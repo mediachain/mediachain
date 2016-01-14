@@ -1,2 +1,2 @@
-# ccr
-The Canonical Content Registry
+# Mediachain
+The primary Mediachain working spec repo
