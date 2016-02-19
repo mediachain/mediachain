@@ -12,8 +12,8 @@ object LSpaceBuild extends Build{
     version := "0.0.1-WORKSHOP",
     scalacOptions := Seq("-Xlint", "-deprecation", "-Xfatal-warnings"),
     libraryDependencies := Seq(
-      "org.specs2" %% "specs2-core" % "3.7" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.13.0" % "test"
+//      "org.specs2" %% "specs2-core" % "3.7" % "test",
+//      "org.scalacheck" %% "scalacheck" % "1.13.0" % "test"
     ),
     scalacOptions in Test := Seq("-Yrangepos")
   )
