@@ -12,6 +12,15 @@ import gremlin.scala._
 
 trait Orientable extends ForEach[OrientGraph] {
   def foreach[R: AsResult](f: OrientGraph => R): Result = {
+
+    // The line below fixes the NoClassDefFound exception when running
+    // `sbt test`, but we should find a better place to put it...
+    //
+    // The problem is that sbt uses a restricted classloader. But if we
+    // make the current thread use the default loader for one of our classes
+    // instead, it's all good.
+    Thread.currentThread().setContextClassLoader(LSpace.getClass.getClassLoader)
+
     lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
     try AsResult(f(graph))
     finally {
