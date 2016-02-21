@@ -1,4 +1,6 @@
 package org.mediachain
+
+import com.orientechnologies.orient.core.Orient
 import org.specs2._
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.specification.ForEach
@@ -13,17 +15,10 @@ import gremlin.scala._
 trait Orientable extends ForEach[OrientGraph] {
   def foreach[R: AsResult](f: OrientGraph => R): Result = {
 
-    // The line below fixes the NoClassDefFound exception when running
-    // `sbt test`, but we should find a better place to put it...
-    //
-    // The problem is that sbt uses a restricted classloader. But if we
-    // make the current thread use the default loader for one of our classes
-    // instead, it's all good.
-    Thread.currentThread().setContextClassLoader(LSpace.getClass.getClassLoader)
-
     lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
     try AsResult(f(graph))
     finally {
+      graph.database().drop()
       // no-op
     }
   }
@@ -42,6 +37,6 @@ object LSpaceSpec extends Specification with Orientable {
     val molotovMan = graph + (Photo, Name -> "Molotov Man")
     val susan = graph + (Person, Name -> "Susan Meiselas")
     molotovMan --- (Author) --> molotovMan
-    graph.V must beNull
+    graph.V must not beNull
   }
 }
