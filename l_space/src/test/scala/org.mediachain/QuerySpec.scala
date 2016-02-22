@@ -4,6 +4,7 @@ import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import org.mediachain.Types._
 import org.specs2.Specification
 import gremlin.scala._
+import scala.util.Random
 
 object QuerySpec extends Specification with Orientable {
 
@@ -14,16 +15,26 @@ object QuerySpec extends Specification with Orientable {
         Does not find a non-matching PhotoBlob $doesNotFindPhoto
       """
 
-  def getPhotoBlob = {
+  def getPhotoBlob: PhotoBlob = {
     val title = "A Starry Night"
     val desc = "shiny!"
     val date = "2016-02-22T19:04:13+00:00"
     PhotoBlob(None, title, desc, date, None)
   }
 
-  def getPerson = {
+  def getPerson: Person = {
     val alex = "Alex Grey"
     Person.create(alex)
+  }
+
+  // guarantees returned string is different from input
+  // TODO: accept distance
+  def mutate(s: String): String = {
+    val idx = Random.nextInt(s.length)
+    val chars = ('a' to 'z').toSet
+    val replaced = s.charAt(idx)
+    val replacing = (chars - replaced).toVector(Random.nextInt(chars.size))
+    s.updated(idx, replacing)
   }
 
   def findsPerson = { graph: OrientGraph =>
@@ -52,7 +63,7 @@ object QuerySpec extends Specification with Orientable {
     val photoBlob = getPhotoBlob
     graph + photoBlob
 
-    val queryBlob = photoBlob.copy(description = "something else")
+    val queryBlob = photoBlob.copy(description = mutate(photoBlob.description))
 
     val queriedPhoto = Query.findPhotoBlob(graph, queryBlob)
 
