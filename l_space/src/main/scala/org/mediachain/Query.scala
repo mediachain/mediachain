@@ -5,7 +5,6 @@ import org.mediachain.Types._
 
 object Query {
   import gremlin.scala._
-  import shapeless._
 
   /** Finds a vertex with label "Person" and traits matching `p` in the graph
     * `g`.
@@ -32,26 +31,6 @@ object Query {
     val Description = Key[String]("description")
     val Date = Key[String]("date")
 
-    // demo
-
-    // val terms = ("title", p.title) :: ("description", p.description) :: ("date", p.date) :: HNil
-    // val q: GremlinScala[Vertex, HNil] = graph.V.hasLabel[PhotoBlob]
-
-    // object buildQuery extends Poly {
-    //   implicit def caseAll[T] = use { (q: GremlinScala[Vertex, HNil], x: (String, T)) =>
-    //     x match {
-    //       case (label, value) => q.has(Key[T](label), value)
-    //     }
-    //   }
-    // }
-
-    // terms.foldLeft(q)(buildQuery)
-
-    // end demo -- no idea if this works
-
-
-
-    // TODO(bigs): simplify this `has` stuff with HList
     graph.V
       .hasLabel[PhotoBlob]
       .has(Title, p.title)
