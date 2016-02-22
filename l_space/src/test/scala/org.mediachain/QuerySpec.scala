@@ -50,12 +50,16 @@ object QuerySpec extends Specification with Orientable {
   def findsPhoto = { graph: OrientGraph =>
     // manually insert the photo blob until Ingress.addPhotoBlob is working
     val photoBlob = getPhotoBlob
-    graph + photoBlob
+    val photoV = graph + photoBlob
+    val canonical = Canonical.create
+    val canonicalV = graph + canonical
+
+    canonicalV --- DescribedBy --> photoV
 
     val queriedPhoto = Query.findPhotoBlob(graph, photoBlob)
 
-    queriedPhoto must beSome[PhotoBlob].which(p => {
-      p.title == photoBlob.title
+    queriedPhoto must beSome[Canonical].which(c => {
+      c.canonicalID == canonical.canonicalID
     })
   }
 
