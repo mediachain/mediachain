@@ -1,11 +1,9 @@
 package org.mediachain
 
-import com.orientechnologies.orient.core.Orient
 import org.specs2._
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.specification.ForEach
 import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
-import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal
 import gremlin.scala._
 
 /**
@@ -19,7 +17,6 @@ trait Orientable extends ForEach[OrientGraph] {
     try AsResult(f(graph))
     finally {
       graph.database().drop()
-      // no-op
     }
   }
 }
@@ -42,3 +39,4 @@ object LSpaceSpec extends Specification with Orientable {
     graph.V must not beNull
   }
 }
+
