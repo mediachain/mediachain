@@ -50,9 +50,11 @@ object QuerySpec extends Specification with Orientable {
 
   def doesNotFindPhoto = { graph: OrientGraph =>
     val photoBlob = getPhotoBlob
+    graph + photoBlob
+
     val queryBlob = photoBlob.copy(description = "something else")
 
-    val queriedPhoto = Query.findPhotoBlob(graph, photoBlob)
+    val queriedPhoto = Query.findPhotoBlob(graph, queryBlob)
 
     queriedPhoto must beNone
   }
