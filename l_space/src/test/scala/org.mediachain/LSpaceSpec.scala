@@ -30,9 +30,11 @@ object LSpaceSpec extends Specification with Orientable {
   val Id = Key[String]("id")
 
   def e1 = { graph: OrientGraph =>
+    println("TEST")
     val molotovMan = graph + (Photo, Name -> "Molotov Man")
     val susan = graph + (Person, Name -> "Susan Meiselas")
     molotovMan --- (Author) --> molotovMan
+    graph.commit
     graph.V must beNull
   }
 }
