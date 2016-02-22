@@ -26,7 +26,7 @@ object Query {
       .map(_.toCC[Canonical])
   }
 
-  def findPhotoBlob(graph: OrientGraph, p: PhotoBlob): Option[PhotoBlob] = {
+  def findPhotoBlob(graph: OrientGraph, p: PhotoBlob): Option[Canonical] = {
     val Title = Key[String]("title")
     val Description = Key[String]("description")
     val Date = Key[String]("date")
@@ -37,8 +37,9 @@ object Query {
       .has(Title, p.title)
       .has(Description, p.description)
       .has(Date, p.date)
+      .in(DescribedBy)
       .headOption
-      .map(_.toCC[PhotoBlob])
+      .map(_.toCC[Canonical])
   }
 }
 

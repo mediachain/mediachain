@@ -27,8 +27,14 @@ object Ingress {
     }
 
     // 2) check to see if a duplicate entry exists
-//    graph.V.has("")
-    ???
+    Query.findPhotoBlob(graph, photo).getOrElse {
+      val canonicalVertex = graph + Canonical.create
+      val photoVertex = graph + photo
+
+      canonicalVertex --- DescribedBy --> photoVertex
+
+      Canonical(canonicalVertex)
+    }
   }
 }
 
