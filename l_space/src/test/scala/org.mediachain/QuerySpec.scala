@@ -10,8 +10,8 @@ object QuerySpec extends Specification with Orientable {
 
   def is =
     s2"""
-        Finds a Person's canonical given a case class  $findsPerson
-        Finds a PhotoBlob given a case class $findsPhoto
+        Finds a Person's canonical given a Person  $findsPerson
+        Finds the corresponding Canonical given a PhotoBlob $findsPhoto
         Does not find a non-matching PhotoBlob $doesNotFindPhoto
       """
 
