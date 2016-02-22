@@ -49,8 +49,6 @@ object Query {
 
     // end demo -- no idea if this works
 
-
-
     // TODO(bigs): simplify this `has` stuff with HList
     graph.V
       .hasLabel[PhotoBlob]

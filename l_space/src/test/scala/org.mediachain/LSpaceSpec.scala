@@ -17,7 +17,6 @@ trait Orientable extends ForEach[OrientGraph] {
     try AsResult(f(graph))
     finally {
       graph.database().drop()
-      // no-op
     }
   }
 }
