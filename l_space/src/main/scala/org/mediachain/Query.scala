@@ -31,6 +31,7 @@ object Query {
     val Description = Key[String]("description")
     val Date = Key[String]("date")
 
+    // TODO(bigs): simplify this `has` stuff with HList
     graph.V
       .hasLabel[PhotoBlob]
       .has(Title, p.title)
