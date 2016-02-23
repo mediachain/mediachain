@@ -52,8 +52,8 @@ object Query {
 
   def findCanonicalForBlob(graph: Graph, blobID: String): Option[Canonical] = {
     graph.V(blobID)
-      .repeat(_.in(ModifiedBy))
       .untilWithTraverser(t => t.get().in(DescribedBy).exists)
+      .repeat(_.in(ModifiedBy))
       .in(DescribedBy)
       .headOption()
       .map(_.toCC[Canonical])
