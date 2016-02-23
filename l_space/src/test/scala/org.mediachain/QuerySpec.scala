@@ -10,11 +10,16 @@ object QuerySpec extends Specification with Orientable {
 
   def is =
     s2"""
-        Finds a Person's canonical given a Person  $findsPerson
-        Finds the corresponding Canonical given a PhotoBlob $findsPhoto
+        Given a MetadataBlob, find the Canonical $findsPhoto
+        Given a Canonical, finds full tree $findsTree
+        Given a Person, finds the person's Canonical $findsPerson
+        Given a MetadataBlob, finds the author Person $findsAuthor
+        Given a Person, finds all Canonical that they are the Author of $findsWorks
+
         Does not find a non-matching PhotoBlob $doesNotFindPhoto
       """
 
+  // UTILS BELOW (TODO: move out)
   def getPhotoBlob: PhotoBlob = {
     val title = "A Starry Night"
     val desc = "shiny!"
@@ -37,16 +42,7 @@ object QuerySpec extends Specification with Orientable {
     s.updated(idx, replacing)
   }
 
-  def findsPerson = { graph: OrientGraph =>
-    val p = getPerson
-    val alexCanonical = Ingress.addPerson(graph, p)
-    val queriedCanonical = Query.findPerson(graph, p)
-
-    queriedCanonical must beSome[Canonical].which(c => {
-      c.canonicalID == alexCanonical.canonicalID
-    })
-  }
-
+  // TESTS BELOW
   def findsPhoto = { graph: OrientGraph =>
     // manually insert the photo blob until Ingress.addPhotoBlob is working
     val photoBlob = getPhotoBlob
@@ -61,6 +57,28 @@ object QuerySpec extends Specification with Orientable {
     queriedPhoto must beSome[Canonical].which(c => {
       c.canonicalID == canonical.canonicalID
     })
+  }
+
+  def findsTree = { graph: OrientGraph =>
+    pending
+  }
+
+  def findsPerson = { graph: OrientGraph =>
+    val p = getPerson
+    val alexCanonical = Ingress.addPerson(graph, p)
+    val queriedCanonical = Query.findPerson(graph, p)
+
+    queriedCanonical must beSome[Canonical].which(c => {
+      c.canonicalID == alexCanonical.canonicalID
+    })
+  }
+
+  def findsAuthor = { graph: OrientGraph =>
+    pending
+  }
+
+  def findsWorks = { graph: OrientGraph =>
+    pending
   }
 
   def doesNotFindPhoto = { graph: OrientGraph =>
