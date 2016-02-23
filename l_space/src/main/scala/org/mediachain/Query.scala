@@ -40,5 +40,13 @@ object Query {
       .headOption
       .map(_.toCC[Canonical])
   }
+
+  def findCanonical(graph: Graph, blobId: String): Option[Canonical] = {
+  // TODO: recurse through a chain of DescribedBy edges
+    graph.V(blobId)
+      .in(DescribedBy)
+      .headOption
+      .map(_.toCC[Canonical])
+  }
 }
 
