@@ -13,6 +13,7 @@ object QuerySpec extends Specification with Orientable {
         Finds a Person's canonical given a Person  $findsPerson
         Finds the corresponding Canonical given a PhotoBlob $findsPhoto
         Does not find a non-matching PhotoBlob $doesNotFindPhoto
+        Finds Canonical for a modified PhotoBlob $findsCanonicalForModifiedBlob
       """
 
   def getPhotoBlob: PhotoBlob = {
@@ -72,5 +73,23 @@ object QuerySpec extends Specification with Orientable {
     val queriedPhoto = Query.findPhotoBlob(graph, queryBlob)
 
     queriedPhoto must beNone
+  }
+
+  def findsCanonicalForModifiedBlob = { graph: OrientGraph =>
+    val photoBlob = getPhotoBlob
+    val parentVertex = graph + photoBlob
+    val canonical = Canonical.create()
+    val canonicalVertex = graph + canonical
+    canonicalVertex --- DescribedBy --> parentVertex
+
+    val mutated = photoBlob.copy(description = mutate(photoBlob.description))
+    val mutatedVertex = graph + mutated
+    parentVertex --- ModifiedBy --> mutatedVertex
+
+    graph.commit()
+    val parentCanonical = Query.findCanonicalForBlob(graph, parentVertex.id.toString)
+    val childCanonical = Query.findCanonicalForBlob(graph, mutatedVertex.id.toString)
+    (childCanonical must beSome[Canonical]) and
+      (childCanonical must_== parentCanonical)
   }
 }
