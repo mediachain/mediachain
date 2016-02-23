@@ -10,12 +10,12 @@ object LSpaceBuild extends Build{
   lazy val scalaSettings = Seq(
     scalaVersion := "2.11.7",
     version := "0.0.1-WORKSHOP",
-    scalacOptions := Seq("-Xlint", "-deprecation", "-Xfatal-warnings"),
-    libraryDependencies := Seq(
+    scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings"),
+    libraryDependencies ++= Seq(
       "org.specs2" %% "specs2-core" % "3.7" % "test",
       "org.scalacheck" %% "scalacheck" % "1.13.0" % "test"
     ),
-    scalacOptions in Test := Seq("-Yrangepos")
+    scalacOptions in Test ++= Seq("-Yrangepos")
   )
 
   assemblyMergeStrategy in assembly := {
@@ -30,5 +30,5 @@ object LSpaceBuild extends Build{
     .settings(scalaSettings: _*)
 
   lazy val root = (project in file("."))
-    .aggregate()
+    .aggregate(l_space)
 }
