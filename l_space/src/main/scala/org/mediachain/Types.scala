@@ -7,6 +7,16 @@ object Types {
   val DescribedBy = "described-by"
   val AuthoredBy  = "authored-by"
 
+  /**
+    * Convert from the AnyRef returned by Vertex.id()
+    * to an Option[String]
+    * @param v a Vertex
+    * @return Some("StringId"), or None if no id exists
+    */
+  def vertexId(v: Vertex): Option[String] = {
+    Option(v.id).map(_.toString)
+  }
+
   @label("Canonical")
   case class Canonical(@id id: Option[String],
                        canonicalID: String)
@@ -18,7 +28,7 @@ object Types {
 
     def apply(v: Vertex): Canonical = {
       Canonical(
-        v.valueOption[String]("id"),
+        vertexId(v),
         v.value[String]("canonicalID")
       )
     }
@@ -43,7 +53,7 @@ object Types {
       if (v.label() == "Person") {
         Some(
           Person(
-            id = v.valueOption[String]("id"),
+            vertexId(v),
             name = v.value("name")
           )
         )
@@ -65,7 +75,7 @@ object Types {
       if (v.label() == "PhotoBlob") {
         Some(
           PhotoBlob(
-            id = v.valueOption[String]("id"),
+            vertexId(v),
             title = v.value("title"),
             description = v.value("description"),
             date = v.value("date"),
