@@ -56,7 +56,7 @@ object Ingress {
         Some(addPerson(graph, p))
       }
 
-      (author, Query.findAuthorForBlob(photo)) match {
+      (author, Query.findAuthorForBlob[PhotoBlob](graph, photo)) match {
         case (Some(newAuthor), Some(oldAuthor)) => {
           if (newAuthor.canonicalID != oldAuthor.canonicalID) {
             newAuthor.vertex(graph).foreach(v => {
