@@ -47,5 +47,9 @@ object Ingress {
     }
   }
 
+
+  def modifyPhotoBlob(graph: Graph, parentVertex: Vertex, photo: PhotoBlob): Option[Canonical] = {
+    ???
+  }
 }
 

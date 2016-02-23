@@ -48,5 +48,7 @@ object Query {
       .headOption
       .map(_.toCC[Canonical])
   }
+
+  def findAuthorForBlob[T](blob: T): Option[Canonical] = ???
 }
 
