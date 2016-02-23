@@ -41,12 +41,26 @@ object Query {
       .map(_.toCC[Canonical])
   }
 
-  def findCanonical(graph: Graph, blobId: String): Option[Canonical] = {
-  // TODO: recurse through a chain of DescribedBy edges
-    graph.V(blobId)
+  def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Vertex] = {
+    blob.id.flatMap { id =>
+      graph.V(id)
+        .repeat(_.in(ModifiedBy))
+        .untilWithTraverser(t => t.get().in(DescribedBy).exists)
+        .headOption
+    }
+  }
+
+  def findCanonicalForBlob(graph: Graph, blobID: String): Option[Canonical] = {
+    graph.V(blobID)
+      .repeat(_.in(ModifiedBy))
+      .untilWithTraverser(t => t.get().in(DescribedBy).exists)
       .in(DescribedBy)
-      .headOption
+      .headOption()
       .map(_.toCC[Canonical])
+  }
+
+  def findCanonicalForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
+    blob.id.flatMap(id => findCanonicalForBlob(graph, id))
   }
 
   def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T):
