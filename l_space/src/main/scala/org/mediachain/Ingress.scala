@@ -37,8 +37,7 @@ object Ingress {
       //    make an edge from the PhotoBlob vertex to
       //    the Canonical vertex for the author
       author
-        .flatMap(a => a.id)
-        .flatMap(id => graph.V(id).headOption)
+        .flatMap(a => a.vertex(graph))
         .foreach(authorVertex => {
           photoVertex --- AuthoredBy --> authorVertex
         })
@@ -49,7 +48,39 @@ object Ingress {
 
 
   def modifyPhotoBlob(graph: Graph, parentVertex: Vertex, photo: PhotoBlob): Option[Canonical] = {
-    ???
+    Query.findPhotoBlob(graph, photo).orElse {
+      val childVertex = graph + photo
+      parentVertex --- ModifiedBy --> childVertex
+
+      val author: Option[Canonical] = photo.author.flatMap { p =>
+        Some(addPerson(graph, p))
+      }
+
+      (author, Query.findAuthorForBlob(photo)) match {
+        case (Some(newAuthor), Some(oldAuthor)) => {
+          if (newAuthor.canonicalID != oldAuthor.canonicalID) {
+            newAuthor.vertex(graph).foreach(v => {
+              childVertex --- AuthoredBy --> v
+            })
+          }
+        }
+        case _ => ()
+      }
+
+      Query.findCanonical(graph, childVertex.id.toString)
+    }
   }
+
+  def modifyPhotoBlob(graph: Graph, parent: PhotoBlob, photo: PhotoBlob): Option[Canonical] = {
+    Query.findPhotoBlob(graph, parent)
+      .flatMap(p => p.vertex(graph))
+      .flatMap(v => modifyPhotoBlob(graph, v, photo))
+  }
+
+  def modifyPhotoBlob(graph: Graph, parentID: String, photo: PhotoBlob): Option[Canonical] = {
+    graph.V(parentID).headOption
+      .flatMap(v => modifyPhotoBlob(graph, v, photo))
+  }
+
 }
 
