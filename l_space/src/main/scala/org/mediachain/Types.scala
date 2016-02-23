@@ -7,7 +7,6 @@ object Types {
   val DescribedBy = "described-by"
   val ModifiedBy  = "modified-by"
   val AuthoredBy  = "authored-by"
-  val ModifiedBy  = "modified-by"
 
   /**
     * Convert from the AnyRef returned by Vertex.id()
@@ -52,9 +51,7 @@ object Types {
 
   @label("Person")
   case class Person(@id id: Option[String],
-                    name: String) extends MetadataBlob {
-    def getID(): Option[String] = id
-  }
+                    name: String) extends MetadataBlob
 
   object Person {
     def create(name: String) = {
@@ -80,9 +77,7 @@ object Types {
                        title: String,
                        description: String,
                        date: String,
-                       author: Option[Person]) extends MetadataBlob {
-    def getID(): Option[String] = id
-  }
+                       author: Option[Person]) extends MetadataBlob
 
   object PhotoBlob {
     def apply(v: Vertex): Option[PhotoBlob] = {
