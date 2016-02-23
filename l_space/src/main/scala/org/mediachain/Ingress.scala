@@ -17,13 +17,12 @@ object Ingress {
   }
 
   def addPhotoBlob(graph: OrientGraph, photo: PhotoBlob): Canonical = {
-    // 1) extract author & see if they exist already
-    val author: Option[Canonical] = photo.author match {
-      case Some(p) =>
-        Query.findPerson(graph, p).orElse {
-          Some(addPerson(graph, p))
-        }
-      case _       => None
+
+    // 1) extract author & add if they don't exist in the graph already
+    val author: Option[Canonical] = photo.author.flatMap { p =>
+      Query.findPerson(graph, p).orElse {
+        Some(addPerson(graph, p))
+      }
     }
 
     // 2) check to see if a duplicate entry exists
