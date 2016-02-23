@@ -5,6 +5,7 @@ object Types {
   import java.util.UUID
 
   val DescribedBy = "described-by"
+  val ModifiedBy  = "modified-by"
   val AuthoredBy  = "authored-by"
 
   /**
@@ -17,9 +18,17 @@ object Types {
     Option(v.id).map(_.toString)
   }
 
+  trait VertexClass {
+    val id: Option[String]
+
+    def vertex(graph: Graph): Option[Vertex] = {
+      id.flatMap(id => graph.V(id).headOption)
+    }
+  }
+
   @label("Canonical")
   case class Canonical(@id id: Option[String],
-                       canonicalID: String)
+                       canonicalID: String) extends VertexClass
 
   object Canonical {
     def create(): Canonical = {
@@ -34,10 +43,10 @@ object Types {
     }
   }
 
-  sealed trait MetadataBlob
+  sealed trait MetadataBlob extends VertexClass
 
   @label("RawMetadataBlob")
-  case class RawMetadataBlob(@id id: String,
+  case class RawMetadataBlob(@id id: Option[String],
                              blob: String) extends MetadataBlob
 
   @label("Person")
