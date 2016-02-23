@@ -49,6 +49,17 @@ object Query {
       .map(_.toCC[Canonical])
   }
 
-  def findAuthorForBlob[T](blob: T): Option[Canonical] = ???
+  def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T):
+  Option[Canonical] = {
+    blob.id.flatMap { id =>
+      graph.V(id)
+        .repeat(_.in(ModifiedBy))
+        .untilWithTraverser { t =>
+          t.get().in(AuthoredBy).exists() || t.get().in().notExists()
+        }
+        .in(AuthoredBy)
+        .headOption()
+    }.map(_.toCC[Canonical])
+  }
 }
 
