@@ -1,13 +1,12 @@
 package org.mediachain
 
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import org.mediachain.Types._
 import org.specs2.Specification
 import gremlin.scala._
 import scala.util.Random
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.specification.ForEach
-import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
+import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 
 case class QueryObjects(
   person: Person,
@@ -16,10 +15,10 @@ case class QueryObjects(
   photoBlobCanonical: Canonical
   );
 
-case class QuerySpecContext(graph: OrientGraph, q: QueryObjects)
+case class QuerySpecContext(graph: Graph, q: QueryObjects)
 
 object QuerySpec extends Specification with ForEach[QuerySpecContext] {
-  def setupTree(graph: OrientGraph): QueryObjects = {
+  def setupTree(graph: Graph): QueryObjects = {
     def getPhotoBlob: PhotoBlob = {
       val title = "A Starry Night"
       val desc = "shiny!"
