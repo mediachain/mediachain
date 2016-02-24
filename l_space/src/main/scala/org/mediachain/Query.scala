@@ -66,11 +66,11 @@ object Query {
   def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
     blob.id.flatMap { id =>
       graph.V(id)
-        .repeat(_.in(ModifiedBy))
         .untilWithTraverser { t =>
-          t.get().in(AuthoredBy).exists() || t.get().in().notExists()
+          t.get().out(AuthoredBy).exists() || t.get().in().notExists()
         }
-        .in(AuthoredBy)
+        .repeat(_.in(ModifiedBy))
+        .out(AuthoredBy)
         .headOption()
     }.map(_.toCC[Canonical])
   }
