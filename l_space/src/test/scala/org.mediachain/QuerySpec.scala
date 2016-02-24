@@ -127,7 +127,7 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
       val idx = Random.nextInt(s.length)
       val chars = ('a' to 'z').toSet
       val replaced = s.charAt(idx)
-      val replacing = (chars - replaced).toVector(Random.nextInt(chars.size) - 1)
+      val replacing = (chars - replaced).toVector(Random.nextInt(chars.size - 1))
       s.updated(idx, replacing)
     }
 
