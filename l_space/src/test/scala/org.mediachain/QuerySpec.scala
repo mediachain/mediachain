@@ -5,89 +5,114 @@ import org.mediachain.Types._
 import org.specs2.Specification
 import gremlin.scala._
 import scala.util.Random
+import org.specs2.execute.{AsResult, Result}
+import org.specs2.specification.ForEach
+import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
 
-object QuerySpec extends Specification with Orientable {
+case class QueryObjects(
+  person: Person,
+  personCanonical: Canonical,
+  photoBlob: PhotoBlob,
+  photoBlobCanonical: Canonical
+  );
 
-  def is =
-    s2"""
-        Given a MetadataBlob, find the Canonical $findsPhoto
-        Given a Canonical, finds full tree $findsTree
-        Given a Person, finds the person's Canonical $findsPerson
-        Given a MetadataBlob, finds the author Person $findsAuthor
-        Given a Person, finds all Canonical that they are the Author of $findsWorks
+case class QuerySpecContext(graph: OrientGraph, q: QueryObjects)
 
-        Does not find a non-matching PhotoBlob $doesNotFindPhoto
-      """
+object QuerySpec extends Specification with ForEach[QuerySpecContext] {
+  def setupTree(graph: OrientGraph): QueryObjects = {
+    def getPhotoBlob: PhotoBlob = {
+      val title = "A Starry Night"
+      val desc = "shiny!"
+      val date = "2016-02-22T19:04:13+00:00"
+      PhotoBlob(None, title, desc, date, None)
+    }
 
-  // UTILS BELOW (TODO: move out)
-  def getPhotoBlob: PhotoBlob = {
-    val title = "A Starry Night"
-    val desc = "shiny!"
-    val date = "2016-02-22T19:04:13+00:00"
-    PhotoBlob(None, title, desc, date, None)
-  }
+    def getPerson: Person = {
+      val alex = "Alex Grey"
+      Person.create(alex)
+    }
 
-  def getPerson: Person = {
-    val alex = "Alex Grey"
-    Person.create(alex)
-  }
 
-  // guarantees returned string is different from input
-  // TODO: accept distance
-  def mutate(s: String): String = {
-    val idx = Random.nextInt(s.length)
-    val chars = ('a' to 'z').toSet
-    val replaced = s.charAt(idx)
-    val replacing = (chars - replaced).toVector(Random.nextInt(chars.size))
-    s.updated(idx, replacing)
-  }
-
-  // TESTS BELOW
-  def findsPhoto = { graph: OrientGraph =>
-    // manually insert the photo blob until Ingress.addPhotoBlob is working
     val photoBlob = getPhotoBlob
     val photoV = graph + photoBlob
-    val canonical = Canonical.create
-    val canonicalV = graph + canonical
+    val photoBlobCanonical = Canonical.create
+    val canonicalV = graph + photoBlobCanonical
 
     canonicalV --- DescribedBy --> photoV
 
-    val queriedPhoto = Query.findPhotoBlob(graph, photoBlob)
+    val p = getPerson
+    val pCanonical = Ingress.addPerson(graph, p) // FIXME: don't use ingress
+
+    QueryObjects(p, pCanonical, photoBlob, photoBlobCanonical)
+  }
+
+  // TODO: can you figure out how to abstract out the connection creation?
+  def foreach[R: AsResult](f: QuerySpecContext => R): Result = {
+
+    lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
+    try {
+      val queryObjects = setupTree(graph)
+      AsResult(f(QuerySpecContext(graph, queryObjects)))
+    } finally {
+      graph.database().drop()
+    }
+  }
+
+  def is =
+  s2"""
+  Given a MetadataBlob, find the Canonical $findsPhoto
+  Given a Canonical, finds full tree $findsTree
+  Given a Person, finds the person's Canonical $findsPerson
+  Given a MetadataBlob, finds the author Person $findsAuthor
+  Given a Person, finds all Canonical that they are the Author of $findsWorks
+
+  Does not find a non-matching PhotoBlob $doesNotFindPhoto
+  """
+
+  // TESTS BELOW
+  def findsPhoto = { context: QuerySpecContext =>
+    val queriedPhoto = Query.findPhotoBlob(context.graph, context.q.photoBlob)
 
     queriedPhoto must beSome[Canonical].which(c => {
-      c.canonicalID == canonical.canonicalID
-    })
+      c.canonicalID == context.q.photoBlobCanonical.canonicalID
+      })
   }
 
-  def findsTree = { graph: OrientGraph =>
+  def findsTree = { context: QuerySpecContext =>
     pending
   }
 
-  def findsPerson = { graph: OrientGraph =>
-    val p = getPerson
-    val alexCanonical = Ingress.addPerson(graph, p)
-    val queriedCanonical = Query.findPerson(graph, p)
+  def findsPerson = { context: QuerySpecContext =>
+    val queriedCanonical = Query.findPerson(context.graph, context.q.person)
 
     queriedCanonical must beSome[Canonical].which(c => {
-      c.canonicalID == alexCanonical.canonicalID
-    })
+      c.canonicalID == context.q.personCanonical.canonicalID
+      })
   }
 
-  def findsAuthor = { graph: OrientGraph =>
+  def findsAuthor = { context: QuerySpecContext =>
     pending
   }
 
-  def findsWorks = { graph: OrientGraph =>
+  def findsWorks = { context: QuerySpecContext =>
     pending
   }
 
-  def doesNotFindPhoto = { graph: OrientGraph =>
-    val photoBlob = getPhotoBlob
-    graph + photoBlob
+  def doesNotFindPhoto = { context: QuerySpecContext =>
+    // guarantees returned string is different from input
+    // TODO: accept distance
+    def mutate(s: String): String = {
+      val idx = Random.nextInt(s.length)
+      val chars = ('a' to 'z').toSet
+      val replaced = s.charAt(idx)
+      val replacing = (chars - replaced).toVector(Random.nextInt(chars.size))
+      s.updated(idx, replacing)
+    }
 
-    val queryBlob = photoBlob.copy(description = mutate(photoBlob.description))
+    val queryBlob = context.q.photoBlob.copy(
+      description = mutate(context.q.photoBlob.description))
 
-    val queriedPhoto = Query.findPhotoBlob(graph, queryBlob)
+    val queriedPhoto = Query.findPhotoBlob(context.graph, queryBlob)
 
     queriedPhoto must beNone
   }
