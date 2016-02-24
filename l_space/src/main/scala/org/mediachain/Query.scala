@@ -1,6 +1,5 @@
 package org.mediachain
 
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import org.mediachain.Types._
 
 object Query {
@@ -13,7 +12,7 @@ object Query {
     * @param p The person to search for
     * @return Optional person matching criteria
     */
-  def findPerson(graph: OrientGraph, p: Person): Option[Canonical] = {
+  def findPerson(graph: Graph, p: Person): Option[Canonical] = {
     val Name = Key[String]("name")
 
     // at some point, this should prob search for inbound edge of HEAD or do
@@ -26,7 +25,7 @@ object Query {
       .map(_.toCC[Canonical])
   }
 
-  def findPhotoBlob(graph: OrientGraph, p: PhotoBlob): Option[Canonical] = {
+  def findPhotoBlob(graph: Graph, p: PhotoBlob): Option[Canonical] = {
     val Title = Key[String]("title")
     val Description = Key[String]("description")
     val Date = Key[String]("date")
@@ -42,7 +41,7 @@ object Query {
       .map(_.toCC[Canonical])
   }
 
-  def findAuthor(graph: OrientGraph, p: PhotoBlob): Option[Canonical] = {
+  def findAuthor(graph: Graph, p: PhotoBlob): Option[Canonical] = {
     ???
   }
 }
