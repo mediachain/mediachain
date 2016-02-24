@@ -56,7 +56,12 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
     personCanonicalV --- DescribedBy --> personV
     photoBlobV --- AuthoredBy --> personCanonicalV
 
-    QueryObjects(person, personCanonical, photoBlob, photoBlobCanonical, modifiedBlob)
+    QueryObjects(
+      Person(personV).get,
+      Canonical(personCanonicalV),
+      PhotoBlob(photoBlobV).get,
+      Canonical(canonicalV),
+      PhotoBlob(modifiedBlobV).get)
   }
 
   // TODO: can you figure out how to abstract out the connection creation?
@@ -122,7 +127,7 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
       val idx = Random.nextInt(s.length)
       val chars = ('a' to 'z').toSet
       val replaced = s.charAt(idx)
-      val replacing = (chars - replaced).toVector(Random.nextInt(chars.size))
+      val replacing = (chars - replaced).toVector(Random.nextInt(chars.size) - 1)
       s.updated(idx, replacing)
     }
 
