@@ -1,6 +1,5 @@
 package org.mediachain
 
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import org.mediachain.Types._
 import scala.util.Try
 import gremlin.scala._
@@ -16,7 +15,7 @@ object Ingress {
     Canonical(canonicalVertex)
   }
 
-  def addPhotoBlob(graph: OrientGraph, photo: PhotoBlob): Canonical = {
+  def addPhotoBlob(graph: Graph, photo: PhotoBlob): Canonical = {
 
     // 1) extract author & add if they don't exist in the graph already
     val author: Option[Canonical] = photo.author.flatMap { p =>
