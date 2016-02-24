@@ -67,7 +67,7 @@ object Ingress {
         case _ => ()
       }
 
-      Query.findCanonicalForBlob(graph, childVertex.id.toString)
+      Query.findCanonicalForBlob(graph, childVertex)
     }
   }
 

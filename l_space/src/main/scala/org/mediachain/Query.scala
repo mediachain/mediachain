@@ -50,17 +50,23 @@ object Query {
     }
   }
 
-  def findCanonicalForBlob(graph: Graph, blobID: String): Option[Canonical] = {
-    graph.V(blobID)
+  def findCanonicalForBlob(graph: Graph, blobID: ElementID): Option[Canonical] = {
+    val canonicalV = graph.V(blobID)
       .untilWithTraverser(t => t.get().in(DescribedBy).exists)
       .repeat(_.in(ModifiedBy))
       .in(DescribedBy)
       .headOption()
-      .map(_.toCC[Canonical])
+
+
+    canonicalV.map(_.toCC[Canonical])
   }
 
   def findCanonicalForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
     blob.id.flatMap(id => findCanonicalForBlob(graph, id))
+  }
+
+  def findCanonicalForBlob(graph: Graph, vertex: Vertex): Option[Canonical] = {
+    vertexId(vertex).flatMap(findCanonicalForBlob(graph, _))
   }
 
   def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
@@ -76,7 +82,15 @@ object Query {
   }
 
   def findWorks(graph: Graph, p: Person): Option[List[Canonical]] = {
-    ???
+    val personCanonical = findCanonicalForBlob(graph, p)
+    personCanonical
+      .flatMap(p => p.vertex(graph))
+      .map { v =>
+        v.in(AuthoredBy)
+        .map(v => findCanonicalForBlob(graph, v))
+        .toList
+        .flatten
+    }
   }
 }
 
