@@ -8,7 +8,10 @@ object IngressSpec extends Specification with Orientable {
 
   def is =
     s2"""
-        Ingests a PhotoBlob: $ingestsPhoto
+        Ingests a PhotoBlob with no Author $ingestsPhoto
+        Given a PhotoBlob with an existing Author, doesn't recreate it $findsExistingAuthor
+        Given an exact match, don't recreate, only attach RawMetadataBlob $attachesRawMetadata
+        Given a new PhotoBlob with a new Author, add new Canonical and new Author $ingestsPhotoBothNew
       """
 
   def ingestsPhoto = { graph: OrientGraph =>
@@ -17,4 +20,8 @@ object IngressSpec extends Specification with Orientable {
     val canonical = Ingress.addPhotoBlob(graph, photoBlob)
     canonical.id must beSome[String]
   }
+
+  def findsExistingAuthor = pending
+  def attachesRawMetadata = pending
+  def ingestsPhotoBothNew = pending
 }
