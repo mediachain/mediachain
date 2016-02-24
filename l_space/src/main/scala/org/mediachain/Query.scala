@@ -44,5 +44,9 @@ object Query {
   def findAuthor(graph: Graph, p: PhotoBlob): Option[Canonical] = {
     ???
   }
+
+  def findWorks(graph: Graph, p: Person): Option[List[Canonical]] = {
+    ???
+  }
 }
 
