@@ -20,7 +20,6 @@ object Ingress {
   }
 
   def addPhotoBlob(graph: Graph, photo: PhotoBlob): Canonical = {
-
     // 1) extract author & add if they don't exist in the graph already
     val author: Option[Canonical] = photo.author.flatMap { p =>
       Some(addPerson(graph, p))
