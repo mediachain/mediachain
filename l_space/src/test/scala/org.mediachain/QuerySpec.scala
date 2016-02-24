@@ -32,12 +32,14 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
       Person.create(alex)
     }
 
+    // add photo and canonical
     val photoBlob = getPhotoBlob
     val photoBlobV = graph + photoBlob
     val photoBlobCanonical = Canonical.create
     val canonicalV = graph + photoBlobCanonical
     canonicalV --- DescribedBy --> photoBlobV
 
+    // add an author for the photo
     val person = getPerson
     val personV = graph + person
     val personCanonical = Canonical.create
