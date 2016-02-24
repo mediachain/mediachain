@@ -63,8 +63,7 @@ object Query {
     blob.id.flatMap(id => findCanonicalForBlob(graph, id))
   }
 
-  def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T):
-  Option[Canonical] = {
+  def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
     blob.id.flatMap { id =>
       graph.V(id)
         .repeat(_.in(ModifiedBy))
@@ -74,6 +73,10 @@ object Query {
         .in(AuthoredBy)
         .headOption()
     }.map(_.toCC[Canonical])
+  }
+
+  def findWorks(graph: Graph, p: Person): Option[List[Canonical]] = {
+    ???
   }
 }
 
