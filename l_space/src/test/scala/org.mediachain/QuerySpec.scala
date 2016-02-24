@@ -101,7 +101,10 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
   }
 
   def findsWorks = { context: QuerySpecContext =>
-    pending
+    val queriedWorks = Query.findWorks(context.graph, context.q.person)
+
+    queriedWorks must beSome[Seq[Canonical]].which(s =>
+      s.contains(context.q.photoBlobCanonical))
   }
 
   def doesNotFindPhoto = { context: QuerySpecContext =>
