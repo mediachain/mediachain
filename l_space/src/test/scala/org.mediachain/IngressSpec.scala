@@ -21,7 +21,33 @@ object IngressSpec extends Specification with Orientable {
     canonical.id must beSome[ElementID]
   }
 
-  def findsExistingAuthor = pending
+  def findsExistingAuthor = { graph: OrientGraph =>
+    val photoBlobs = List(
+      PhotoBlob(None, "A Starry Night", "shiny!", "1/2/2013",
+        Some(Person(None, "Fooman Bars"))),
+      PhotoBlob(None, "A Starrier Night", "shiny!", "1/2/2013",
+        Some(Person(None, "Fooman Bars")))
+    )
+
+    photoBlobs.foreach(Ingress.addPhotoBlob(graph, _))
+    graph.commit
+
+    val people = graph.V.hasLabel[Person].toCC[Person].toList
+    people.size shouldEqual 1
+
+    val person = people.head
+    person.name shouldEqual "Fooman Bars"
+    person.id should beSome
+
+    val photos = graph.V(person.id.get).in(AuthoredBy).toCC[PhotoBlob].toList()
+
+    photos.size shouldEqual 2
+
+    val photoTitles = photos.map(_.title)
+    photoTitles must contain("A Starry Night")
+    photoTitles must contain("A Starrier Night")
+  }
+
   def attachesRawMetadata = pending
   def ingestsPhotoBothNew = pending
 }

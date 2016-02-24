@@ -12,8 +12,9 @@ import gremlin.scala._
 
 trait Orientable extends ForEach[OrientGraph] {
   def foreach[R: AsResult](f: OrientGraph => R): Result = {
+    import java.util.UUID
 
-    lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
+    lazy val graph = new OrientGraphFactory(s"memory:test-${UUID.randomUUID}").getNoTx()
     try AsResult(f(graph))
     finally {
       graph.database().drop()
@@ -31,7 +32,6 @@ object LSpaceSpec extends Specification with Orientable {
   val Id = Key[String]("id")
 
   def e1 = { graph: OrientGraph =>
-    println("TEST")
     val molotovMan = graph + (Photo, Name -> "Molotov Man")
     val susan = graph + (Person, Name -> "Susan Meiselas")
     molotovMan --- (Author) --> molotovMan
