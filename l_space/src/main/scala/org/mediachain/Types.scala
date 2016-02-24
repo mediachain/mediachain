@@ -1,8 +1,12 @@
 package org.mediachain
 
+import com.orientechnologies.orient.core.id.ORecordId
+
 object Types {
   import gremlin.scala._
   import java.util.UUID
+
+  type ElementID = ORecordId
 
   val DescribedBy = "described-by"
   val ModifiedBy  = "modified-by"
@@ -10,16 +14,17 @@ object Types {
 
   /**
     * Convert from the AnyRef returned by Vertex.id()
-    * to an Option[String]
+    * to an Option[ElementID]
+ *
     * @param v a Vertex
-    * @return Some("StringId"), or None if no id exists
+    * @return Some(ElementID), or None if no id exists
     */
-  def vertexId(v: Vertex): Option[String] = {
-    Option(v.id).map(_.toString)
+  def vertexId(v: Vertex): Option[ElementID] = {
+    Option(v.id).map(id => id.asInstanceOf[ElementID])
   }
 
   trait VertexClass {
-    val id: Option[String]
+    val id: Option[ElementID]
 
     def vertex(graph: Graph): Option[Vertex] = {
       id.flatMap(id => graph.V(id).headOption)
@@ -27,7 +32,7 @@ object Types {
   }
 
   @label("Canonical")
-  case class Canonical(@id id: Option[String],
+  case class Canonical(@id id: Option[ElementID],
                        canonicalID: String) extends VertexClass
 
   object Canonical {
@@ -46,11 +51,11 @@ object Types {
   sealed trait MetadataBlob extends VertexClass
 
   @label("RawMetadataBlob")
-  case class RawMetadataBlob(@id id: Option[String],
+  case class RawMetadataBlob(@id id: Option[ElementID],
                              blob: String) extends MetadataBlob
 
   @label("Person")
-  case class Person(@id id: Option[String],
+  case class Person(@id id: Option[ElementID],
                     name: String) extends MetadataBlob
 
   object Person {
@@ -73,7 +78,7 @@ object Types {
   }
 
   @label("PhotoBlob")
-  case class PhotoBlob(@id id: Option[String],
+  case class PhotoBlob(@id id: Option[ElementID],
                        title: String,
                        description: String,
                        date: String,
