@@ -32,18 +32,20 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
       Person.create(alex)
     }
 
-
     val photoBlob = getPhotoBlob
-    val photoV = graph + photoBlob
+    val photoBlobV = graph + photoBlob
     val photoBlobCanonical = Canonical.create
     val canonicalV = graph + photoBlobCanonical
+    canonicalV --- DescribedBy --> photoBlobV
 
-    canonicalV --- DescribedBy --> photoV
+    val person = getPerson
+    val personV = graph + person
+    val personCanonical = Canonical.create
+    val personCanonicalV = graph + personCanonical
+    personCanonicalV --- DescribedBy --> personV
+    photoBlobV --- AuthoredBy --> personCanonicalV
 
-    val p = getPerson
-    val pCanonical = Ingress.addPerson(graph, p) // FIXME: don't use ingress
-
-    QueryObjects(p, pCanonical, photoBlob, photoBlobCanonical)
+    QueryObjects(person, personCanonical, photoBlob, photoBlobCanonical)
   }
 
   // TODO: can you figure out how to abstract out the connection creation?
@@ -91,7 +93,10 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
   }
 
   def findsAuthor = { context: QuerySpecContext =>
-    pending
+    val queriedAuthor = Query.findAuthor(context.graph, context.q.photoBlob)
+
+    queriedAuthor must beSome[Canonical].which(c =>
+      c.canonicalID == context.q.personCanonical.canonicalID)
   }
 
   def findsWorks = { context: QuerySpecContext =>

@@ -41,5 +41,9 @@ object Query {
       .headOption
       .map(_.toCC[Canonical])
   }
+
+  def findAuthor(graph: OrientGraph, p: PhotoBlob): Option[Canonical] = {
+    ???
+  }
 }
 
