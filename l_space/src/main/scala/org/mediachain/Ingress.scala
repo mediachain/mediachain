@@ -37,9 +37,7 @@ object Ingress {
       //    the Canonical vertex for the author
       author
         .flatMap(a => a.vertex(graph))
-        .foreach(authorVertex => {
-          photoVertex --- AuthoredBy --> authorVertex
-        })
+        .foreach({authorVertex => photoVertex --- AuthoredBy --> authorVertex})
 
       Canonical(canonicalVertex)
     }

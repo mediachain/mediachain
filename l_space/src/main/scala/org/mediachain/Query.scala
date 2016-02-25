@@ -42,7 +42,7 @@ object Query {
   }
 
   def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Vertex] = {
-    blob.id.flatMap { id =>
+    blob.getID.flatMap { id =>
       graph.V(id)
         .repeat(_.in(ModifiedBy))
         .untilWithTraverser(t => t.get().in(DescribedBy).exists)
@@ -62,7 +62,7 @@ object Query {
   }
 
   def findCanonicalForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
-    blob.id.flatMap(id => findCanonicalForBlob(graph, id))
+    blob.getID.flatMap(id => findCanonicalForBlob(graph, id))
   }
 
   def findCanonicalForBlob(graph: Graph, vertex: Vertex): Option[Canonical] = {
@@ -70,7 +70,7 @@ object Query {
   }
 
   def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
-    blob.id.flatMap { id =>
+    blob.getID.flatMap { id =>
       graph.V(id)
         .untilWithTraverser { t =>
           t.get().out(AuthoredBy).exists() || t.get().in().notExists()
