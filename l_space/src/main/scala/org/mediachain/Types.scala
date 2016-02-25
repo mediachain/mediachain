@@ -24,16 +24,18 @@ object Types {
   }
 
   trait VertexClass {
-    val id: Option[ElementID]
+    def getID(): Option[ElementID]
 
     def vertex(graph: Graph): Option[Vertex] = {
-      id.flatMap(id => graph.V(id).headOption)
+      getID.flatMap(id => graph.V(id).headOption)
     }
   }
 
   @label("Canonical")
   case class Canonical(@id id: Option[ElementID],
-                       canonicalID: String) extends VertexClass
+                       canonicalID: String) extends VertexClass {
+    def getID(): Option[ElementID] = id
+  }
 
   object Canonical {
     def create(): Canonical = {
@@ -52,11 +54,15 @@ object Types {
 
   @label("RawMetadataBlob")
   case class RawMetadataBlob(@id id: Option[ElementID],
-                             blob: String) extends MetadataBlob
+                             blob: String) extends MetadataBlob {
+    def getID(): Option[ElementID] = id
+  }
 
   @label("Person")
   case class Person(@id id: Option[ElementID],
-                    name: String) extends MetadataBlob
+                    name: String) extends MetadataBlob {
+    def getID(): Option[ElementID] = id
+  }
 
   object Person {
     def create(name: String) = {
@@ -82,7 +88,9 @@ object Types {
                        title: String,
                        description: String,
                        date: String,
-                       author: Option[Person]) extends MetadataBlob
+                       author: Option[Person]) extends MetadataBlob {
+    def getID(): Option[ElementID] = id
+  }
 
   object PhotoBlob {
     def apply(v: Vertex): Option[PhotoBlob] = {

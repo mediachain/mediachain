@@ -39,7 +39,10 @@ object IngressSpec extends Specification with Orientable {
     person.name shouldEqual "Fooman Bars"
     person.id should beSome
 
-    val photos = graph.V(person.id.get).in(AuthoredBy).toCC[PhotoBlob].toList()
+    val photos = graph.V(person.id.get)
+      .in(AuthoredBy)
+      .out(DescribedBy)
+      .toCC[PhotoBlob].toList()
 
     photos.size shouldEqual 2
 
