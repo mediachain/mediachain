@@ -44,8 +44,9 @@ object Query {
   def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Vertex] = {
     blob.getID.flatMap { id =>
       graph.V(id)
-        .repeat(_.in(ModifiedBy))
         .untilWithTraverser(t => t.get().in(DescribedBy).exists)
+        .repeat(_.in(ModifiedBy))
+        .in(DescribedBy)
         .headOption
     }
   }
