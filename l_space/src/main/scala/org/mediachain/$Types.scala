@@ -1,3 +1,17 @@
+/**
+  * Please note that the odd naming of this file is intentional!
+  * Because we're relying on macro magic (via gremlin-scala), this file needs
+  * to be compiled before any file that uses the `toCC` or `fromCC` marshalling
+  * calls with the types defined in this file.
+  *
+  * sbt compiles files in alphabetical order, so this file is named `$Types.scala`,
+  * since the `$` character sorts before any alphanumeric char.
+  *
+  * Fun!
+  *
+  */
+
+
 package org.mediachain
 
 import com.orientechnologies.orient.core.id.ORecordId
