@@ -102,8 +102,10 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
   def findsPerson = { context: QuerySpecContext =>
     val queriedCanonical = Query.findPerson(context.graph, context.q.person)
 
-    queriedCanonical must beSome[Canonical].which(c =>
-      c.canonicalID == context.q.personCanonical.canonicalID)
+    queriedCanonical must beSome { (person: Canonical) =>
+      (person.canonicalID must beEqualTo(context.q.personCanonical.canonicalID)) and
+      (person.id must beSome)
+    }
   }
 
   def findsAuthor = { context: QuerySpecContext =>
