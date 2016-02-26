@@ -27,7 +27,7 @@ object Types {
     def getID(): Option[ElementID]
 
     def vertex(graph: Graph): Option[Vertex] = {
-      val id = getID().getOrElse(throw new Exception("Malformed vertex object: no id"))
+      val id = getID().getOrElse(throw new IllegalStateException("Malformed vertex object: no id"))
       graph.V(id).headOption()
     }
   }
