@@ -3,6 +3,12 @@ import Keys._
 import sbtassembly.AssemblyKeys._
 import sbtassembly._
 
+object ApplicationBuild extends Build {
+  override lazy val settings = super.settings ++ Seq(
+    scalaVersion := "2.11.7"
+  )
+}
+
 object LSpaceBuild extends Build{
   val lSpaceConfigPath = Option(System.getProperty("LSPACE_CONFIG_PATH"))
     .getOrElse("/etc/lspace/")
