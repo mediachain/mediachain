@@ -53,6 +53,10 @@ object Types {
   }
 
   object Canonical {
+    object Keys {
+      val canonicalID = Key[String]("canonicalID")
+    }
+
     def create(): Canonical = {
       Canonical(None, UUID.randomUUID.toString)
     }
@@ -80,6 +84,10 @@ object Types {
   }
 
   object Person {
+    object Keys {
+      val name = Key[String]("name")
+    }
+
     def create(name: String) = {
       Person(None, name)
     }
@@ -108,6 +116,12 @@ object Types {
   }
 
   object PhotoBlob {
+    object Keys {
+      val title = Key[String]("title")
+      val description = Key[String]("description")
+      val date = Key[String]("date")
+    }
+
     def apply(v: Vertex): Option[PhotoBlob] = {
       if (v.label() == "PhotoBlob") {
         Some(
