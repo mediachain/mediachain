@@ -68,11 +68,6 @@ object Ingress {
     }
   }
 
-  def modifyPhotoBlob(graph: Graph, parent: PhotoBlob, photo: PhotoBlob): Option[Canonical] = {
-    Query.findPhotoBlob(graph, parent)
-      .flatMap(p => p.vertex(graph))
-      .flatMap(v => modifyPhotoBlob(graph, v, photo))
-  }
 
   def modifyPhotoBlob(graph: Graph, parentID: String, photo: PhotoBlob): Option[Canonical] = {
     graph.V(parentID).headOption
