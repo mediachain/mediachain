@@ -4,6 +4,8 @@ import org.mediachain.Types._
 
 object Query {
   import gremlin.scala._
+  import Traversals.VertexTraversals
+
 
   /** Finds a vertex with label "Person" and traits matching `p` in the graph
     * `g`.
@@ -13,51 +15,25 @@ object Query {
     * @return Optional person matching criteria
     */
   def findPerson(graph: Graph, p: Person): Option[Person] = {
-    val Name = Key[String]("name")
 
-    // at some point, this should prob search for inbound edge of HEAD or do
-    // something to promote fielding multiple valid-ish results
-    graph.V
-      .hasLabel[Person]
-      .has(Name, p.name)
-      .headOption
-      .flatMap(Person(_))
+    Traversals.personWithExactMatch(graph.V, p)
+      .toCC[Person]
+      .headOption()
   }
 
   def findPhotoBlob(graph: Graph, p: PhotoBlob): Option[PhotoBlob] = {
-    val Title = Key[String]("title")
-    val Description = Key[String]("description")
-    val Date = Key[String]("date")
-
-    // TODO(bigs): simplify this `has` stuff with HList
-    graph.V
-      .hasLabel[PhotoBlob]
-      .has(Title, p.title)
-      .has(Description, p.description)
-      .has(Date, p.date)
-      .headOption
-      .flatMap(PhotoBlob(_))
+    Traversals.photoBlobWithExactMatch(graph.V, p)
+      .toCC[PhotoBlob]
+      .headOption()
   }
 
   def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Vertex] = {
-    blob.getID.flatMap { id =>
-      graph.V(id)
-        .untilWithTraverser(t => t.get().in(DescribedBy).exists)
-        .repeat(_.in(ModifiedBy))
-        .in(DescribedBy)
-        .headOption
-    }
+    graph.V.flatMap(Traversals.getRootRevision)
+      .headOption
   }
 
   def findCanonicalForBlob(graph: Graph, blobID: ElementID): Option[Canonical] = {
-    val canonicalV = graph.V(blobID)
-      .untilWithTraverser(t => t.get().in(DescribedBy).exists)
-      .repeat(_.in(ModifiedBy))
-      .in(DescribedBy)
-      .headOption()
-
-
-    canonicalV.map(Canonical(_))
+    graph.V(blobID).canonicalOption
   }
 
   def findCanonicalForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {

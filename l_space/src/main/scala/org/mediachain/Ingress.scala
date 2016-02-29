@@ -4,21 +4,23 @@ import org.mediachain.Types._
 import gremlin.scala._
 
 object Ingress {
+  import Traversals.VertexTraversals
+
   // throws?
   def addPerson(graph: Graph, author: Person): Canonical = {
     // If there's an exact match already, return it,
     // otherwise create a new Person vertex and canonial
     // and return the canonical
-    Query.findPerson(graph, author)
-      .flatMap(Query.findCanonicalForBlob(graph, _))
-      .getOrElse {
-        val canonicalVertex = graph + Canonical.create
-        val personVertex = graph + author
+    val existing = Traversals.personWithExactMatch(graph.V, author)
+      .canonicalOption
 
-        canonicalVertex --- DescribedBy --> personVertex
+    existing.getOrElse {
+      val canonicalV = graph + Canonical.create()
+      val personV = graph + author
+      canonicalV --- DescribedBy --> personV
 
-        Canonical(canonicalVertex)
-      }
+      canonicalV.toCC[Canonical]
+    }
   }
 
   def addPhotoBlob(graph: Graph, photo: PhotoBlob): Canonical = {
@@ -28,8 +30,8 @@ object Ingress {
     }
 
     // 2) check to see if a duplicate entry exists
-    Query.findPhotoBlob(graph, photo)
-      .flatMap(Query.findCanonicalForBlob(graph, _))
+    Traversals.photoBlobWithExactMatch(graph.V, photo)
+      .canonicalOption
       .getOrElse {
         val canonicalVertex = graph + Canonical.create
         val photoVertex = graph + photo
