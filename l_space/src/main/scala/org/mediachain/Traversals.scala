@@ -1,5 +1,7 @@
 package org.mediachain
 
+import shapeless.HList
+
 
 object Traversals {
   import gremlin.scala._
@@ -21,6 +23,12 @@ object Traversals {
       .has(PhotoBlob.Keys.description, blob.description)
       .has(PhotoBlob.Keys.date, blob.date)
   }
+
+  def rawMetadataWithExactMatch(q: GremlinScala[Vertex, _], raw: RawMetadataBlob) = {
+    q.hasLabel[RawMetadataBlob]
+      .has(RawMetadataBlob.Keys.blob, raw.blob)
+  }
+
 
   def getCanonical(v: Vertex) = {
     v.graph.V(v.id)
@@ -45,6 +53,9 @@ object Traversals {
       .in(DescribedBy)
   }
 
+  def getRawMetadataForBlob(v: Vertex) = {
+    v.out(TranslatedFrom)
+  }
 
   implicit class GremlinScalaImplicits(gs: GremlinScala[Vertex, _]) {
     def canonicalOption: Option[Canonical] = {
@@ -56,6 +67,12 @@ object Traversals {
     def authorOption: Option[Canonical] = {
       gs.flatMap(getAuthor)
         .toCC[Canonical]
+        .headOption
+    }
+
+    def rawMetadataOption: Option[RawMetadataBlob] = {
+      gs.flatMap(getRawMetadataForBlob)
+        .toCC[RawMetadataBlob]
         .headOption
     }
   }

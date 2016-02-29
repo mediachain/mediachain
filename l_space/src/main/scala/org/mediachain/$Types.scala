@@ -25,6 +25,7 @@ object Types {
   val DescribedBy = "described-by"
   val ModifiedBy  = "modified-by"
   val AuthoredBy  = "authored-by"
+  val TranslatedFrom = "translated-from"
 
   /**
     * Convert from the AnyRef returned by Vertex.id()
@@ -75,6 +76,12 @@ object Types {
   case class RawMetadataBlob(@id id: Option[ElementID],
                              blob: String) extends MetadataBlob {
     def getID(): Option[ElementID] = id
+  }
+
+  object RawMetadataBlob {
+    object Keys {
+      val blob = Key[String]("blob")
+    }
   }
 
   @label("Person")
