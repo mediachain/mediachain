@@ -45,15 +45,11 @@ object Query {
   }
 
   def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
-    blob.getID.flatMap { id =>
-      graph.V(id)
-        .untilWithTraverser { t =>
-          t.get().out(AuthoredBy).exists() || t.get().in().notExists()
-        }
-        .repeat(_.in(ModifiedBy))
-        .out(AuthoredBy)
-        .headOption()
-    }.map(Canonical(_))
+    blob.getID
+      .flatMap(id =>
+        graph.V(id)
+          .authorOption
+      )
   }
 
   def findWorks(graph: Graph, p: Person): Option[List[Canonical]] = {
