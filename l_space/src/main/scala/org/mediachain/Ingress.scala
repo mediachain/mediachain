@@ -52,7 +52,6 @@ object Ingress {
 
   def modifyPhotoBlob(graph: Graph, parentVertex: Vertex, photo: PhotoBlob): Option[Canonical] = {
     Query.findPhotoBlob(graph, photo)
-      .flatMap(Query.findCanonicalForBlob(graph, _))
       .orElse {
         val childVertex = graph + photo
         parentVertex --- ModifiedBy --> childVertex
