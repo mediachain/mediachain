@@ -58,9 +58,9 @@ object Traversals {
         .headOption
     }
 
-    def authorOption: Option[Person] = {
+    def authorOption: Option[Canonical] = {
       gs.flatMap(getAuthor)
-        .toCC[Person]
+        .toCC[Canonical]
         .headOption
     }
   }
