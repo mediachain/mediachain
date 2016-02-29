@@ -15,7 +15,6 @@ object Query {
     * @return Optional person matching criteria
     */
   def findPerson(graph: Graph, p: Person): Option[Canonical] = {
-
     Traversals.personWithExactMatch(graph.V, p)
       .canonicalOption
   }
