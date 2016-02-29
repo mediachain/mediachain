@@ -14,17 +14,15 @@ object Query {
     * @param p The person to search for
     * @return Optional person matching criteria
     */
-  def findPerson(graph: Graph, p: Person): Option[Person] = {
+  def findPerson(graph: Graph, p: Person): Option[Canonical] = {
 
     Traversals.personWithExactMatch(graph.V, p)
-      .toCC[Person]
-      .headOption()
+      .canonicalOption
   }
 
-  def findPhotoBlob(graph: Graph, p: PhotoBlob): Option[PhotoBlob] = {
+  def findPhotoBlob(graph: Graph, p: PhotoBlob): Option[Canonical] = {
     Traversals.photoBlobWithExactMatch(graph.V, p)
-      .toCC[PhotoBlob]
-      .headOption()
+      .canonicalOption
   }
 
   def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Vertex] = {
@@ -46,10 +44,7 @@ object Query {
 
   def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
     blob.getID
-      .flatMap(id =>
-        graph.V(id)
-          .authorOption
-      )
+      .flatMap(id => graph.V(id).authorOption)
   }
 
   def findWorks(graph: Graph, p: Person): Option[List[Canonical]] = {

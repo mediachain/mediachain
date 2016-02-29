@@ -90,7 +90,6 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
   // TESTS BELOW
   def findsPhoto = { context: QuerySpecContext =>
     val queriedCanonical = Query.findPhotoBlob(context.graph, context.q.photoBlob)
-        .flatMap(Query.findCanonicalForBlob(context.graph, _))
 
     queriedCanonical must beSome[Canonical].which(c =>
       c.canonicalID == context.q.photoBlobCanonical.canonicalID)
@@ -102,7 +101,6 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
 
   def findsPerson = { context: QuerySpecContext =>
     val queriedCanonical = Query.findPerson(context.graph, context.q.person)
-        .flatMap(Query.findCanonicalForBlob(context.graph, _))
 
     queriedCanonical must beSome { (person: Canonical) =>
       (person.canonicalID must beEqualTo(context.q.personCanonical.canonicalID)) and
