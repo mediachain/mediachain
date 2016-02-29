@@ -9,14 +9,16 @@ object Ingress {
     // If there's an exact match already, return it,
     // otherwise create a new Person vertex and canonial
     // and return the canonical
-    Query.findPerson(graph, author).getOrElse {
-      val canonicalVertex = graph + Canonical.create
-      val personVertex = graph + author
+    Query.findPerson(graph, author)
+      .flatMap(Query.findCanonicalForBlob(graph, _))
+      .getOrElse {
+        val canonicalVertex = graph + Canonical.create
+        val personVertex = graph + author
 
-      canonicalVertex --- DescribedBy --> personVertex
+        canonicalVertex --- DescribedBy --> personVertex
 
-      Canonical(canonicalVertex)
-    }
+        Canonical(canonicalVertex)
+      }
   }
 
   def addPhotoBlob(graph: Graph, photo: PhotoBlob): Canonical = {
@@ -26,46 +28,50 @@ object Ingress {
     }
 
     // 2) check to see if a duplicate entry exists
-    Query.findPhotoBlob(graph, photo).getOrElse {
-      val canonicalVertex = graph + Canonical.create
-      val photoVertex = graph + photo
+    Query.findPhotoBlob(graph, photo)
+      .flatMap(Query.findCanonicalForBlob(graph, _))
+      .getOrElse {
+        val canonicalVertex = graph + Canonical.create
+        val photoVertex = graph + photo
 
-      canonicalVertex --- DescribedBy --> photoVertex
+        canonicalVertex --- DescribedBy --> photoVertex
 
-      // 3) when adding a new entry with an author,
-      //    make an edge from the PhotoBlob vertex to
-      //    the Canonical vertex for the author
-      author
-        .flatMap(a => a.vertex(graph))
-        .foreach({authorVertex => photoVertex --- AuthoredBy --> authorVertex})
+        // 3) when adding a new entry with an author,
+        //    make an edge from the PhotoBlob vertex to
+        //    the Canonical vertex for the author
+        author
+          .flatMap(a => a.vertex(graph))
+          .foreach({authorVertex => photoVertex --- AuthoredBy --> authorVertex})
 
-      Canonical(canonicalVertex)
-    }
+        Canonical(canonicalVertex)
+      }
   }
 
 
   def modifyPhotoBlob(graph: Graph, parentVertex: Vertex, photo: PhotoBlob): Option[Canonical] = {
-    Query.findPhotoBlob(graph, photo).orElse {
-      val childVertex = graph + photo
-      parentVertex --- ModifiedBy --> childVertex
+    Query.findPhotoBlob(graph, photo)
+      .flatMap(Query.findCanonicalForBlob(graph, _))
+      .orElse {
+        val childVertex = graph + photo
+        parentVertex --- ModifiedBy --> childVertex
 
-      val author: Option[Canonical] = photo.author.map { p =>
-        addPerson(graph, p)
-      }
-
-      (author, Query.findAuthorForBlob(graph, photo)) match {
-        case (Some(newAuthor), Some(oldAuthor)) => {
-          if (newAuthor.canonicalID != oldAuthor.canonicalID) {
-            newAuthor.vertex(graph).foreach(v => {
-              childVertex --- AuthoredBy --> v
-            })
-          }
+        val author: Option[Canonical] = photo.author.map { p =>
+          addPerson(graph, p)
         }
-        case _ => ()
-      }
 
-      Query.findCanonicalForBlob(graph, childVertex)
-    }
+        (author, Query.findAuthorForBlob(graph, photo)) match {
+          case (Some(newAuthor), Some(oldAuthor)) => {
+            if (newAuthor.canonicalID != oldAuthor.canonicalID) {
+              newAuthor.vertex(graph).foreach(v => {
+                childVertex --- AuthoredBy --> v
+              })
+            }
+          }
+          case _ => ()
+        }
+
+        Query.findCanonicalForBlob(graph, childVertex)
+      }
   }
 
 

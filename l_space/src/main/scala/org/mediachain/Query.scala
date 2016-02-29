@@ -12,7 +12,7 @@ object Query {
     * @param p The person to search for
     * @return Optional person matching criteria
     */
-  def findPerson(graph: Graph, p: Person): Option[Canonical] = {
+  def findPerson(graph: Graph, p: Person): Option[Person] = {
     val Name = Key[String]("name")
 
     // at some point, this should prob search for inbound edge of HEAD or do
@@ -20,12 +20,11 @@ object Query {
     graph.V
       .hasLabel[Person]
       .has(Name, p.name)
-      .in(DescribedBy)
       .headOption
-      .map(_.toCC[Canonical])
+      .flatMap(Person(_))
   }
 
-  def findPhotoBlob(graph: Graph, p: PhotoBlob): Option[Canonical] = {
+  def findPhotoBlob(graph: Graph, p: PhotoBlob): Option[PhotoBlob] = {
     val Title = Key[String]("title")
     val Description = Key[String]("description")
     val Date = Key[String]("date")
@@ -36,9 +35,8 @@ object Query {
       .has(Title, p.title)
       .has(Description, p.description)
       .has(Date, p.date)
-      .in(DescribedBy)
       .headOption
-      .map(_.toCC[Canonical])
+      .flatMap(PhotoBlob(_))
   }
 
   def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Vertex] = {
@@ -59,7 +57,7 @@ object Query {
       .headOption()
 
 
-    canonicalV.map(_.toCC[Canonical])
+    canonicalV.map(Canonical(_))
   }
 
   def findCanonicalForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
@@ -79,7 +77,7 @@ object Query {
         .repeat(_.in(ModifiedBy))
         .out(AuthoredBy)
         .headOption()
-    }.map(_.toCC[Canonical])
+    }.map(Canonical(_))
   }
 
   def findWorks(graph: Graph, p: Person): Option[List[Canonical]] = {
