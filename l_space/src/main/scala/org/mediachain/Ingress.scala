@@ -49,8 +49,8 @@ object Ingress {
       val childVertex = graph + photo
       parentVertex --- ModifiedBy --> childVertex
 
-      val author: Option[Canonical] = photo.author.flatMap { p =>
-        Some(addPerson(graph, p))
+      val author: Option[Canonical] = photo.author.map { p =>
+        addPerson(graph, p)
       }
 
       (author, Query.findAuthorForBlob(graph, photo)) match {
