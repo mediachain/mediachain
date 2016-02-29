@@ -46,7 +46,7 @@ object Traversals {
   }
 
 
-  implicit class VertexTraversals(gs: GremlinScala[Vertex, _]) {
+  implicit class GremlinScalaImplicits(gs: GremlinScala[Vertex, _]) {
     def canonicalOption: Option[Canonical] = {
       gs.flatMap(getCanonical)
         .toCC[Canonical]

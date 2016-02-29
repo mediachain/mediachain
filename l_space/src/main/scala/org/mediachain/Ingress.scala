@@ -4,7 +4,7 @@ import org.mediachain.Types._
 import gremlin.scala._
 
 object Ingress {
-  import Traversals.VertexTraversals
+  import Traversals.GremlinScalaImplicits
 
   // throws?
   def addPerson(graph: Graph, author: Person): Canonical = {

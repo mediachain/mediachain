@@ -4,7 +4,7 @@ import org.mediachain.Types._
 
 object Query {
   import gremlin.scala._
-  import Traversals.VertexTraversals
+  import Traversals.GremlinScalaImplicits
 
 
   /** Finds a vertex with label "Person" and traits matching `p` in the graph
