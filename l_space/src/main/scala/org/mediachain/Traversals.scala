@@ -1,26 +1,21 @@
 package org.mediachain
 
-import shapeless.HList
-import gremlin.scala._
-
-
-
-
 
 object Traversals {
+  import gremlin.scala._
   import Types._
 
-  def canonicalWithID[Labels <: HList](q: GremlinScala[Vertex, Labels], canonicalID: String) = {
+  def canonicalWithID(q: GremlinScala[Vertex, _], canonicalID: String) = {
     q.hasLabel[Canonical]
       .has(Canonical.Keys.canonicalID, canonicalID)
   }
 
-  def personWithExactMatch[Labels <: HList](q: GremlinScala[Vertex, Labels], p: Person) = {
+  def personWithExactMatch(q: GremlinScala[Vertex, _], p: Person) = {
     q.hasLabel[Person]
       .has(Person.Keys.name, p.name)
   }
 
-  def photoBlobWithExactMatch[Labels <: HList](q: GremlinScala[Vertex, Labels], blob: PhotoBlob) = {
+  def photoBlobWithExactMatch(q: GremlinScala[Vertex, _], blob: PhotoBlob) = {
     q.hasLabel[PhotoBlob]
       .has(PhotoBlob.Keys.title, blob.title)
       .has(PhotoBlob.Keys.description, blob.description)
