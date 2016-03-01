@@ -31,14 +31,14 @@ object Traversals {
 
 
   def getCanonical(v: Vertex) = {
-    v.graph.V(v.id)
+    v.lift
       .untilWithTraverser(t => t.get().in(DescribedBy).exists)
       .repeat(_.in(ModifiedBy))
       .in(DescribedBy)
   }
 
   def getAuthor(v: Vertex) = {
-    v.graph.V(v.id)
+    v.lift
       .untilWithTraverser { t =>
         t.get().out(AuthoredBy).exists() || t.get().in().notExists()
       }
@@ -47,7 +47,7 @@ object Traversals {
   }
 
   def getRootRevision(v: Vertex) = {
-    v.graph.V(v.id)
+    v.lift
       .untilWithTraverser(t => t.get().in(DescribedBy).exists)
       .repeat(_.in(ModifiedBy))
       .in(DescribedBy)
@@ -55,6 +55,14 @@ object Traversals {
 
   def getRawMetadataForBlob(v: Vertex) = {
     v.out(TranslatedFrom)
+  }
+
+  implicit class VertexImplicits(v: Vertex) {
+    /**
+      * 'lift' a Vertex into a GremlinScala[Vertex, _] pipeline
+      * @return a query pipeline based on the vertex
+      */
+    def lift: GremlinScala[Vertex, _] = v.graph.V(v.id)
   }
 
   implicit class GremlinScalaImplicits(gs: GremlinScala[Vertex, _]) {
