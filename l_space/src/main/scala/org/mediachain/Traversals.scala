@@ -1,23 +1,20 @@
 package org.mediachain
 
-import shapeless.HList
-
-
 object Traversals {
   import gremlin.scala._
   import Types._
 
-  def canonicalWithID(q: GremlinScala[Vertex, _], canonicalID: String): GremlinScala[Vertex, _] = {
+  def canonicalsWithID(q: GremlinScala[Vertex, _], canonicalID: String): GremlinScala[Vertex, _] = {
     q.hasLabel[Canonical]
       .has(Canonical.Keys.canonicalID, canonicalID)
   }
 
-  def personWithExactMatch(q: GremlinScala[Vertex, _], p: Person): GremlinScala[Vertex, _] = {
+  def personBlobsWithExactMatch(q: GremlinScala[Vertex, _], p: Person): GremlinScala[Vertex, _] = {
     q.hasLabel[Person]
       .has(Person.Keys.name, p.name)
   }
 
-  def photoBlobWithExactMatch(q: GremlinScala[Vertex, _], blob: PhotoBlob)
+  def photoBlobsWithExactMatch(q: GremlinScala[Vertex, _], blob: PhotoBlob)
   : GremlinScala[Vertex, _] = {
     q.hasLabel[PhotoBlob]
       .has(PhotoBlob.Keys.title, blob.title)
@@ -25,7 +22,7 @@ object Traversals {
       .has(PhotoBlob.Keys.date, blob.date)
   }
 
-  def rawMetadataWithExactMatch(q: GremlinScala[Vertex, _], raw: RawMetadataBlob)
+  def rawMetadataBlobsWithExactMatch(q: GremlinScala[Vertex, _], raw: RawMetadataBlob)
   : GremlinScala[Vertex, _] = {
     q.hasLabel[RawMetadataBlob]
       .has(RawMetadataBlob.Keys.blob, raw.blob)

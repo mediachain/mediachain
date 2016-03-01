@@ -10,7 +10,7 @@ object Ingress {
     val graph = blobV.graph
 
     // add the raw metadata to the graph if it doesn't already exist
-    val rawV = Traversals.rawMetadataWithExactMatch(graph.V, raw)
+    val rawV = Traversals.rawMetadataBlobsWithExactMatch(graph.V, raw)
       .headOption
       .getOrElse(graph + raw)
 
@@ -26,9 +26,9 @@ object Ingress {
   // throws?
   def addPerson(graph: Graph, author: Person, raw: Option[RawMetadataBlob] = None): Canonical = {
     // If there's an exact match already, return it,
-    // otherwise create a new Person vertex and canonial
+    // otherwise create a new Person vertex and canonical
     // and return the canonical
-    val q = Traversals.personWithExactMatch(graph.V, author)
+    val q = Traversals.personBlobsWithExactMatch(graph.V, author)
 
     val personV: Vertex = q.headOption.getOrElse(graph + author)
     raw.foreach(attachRawMetadata(personV, _))
@@ -49,7 +49,7 @@ object Ingress {
     }
 
     // check to see if a duplicate entry exists
-    val photoV = Traversals.photoBlobWithExactMatch(graph.V, photo)
+    val photoV = Traversals.photoBlobsWithExactMatch(graph.V, photo)
         .headOption.getOrElse(graph + photo)
 
     // attach raw metadata (if it exists) to photo vertex
