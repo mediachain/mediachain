@@ -148,5 +148,10 @@ object TraversalsSpec extends Specification with Orientable {
     rootRevV must beSome(photoV)
   }
 
-  def liftsVertex = pending
+  def liftsVertex = { graph: OrientGraph =>
+    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", None)
+    val photoV = graph + photo
+
+    photoV.lift.headOption must beSome(photoV)
+  }
 }
