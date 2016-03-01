@@ -74,12 +74,12 @@ object IngressSpec extends Specification with Orientable {
     graph.commit()
 
     // These should both == 1, since adding again doesn't recreate the blob vertices
-    val photoBlobCount = Traversals.photoBlobWithExactMatch(graph.V, blob).count.head
-    val authorCount = Traversals.personWithExactMatch(graph.V, leo).count.head
+    val photoBlobCount = Traversals.photoBlobsWithExactMatch(graph.V, blob).count.head
+    val authorCount = Traversals.personBlobsWithExactMatch(graph.V, leo).count.head
 
-    val photoV = Traversals.photoBlobWithExactMatch(graph.V, blob)
+    val photoV = Traversals.photoBlobsWithExactMatch(graph.V, blob)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve photo blob"))
-    val authorV = Traversals.personWithExactMatch(graph.V, leo)
+    val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
 
     val photoRawMeta = photoV.lift.findRawMetadataOption

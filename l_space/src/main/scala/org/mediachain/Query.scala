@@ -15,12 +15,12 @@ object Query {
     * @return Optional person matching criteria
     */
   def findPerson(graph: Graph, p: Person): Option[Canonical] = {
-    Traversals.personWithExactMatch(graph.V, p)
+    Traversals.personBlobsWithExactMatch(graph.V, p)
       .findCanonicalOption
   }
 
   def findPhotoBlob(graph: Graph, p: PhotoBlob): Option[Canonical] = {
-    Traversals.photoBlobWithExactMatch(graph.V, p)
+    Traversals.photoBlobsWithExactMatch(graph.V, p)
       .findCanonicalOption
   }
 
