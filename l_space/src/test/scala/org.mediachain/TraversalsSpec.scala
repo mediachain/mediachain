@@ -35,7 +35,6 @@ class TraversalsFixtures(graph: Graph) {
 }
 
 object TraversalsSpec extends Specification with ForEach[TraversalsFixtures]{
-  import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
   import org.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits, SUT.VertexImplicits
 
   def is =
@@ -118,12 +117,12 @@ object TraversalsSpec extends Specification with ForEach[TraversalsFixtures]{
   }
 
   def findsAuthorForPhotoBlob = { fixtures: TraversalsFixtures =>
-    val queriedAuthorName = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
+    val queriedAuthorCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
       .flatMap(SUT.getAuthor)
       .value(Canonical.Keys.canonicalID)
       .headOption
 
-    queriedAuthorName must beSome(fixtures.zaphodCanonical.canonicalID)
+    queriedAuthorCanonicalID must beSome(fixtures.zaphodCanonical.canonicalID)
   }
 
   def findsRawForBlob = { fixtures: TraversalsFixtures =>
@@ -147,7 +146,27 @@ object TraversalsSpec extends Specification with ForEach[TraversalsFixtures]{
     fixtures.photoVertex.lift.headOption must beSome(fixtures.photoVertex)
   }
 
-  def findsCanonicalImplicit = pending
-  def findsAuthorImplicit = pending
-  def findsRawImplicit = pending
+  def findsCanonicalImplicit = { fixtures: TraversalsFixtures =>
+    val revisedPhotoCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto)
+      .findCanonicalOption
+      .map(_.canonicalID)
+
+    revisedPhotoCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
+  }
+
+  def findsAuthorImplicit = { fixtures: TraversalsFixtures =>
+    val queriedAuthorCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
+      .findAuthorOption
+      .map(_.canonicalID)
+
+    queriedAuthorCanonicalID must beSome(fixtures.zaphodCanonical.canonicalID)
+  }
+
+  def findsRawImplicit = { fixtures: TraversalsFixtures =>
+    val queriedRawString = SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod)
+      .findRawMetadataOption
+      .map(_.blob)
+
+    queriedRawString must beSome(fixtures.rawZaphod.blob)
+  }
 }
