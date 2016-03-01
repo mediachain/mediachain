@@ -82,8 +82,8 @@ object IngressSpec extends Specification with Orientable {
     val authorV = Traversals.personWithExactMatch(graph.V, leo)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
 
-    val photoRawMeta = photoV.lift.rawMetadataOption
-    val authorRawMeta = authorV.lift.rawMetadataOption
+    val photoRawMeta = photoV.lift.findRawMetadataOption
+    val authorRawMeta = authorV.lift.findRawMetadataOption
 
     (photoBlobCount must_== 1) and
       (authorCount must_== 1) and
