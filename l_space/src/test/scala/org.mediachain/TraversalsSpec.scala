@@ -104,7 +104,18 @@ object TraversalsSpec extends Specification with Orientable {
     photoRevCanonicalID must beSome(canonical.canonicalID)
   }
 
-  def findsAuthorForPhotoBlob = pending
+  def findsAuthorForPhotoBlob = { graph: OrientGraph =>
+    val author = Person(None, "Fooman Bars")
+    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", Some(author))
+
+    Ingress.addPhotoBlob(graph, photo)
+    val queriedAuthorName = SUT.photoBlobsWithExactMatch(graph.V, photo)
+      .flatMap(SUT.getAuthor)
+      .value(Canonical.Keys.canonicalID)
+      .headOption
+
+    queriedAuthorName must beSome[String]
+  }
 
   def findsRawForBlob = pending
 
