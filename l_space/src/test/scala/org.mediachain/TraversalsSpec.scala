@@ -1,11 +1,41 @@
 package org.mediachain
 
-import org.specs2.Specification
 
-object TraversalsSpec extends Specification with Orientable {
+import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
+import org.specs2.Specification
+import gremlin.scala._
+import Types._
+import org.specs2.execute.{Result, AsResult}
+import org.specs2.specification.ForEach
+
+class TraversalsFixtures(graph: Graph) {
+  def g = graph
+
+  val rawZaphod = RawMetadataBlob(None, """{"name": "Zaphod Beeblebrox}""")
+  val zaphod = Person(None, "Zaphod Beeblebrox")
+  val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", Some(zaphod))
+  val revisedPhoto = PhotoBlob(None, "Foo at sunset", "foo", "1/2/1234", Some(zaphod))
+
+  val rawZaphodVertex = graph + rawZaphod
+  val zaphodVertex = graph + zaphod
+  val photoVertex = graph + photo
+  val revisedPhotoVertex = graph + revisedPhoto
+
+  val zaphodCanonical = Canonical.create()
+  val photoCanonical = Canonical.create()
+
+  val zaphodCanonicalVertex = graph + zaphodCanonical
+  val photoCanonicalVertex = graph + photoCanonical
+
+  zaphodCanonicalVertex --- DescribedBy --> zaphodVertex
+  photoCanonicalVertex --- DescribedBy --> photoVertex
+  photoVertex --- ModifiedBy --> revisedPhotoVertex
+  photoVertex --- AuthoredBy --> zaphodCanonicalVertex
+  zaphodVertex --- TranslatedFrom --> rawZaphodVertex
+}
+
+object TraversalsSpec extends Specification with ForEach[TraversalsFixtures]{
   import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
-  import gremlin.scala._
-  import Types._
   import org.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits, SUT.VertexImplicits
 
   def is =
@@ -22,136 +52,102 @@ object TraversalsSpec extends Specification with Orientable {
        Finds the root revision of a blob vertex: $findsRootRevision
 
        Lifts a vertex into a gremlin-scala query pipeline: $liftsVertex
+
+       Extends GremlinScala with implicts:
+        Finds canonical for blob vertex and converts to Canonical CC: $findsCanonicalImplicit
+        Finds author for blob vertex and converts to Canonical CC: $findsAuthorImplicit
+        Finds raw medatata for blob vertex and converts to RawMetadataBlob CC: $findsRawImplicit
     """
 
+  // TODO: can you figure out how to abstract out the connection creation?
+  def foreach[R: AsResult](f: TraversalsFixtures => R): Result = {
 
-  def findsCanonicalByID = { graph: OrientGraph =>
-    val canonical = Canonical.create()
-    val canonicalV = graph + canonical
-
-    val queriedVertex = SUT.canonicalsWithID(graph.V, canonical.canonicalID)
-      .headOption
-
-    queriedVertex must beSome[Vertex].which { v =>
-      v must_== canonicalV
+    lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
+    try {
+      val fixtures = new TraversalsFixtures(graph)
+      AsResult(f(fixtures))
+    } finally {
+      graph.database().drop()
     }
   }
 
-  def findsPersonExact = { graph: OrientGraph =>
-    val person = Person(None, "Zaphod Beeblebrox")
-    val personV = graph + person
-
-    val queriedVertex = SUT.personBlobsWithExactMatch(graph.V, person)
+  def findsCanonicalByID = { fixtures: TraversalsFixtures =>
+    val queriedVertex = SUT.canonicalsWithID(fixtures.g.V, fixtures.zaphodCanonical.canonicalID)
       .headOption
 
-    queriedVertex must beSome[Vertex].which { v =>
-      v must_== personV
-    }
+    queriedVertex must beSome(fixtures.zaphodCanonicalVertex)
   }
 
-  def findsPhotoExact = { graph: OrientGraph =>
-    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", None)
-    val photoV = graph + photo
-
-    val queriedVertex = SUT.photoBlobsWithExactMatch(graph.V, photo)
+  def findsPersonExact = { fixtures: TraversalsFixtures =>
+    val queriedVertex = SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod)
       .headOption
 
-    queriedVertex must beSome[Vertex].which { v =>
-      v must_== photoV
-    }
+    queriedVertex must beSome(fixtures.zaphodVertex)
   }
 
-  def findsRawExact = { graph: OrientGraph =>
-    val raw = RawMetadataBlob(None, "So raw!")
-    val rawV = graph + raw
-
-    val queriedVertex = SUT.rawMetadataBlobsWithExactMatch(graph.V, raw)
+  def findsPhotoExact = { fixtures: TraversalsFixtures =>
+    val queriedVertex = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
       .headOption
 
-    queriedVertex must beSome[Vertex].which { v =>
-      v must_== rawV
-    }
+    queriedVertex must beSome(fixtures.photoVertex)
   }
 
-  def findsCanonicalForRootBlob = { graph: OrientGraph =>
-    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", None)
-    val canonical = Ingress.addPhotoBlob(graph, photo)
+  def findsRawExact = { fixtures: TraversalsFixtures =>
+    val queriedVertex = SUT.rawMetadataBlobsWithExactMatch(fixtures.g.V, fixtures.rawZaphod)
+      .headOption
 
-    val queriedCanonicalID = SUT.photoBlobsWithExactMatch(graph.V, photo)
+    queriedVertex must beSome(fixtures.rawZaphodVertex)
+  }
+
+  def findsCanonicalForRootBlob = { fixtures: TraversalsFixtures =>
+    val queriedCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
       .flatMap(SUT.getCanonical)
       .value(Canonical.Keys.canonicalID)
       .headOption
 
-    queriedCanonicalID must beSome(canonical.canonicalID)
+    queriedCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
   }
 
-  def findsCanonicalForRevisedBlob = { graph: OrientGraph =>
-    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", None)
-    val photoRev = PhotoBlob(None, "Foo at sunset", "foo", "1/2/1234", None)
-
-    val canonical = Ingress.addPhotoBlob(graph, photo)
-
-    val photoV = SUT.photoBlobsWithExactMatch(graph.V, photo).headOption
-        .getOrElse(throw new IllegalStateException("Unable to retrieve photo vertex"))
-
-    Ingress.modifyPhotoBlob(graph, photoV, photoRev)
-
-    val photoRevCanonicalID = SUT.photoBlobsWithExactMatch(graph.V, photoRev)
+  def findsCanonicalForRevisedBlob = { fixtures: TraversalsFixtures =>
+    val photoRevCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto)
       .flatMap(SUT.getCanonical)
       .value(Canonical.Keys.canonicalID)
       .headOption
 
-    photoRevCanonicalID must beSome(canonical.canonicalID)
+    photoRevCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
   }
 
-  def findsAuthorForPhotoBlob = { graph: OrientGraph =>
-    val author = Person(None, "Fooman Bars")
-    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", Some(author))
-
-    Ingress.addPhotoBlob(graph, photo)
-    val queriedAuthorName = SUT.photoBlobsWithExactMatch(graph.V, photo)
+  def findsAuthorForPhotoBlob = { fixtures: TraversalsFixtures =>
+    val queriedAuthorName = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
       .flatMap(SUT.getAuthor)
       .value(Canonical.Keys.canonicalID)
       .headOption
 
-    queriedAuthorName must beSome[String]
+    queriedAuthorName must beSome(fixtures.zaphodCanonical.canonicalID)
   }
 
-  def findsRawForBlob = { graph: OrientGraph =>
-    val rawString = """"{"name": "Ford Prefect"}""""
-    val raw = RawMetadataBlob(None, rawString)
-    val person = Person(None, "Ford Prefect")
-    Ingress.addPerson(graph, person, Some(raw))
-
-    val queriedRawString = SUT.personBlobsWithExactMatch(graph.V, person)
+  def findsRawForBlob = { fixtures: TraversalsFixtures =>
+    val queriedRawString = SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod)
       .flatMap(SUT.getRawMetadataForBlob)
       .value(RawMetadataBlob.Keys.blob)
       .headOption
 
-    queriedRawString must beSome(rawString)
+    queriedRawString must beSome(fixtures.rawZaphod.blob)
   }
 
-  def findsRootRevision = { graph: OrientGraph =>
-    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", None)
-    val photoRev = PhotoBlob(None, "Foo at sunset", "foo", "1/2/1234", None)
-
-    Ingress.addPhotoBlob(graph, photo)
-    val photoV = SUT.photoBlobsWithExactMatch(graph.V, photo).headOption
-      .getOrElse(throw new IllegalStateException("Unable to retrieve photo vertex"))
-
-    Ingress.modifyPhotoBlob(graph, photoV, photoRev)
-
-    val rootRevV = SUT.photoBlobsWithExactMatch(graph.V, photoRev)
+  def findsRootRevision = { fixtures: TraversalsFixtures =>
+    val rootRevV = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto)
       .flatMap(SUT.getRootRevision)
       .headOption
 
-    rootRevV must beSome(photoV)
+    rootRevV must beSome(fixtures.photoVertex)
   }
 
-  def liftsVertex = { graph: OrientGraph =>
-    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", None)
-    val photoV = graph + photo
-
-    photoV.lift.headOption must beSome(photoV)
+  def liftsVertex = { fixtures: TraversalsFixtures =>
+    fixtures.photoVertex.lift.headOption must beSome(fixtures.photoVertex)
   }
+
+  def findsCanonicalImplicit = pending
+  def findsAuthorImplicit = pending
+  def findsRawImplicit = pending
 }
