@@ -15,7 +15,8 @@ object TraversalsSpec extends Specification with Orientable {
        Finds a photo blob vertex exactly matching a PhotoBlob CC: $findsPhotoExact
        Finds a raw metadata vertex exactly matching a RawMetadataBlob CC: $findsRawExact
 
-       Finds the canonical vertex for a blob vertex: $findsCanonicalForBlob
+       Finds the canonical vertex for a blob vertex: $findsCanonicalForRootBlob
+       Finds the canonical vertex for a revised blob vertex: $findsCanonicalForRevisedBlob
        Finds the author vertex for a photo blob vertex: $findsAuthorForPhotoBlob
        Finds the raw metadata vertex for a blob vertex: $findsRawForBlob
        Finds the root revision of a blob vertex: $findsRootRevision
@@ -72,7 +73,36 @@ object TraversalsSpec extends Specification with Orientable {
     }
   }
 
-  def findsCanonicalForBlob = pending
+  def findsCanonicalForRootBlob = { graph: OrientGraph =>
+    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", None)
+    val canonical = Ingress.addPhotoBlob(graph, photo)
+
+    val queriedCanonicalID = SUT.photoBlobsWithExactMatch(graph.V, photo)
+      .flatMap(SUT.getCanonical)
+      .value(Canonical.Keys.canonicalID)
+      .headOption
+
+    queriedCanonicalID must beSome(canonical.canonicalID)
+  }
+
+  def findsCanonicalForRevisedBlob = { graph: OrientGraph =>
+    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", None)
+    val photoRev = PhotoBlob(None, "Foo at sunset", "foo", "1/2/1234", None)
+
+    val canonical = Ingress.addPhotoBlob(graph, photo)
+
+    val photoV = SUT.photoBlobsWithExactMatch(graph.V, photo).headOption
+        .getOrElse(throw new IllegalStateException("Unable to retrieve photo vertex"))
+
+    Ingress.modifyPhotoBlob(graph, photoV, photoRev)
+
+    val photoRevCanonicalID = SUT.photoBlobsWithExactMatch(graph.V, photoRev)
+      .flatMap(SUT.getCanonical)
+      .value(Canonical.Keys.canonicalID)
+      .headOption
+
+    photoRevCanonicalID must beSome(canonical.canonicalID)
+  }
 
   def findsAuthorForPhotoBlob = pending
 
