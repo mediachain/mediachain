@@ -141,7 +141,12 @@ object TraversalsSpec extends Specification with Orientable {
 
     Ingress.modifyPhotoBlob(graph, photoV, photoRev)
 
-  def findsRootRevision = pending
+    val rootRevV = SUT.photoBlobsWithExactMatch(graph.V, photoRev)
+      .flatMap(SUT.getRootRevision)
+      .headOption
+
+    rootRevV must beSome(photoV)
+  }
 
   def liftsVertex = pending
 }
