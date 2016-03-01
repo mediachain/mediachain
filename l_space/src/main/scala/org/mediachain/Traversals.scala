@@ -51,7 +51,6 @@ object Traversals {
     v.lift
       .untilWithTraverser(t => t.get().in(DescribedBy).exists)
       .repeat(_.in(ModifiedBy))
-      .in(DescribedBy)
   }
 
   def getRawMetadataForBlob(v: Vertex): GremlinScala[Vertex, _] = {
