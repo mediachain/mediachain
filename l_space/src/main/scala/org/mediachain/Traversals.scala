@@ -32,9 +32,11 @@ object Traversals {
 
   def getCanonical(v: Vertex) = {
     v.lift
-      .untilWithTraverser(t => t.get().in(DescribedBy).exists)
-      .repeat(_.in(ModifiedBy))
-      .in(DescribedBy)
+      .untilWithTraverser {t =>
+        t.get.label == "Canonical" ||
+          t.get.in(DescribedBy, ModifiedBy).notExists
+      }
+      .repeat(_.in(ModifiedBy, DescribedBy))
   }
 
   def getAuthor(v: Vertex) = {
