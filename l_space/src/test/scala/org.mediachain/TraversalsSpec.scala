@@ -117,7 +117,29 @@ object TraversalsSpec extends Specification with Orientable {
     queriedAuthorName must beSome[String]
   }
 
-  def findsRawForBlob = pending
+  def findsRawForBlob = { graph: OrientGraph =>
+    val rawString = """"{"name": "Ford Prefect"}""""
+    val raw = RawMetadataBlob(None, rawString)
+    val person = Person(None, "Ford Prefect")
+    Ingress.addPerson(graph, person, Some(raw))
+
+    val queriedRawString = SUT.personBlobsWithExactMatch(graph.V, person)
+      .flatMap(SUT.getRawMetadataForBlob)
+      .value(RawMetadataBlob.Keys.blob)
+      .headOption
+
+    queriedRawString must beSome(rawString)
+  }
+
+  def findsRootRevision = { graph: OrientGraph =>
+    val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", None)
+    val photoRev = PhotoBlob(None, "Foo at sunset", "foo", "1/2/1234", None)
+
+    Ingress.addPhotoBlob(graph, photo)
+    val photoV = SUT.photoBlobsWithExactMatch(graph.V, photo).headOption
+      .getOrElse(throw new IllegalStateException("Unable to retrieve photo vertex"))
+
+    Ingress.modifyPhotoBlob(graph, photoV, photoRev)
 
   def findsRootRevision = pending
 
