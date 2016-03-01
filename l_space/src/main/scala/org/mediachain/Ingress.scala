@@ -34,7 +34,7 @@ object Ingress {
     raw.foreach(attachRawMetadata(personV, _))
 
     graph.V(personV.id)
-      .canonicalOption
+      .findCanonicalOption
       .getOrElse {
         val canonicalV = graph + Canonical.create()
         canonicalV --- DescribedBy --> personV
@@ -57,7 +57,7 @@ object Ingress {
 
     // return existing canonical for photo vertex, or create one
     graph.V(photoV.id)
-      .canonicalOption
+      .findCanonicalOption
       .getOrElse {
         val canonicalVertex = graph + Canonical.create
         canonicalVertex --- DescribedBy --> photoV
