@@ -1,25 +1,26 @@
 package org.mediachain
 
+import cats.data.Xor
 import org.mediachain.Types._
 import gremlin.scala._
 
 object Ingress {
-  import Traversals.GremlinScalaImplicits
+  import Traversals.{GremlinScalaImplicits, VertexImplicits}
 
-  def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob): Unit = {
+  def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob): Xor[Throwable, Unit] = {
     val graph = blobV.graph
 
-    // add the raw metadata to the graph if it doesn't already exist
-    val rawV = Traversals.rawMetadataBlobsWithExactMatch(graph.V, raw)
-      .headOption
-      .getOrElse(graph + raw)
+    // only allow one TranslatedFrom edge from each blob vertex
+    if (blobV.lift.findRawMetadataOption.isEmpty) {
+      // add the raw metadata to the graph if it doesn't already exist
+      val rawV = Traversals.rawMetadataBlobsWithExactMatch(graph.V, raw)
+        .headOption
+        .getOrElse(graph + raw)
 
-    val edgeExists = Traversals.getRawMetadataForBlob(blobV)
-      .toSet
-      .contains(rawV)
-
-    if (!edgeExists) {
       blobV --- TranslatedFrom --> rawV
+      Xor.right(())
+    } else {
+      Xor.left(new Exception("Only one RawMetadataBlob is allowed per blob revision"))
     }
   }
 
