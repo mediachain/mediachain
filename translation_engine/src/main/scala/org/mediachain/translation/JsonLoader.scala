@@ -22,29 +22,20 @@ object JsonLoader {
 
 
   def loadObjectFromURL(url: URL): Xor[Throwable, JObject] = {
-    for {
-      source <- Xor.catchNonFatal(Source.fromURL(url))
-      obj <- loadObjectFromSource(source)
-    } yield obj
+    Xor.catchNonFatal(Source.fromURL(url))
+      .flatMap(loadObjectFromSource)
   }
 
   def loadObjectFromFile(file: File): Xor[Throwable, JObject] = {
-    for {
-      source <- Xor.catchNonFatal(Source.fromFile(file))
-      obj <- loadObjectFromSource(source)
-    } yield obj
+    Xor.catchNonFatal(Source.fromFile(file))
+      .flatMap(loadObjectFromSource)
   }
 
-  /*
-  Doesn't compile :(
 
-  def loadObjectsFromDirectoryTree(directoryURI: URI): Xor[Throwable, Seq[JObject]] = {
+  def loadObjectsFromDirectoryTree(directoryURI: URI): Iterable[Xor[Throwable, JObject]] = {
     val dir = new File(directoryURI)
-    for {
-      file <- DirectoryWalker.findWithExtension(dir, ".json")
-      obj <- loadObjectFromFile(file)
-    } yield obj
+    val files = DirectoryWalker.findWithExtension(dir, ".json")
+    files.map(loadObjectFromFile)
   }
 
-  */
 }
