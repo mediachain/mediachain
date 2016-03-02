@@ -4,14 +4,16 @@ object DirectoryWalker {
 
   import java.io.File
 
-  def walkTree(file: File): Iterable[File] = {
+  def walkTree(file: File): Vector[File] = {
     val children = new Iterable[File] {
       def iterator = if (file.isDirectory) file.listFiles.iterator else Iterator.empty
     }
-    Seq(file) ++: children.flatMap(walkTree(_))
+    val files = Vector(file) ++: children.flatMap(walkTree)
+    files.toVector
   }
 
-  def findWithExtension(dir: File, ext: String): Iterable[File] = {
-    for (f <- walkTree(dir) if f.getName.endsWith(ext)) yield f
+  def findWithExtension(dir: File, ext: String): Vector[File] = {
+    val lowerCaseExt = ext.toLowerCase
+    walkTree(dir).filter(_.getName.toLowerCase.endsWith(lowerCaseExt))
   }
 }
