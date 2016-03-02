@@ -1,6 +1,7 @@
 package org.mediachain
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import org.mediachain.Types._
+import org.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
 import org.specs2.Specification
 import gremlin.scala._
 
@@ -51,6 +52,47 @@ object IngressSpec extends Specification with Orientable {
     photoTitles must contain("A Starrier Night")
   }
 
-  def attachesRawMetadata = pending
+  def attachesRawMetadata = {graph: OrientGraph =>
+    val rawString =
+      """{"title": "The Last Supper",
+          "description: "Why is everyone sitting on the same side of the table?",
+          "date": "c. 1495",
+          "author": "Leonardo da Vinci"}""".stripMargin
+    val raw = RawMetadataBlob(None, rawString)
+    val leo = Person(None, "Leonardo da Vinci")
+    val blob = PhotoBlob(None,
+      "The Last Supper",
+      "Why is everyone sitting on the same side of the table?",
+      "c. 1495",
+      Some(leo))
+
+    // First add without raw metadata
+    Ingress.addPhotoBlob(graph, blob)
+
+    // add again with raw metadata
+    Ingress.addPhotoBlob(graph, blob, Some(raw))
+    graph.commit()
+
+    // These should both == 1, since adding again doesn't recreate the blob vertices
+    val photoBlobCount = Traversals.photoBlobsWithExactMatch(graph.V, blob).count.head
+    val authorCount = Traversals.personBlobsWithExactMatch(graph.V, leo).count.head
+
+    val photoV = Traversals.photoBlobsWithExactMatch(graph.V, blob)
+      .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve photo blob"))
+    val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
+      .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
+
+    val photoRawMeta = photoV.lift.findRawMetadataOption
+    val authorRawMeta = authorV.lift.findRawMetadataOption
+
+    (photoBlobCount must_== 1) and
+      (authorCount must_== 1) and
+      (authorRawMeta must beSome[RawMetadataBlob]) and
+      (photoRawMeta must beSome[RawMetadataBlob].which { photoRaw =>
+        photoRaw.blob == rawString &&
+          photoRaw == authorRawMeta.get
+      })
+  }
+
   def ingestsPhotoBothNew = pending
 }

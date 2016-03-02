@@ -89,9 +89,9 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
 
   // TESTS BELOW
   def findsPhoto = { context: QuerySpecContext =>
-    val queriedPhoto = Query.findPhotoBlob(context.graph, context.q.photoBlob)
+    val queriedCanonical = Query.findPhotoBlob(context.graph, context.q.photoBlob)
 
-    queriedPhoto must beSome[Canonical].which(c =>
+    queriedCanonical must beSome[Canonical].which(c =>
       c.canonicalID == context.q.photoBlobCanonical.canonicalID)
   }
 
