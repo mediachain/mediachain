@@ -90,20 +90,11 @@ object Ingress {
         val childVertex = graph + photo
         parentVertex --- ModifiedBy --> childVertex
 
-        val author: Option[Canonical] = photo.author.map { p =>
-          addPerson(graph, p)
-        }
-
-        val existingAuthor = Traversals.getAuthor(childVertex).toCC[Canonical].headOption
-
-        (author, existingAuthor) match {
-          case (Some(newAuthor), Some(oldAuthor)) => {
-            if (newAuthor.canonicalID != oldAuthor.canonicalID) {
-              defineAuthorship(childVertex, newAuthor)
-            }
-          }
-          case _ => ()
-        }
+        for {
+          author         <- photo.author.map(p => addPerson(graph, p))
+          existingAuthor <- Traversals.getAuthor(childVertex).toCC[Canonical].headOption
+          if author.canonicalID != existingAuthor.canonicalID
+        } yield defineAuthorship(childVertex, author)
 
         childVertex.lift.findCanonicalOption
       }
