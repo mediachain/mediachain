@@ -44,22 +44,26 @@ object Ingress {
   // throws?
   def addPerson(graph: Graph,
                 author: Person,
-                raw: Option[RawMetadataBlob] = None): Canonical = {
+                raw: Option[RawMetadataBlob] = None):
+  Xor[MultipleRawBlobsError, Canonical] = {
     // If there's an exact match already, return it,
     // otherwise create a new Person vertex and canonical
     // and return the canonical
     val q = Traversals.personBlobsWithExactMatch(graph.V, author)
 
     val personV: Vertex = q.headOption.getOrElse(graph + author)
-    raw.foreach(attachRawMetadata(personV, _))
 
-    graph.V(personV.id)
-      .findCanonicalOption
-      .getOrElse {
-        val canonicalV = graph + Canonical.create()
-        canonicalV --- DescribedBy --> personV
-        canonicalV.toCC[Canonical]
-      }
+    for {
+      _ <- raw.map(attachRawMetadata(personV, _)).getOrElse(Xor.right(()))
+    } yield {
+      graph.V(personV.id)
+        .findCanonicalOption
+        .getOrElse {
+          val canonicalV = graph + Canonical.create()
+          canonicalV --- DescribedBy --> personV
+          canonicalV.toCC[Canonical]
+        }
+    }
   }
 
   def addPhotoBlob(graph: Graph,
@@ -67,7 +71,7 @@ object Ingress {
                    raw: Option[RawMetadataBlob] = None):
   Xor[GraphError, Canonical] = {
     // extract author & add if they don't exist in the graph already
-    val author: Option[Canonical] = photo.author.map { p =>
+    val author = photo.author.map { p =>
       addPerson(graph, p, raw)
     }
 
@@ -77,7 +81,8 @@ object Ingress {
 
     for {
       _ <- raw.map(attachRawMetadata(photoV, _)).getOrElse(Xor.right(()))
-      _ <- author.map(defineAuthorship(photoV, _)).getOrElse(Xor.right(()))
+      _ <- author.map(x => x.flatMap(defineAuthorship(photoV, _)))
+        .getOrElse(Xor.right(()))
     } yield {
       // return existing canonical for photo vertex, or create one
       graph.V(photoV.id)
@@ -101,8 +106,9 @@ object Ingress {
         parentVertex --- ModifiedBy --> childVertex
 
         for {
-          author         <- photo.author.map(p => addPerson(graph, p))
-          existingAuthor <- Traversals.getAuthor(childVertex).toCC[Canonical].headOption
+          author         <- photo.author.flatMap(addPerson(graph, _).toOption)
+          existingAuthor <- Traversals.getAuthor(childVertex)
+            .toCC[Canonical].headOption
           if author.canonicalID != existingAuthor.canonicalID
         } yield defineAuthorship(childVertex, author)
 
