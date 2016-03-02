@@ -18,8 +18,8 @@ object JsonLoaderSpec extends Specification {
 
   def resourceUrl(path: String) = this.getClass.getResource(path)
 
-  val simpleTestURL = resourceUrl(simpleTestResourcePath)
   def loadsFromURL = {
+    val simpleTestURL = resourceUrl(simpleTestResourcePath)
     val json = JsonLoader.loadObjectFromURL(simpleTestURL)
 
     json.toEither must beRight
@@ -27,7 +27,6 @@ object JsonLoaderSpec extends Specification {
 
 
   def loadsFromDir = {
-
     val tateSampleDirURI = resourceUrl(tateSampleDirResourcePath).toURI
     val jsonResults = JsonLoader.loadObjectsFromDirectoryTree(tateSampleDirURI)
     val asEitherList = jsonResults.map(_.toEither).toList
