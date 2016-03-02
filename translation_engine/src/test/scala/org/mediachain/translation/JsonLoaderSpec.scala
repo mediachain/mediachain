@@ -29,9 +29,9 @@ object JsonLoaderSpec extends Specification {
   def loadsFromDir = {
     val tateSampleDirURI = resourceUrl(tateSampleDirResourcePath).toURI
     val jsonResults = JsonLoader.loadObjectsFromDirectoryTree(tateSampleDirURI)
-    val asEitherList = jsonResults.map(_.toEither).toList
+    val asEithers = jsonResults.map(_.toEither)
 
-    (asEitherList.size must_== numTateSamples) and
-      (asEitherList must contain(beRight[JObject]))
+    (asEithers.size must_== numTateSamples) and
+      (asEithers must contain(beRight[JObject]))
   }
 }
