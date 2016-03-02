@@ -12,7 +12,8 @@ case class QueryObjects(
   person: Person,
   personCanonical: Canonical,
   photoBlob: PhotoBlob,
-  photoBlobCanonical: Canonical
+  photoBlobCanonical: Canonical,
+  modifiedPhotoBlob: PhotoBlob
   );
 
 case class QuerySpecContext(graph: Graph, q: QueryObjects)
@@ -24,6 +25,10 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
       val desc = "shiny!"
       val date = "2016-02-22T19:04:13+00:00"
       PhotoBlob(None, title, desc, date, None)
+    }
+
+    def getModifiedPhotoBlob: PhotoBlob = {
+      getPhotoBlob.copy(description = "Stars are pretty...")
     }
 
     def getPerson: Person = {
@@ -38,6 +43,11 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
     val canonicalV = graph + photoBlobCanonical
     canonicalV --- DescribedBy --> photoBlobV
 
+    // add a revision to a photo
+    val modifiedBlob = getModifiedPhotoBlob
+    val modifiedBlobV = graph + modifiedBlob
+    photoBlobV --- ModifiedBy --> modifiedBlobV
+
     // add an author for the photo
     val person = getPerson
     val personV = graph + person
@@ -46,7 +56,12 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
     personCanonicalV --- DescribedBy --> personV
     photoBlobV --- AuthoredBy --> personCanonicalV
 
-    QueryObjects(person, personCanonical, photoBlob, photoBlobCanonical)
+    QueryObjects(
+      Person(personV).get,
+      Canonical(personCanonicalV),
+      PhotoBlob(photoBlobV).get,
+      Canonical(canonicalV),
+      PhotoBlob(modifiedBlobV).get)
   }
 
   // TODO: can you figure out how to abstract out the connection creation?
@@ -74,9 +89,9 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
 
   // TESTS BELOW
   def findsPhoto = { context: QuerySpecContext =>
-    val queriedPhoto = Query.findPhotoBlob(context.graph, context.q.photoBlob)
+    val queriedCanonical = Query.findPhotoBlob(context.graph, context.q.photoBlob)
 
-    queriedPhoto must beSome[Canonical].which(c =>
+    queriedCanonical must beSome[Canonical].which(c =>
       c.canonicalID == context.q.photoBlobCanonical.canonicalID)
   }
 
@@ -87,12 +102,14 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
   def findsPerson = { context: QuerySpecContext =>
     val queriedCanonical = Query.findPerson(context.graph, context.q.person)
 
-    queriedCanonical must beSome[Canonical].which(c =>
-      c.canonicalID == context.q.personCanonical.canonicalID)
+    queriedCanonical must beSome { (person: Canonical) =>
+      (person.canonicalID must beEqualTo(context.q.personCanonical.canonicalID)) and
+      (person.id must beSome)
+    }
   }
 
   def findsAuthor = { context: QuerySpecContext =>
-    val queriedAuthor = Query.findAuthor(context.graph, context.q.photoBlob)
+    val queriedAuthor = Query.findAuthorForBlob(context.graph, context.q.photoBlob)
 
     queriedAuthor must beSome[Canonical].which(c =>
       c.canonicalID == context.q.personCanonical.canonicalID)
@@ -112,7 +129,7 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
       val idx = Random.nextInt(s.length)
       val chars = ('a' to 'z').toSet
       val replaced = s.charAt(idx)
-      val replacing = (chars - replaced).toVector(Random.nextInt(chars.size))
+      val replacing = (chars - replaced).toVector(Random.nextInt(chars.size - 1))
       s.updated(idx, replacing)
     }
 
@@ -123,4 +140,14 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
 
     queriedPhoto must beNone
   }
+
+  def findsCanonicalForModifiedBlob = { context: QuerySpecContext =>
+
+    val parentCanonical = Query.findPhotoBlob(context.graph, context.q.photoBlob)
+    val childCanonical = Query.findCanonicalForBlob(context.graph, context.q.modifiedPhotoBlob)
+    (childCanonical must beSome[Canonical]) and
+      (childCanonical must_== parentCanonical)
+  }
+
+
 }
