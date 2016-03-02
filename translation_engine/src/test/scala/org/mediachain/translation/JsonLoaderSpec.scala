@@ -1,10 +1,14 @@
 package org.mediachain.translation
 
 import org.specs2.Specification
+import org.json4s.JObject
+
 
 object JsonLoaderSpec extends Specification {
+  val simpleTestResourcePath = "/simple-test.json"
+  val tateSampleDirResourcePath = "/tate-sample"
+  val numTateSamples = 18
 
-  import java.io.File
 
   def is =
     s2"""
@@ -12,8 +16,9 @@ object JsonLoaderSpec extends Specification {
         Loads all json objects in a directory structure: $loadsFromDir
       """
 
+  def resourceUrl(path: String) = this.getClass.getResource(path)
 
-  val simpleTestURL = this.getClass.getResource("/simple-test.json")
+  val simpleTestURL = resourceUrl(simpleTestResourcePath)
   def loadsFromURL = {
     val json = JsonLoader.loadObjectFromURL(simpleTestURL)
 
@@ -21,6 +26,13 @@ object JsonLoaderSpec extends Specification {
   }
 
 
-  val tateSampleDir = new File(this.getClass.getResource("/tate-sample").toURI)
-  def loadsFromDir = pending
+  def loadsFromDir = {
+
+    val tateSampleDirURI = resourceUrl(tateSampleDirResourcePath).toURI
+    val jsonResults = JsonLoader.loadObjectsFromDirectoryTree(tateSampleDirURI)
+    val asEitherList = jsonResults.map(_.toEither).toList
+
+    (asEitherList.size must_== numTateSamples) and
+      (asEitherList must contain(beRight[JObject]))
+  }
 }
