@@ -3,6 +3,7 @@ package org.mediachain
 object Traversals {
   import gremlin.scala._
   import Types._
+  import cats.data.Xor
 
   def canonicalsWithID(q: GremlinScala[Vertex, _], canonicalID: String): GremlinScala[Vertex, _] = {
     q.hasLabel[Canonical]
