@@ -25,6 +25,7 @@ object Types {
   val DescribedBy = "described-by"
   val ModifiedBy  = "modified-by"
   val AuthoredBy  = "authored-by"
+  val TranslatedFrom = "translated-from"
 
   /**
     * Convert from the AnyRef returned by Vertex.id()
@@ -53,6 +54,10 @@ object Types {
   }
 
   object Canonical {
+    object Keys {
+      val canonicalID = Key[String]("canonicalID")
+    }
+
     def create(): Canonical = {
       Canonical(None, UUID.randomUUID.toString)
     }
@@ -73,6 +78,12 @@ object Types {
     def getID(): Option[ElementID] = id
   }
 
+  object RawMetadataBlob {
+    object Keys {
+      val blob = Key[String]("blob")
+    }
+  }
+
   @label("Person")
   case class Person(@id id: Option[ElementID],
                     name: String) extends MetadataBlob {
@@ -80,6 +91,10 @@ object Types {
   }
 
   object Person {
+    object Keys {
+      val name = Key[String]("name")
+    }
+
     def create(name: String) = {
       Person(None, name)
     }
@@ -108,6 +123,12 @@ object Types {
   }
 
   object PhotoBlob {
+    object Keys {
+      val title = Key[String]("title")
+      val description = Key[String]("description")
+      val date = Key[String]("date")
+    }
+
     def apply(v: Vertex): Option[PhotoBlob] = {
       if (v.label() == "PhotoBlob") {
         Some(

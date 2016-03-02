@@ -1,78 +1,112 @@
 package org.mediachain
 
+import cats.data.Xor
 import org.mediachain.Types._
 import gremlin.scala._
 
 object Ingress {
-  // throws?
-  def addPerson(graph: Graph, author: Person): Canonical = {
-    // If there's an exact match already, return it,
-    // otherwise create a new Person vertex and canonial
-    // and return the canonical
-    Query.findPerson(graph, author).getOrElse {
-      val canonicalVertex = graph + Canonical.create
-      val personVertex = graph + author
+  import Traversals.{GremlinScalaImplicits, VertexImplicits}
 
-      canonicalVertex --- DescribedBy --> personVertex
+  def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob): Xor[Throwable, Unit] = {
+    val graph = blobV.graph
 
-      Canonical(canonicalVertex)
+    // only allow one TranslatedFrom edge from each blob vertex
+    if (blobV.lift.findRawMetadataOption.isEmpty) {
+      // add the raw metadata to the graph if it doesn't already exist
+      val rawV = Traversals.rawMetadataBlobsWithExactMatch(graph.V, raw)
+        .headOption
+        .getOrElse(graph + raw)
+
+      blobV --- TranslatedFrom --> rawV
+      Xor.right(())
+    } else {
+      Xor.left(new Exception("Only one RawMetadataBlob is allowed per blob revision"))
     }
   }
 
-  def addPhotoBlob(graph: Graph, photo: PhotoBlob): Canonical = {
-    // 1) extract author & add if they don't exist in the graph already
+  def defineAuthorship(blobV: Vertex, authorCanonical: Canonical): Xor[Throwable, Unit] = {
+
+    Xor.catchNonFatal {
+      val authorCanonicalV = authorCanonical.vertex(blobV.graph)
+          .getOrElse(throw new Exception("No vertex for author Canonical exists in graph"))
+
+      val existingAuthors = Traversals.getAuthor(blobV).toSet
+      if (!existingAuthors.contains(authorCanonicalV)) {
+        blobV --- AuthoredBy --> authorCanonicalV
+      }
+    }
+  }
+
+  // throws?
+  def addPerson(graph: Graph, author: Person, raw: Option[RawMetadataBlob] = None): Canonical = {
+    // If there's an exact match already, return it,
+    // otherwise create a new Person vertex and canonical
+    // and return the canonical
+    val q = Traversals.personBlobsWithExactMatch(graph.V, author)
+
+    val personV: Vertex = q.headOption.getOrElse(graph + author)
+    raw.foreach(attachRawMetadata(personV, _))
+
+    graph.V(personV.id)
+      .findCanonicalOption
+      .getOrElse {
+        val canonicalV = graph + Canonical.create()
+        canonicalV --- DescribedBy --> personV
+        canonicalV.toCC[Canonical]
+      }
+  }
+
+  def addPhotoBlob(graph: Graph, photo: PhotoBlob, raw: Option[RawMetadataBlob] = None): Canonical = {
+    // extract author & add if they don't exist in the graph already
     val author: Option[Canonical] = photo.author.map { p =>
-      addPerson(graph, p)
+      addPerson(graph, p, raw)
     }
 
-    // 2) check to see if a duplicate entry exists
-    Query.findPhotoBlob(graph, photo).getOrElse {
-      val canonicalVertex = graph + Canonical.create
-      val photoVertex = graph + photo
+    // check to see if a duplicate entry exists
+    val photoV = Traversals.photoBlobsWithExactMatch(graph.V, photo)
+        .headOption.getOrElse(graph + photo)
 
-      canonicalVertex --- DescribedBy --> photoVertex
+    // attach raw metadata (if it exists) to photo vertex
+    raw.foreach(attachRawMetadata(photoV, _))
 
-      // 3) when adding a new entry with an author,
-      //    make an edge from the PhotoBlob vertex to
-      //    the Canonical vertex for the author
-      author
-        .flatMap(a => a.vertex(graph))
-        .foreach({authorVertex => photoVertex --- AuthoredBy --> authorVertex})
+    // if there's an author, ensure that there's an edge defining the relationship
+    author.foreach(defineAuthorship(photoV, _))
 
-      Canonical(canonicalVertex)
-    }
+    // return existing canonical for photo vertex, or create one
+    graph.V(photoV.id)
+      .findCanonicalOption
+      .getOrElse {
+        val canonicalVertex = graph + Canonical.create
+        canonicalVertex --- DescribedBy --> photoV
+        canonicalVertex.toCC[Canonical]
+      }
   }
 
 
   def modifyPhotoBlob(graph: Graph, parentVertex: Vertex, photo: PhotoBlob): Option[Canonical] = {
-    Query.findPhotoBlob(graph, photo).orElse {
-      val childVertex = graph + photo
-      parentVertex --- ModifiedBy --> childVertex
+    Traversals.photoBlobsWithExactMatch(graph.V, photo)
+      .findCanonicalOption
+      .orElse {
+        val childVertex = graph + photo
+        parentVertex --- ModifiedBy --> childVertex
 
-      val author: Option[Canonical] = photo.author.map { p =>
-        addPerson(graph, p)
-      }
-
-      (author, Query.findAuthorForBlob(graph, photo)) match {
-        case (Some(newAuthor), Some(oldAuthor)) => {
-          if (newAuthor.canonicalID != oldAuthor.canonicalID) {
-            newAuthor.vertex(graph).foreach(v => {
-              childVertex --- AuthoredBy --> v
-            })
-          }
+        val author: Option[Canonical] = photo.author.map { p =>
+          addPerson(graph, p)
         }
-        case _ => ()
+
+        val existingAuthor = Traversals.getAuthor(childVertex).toCC[Canonical].headOption
+
+        (author, existingAuthor) match {
+          case (Some(newAuthor), Some(oldAuthor)) => {
+            if (newAuthor.canonicalID != oldAuthor.canonicalID) {
+              defineAuthorship(childVertex, newAuthor)
+            }
+          }
+          case _ => ()
+        }
+
+        childVertex.lift.findCanonicalOption
       }
-
-      Query.findCanonicalForBlob(graph, childVertex)
-    }
   }
-
-
-  def modifyPhotoBlob(graph: Graph, parentID: String, photo: PhotoBlob): Option[Canonical] = {
-    graph.V(parentID).headOption
-      .flatMap(v => modifyPhotoBlob(graph, v, photo))
-  }
-
 }
 
