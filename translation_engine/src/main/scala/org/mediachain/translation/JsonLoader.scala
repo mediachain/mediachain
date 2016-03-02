@@ -20,7 +20,6 @@ object JsonLoader {
       .flatMap(loadObjectFromString)
   }
 
-
   def loadObjectFromURL(url: URL): Xor[Throwable, JObject] = {
     Xor.catchNonFatal(Source.fromURL(url))
       .flatMap(loadObjectFromSource)
