@@ -81,7 +81,8 @@ object Ingress {
 
     for {
       _ <- raw.map(attachRawMetadata(photoV, _)).getOrElse(Xor.right(()))
-      _ <- author.map(x => x.flatMap(defineAuthorship(photoV, _)))
+      _ <- author
+        .map(x => x.flatMap(defineAuthorship(photoV, _)))
         .getOrElse(Xor.right(()))
     } yield {
       // return existing canonical for photo vertex, or create one
@@ -100,7 +101,7 @@ object Ingress {
   Xor[GraphError, Canonical] = {
     Traversals.photoBlobsWithExactMatch(graph.V, photo)
       .findCanonicalOption
-      .map(id => Xor.right(id))
+      .map(Xor.right)
       .getOrElse {
         val childVertex = graph + photo
         parentVertex --- ModifiedBy --> childVertex
