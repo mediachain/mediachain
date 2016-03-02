@@ -19,7 +19,8 @@ object IngressSpec extends Specification with Orientable {
     val photoBlob = PhotoBlob(None, "A Starry Night", "shiny!", "1/2/2013", None)
 
     val canonical = Ingress.addPhotoBlob(graph, photoBlob)
-    canonical.id must beSome[ElementID]
+    canonical.isRight must beTrue
+    canonical.forall(x => x.id must beSome[ElementID])
   }
 
   def findsExistingAuthor = { graph: OrientGraph =>
