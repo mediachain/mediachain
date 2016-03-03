@@ -10,7 +10,7 @@ object TateTranslator {
   implicit val formats = org.json4s.DefaultFormats
 
 
-  case class Contributor(name: String, role: String)
+  case class Contributor(fc: String, role: String)
   case class Artwork(title: String,
                      contributors: List[Contributor])
 
@@ -22,7 +22,7 @@ object TateTranslator {
       val artists = for {
         c <- a.contributors
         if c.role == "artist"
-      } yield Person(None, c.name)
+      } yield Person(None, c.fc)
 
       // TODO: description and date fields
       (PhotoBlob(None, a.title, "", "", artists.headOption), artists.toList)
