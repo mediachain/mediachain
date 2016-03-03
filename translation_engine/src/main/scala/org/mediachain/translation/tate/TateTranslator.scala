@@ -12,6 +12,8 @@ object TateTranslator {
 
   case class Contributor(fc: String, role: String)
   case class Artwork(title: String,
+                     medium: Option[String],
+                     dateText: Option[String],
                      contributors: List[Contributor])
 
 
@@ -25,7 +27,12 @@ object TateTranslator {
       } yield Person(None, c.fc)
 
       // TODO: description and date fields
-      (PhotoBlob(None, a.title, "", "", artists.headOption), artists.toList)
+      val blob = PhotoBlob(None,
+        a.title,
+        a.medium.getOrElse(""),
+        a.dateText.getOrElse(""),
+        artists.headOption)
+      (blob, artists.toList)
     }
 
     Xor.fromOption(result, InvalidFormatError())
