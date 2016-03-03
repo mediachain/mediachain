@@ -29,7 +29,6 @@ object TateTranslatorSpec extends Specification {
   }
 
   def loadsArtworksFromDir = {
-
     val tateSampleDirURI = SpecResources.tateSampleDirResourceUrl.toURI
     val jsonResults = JsonLoader.loadObjectsFromDirectoryTree(tateSampleDirURI)
 
