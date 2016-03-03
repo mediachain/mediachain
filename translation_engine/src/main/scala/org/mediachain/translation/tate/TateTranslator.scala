@@ -26,7 +26,6 @@ object TateTranslator {
         if c.role == "artist"
       } yield Person(None, c.fc)
 
-      // TODO: description and date fields
       val blob = PhotoBlob(None,
         a.title,
         a.medium.getOrElse(""),
