@@ -19,6 +19,16 @@ case class QueryObjects(
 case class QuerySpecContext(graph: Graph, q: QueryObjects)
 
 object QuerySpec extends Specification with ForEach[QuerySpecContext] {
+  // guarantees returned string is different from input
+  // TODO: accept distance
+  private def mutate(s: String): String = {
+    val idx = Random.nextInt(s.length)
+    val chars = ('a' to 'z').toSet
+    val replaced = s.charAt(idx)
+    val replacing = (chars - replaced).toVector(Random.nextInt(chars.size - 1))
+    s.updated(idx, replacing)
+  }
+
   def setupTree(graph: Graph): QueryObjects = {
     def getPhotoBlob: PhotoBlob = {
       val title = "A Starry Night"
@@ -96,7 +106,8 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
   }
 
   def findsTree = { context: QuerySpecContext =>
-    pending
+    val tree: Option[Graph] = Query.findTreeForCanonical(context.graph, context.q.photoBlobCanonical)
+    tree must beSome
   }
 
   def findsPerson = { context: QuerySpecContext =>
@@ -123,17 +134,7 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
   }
 
   def doesNotFindPhoto = { context: QuerySpecContext =>
-    // guarantees returned string is different from input
-    // TODO: accept distance
-    def mutate(s: String): String = {
-      val idx = Random.nextInt(s.length)
-      val chars = ('a' to 'z').toSet
-      val replaced = s.charAt(idx)
-      val replacing = (chars - replaced).toVector(Random.nextInt(chars.size - 1))
-      s.updated(idx, replacing)
-    }
-
-    val queryBlob = context.q.photoBlob.copy(
+   val queryBlob = context.q.photoBlob.copy(
       description = mutate(context.q.photoBlob.description))
 
     val queriedPhoto = Query.findPhotoBlob(context.graph, queryBlob)

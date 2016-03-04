@@ -5,6 +5,7 @@ import org.mediachain.Types._
 object Query {
   import gremlin.scala._
   import Traversals.GremlinScalaImplicits
+  import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
 
 
   /** Finds a vertex with label "Person" and traits matching `p` in the graph
@@ -44,6 +45,15 @@ object Query {
   def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
     blob.getID
       .flatMap(id => graph.V(id).findAuthorOption)
+  }
+
+  def findTreeForCanonical[T <: Canonical](graph: Graph, canonical: Canonical): Option[TinkerGraph] = {
+    canonical.getID
+      .map {
+        id => graph.V(id).outE().subgraph("sg").cap("sg")
+          .head
+          .asInstanceOf[TinkerGraph]
+      }
   }
 
   def findWorks(graph: Graph, p: Person): Option[List[Canonical]] = {
