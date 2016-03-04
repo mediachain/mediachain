@@ -30,3 +30,16 @@ testOptions in Test += Tests.Cleanup( loader => {
   println("test cleanup")
   loader.loadClass("org.mediachain.SBTCleanupHook").newInstance
 })
+
+initialCommands in console :=
+  """
+    import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
+    import gremlin.scala._
+    lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
+    println("It's a UNIX system! I know this!")
+  """
+
+cleanupCommands in consoleProject :=
+  """
+    graph.close()
+  """
