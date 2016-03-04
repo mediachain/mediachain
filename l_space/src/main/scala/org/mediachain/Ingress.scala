@@ -13,7 +13,7 @@ object Ingress {
     val graph = blobV.graph
 
     // only allow one TranslatedFrom edge from each blob vertex
-    if (blobV.lift.findRawMetadataOption.isEmpty) {
+    if (blobV.lift.findRawMetadataOption.isLeft) {
       // add the raw metadata to the graph if it doesn't already exist
       val rawV = Traversals.rawMetadataBlobsWithExactMatch(graph.V, raw)
         .headOption

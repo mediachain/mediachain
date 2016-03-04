@@ -1,6 +1,6 @@
 package org.mediachain
 
-import gremlin.scala.{Vertex}
+import gremlin.scala.Vertex
 
 sealed abstract class GraphError
 
@@ -9,6 +9,9 @@ object GraphError {
   case class AuthorNotFoundError(vertex: Vertex) extends GraphError
 
   case class CanonicalNotFound() extends GraphError
+  case class RawMetadataNotFound() extends GraphError
+  case class PersonNotFound() extends GraphError
+  case class VertexNotFound() extends GraphError
 }
 
 
