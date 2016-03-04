@@ -8,3 +8,5 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats" % "0.4.1",
   "org.json4s" %% "json4s-jackson" % "3.2.11"
 )
+
+unmanagedClasspath in Test += baseDirectory.value / "test-resources"

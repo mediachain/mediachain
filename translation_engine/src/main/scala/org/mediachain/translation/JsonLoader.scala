@@ -20,6 +20,9 @@ object JsonLoader {
       .flatMap(loadObjectFromString)
   }
 
+  def loadObjectFromURI(uri: URI): Xor[Throwable, JObject] =
+    loadObjectFromURL(uri.toURL)
+
   def loadObjectFromURL(url: URL): Xor[Throwable, JObject] = {
     Xor.catchNonFatal(Source.fromURL(url))
       .flatMap(loadObjectFromSource)
@@ -31,10 +34,9 @@ object JsonLoader {
   }
 
 
-  def loadObjectsFromDirectoryTree(directoryURI: URI, fileExtension: String = ".json")
+  def loadObjectsFromDirectoryTree(directory: File, fileExtension: String = ".json")
   : Vector[Xor[Throwable, JObject]] = {
-    val dir = new File(directoryURI)
-    val files = DirectoryWalker.findWithExtension(dir, fileExtension)
+    val files = DirectoryWalker.findWithExtension(directory, fileExtension)
     files.map(loadObjectFromFile)
   }
 
