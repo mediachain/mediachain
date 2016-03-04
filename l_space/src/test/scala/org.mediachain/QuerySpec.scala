@@ -42,10 +42,9 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
       getPhotoBlob.copy(description = "Stars are pretty...")
     }
 
-    val bodhisattvas = List("Avalokitesvara",
-      "Manjushri", "Samantabhadra", "Kshitigarbha", "Maitreya", "Mahasthamaprapta", "Ākāśagarbha")
-    val bodhisattvasG = Gen.oneOf(bodhisattvas)
-    def getPerson: Person = bodhisattvasG.sample.map(Person.create(_)).get
+    val bodhisattvasI = Random.shuffle(List("Avalokitesvara",
+      "Manjushri", "Samantabhadra", "Kshitigarbha", "Maitreya", "Mahasthamaprapta", "Ākāśagarbha")).toIterator
+    def getPerson: Person = Person.create(bodhisattvasI.next)
 
     // add photo and canonical
     val photoBlob = getPhotoBlob
