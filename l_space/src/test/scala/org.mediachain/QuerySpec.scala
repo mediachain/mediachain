@@ -6,6 +6,7 @@ import gremlin.scala._
 import scala.util.Random
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.specification.ForEach
+import org.scalacheck.Gen
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 
 case class QueryObjects(
@@ -41,10 +42,10 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
       getPhotoBlob.copy(description = "Stars are pretty...")
     }
 
-    def getPerson: Person = {
-      val alex = "Alex Grey"
-      Person.create(alex)
-    }
+    val bodhisattvas = List("Avalokitesvara",
+      "Manjushri", "Samantabhadra", "Kshitigarbha", "Maitreya", "Mahasthamaprapta", "Ākāśagarbha")
+    val bodhisattvasG = Gen.oneOf(bodhisattvas)
+    def getPerson: Person = bodhisattvasG.sample.map(Person.create(_)).get
 
     // add photo and canonical
     val photoBlob = getPhotoBlob
