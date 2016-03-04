@@ -34,7 +34,10 @@ class TraversalsFixtures(graph: Graph) {
   zaphodVertex --- TranslatedFrom --> rawZaphodVertex
 }
 
-object TraversalsSpec extends Specification with ForEach[TraversalsFixtures]{
+object TraversalsSpec extends
+  Specification with
+  ForEach[TraversalsFixtures] with
+  XorMatchers {
   import org.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits, SUT.VertexImplicits
 
   def is =
@@ -151,7 +154,7 @@ object TraversalsSpec extends Specification with ForEach[TraversalsFixtures]{
       .findCanonicalOption
       .map(_.canonicalID)
 
-    revisedPhotoCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
+    revisedPhotoCanonicalID must beRight(fixtures.photoCanonical.canonicalID)
   }
 
   def findsAuthorImplicit = { fixtures: TraversalsFixtures =>
@@ -159,7 +162,7 @@ object TraversalsSpec extends Specification with ForEach[TraversalsFixtures]{
       .findAuthorOption
       .map(_.canonicalID)
 
-    queriedAuthorCanonicalID must beSome(fixtures.zaphodCanonical.canonicalID)
+    queriedAuthorCanonicalID must beRight(fixtures.zaphodCanonical.canonicalID)
   }
 
   def findsRawImplicit = { fixtures: TraversalsFixtures =>
@@ -167,6 +170,6 @@ object TraversalsSpec extends Specification with ForEach[TraversalsFixtures]{
       .findRawMetadataOption
       .map(_.blob)
 
-    queriedRawString must beSome(fixtures.rawZaphod.blob)
+    queriedRawString must beRight(fixtures.rawZaphod.blob)
   }
 }
