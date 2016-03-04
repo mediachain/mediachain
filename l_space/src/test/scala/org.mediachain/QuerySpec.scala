@@ -14,11 +14,15 @@ case class QueryObjects(
   photoBlob: PhotoBlob,
   photoBlobCanonical: Canonical,
   modifiedPhotoBlob: PhotoBlob
-  );
+  )
 
 case class QuerySpecContext(graph: Graph, q: QueryObjects)
 
-object QuerySpec extends Specification with ForEach[QuerySpecContext] {
+object QuerySpec extends
+  Specification with
+  ForEach[QuerySpecContext] with
+  XorMatchers {
+
   def setupTree(graph: Graph): QueryObjects = {
     def getPhotoBlob: PhotoBlob = {
       val title = "A Starry Night"
@@ -91,8 +95,9 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
   def findsPhoto = { context: QuerySpecContext =>
     val queriedCanonical = Query.findPhotoBlob(context.graph, context.q.photoBlob)
 
-    queriedCanonical must beSome[Canonical].which(c =>
-      c.canonicalID == context.q.photoBlobCanonical.canonicalID)
+    queriedCanonical must beRight({ (c: Canonical) =>
+      c.canonicalID == context.q.photoBlobCanonical.canonicalID
+    })
   }
 
   def findsTree = { context: QuerySpecContext =>
@@ -102,24 +107,27 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
   def findsPerson = { context: QuerySpecContext =>
     val queriedCanonical = Query.findPerson(context.graph, context.q.person)
 
-    queriedCanonical must beSome { (person: Canonical) =>
-      (person.canonicalID must beEqualTo(context.q.personCanonical.canonicalID)) and
-      (person.id must beSome)
+    queriedCanonical must beRight { (person: Canonical) =>
+      person.canonicalID == context.q.personCanonical.canonicalID &&
+        person.id.isDefined
     }
   }
 
   def findsAuthor = { context: QuerySpecContext =>
-    val queriedAuthor = Query.findAuthorForBlob(context.graph, context.q.photoBlob)
+    val queriedAuthor =
+      Query.findAuthorForBlob(context.graph, context.q.photoBlob)
 
-    queriedAuthor must beSome[Canonical].which(c =>
-      c.canonicalID == context.q.personCanonical.canonicalID)
+    queriedAuthor must beRight { (c: Canonical) =>
+      c.canonicalID == context.q.personCanonical.canonicalID
+    }
   }
 
   def findsWorks = { context: QuerySpecContext =>
     val queriedWorks = Query.findWorks(context.graph, context.q.person)
 
-    queriedWorks must beSome[Seq[Canonical]].which(s =>
-      s.contains(context.q.photoBlobCanonical))
+    queriedWorks must beRight { (s: List[Canonical]) =>
+      s.contains(context.q.photoBlobCanonical)
+    }
   }
 
   def doesNotFindPhoto = { context: QuerySpecContext =>
@@ -138,14 +146,14 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
 
     val queriedPhoto = Query.findPhotoBlob(context.graph, queryBlob)
 
-    queriedPhoto must beNone
+    queriedPhoto must beLeft()
   }
 
   def findsCanonicalForModifiedBlob = { context: QuerySpecContext =>
 
     val parentCanonical = Query.findPhotoBlob(context.graph, context.q.photoBlob)
     val childCanonical = Query.findCanonicalForBlob(context.graph, context.q.modifiedPhotoBlob)
-    (childCanonical must beSome[Canonical]) and
+    (childCanonical must beRight()) and
       (childCanonical must_== parentCanonical)
   }
 
