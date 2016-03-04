@@ -27,9 +27,11 @@ object Query {
   }
 
   def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T):
-  Option[Vertex] = {
-    graph.V.flatMap(Traversals.getRootRevision)
+  Xor[BlobNotFound, Vertex] = {
+    val result = graph.V.flatMap(Traversals.getRootRevision)
       .headOption
+
+    Xor.fromOption(result, BlobNotFound())
   }
 
   def findCanonicalForBlob(graph: Graph, blobID: ElementID):

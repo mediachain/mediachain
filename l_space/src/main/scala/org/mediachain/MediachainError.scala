@@ -12,6 +12,7 @@ object GraphError {
   case class RawMetadataNotFound() extends GraphError
   case class PersonNotFound() extends GraphError
   case class VertexNotFound() extends GraphError
+  case class BlobNotFound() extends GraphError
 }
 
 
