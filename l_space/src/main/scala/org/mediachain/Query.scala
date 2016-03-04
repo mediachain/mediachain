@@ -5,7 +5,8 @@ import org.mediachain.Types._
 object Query {
   import gremlin.scala._
   import Traversals.GremlinScalaImplicits
-
+  import GraphError._
+  import cats.data.Xor
 
   /** Finds a vertex with label "Person" and traits matching `p` in the graph
     * `g`.
@@ -14,48 +15,55 @@ object Query {
     * @param p The person to search for
     * @return Optional person matching criteria
     */
-  def findPerson(graph: Graph, p: Person): Option[Canonical] = {
+  def findPerson(graph: Graph, p: Person): Xor[CanonicalNotFound, Canonical] = {
     Traversals.personBlobsWithExactMatch(graph.V, p)
       .findCanonicalOption
   }
 
-  def findPhotoBlob(graph: Graph, p: PhotoBlob): Option[Canonical] = {
+  def findPhotoBlob(graph: Graph, p: PhotoBlob):
+  Xor[CanonicalNotFound, Canonical] = {
     Traversals.photoBlobsWithExactMatch(graph.V, p)
       .findCanonicalOption
   }
 
-  def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Vertex] = {
+  def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T):
+  Option[Vertex] = {
     graph.V.flatMap(Traversals.getRootRevision)
       .headOption
   }
 
-  def findCanonicalForBlob(graph: Graph, blobID: ElementID): Option[Canonical] = {
+  def findCanonicalForBlob(graph: Graph, blobID: ElementID):
+  Xor[CanonicalNotFound, Canonical] = {
     graph.V(blobID).findCanonicalOption
   }
 
-  def findCanonicalForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
-    blob.getID.flatMap(id => findCanonicalForBlob(graph, id))
+  def findCanonicalForBlob[T <: MetadataBlob](graph: Graph, blob: T):
+  Xor[CanonicalNotFound, Canonical] = {
+    blob.getID().map(findCanonicalForBlob(graph, _))
+      .getOrElse(Xor.left(CanonicalNotFound()))
   }
 
-  def findCanonicalForBlob(graph: Graph, vertex: Vertex): Option[Canonical] = {
-    vertexId(vertex).flatMap(findCanonicalForBlob(graph, _))
+  def findCanonicalForBlob(graph: Graph, vertex: Vertex):
+  Xor[CanonicalNotFound, Canonical] = {
+    vertexId(vertex).map(findCanonicalForBlob(graph, _))
+      .getOrElse(Xor.left(CanonicalNotFound()))
   }
 
-  def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T): Option[Canonical] = {
-    blob.getID
-      .flatMap(id => graph.V(id).findAuthorOption)
+  def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T):
+  Xor[CanonicalNotFound, Canonical] = {
+    blob.getID.map(id => graph.V(id).findAuthorOption)
+        .getOrElse(Xor.left(CanonicalNotFound()))
   }
 
-  def findWorks(graph: Graph, p: Person): Option[List[Canonical]] = {
-    val personCanonical = findCanonicalForBlob(graph, p)
-    personCanonical
-      .flatMap(p => p.vertex(graph))
-      .map { v =>
-        v.in(AuthoredBy)
+  def findWorks(graph: Graph, p: Person):
+  Xor[GraphError, List[Canonical]] = {
+    for {
+      personCanonical <- findCanonicalForBlob(graph, p)
+      vertex          <- personCanonical.vertex(graph)
+      items = vertex.in(AuthoredBy)
         .map(v => findCanonicalForBlob(graph, v))
         .toList
-        .flatten
-    }
+    } yield { items.flatMap(_.toList) }
   }
 }
 
