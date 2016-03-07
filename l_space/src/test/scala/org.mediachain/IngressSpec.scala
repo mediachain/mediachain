@@ -85,8 +85,8 @@ object IngressSpec extends Specification with Orientable with XorMatchers {
     val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
 
-    val photoRawMeta = photoV.lift.findRawMetadataOption
-    val authorRawMeta = authorV.lift.findRawMetadataOption
+    val photoRawMeta = photoV.lift.findRawMetadataXor
+    val authorRawMeta = authorV.lift.findRawMetadataXor
     val photoMatch = photoRawMeta match {
       case Xor.Right(photo) => photo.blob == rawString
       case _ => false

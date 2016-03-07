@@ -17,13 +17,13 @@ object Query {
     */
   def findPerson(graph: Graph, p: Person): Xor[CanonicalNotFound, Canonical] = {
     Traversals.personBlobsWithExactMatch(graph.V, p)
-      .findCanonicalOption
+      .findCanonicalXor
   }
 
   def findPhotoBlob(graph: Graph, p: PhotoBlob):
   Xor[CanonicalNotFound, Canonical] = {
     Traversals.photoBlobsWithExactMatch(graph.V, p)
-      .findCanonicalOption
+      .findCanonicalXor
   }
 
   def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T):
@@ -36,7 +36,7 @@ object Query {
 
   def findCanonicalForBlob(graph: Graph, blobID: ElementID):
   Xor[CanonicalNotFound, Canonical] = {
-    graph.V(blobID).findCanonicalOption
+    graph.V(blobID).findCanonicalXor
   }
 
   def findCanonicalForBlob[T <: MetadataBlob](graph: Graph, blob: T):
@@ -53,7 +53,7 @@ object Query {
 
   def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T):
   Xor[CanonicalNotFound, Canonical] = {
-    blob.getID.map(id => graph.V(id).findAuthorOption)
+    blob.getID.map(id => graph.V(id).findAuthorXor)
         .getOrElse(Xor.left(CanonicalNotFound()))
   }
 

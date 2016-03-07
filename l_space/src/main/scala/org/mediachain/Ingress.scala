@@ -13,7 +13,7 @@ object Ingress {
     val graph = blobV.graph
 
     // only allow one TranslatedFrom edge from each blob vertex
-    if (blobV.lift.findRawMetadataOption.isLeft) {
+    if (blobV.lift.findRawMetadataXor.isLeft) {
       // add the raw metadata to the graph if it doesn't already exist
       val rawV = Traversals.rawMetadataBlobsWithExactMatch(graph.V, raw)
         .headOption
@@ -57,7 +57,7 @@ object Ingress {
       _ <- raw.map(attachRawMetadata(personV, _)).getOrElse(Xor.right({}))
     } yield {
       graph.V(personV.id)
-        .findCanonicalOption
+        .findCanonicalXor
         .getOrElse {
           val canonicalV = graph + Canonical.create()
           canonicalV --- DescribedBy --> personV
@@ -80,14 +80,16 @@ object Ingress {
         .headOption.getOrElse(graph + photo)
 
     for {
-      _ <- raw.map(attachRawMetadata(photoV, _)).getOrElse(Xor.right({}))
+      _ <- raw
+        .map(attachRawMetadata(photoV, _))
+        .getOrElse(Xor.right({}))
       _ <- author
         .map(x => x.flatMap(defineAuthorship(photoV, _)))
         .getOrElse(Xor.right({}))
     } yield {
       // return existing canonical for photo vertex, or create one
       graph.V(photoV.id)
-        .findCanonicalOption
+        .findCanonicalXor
         .getOrElse {
           val canonicalVertex = graph + Canonical.create
           canonicalVertex --- DescribedBy --> photoV
@@ -100,7 +102,7 @@ object Ingress {
   def modifyPhotoBlob(graph: Graph, parentVertex: Vertex, photo: PhotoBlob):
   Xor[GraphError, Canonical] = {
     Traversals.photoBlobsWithExactMatch(graph.V, photo)
-      .findCanonicalOption
+      .findCanonicalXor
       .map(Xor.right)
       .getOrElse {
         val childVertex = graph + photo
@@ -113,7 +115,7 @@ object Ingress {
           if author.canonicalID != existingAuthor.canonicalID
         } yield defineAuthorship(childVertex, author)
 
-        childVertex.lift.findCanonicalOption
+        childVertex.lift.findCanonicalXor
           .map(Xor.right)
           .getOrElse(Xor.left(CanonicalNotFound()))
       }
