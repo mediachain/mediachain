@@ -5,26 +5,26 @@ import tate.{TateTranslator => SUT}
 import cats.data.Xor
 import org.mediachain.Types._
 
+import scala.io.Source
+
 object TateTranslatorSpec extends Specification {
 
 
   def is = skipAllIf(!SpecResources.Tate.sampleDataExists) ^
   s2"""
-       $loadsArtwork - Translates Tate artwork json into PhotoBlob + List[Person]
+       $loadsArtwork - Translates Tate artwork json into PhotoBlob
        $loadsArtworksFromDir - Translates all artworks from a directory structure
     """
 
   def loadsArtwork = {
     val expected = SpecResources.Tate.SampleArtworkA00001
-    val jsonResult = JsonLoader.loadObjectFromFile(expected.jsonFile)
-    val translated = jsonResult.flatMap(SUT.loadArtwork)
-      .getOrElse(throw new Exception("Unable to translate sample artwork from tate collection"))
 
-    val blob = translated
+    val source = Source.fromFile(expected.jsonFile).mkString
+    val context = SUT.TateContext("testing")
 
-    (blob.title must_== expected.title) and
-      (blob.date must_== expected.dateText) and
-      (blob.author must beSome[Person].which(_.name == expected.artistName))
+    val translated = context.translate(source)
+
+    translated.toEither must beRight
   }
 
   def loadsArtworksFromDir = {
