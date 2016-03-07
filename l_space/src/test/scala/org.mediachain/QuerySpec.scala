@@ -95,7 +95,7 @@ object QuerySpec extends
   def findsPhoto = { context: QuerySpecContext =>
     val queriedCanonical = Query.findPhotoBlob(context.graph, context.q.photoBlob)
 
-    queriedCanonical must beRight({ (c: Canonical) =>
+    queriedCanonical must beRightXor({ (c: Canonical) =>
       c.canonicalID == context.q.photoBlobCanonical.canonicalID
     })
   }
@@ -107,7 +107,7 @@ object QuerySpec extends
   def findsPerson = { context: QuerySpecContext =>
     val queriedCanonical = Query.findPerson(context.graph, context.q.person)
 
-    queriedCanonical must beRight { (person: Canonical) =>
+    queriedCanonical must beRightXor { (person: Canonical) =>
       person.canonicalID == context.q.personCanonical.canonicalID &&
         person.id.isDefined
     }
@@ -117,7 +117,7 @@ object QuerySpec extends
     val queriedAuthor =
       Query.findAuthorForBlob(context.graph, context.q.photoBlob)
 
-    queriedAuthor must beRight { (c: Canonical) =>
+    queriedAuthor must beRightXor { (c: Canonical) =>
       c.canonicalID == context.q.personCanonical.canonicalID
     }
   }
@@ -125,7 +125,7 @@ object QuerySpec extends
   def findsWorks = { context: QuerySpecContext =>
     val queriedWorks = Query.findWorks(context.graph, context.q.person)
 
-    queriedWorks must beRight { (s: List[Canonical]) =>
+    queriedWorks must beRightXor { (s: List[Canonical]) =>
       s.contains(context.q.photoBlobCanonical)
     }
   }
@@ -146,14 +146,14 @@ object QuerySpec extends
 
     val queriedPhoto = Query.findPhotoBlob(context.graph, queryBlob)
 
-    queriedPhoto must beLeft()
+    queriedPhoto must beLeftXor()
   }
 
   def findsCanonicalForModifiedBlob = { context: QuerySpecContext =>
 
     val parentCanonical = Query.findPhotoBlob(context.graph, context.q.photoBlob)
     val childCanonical = Query.findCanonicalForBlob(context.graph, context.q.modifiedPhotoBlob)
-    (childCanonical must beRight()) and
+    (childCanonical must beRightXor()) and
       (childCanonical must_== parentCanonical)
   }
 

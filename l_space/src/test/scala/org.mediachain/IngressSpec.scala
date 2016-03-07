@@ -7,7 +7,7 @@ import gremlin.scala._
 import cats.data.Xor
 import GraphError._
 
-object IngressSpec extends Specification with Orientable {
+object IngressSpec extends Specification with Orientable with XorMatchers {
 
   def is =
     s2"""

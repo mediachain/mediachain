@@ -154,7 +154,9 @@ object TraversalsSpec extends
       .findCanonicalOption
       .map(_.canonicalID)
 
-    revisedPhotoCanonicalID must beRight(fixtures.photoCanonical.canonicalID)
+    revisedPhotoCanonicalID must beRightXor { x =>
+      x mustEqual fixtures.photoCanonical.canonicalID
+    }
   }
 
   def findsAuthorImplicit = { fixtures: TraversalsFixtures =>
@@ -162,7 +164,9 @@ object TraversalsSpec extends
       .findAuthorOption
       .map(_.canonicalID)
 
-    queriedAuthorCanonicalID must beRight(fixtures.zaphodCanonical.canonicalID)
+    queriedAuthorCanonicalID must beRightXor { x =>
+      x mustEqual fixtures.zaphodCanonical.canonicalID
+    }
   }
 
   def findsRawImplicit = { fixtures: TraversalsFixtures =>
@@ -170,6 +174,8 @@ object TraversalsSpec extends
       .findRawMetadataOption
       .map(_.blob)
 
-    queriedRawString must beRight(fixtures.rawZaphod.blob)
+    queriedRawString must beRightXor { x =>
+      x mustEqual fixtures.rawZaphod.blob
+    }
   }
 }
