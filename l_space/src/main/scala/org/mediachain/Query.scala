@@ -47,13 +47,11 @@ object Query {
       .flatMap(id => graph.V(id).findAuthorOption)
   }
 
-  def findTreeForCanonical[T <: Canonical](graph: Graph, canonical: Canonical): Option[TinkerGraph] = {
+  def findTreeForCanonical[T <: Canonical](graph: Graph, canonical: Canonical): Option[Graph] = {
     val stepLabel = StepLabel[Graph]("subGraph")
     canonical.getID
-      .map {
-        id => graph.V(id).outE().subgraph(stepLabel).cap(stepLabel)
-          .head
-          .asInstanceOf[TinkerGraph]
+        .flatMap {
+        id => graph.V(id).outE().subgraph(stepLabel).cap(stepLabel).headOption()
       }
   }
 
