@@ -5,7 +5,7 @@ import gremlin.scala.Vertex
 sealed abstract class GraphError
 
 object GraphError {
-  case class MultipleRawBlobsError(vertex: Vertex) extends GraphError
+  case class TooManyRawBlobsError(vertex: Vertex) extends GraphError
   case class AuthorNotFoundError(vertex: Vertex) extends GraphError
 
   case class CanonicalNotFound() extends GraphError
