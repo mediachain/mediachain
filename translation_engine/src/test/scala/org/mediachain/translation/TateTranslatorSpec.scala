@@ -20,12 +20,11 @@ object TateTranslatorSpec extends Specification {
     val translated = jsonResult.flatMap(SUT.loadArtwork)
       .getOrElse(throw new Exception("Unable to translate sample artwork from tate collection"))
 
-    val (blob, people) = translated
+    val blob = translated
 
     (blob.title must_== expected.title) and
       (blob.date must_== expected.dateText) and
-      (blob.author must beSome[Person].which(_.name == expected.artistName)) and
-      (blob.author must_== people.headOption)
+      (blob.author must beSome[Person].which(_.name == expected.artistName))
   }
 
   def loadsArtworksFromDir = {
