@@ -26,7 +26,7 @@ object TateTranslatorSpec extends Specification with XorMatchers {
     translated must beRightXor { result =>
       val (blob, raw) = result
       blob.title == expected.title &&
-      blob.author.map(_.name) == Some(expected.artistName) &&
+      blob.author.map(_.name).contains(expected.artistName) &&
       raw.blob == source
     }
   }
