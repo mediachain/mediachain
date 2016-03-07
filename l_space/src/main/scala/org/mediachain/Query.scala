@@ -58,12 +58,18 @@ object Query {
         .getOrElse(Xor.left(CanonicalNotFound()))
   }
 
-  def findTreeForCanonical[T <: Canonical](graph: Graph, canonical: Canonical): Option[Graph] = {
+  def findTreeForCanonical[T <: Canonical](graph: Graph, canonical: Canonical): Xor[SubtreeError, Graph] = {
     val stepLabel = StepLabel[Graph]("subGraph")
-    canonical.getID
+    val treeOption = canonical.getID
         .flatMap {
-        id => graph.V(id).outE().subgraph(stepLabel).cap(stepLabel).headOption()
+        id => graph
+          .V(id)
+          .repeat(_.outE.subgraph(stepLabel).outV)
+          .times(3)
+          .cap(stepLabel)
+          .headOption()
       }
+    Xor.fromOption(treeOption, SubtreeError())
   }
 
   def findWorks(graph: Graph, p: Person):
