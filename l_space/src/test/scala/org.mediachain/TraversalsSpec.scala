@@ -34,7 +34,10 @@ class TraversalsFixtures(graph: Graph) {
   zaphodVertex --- TranslatedFrom --> rawZaphodVertex
 }
 
-object TraversalsSpec extends Specification with ForEach[TraversalsFixtures]{
+object TraversalsSpec extends
+  Specification with
+  ForEach[TraversalsFixtures] with
+  XorMatchers {
   import org.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits, SUT.VertexImplicits
 
   def is =
@@ -148,25 +151,31 @@ object TraversalsSpec extends Specification with ForEach[TraversalsFixtures]{
 
   def findsCanonicalImplicit = { fixtures: TraversalsFixtures =>
     val revisedPhotoCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto)
-      .findCanonicalOption
+      .findCanonicalXor
       .map(_.canonicalID)
 
-    revisedPhotoCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
+    revisedPhotoCanonicalID must beRightXor { x =>
+      x mustEqual fixtures.photoCanonical.canonicalID
+    }
   }
 
   def findsAuthorImplicit = { fixtures: TraversalsFixtures =>
     val queriedAuthorCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
-      .findAuthorOption
+      .findAuthorXor
       .map(_.canonicalID)
 
-    queriedAuthorCanonicalID must beSome(fixtures.zaphodCanonical.canonicalID)
+    queriedAuthorCanonicalID must beRightXor { x =>
+      x mustEqual fixtures.zaphodCanonical.canonicalID
+    }
   }
 
   def findsRawImplicit = { fixtures: TraversalsFixtures =>
     val queriedRawString = SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod)
-      .findRawMetadataOption
+      .findRawMetadataXor
       .map(_.blob)
 
-    queriedRawString must beSome(fixtures.rawZaphod.blob)
+    queriedRawString must beRightXor { x =>
+      x mustEqual fixtures.rawZaphod.blob
+    }
   }
 }
