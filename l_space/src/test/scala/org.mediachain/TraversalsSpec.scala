@@ -151,7 +151,7 @@ object TraversalsSpec extends
 
   def findsCanonicalImplicit = { fixtures: TraversalsFixtures =>
     val revisedPhotoCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto)
-      .findCanonicalOption
+      .findCanonicalXor
       .map(_.canonicalID)
 
     revisedPhotoCanonicalID must beRightXor { x =>
@@ -161,7 +161,7 @@ object TraversalsSpec extends
 
   def findsAuthorImplicit = { fixtures: TraversalsFixtures =>
     val queriedAuthorCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
-      .findAuthorOption
+      .findAuthorXor
       .map(_.canonicalID)
 
     queriedAuthorCanonicalID must beRightXor { x =>
@@ -171,7 +171,7 @@ object TraversalsSpec extends
 
   def findsRawImplicit = { fixtures: TraversalsFixtures =>
     val queriedRawString = SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod)
-      .findRawMetadataOption
+      .findRawMetadataXor
       .map(_.blob)
 
     queriedRawString must beRightXor { x =>

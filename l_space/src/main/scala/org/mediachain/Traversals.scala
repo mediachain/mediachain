@@ -68,7 +68,7 @@ object Traversals {
   }
 
   implicit class GremlinScalaImplicits(gs: GremlinScala[Vertex, _]) {
-    def findCanonicalOption: Xor[CanonicalNotFound, Canonical] = {
+    def findCanonicalXor: Xor[CanonicalNotFound, Canonical] = {
       val result = gs.flatMap(getCanonical)
         .toCC[Canonical]
         .headOption
@@ -76,7 +76,7 @@ object Traversals {
       Xor.fromOption(result, CanonicalNotFound())
     }
 
-    def findAuthorOption: Xor[CanonicalNotFound, Canonical] = {
+    def findAuthorXor: Xor[CanonicalNotFound, Canonical] = {
       val result = gs.flatMap(getAuthor)
         .toCC[Canonical]
         .headOption
@@ -84,7 +84,7 @@ object Traversals {
       Xor.fromOption(result, CanonicalNotFound())
     }
 
-    def findRawMetadataOption: Xor[RawMetadataNotFound, RawMetadataBlob] = {
+    def findRawMetadataXor: Xor[RawMetadataNotFound, RawMetadataBlob] = {
       val result = gs.flatMap(getRawMetadataForBlob)
         .toCC[RawMetadataBlob]
         .headOption
