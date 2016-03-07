@@ -2,63 +2,76 @@ package org.mediachain
 
 import cats.data.Xor
 import org.mediachain.Types._
+import org.mediachain.GraphError._
 import gremlin.scala._
 
 object Ingress {
   import Traversals.{GremlinScalaImplicits, VertexImplicits}
 
-  def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob): Xor[Throwable, Unit] = {
+  def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob):
+  Xor[TooManyRawBlobsError, Unit] = {
     val graph = blobV.graph
 
     // only allow one TranslatedFrom edge from each blob vertex
-    if (blobV.lift.findRawMetadataOption.isEmpty) {
+    if (blobV.lift.findRawMetadataXor.isLeft) {
       // add the raw metadata to the graph if it doesn't already exist
       val rawV = Traversals.rawMetadataBlobsWithExactMatch(graph.V, raw)
         .headOption
         .getOrElse(graph + raw)
 
       blobV --- TranslatedFrom --> rawV
-      Xor.right(())
+      Xor.right({})
     } else {
-      Xor.left(new Exception("Only one RawMetadataBlob is allowed per blob revision"))
+      Xor.left(TooManyRawBlobsError(blobV))
     }
   }
 
-  def defineAuthorship(blobV: Vertex, authorCanonical: Canonical): Xor[Throwable, Unit] = {
-
-    Xor.catchNonFatal {
-      val authorCanonicalV = authorCanonical.vertex(blobV.graph)
-          .getOrElse(throw new Exception("No vertex for author Canonical exists in graph"))
-
+  def defineAuthorship(blobV: Vertex, authorCanonical: Canonical):
+  Xor[AuthorNotFoundError, Unit] = {
+    authorCanonical.vertex(blobV.graph).map { authorCanonicalV =>
       val existingAuthors = Traversals.getAuthor(blobV).toSet
+
       if (!existingAuthors.contains(authorCanonicalV)) {
         blobV --- AuthoredBy --> authorCanonicalV
       }
+
+      Xor.right({})
+    }.getOrElse {
+      Xor.left(AuthorNotFoundError(blobV))
     }
   }
 
   // throws?
-  def addPerson(graph: Graph, author: Person, raw: Option[RawMetadataBlob] = None): Canonical = {
+  def addPerson(graph: Graph,
+                author: Person,
+                raw: Option[RawMetadataBlob] = None):
+  Xor[TooManyRawBlobsError, Canonical] = {
     // If there's an exact match already, return it,
     // otherwise create a new Person vertex and canonical
     // and return the canonical
     val q = Traversals.personBlobsWithExactMatch(graph.V, author)
 
     val personV: Vertex = q.headOption.getOrElse(graph + author)
-    raw.foreach(attachRawMetadata(personV, _))
 
-    graph.V(personV.id)
-      .findCanonicalOption
-      .getOrElse {
-        val canonicalV = graph + Canonical.create()
-        canonicalV --- DescribedBy --> personV
-        canonicalV.toCC[Canonical]
-      }
+    for {
+      _ <- raw.map(attachRawMetadata(personV, _)).getOrElse(Xor.right({}))
+    } yield {
+      graph.V(personV.id)
+        .findCanonicalXor
+        .getOrElse {
+          val canonicalV = graph + Canonical.create()
+          canonicalV --- DescribedBy --> personV
+          canonicalV.toCC[Canonical]
+        }
+    }
   }
 
-  def addPhotoBlob(graph: Graph, photo: PhotoBlob, raw: Option[RawMetadataBlob] = None): Canonical = {
+  def addPhotoBlob(graph: Graph,
+                   photo: PhotoBlob,
+                   raw: Option[RawMetadataBlob] = None):
+  Xor[GraphError, Canonical] = {
     // extract author & add if they don't exist in the graph already
-    val author: Option[Canonical] = photo.author.map { p =>
+    val author = photo.author.map { p =>
       addPerson(graph, p, raw)
     }
 
@@ -66,46 +79,45 @@ object Ingress {
     val photoV = Traversals.photoBlobsWithExactMatch(graph.V, photo)
         .headOption.getOrElse(graph + photo)
 
-    // attach raw metadata (if it exists) to photo vertex
-    raw.foreach(attachRawMetadata(photoV, _))
-
-    // if there's an author, ensure that there's an edge defining the relationship
-    author.foreach(defineAuthorship(photoV, _))
-
-    // return existing canonical for photo vertex, or create one
-    graph.V(photoV.id)
-      .findCanonicalOption
-      .getOrElse {
-        val canonicalVertex = graph + Canonical.create
-        canonicalVertex --- DescribedBy --> photoV
-        canonicalVertex.toCC[Canonical]
-      }
+    for {
+      _ <- raw
+        .map(attachRawMetadata(photoV, _))
+        .getOrElse(Xor.right({}))
+      _ <- author
+        .map(x => x.flatMap(defineAuthorship(photoV, _)))
+        .getOrElse(Xor.right({}))
+    } yield {
+      // return existing canonical for photo vertex, or create one
+      graph.V(photoV.id)
+        .findCanonicalXor
+        .getOrElse {
+          val canonicalVertex = graph + Canonical.create
+          canonicalVertex --- DescribedBy --> photoV
+          canonicalVertex.toCC[Canonical]
+        }
+    }
   }
 
 
-  def modifyPhotoBlob(graph: Graph, parentVertex: Vertex, photo: PhotoBlob): Option[Canonical] = {
+  def modifyPhotoBlob(graph: Graph, parentVertex: Vertex, photo: PhotoBlob):
+  Xor[GraphError, Canonical] = {
     Traversals.photoBlobsWithExactMatch(graph.V, photo)
-      .findCanonicalOption
-      .orElse {
+      .findCanonicalXor
+      .map(Xor.right)
+      .getOrElse {
         val childVertex = graph + photo
         parentVertex --- ModifiedBy --> childVertex
 
-        val author: Option[Canonical] = photo.author.map { p =>
-          addPerson(graph, p)
-        }
+        for {
+          author         <- photo.author.flatMap(addPerson(graph, _).toOption)
+          existingAuthor <- Traversals.getAuthor(childVertex)
+            .toCC[Canonical].headOption
+          if author.canonicalID != existingAuthor.canonicalID
+        } yield defineAuthorship(childVertex, author)
 
-        val existingAuthor = Traversals.getAuthor(childVertex).toCC[Canonical].headOption
-
-        (author, existingAuthor) match {
-          case (Some(newAuthor), Some(oldAuthor)) => {
-            if (newAuthor.canonicalID != oldAuthor.canonicalID) {
-              defineAuthorship(childVertex, newAuthor)
-            }
-          }
-          case _ => ()
-        }
-
-        childVertex.lift.findCanonicalOption
+        childVertex.lift.findCanonicalXor
+          .map(Xor.right)
+          .getOrElse(Xor.left(CanonicalNotFound()))
       }
   }
 }

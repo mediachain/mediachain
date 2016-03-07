@@ -3,6 +3,8 @@ package org.mediachain
 object Traversals {
   import gremlin.scala._
   import Types._
+  import GraphError._
+  import cats.data.Xor
 
   def canonicalsWithID(q: GremlinScala[Vertex, _], canonicalID: String): GremlinScala[Vertex, _] = {
     q.hasLabel[Canonical]
@@ -66,22 +68,28 @@ object Traversals {
   }
 
   implicit class GremlinScalaImplicits(gs: GremlinScala[Vertex, _]) {
-    def findCanonicalOption: Option[Canonical] = {
-      gs.flatMap(getCanonical)
+    def findCanonicalXor: Xor[CanonicalNotFound, Canonical] = {
+      val result = gs.flatMap(getCanonical)
         .toCC[Canonical]
         .headOption
+
+      Xor.fromOption(result, CanonicalNotFound())
     }
 
-    def findAuthorOption: Option[Canonical] = {
-      gs.flatMap(getAuthor)
+    def findAuthorXor: Xor[CanonicalNotFound, Canonical] = {
+      val result = gs.flatMap(getAuthor)
         .toCC[Canonical]
         .headOption
+
+      Xor.fromOption(result, CanonicalNotFound())
     }
 
-    def findRawMetadataOption: Option[RawMetadataBlob] = {
-      gs.flatMap(getRawMetadataForBlob)
+    def findRawMetadataXor: Xor[RawMetadataNotFound, RawMetadataBlob] = {
+      val result = gs.flatMap(getRawMetadataForBlob)
         .toCC[RawMetadataBlob]
         .headOption
+
+      Xor.fromOption(result, RawMetadataNotFound())
     }
   }
 }
