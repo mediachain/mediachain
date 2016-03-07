@@ -7,7 +7,6 @@ import scala.util.Random
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.specification.ForEach
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
-import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
 
 case class QueryObjects(
   person: Person,
