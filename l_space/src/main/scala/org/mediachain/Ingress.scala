@@ -9,7 +9,7 @@ object Ingress {
   import Traversals.{GremlinScalaImplicits, VertexImplicits}
 
   def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob):
-  Xor[MultipleRawBlobsError, Unit] = {
+  Xor[TooManyRawBlobsError, Unit] = {
     val graph = blobV.graph
 
     // only allow one TranslatedFrom edge from each blob vertex
@@ -22,7 +22,7 @@ object Ingress {
       blobV --- TranslatedFrom --> rawV
       Xor.right(())
     } else {
-      Xor.left(MultipleRawBlobsError(blobV))
+      Xor.left(TooManyRawBlobsError(blobV))
     }
   }
 
@@ -45,7 +45,7 @@ object Ingress {
   def addPerson(graph: Graph,
                 author: Person,
                 raw: Option[RawMetadataBlob] = None):
-  Xor[MultipleRawBlobsError, Canonical] = {
+  Xor[TooManyRawBlobsError, Canonical] = {
     // If there's an exact match already, return it,
     // otherwise create a new Person vertex and canonical
     // and return the canonical
