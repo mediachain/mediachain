@@ -116,7 +116,8 @@ object QuerySpec extends Specification with ForEach[QuerySpecContext] {
   def findsTree = { context: QuerySpecContext =>
     val tree: Option[Graph] = Query.findTreeForCanonical(context.graph, context.q.photoBlobCanonical)
     tree must beSome { (g: Graph) =>
-      g.V(context.q.photoBlob.id.get).findCanonicalOption must beSome
+      (g.V(context.q.photoBlob.id.get).findCanonicalOption must beSome) and
+      (g.V(context.q.person.id.get).findCanonicalOption must beSome)
     }
   }
 
