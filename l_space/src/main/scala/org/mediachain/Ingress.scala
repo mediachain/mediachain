@@ -20,7 +20,7 @@ object Ingress {
         .getOrElse(graph + raw)
 
       blobV --- TranslatedFrom --> rawV
-      Xor.right(())
+      Xor.right({})
     } else {
       Xor.left(TooManyRawBlobsError(blobV))
     }
@@ -35,7 +35,7 @@ object Ingress {
         blobV --- AuthoredBy --> authorCanonicalV
       }
 
-      Xor.right(())
+      Xor.right({})
     }.getOrElse {
       Xor.left(AuthorNotFoundError(blobV))
     }
@@ -54,7 +54,7 @@ object Ingress {
     val personV: Vertex = q.headOption.getOrElse(graph + author)
 
     for {
-      _ <- raw.map(attachRawMetadata(personV, _)).getOrElse(Xor.right(()))
+      _ <- raw.map(attachRawMetadata(personV, _)).getOrElse(Xor.right({}))
     } yield {
       graph.V(personV.id)
         .findCanonicalOption
@@ -80,10 +80,10 @@ object Ingress {
         .headOption.getOrElse(graph + photo)
 
     for {
-      _ <- raw.map(attachRawMetadata(photoV, _)).getOrElse(Xor.right(()))
+      _ <- raw.map(attachRawMetadata(photoV, _)).getOrElse(Xor.right({}))
       _ <- author
         .map(x => x.flatMap(defineAuthorship(photoV, _)))
-        .getOrElse(Xor.right(()))
+        .getOrElse(Xor.right({}))
     } yield {
       // return existing canonical for photo vertex, or create one
       graph.V(photoV.id)
