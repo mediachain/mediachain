@@ -2,5 +2,8 @@ package org.mediachain.translation
 
 // TODO: extend this with error messages, etc.
 
-trait TranslationError
-case class InvalidFormatError() extends  TranslationError
+sealed abstract class TranslationError
+
+object TranslationError {
+  case class InvalidFormatError() extends TranslationError
+}
