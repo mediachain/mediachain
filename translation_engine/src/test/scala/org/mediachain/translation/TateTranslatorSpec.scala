@@ -1,13 +1,12 @@
 package org.mediachain.translation
 
+import org.mediachain.XorMatchers
 import org.specs2.Specification
 import tate.{TateTranslator => SUT}
-import cats.data.Xor
-import org.mediachain.Types._
 
 import scala.io.Source
 
-object TateTranslatorSpec extends Specification {
+object TateTranslatorSpec extends Specification with XorMatchers {
 
 
   def is = skipAllIf(!SpecResources.Tate.sampleDataExists) ^
@@ -24,7 +23,12 @@ object TateTranslatorSpec extends Specification {
 
     val translated = context.translate(source)
 
-    translated.toEither must beRight
+    translated must beRightXor { result =>
+      val (blob, raw) = result
+      blob.title == expected.title &&
+      blob.author.map(_.name) == Some(expected.artistName) &&
+      raw.blob == source
+    }
   }
 
   def loadsArtworksFromDir = {
