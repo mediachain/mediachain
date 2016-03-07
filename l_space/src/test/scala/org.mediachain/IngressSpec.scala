@@ -4,8 +4,10 @@ import org.mediachain.Types._
 import org.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
 import org.specs2.Specification
 import gremlin.scala._
+import cats.data.Xor
+import GraphError._
 
-object IngressSpec extends Specification with Orientable {
+object IngressSpec extends Specification with Orientable with XorMatchers {
 
   def is =
     s2"""
@@ -19,7 +21,8 @@ object IngressSpec extends Specification with Orientable {
     val photoBlob = PhotoBlob(None, "A Starry Night", "shiny!", "1/2/2013", None)
 
     val canonical = Ingress.addPhotoBlob(graph, photoBlob)
-    canonical.id must beSome[ElementID]
+    canonical.isRight must beTrue
+    canonical.forall(x => x.id must beSome[ElementID])
   }
 
   def findsExistingAuthor = { graph: OrientGraph =>
@@ -82,16 +85,23 @@ object IngressSpec extends Specification with Orientable {
     val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
 
-    val photoRawMeta = photoV.lift.findRawMetadataOption
-    val authorRawMeta = authorV.lift.findRawMetadataOption
+    val photoRawMeta = photoV.lift.findRawMetadataXor
+    val authorRawMeta = authorV.lift.findRawMetadataXor
+    val photoMatch = photoRawMeta match {
+      case Xor.Right(photo) => photo.blob == rawString
+      case _ => false
+    }
+    val authorMatch = photoRawMeta.toList ++ authorRawMeta.toList match {
+      case List(photo, author) => photo == author
+      case _ => false
+    }
 
     (photoBlobCount must_== 1) and
       (authorCount must_== 1) and
-      (authorRawMeta must beSome[RawMetadataBlob]) and
-      (photoRawMeta must beSome[RawMetadataBlob].which { photoRaw =>
-        photoRaw.blob == rawString &&
-          photoRaw == authorRawMeta.get
-      })
+      (authorRawMeta.isRight must beTrue) and
+      (photoRawMeta.isRight must beTrue) and
+      (photoMatch must beTrue) and
+      (authorMatch must beTrue)
   }
 
   def ingestsPhotoBothNew = pending

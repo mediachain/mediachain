@@ -19,6 +19,8 @@ import com.orientechnologies.orient.core.id.ORecordId
 object Types {
   import gremlin.scala._
   import java.util.UUID
+  import cats.data.Xor
+  import org.mediachain.GraphError._
 
   type ElementID = ORecordId
 
@@ -41,9 +43,12 @@ object Types {
   trait VertexClass {
     def getID(): Option[ElementID]
 
-    def vertex(graph: Graph): Option[Vertex] = {
-      val id = getID().getOrElse(throw new IllegalStateException("Malformed vertex object: no id"))
-      graph.V(id).headOption()
+    def vertex(graph: Graph): Xor[VertexNotFound, Vertex] = {
+      for {
+        id <- Xor.fromOption(getID(), VertexNotFound())
+        vertexOption <- Xor.fromOption(graph.V(id).headOption(),
+          VertexNotFound())
+      } yield { vertexOption }
     }
   }
 
