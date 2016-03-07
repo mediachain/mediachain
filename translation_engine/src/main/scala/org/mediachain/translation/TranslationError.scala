@@ -1,9 +1,9 @@
 package org.mediachain.translation
 
-// TODO: extend this with error messages, etc.
-
 sealed abstract class TranslationError
 
 object TranslationError {
-  case class InvalidFormatError() extends TranslationError
+  case class ParsingFailed(underlying: Throwable) extends TranslationError
+  case class ResourceNotReadable(underlying: Throwable) extends TranslationError
+  case class InvalidFormat() extends TranslationError
 }
