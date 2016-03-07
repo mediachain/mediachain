@@ -48,9 +48,10 @@ object Query {
   }
 
   def findTreeForCanonical[T <: Canonical](graph: Graph, canonical: Canonical): Option[TinkerGraph] = {
+    val stepLabel = StepLabel[Graph]("subGraph")
     canonical.getID
       .map {
-        id => graph.V(id).outE().subgraph("sg").cap("sg")
+        id => graph.V(id).outE().subgraph(stepLabel).cap(stepLabel)
           .head
           .asInstanceOf[TinkerGraph]
       }
