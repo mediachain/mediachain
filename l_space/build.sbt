@@ -11,7 +11,8 @@ libraryDependencies ++= Seq(
   "com.michaelpollmeier" % "orientdb-gremlin" % "3.1.0-incubating.1",
   "com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0",
   "org.typelevel" %% "cats" % "0.4.1",
-  "com.chuusai" %% "shapeless" % "2.2.5"
+  "com.chuusai" %% "shapeless" % "2.2.5",
+  "org.json4s" %% "json4s-jackson" % "3.2.11"
 )
 
 
