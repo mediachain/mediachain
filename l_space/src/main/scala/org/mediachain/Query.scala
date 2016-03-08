@@ -5,7 +5,6 @@ import org.mediachain.Types._
 object Query {
   import gremlin.scala._
   import Traversals.GremlinScalaImplicits
-  import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
   import GraphError._
   import cats.data.Xor
 
@@ -59,19 +58,8 @@ object Query {
   }
 
   def findTreeForCanonical[T <: Canonical](graph: Graph, canonical: Canonical): Xor[SubtreeError, Graph] = {
-    val stepLabel = StepLabel[Graph]("subGraph")
-    val treeOption = canonical.getID
-        .flatMap {
-        id => graph
-          .V(id)
-          //.simplePath()
-          .untilWithTraverser(t => (t.get.outE(DescribedBy).notExists() && t.get.outE(ModifiedBy).notExists()))
-          .repeat(_.outE.subgraph(stepLabel).inV)
-          //.times(99)
-          .cap(stepLabel)
-          .headOption()
-      }
-    Xor.fromOption(treeOption, SubtreeError())
+    canonical.getID.map(id => graph.V(id).findSubtreeXor)
+      .getOrElse(Xor.left(SubtreeError()))
   }
 
   def findWorks(graph: Graph, p: Person):
