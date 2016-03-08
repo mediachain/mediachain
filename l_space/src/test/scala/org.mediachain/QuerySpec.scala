@@ -121,15 +121,15 @@ object QuerySpec extends
     tree.foreach(t => println(t.V.toList()))
     tree must beRightXor { (g: Graph) =>
       // Canonical itself
-      (g.V(context.q.photoBlobCanonical.id.get).headOption aka "canonical" must beSome) and
+      (context.q.photoBlobCanonical.id.flatMap(id => g.V(id).headOption) aka "canonical" must beSome) and
       // PhotoBlob
-      (g.V(context.q.photoBlob.id.get).headOption aka "describing photoblob" must beSome) and
+      (context.q.photoBlob.id.flatMap(id => g.V(id).headOption) aka "describing photoblob" must beSome) and
       // Modifying PhotoBlob
-      (g.V(context.q.modifiedPhotoBlob.id.get).headOption aka "modifying photoblob" must beSome) and
+      (context.q.modifiedPhotoBlob.id.flatMap(id => g.V(id).headOption) aka "modifying photoblob" must beSome) and
       // Person
-      (g.V(context.q.person.id.get).headOption aka "person" must beSome) and
+      (context.q.person.id.flatMap(id => g.V(id).headOption) aka "person" must beSome) and
       // Person canonical
-      (g.V(context.q.personCanonical.id.get).headOption aka "person canonical" must beSome)
+      (context.q.personCanonical.id.flatMap(id => g.V(id).headOption) aka "person canonical" must beSome)
     }
   }
 
