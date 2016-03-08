@@ -118,9 +118,18 @@ object QuerySpec extends
 
   def findsTree = { context: QuerySpecContext =>
     val tree = Query.findTreeForCanonical(context.graph, context.q.photoBlobCanonical)
+    tree.foreach(t => println(t.V.toList()))
     tree must beRightXor { (g: Graph) =>
-      (g.V(context.q.photoBlob.id.get).findCanonicalXor must beRightXor) and
-      (g.V(context.q.person.id.get).findCanonicalXor must beRightXor)
+      // Canonical itself
+      (g.V(context.q.photoBlobCanonical.id.get).headOption aka "canonical" must beSome) and
+      // PhotoBlob
+      (g.V(context.q.photoBlob.id.get).headOption aka "describing photoblob" must beSome) and
+      // Modifying PhotoBlob
+      (g.V(context.q.modifiedPhotoBlob.id.get).headOption aka "modifying photoblob" must beSome) and
+      // Person
+      (g.V(context.q.person.id.get).headOption aka "person" must beSome) and
+      // Person canonical
+      (g.V(context.q.personCanonical.id.get).headOption aka "person canonical" must beSome)
     }
   }
 
