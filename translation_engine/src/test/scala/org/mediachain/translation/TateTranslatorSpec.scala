@@ -19,7 +19,7 @@ object TateTranslatorSpec extends Specification with XorMatchers {
     val expected = SpecResources.Tate.SampleArtworkA00001
 
     val source = Source.fromFile(expected.jsonFile).mkString
-    val context = SUT.TateContext("testing")
+    val context = SUT.TateArtworkContext("testing")
 
     val translated = context.translate(source)
 
