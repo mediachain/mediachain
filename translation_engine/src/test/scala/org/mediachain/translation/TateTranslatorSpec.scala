@@ -1,5 +1,6 @@
 package org.mediachain.translation
 
+import org.mediachain.Types._
 import org.mediachain.XorMatchers
 import org.specs2.Specification
 import tate.{TateTranslator => SUT}
@@ -7,7 +8,6 @@ import tate.{TateTranslator => SUT}
 import scala.io.Source
 
 object TateTranslatorSpec extends Specification with XorMatchers {
-
 
   def is = skipAllIf(!SpecResources.Tate.sampleDataExists) ^
   s2"""
@@ -23,10 +23,10 @@ object TateTranslatorSpec extends Specification with XorMatchers {
 
     val translated = context.translate(source)
 
-    translated must beRightXor { result =>
+    translated must beRightXor { result: (PhotoBlob, RawMetadataBlob) =>
       val (blob, raw) = result
       blob.title == expected.title &&
-      blob.author.map(_.name).contains(expected.artistName) &&
+      blob.author.exists(_.name == expected.artistName) &&
       raw.blob == source
     }
   }
