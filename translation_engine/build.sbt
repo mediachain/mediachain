@@ -10,3 +10,19 @@ libraryDependencies ++= Seq(
 )
 
 unmanagedClasspath in Test += baseDirectory.value / "test-resources"
+
+// see http://stackoverflow.com/a/9901616
+//
+// instantiating the `SBTSetupHook` and `SBTCleanupHook`
+// classes causes code to run that prepares the testing
+// environment & works around some classloader issues with
+// sbt and orient / gremlin
+testOptions in Test += Tests.Setup( loader => {
+  println("test setup")
+  loader.loadClass("org.mediachain.SBTSetupHook").newInstance
+})
+
+testOptions in Test += Tests.Cleanup( loader => {
+  println("test cleanup")
+  loader.loadClass("org.mediachain.SBTCleanupHook").newInstance
+})
