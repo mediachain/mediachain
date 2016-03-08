@@ -14,7 +14,7 @@ object TateTranslator extends Translator {
   import org.json4s._
   implicit val formats = org.json4s.DefaultFormats
 
-  case class TateContext(id: String, translator: Translator = TateTranslator)
+  case class TateArtworkContext(id: String, translator: Translator = TateTranslator)
     extends TranslationContext[PhotoBlob] {
     def translate(source: String): Xor[TranslationError, (PhotoBlob, RawMetadataBlob)] = {
       JsonLoader.loadObjectFromString(source)
