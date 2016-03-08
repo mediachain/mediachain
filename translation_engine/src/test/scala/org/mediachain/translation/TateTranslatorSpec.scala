@@ -9,7 +9,7 @@ import scala.io.Source
 
 object TateTranslatorSpec extends Specification with XorMatchers {
 
-  def is = skipAllIf(!SpecResources.Tate.sampleDataExists) ^
+  def is = skipAllUnless(SpecResources.Tate.sampleDataExists) ^
   s2"""
        $loadsArtwork - Translates Tate artwork json into PhotoBlob
        $loadsArtworksFromDir - Translates all artworks from a directory structure

@@ -12,7 +12,7 @@ import scala.io.Source
 
 object TateIngestionSpec extends Specification with Orientable with XorMatchers {
 
-  def is =
+  def is = skipAllUnless(SpecResources.Tate.sampleDataExists) ^
     s2"""
        $ingestsSingleArtworkWithAuthor - Ingests a single artwork with author
     """
