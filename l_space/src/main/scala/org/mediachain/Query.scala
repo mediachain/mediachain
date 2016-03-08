@@ -64,8 +64,10 @@ object Query {
         .flatMap {
         id => graph
           .V(id)
-          .repeat(_.outE.subgraph(stepLabel).outV)
-          .times(3)
+          //.simplePath()
+          .untilWithTraverser(t => (t.get.outE(DescribedBy).notExists() && t.get.outE(ModifiedBy).notExists()))
+          .repeat(_.outE.subgraph(stepLabel).inV)
+          //.times(99)
           .cap(stepLabel)
           .headOption()
       }
