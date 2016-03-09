@@ -58,8 +58,7 @@ object Traversals {
     v.out(TranslatedFrom)
   }
 
-  def getSubtree(v: Vertex, label: String = "subtree"): GremlinScala[Vertex, _] = {
-    val stepLabel = StepLabel[Graph](label)
+  def getSubtree(v: Vertex, stepLabel: StepLabel[Graph]): GremlinScala[Vertex, _] = {
     v.lift
       //.simplePath()
       .untilWithTraverser(t => (t.get.outE(DescribedBy).notExists() && t.get.outE(ModifiedBy).notExists()))
@@ -100,9 +99,8 @@ object Traversals {
     }
 
     def findSubtreeXor: Xor[SubtreeError, Graph] = {
-      val label = "subtree"
-      val stepLabel = StepLabel[Graph](label)
-      val result = gs.flatMap(g => getSubtree(g, label))
+      val stepLabel = StepLabel[Graph]("subtree")
+      val result = gs.flatMap(g => getSubtree(g, stepLabel))
         .cap(stepLabel)
         .headOption
       Xor.fromOption(result, SubtreeError())
