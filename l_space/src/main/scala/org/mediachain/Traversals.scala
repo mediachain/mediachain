@@ -60,7 +60,9 @@ object Traversals {
 
   def getSubtree(gs: GremlinScala[Vertex, _], stepLabel: StepLabel[Graph]): GremlinScala[Vertex, _] = {
       gs
-      .untilWithTraverser(t => (t.get.outE(DescribedBy).notExists() && t.get.outE(ModifiedBy).notExists()))
+      .untilWithTraverser(t => (t.get.outE(DescribedBy).notExists()
+        && t.get.outE(ModifiedBy).notExists()
+        && t.get.outE(AuthoredBy).notExists()))
       .repeat(_.outE.subgraph(stepLabel).inV)
   }
 
