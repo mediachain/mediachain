@@ -35,6 +35,8 @@ initialCommands in console :=
   """
     import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
     import gremlin.scala._
+    import org.mediachain.Types._
+    import org.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
     lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
     println("It's a UNIX system! I know this!")
   """
