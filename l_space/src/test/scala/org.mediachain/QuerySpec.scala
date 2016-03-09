@@ -148,7 +148,7 @@ object QuerySpec extends
       // Person canonical
       (context.q.personCanonical.id.flatMap(id => g.V(id).headOption) aka "person canonical" must beSome) and
       // Another photoblob by same author
-      (context.q.extraPhotoBlob.id.flatMap(id => g.V(id).headOption) aka "extra photoblob" must beNone)
+      (context.q.extraPhotoBlob.id.flatMap(id => g.V(id).headOption) aka "extra photoblob" must beNone) and
       // Another photoblob's canonical
       (context.q.extraPhotoBlobCanonical.id.flatMap(id => g.V(id).headOption) aka "extra canonical" must beNone)
     }
