@@ -88,7 +88,7 @@ object QuerySpec extends
       val extraPhotoBlobCanonical = Canonical.create
       val extraPhotoBlobCanonicalV = graph + extraPhotoBlobCanonical
       extraPhotoBlobCanonicalV --- DescribedBy --> extraPhotoBlobV
-      extraPhotoBlobCanonicalV --- AuthoredBy --> personCanonicalV
+      extraPhotoBlobV --- AuthoredBy --> personCanonicalV
 
       QueryObjects(
         Person(personV).get,
