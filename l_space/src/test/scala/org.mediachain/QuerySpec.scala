@@ -13,7 +13,9 @@ case class QueryObjects(
   personCanonical: Canonical,
   photoBlob: PhotoBlob,
   photoBlobCanonical: Canonical,
-  modifiedPhotoBlob: PhotoBlob
+  modifiedPhotoBlob: PhotoBlob,
+  extraPhotoBlob: PhotoBlob,
+  extraPhotoBlobCanonical: Canonical
   )
 
 case class QuerySpecContext(graph: Graph, q: QueryObjects)
@@ -34,9 +36,18 @@ object QuerySpec extends
       s.updated(idx, replacing)
     }
 
+    val stuffI = Random.shuffle(List("can of peas",
+      "wishbone", "pair of glasses", "spool of wire", "wrench", "baseball hat", "television", "food",
+      "wallet", "jar of pickles", "tea cup", "sketch pad", "towel", "game CD", "steak knife", "slipper",
+      "pants", "sand paper", "boom box", "plush unicorn")).toIterator
+    val foodI = Random.shuffle(List("Preserved Peaches", "Brussels Sprouts", "Bananas", "Lettuce Salad",
+      "Olives", "Broiled Ham", "Cigars", "Mixed Green Salad", "Oyster Bay Asparagus", "Roast Lamb, Mint Sauce",
+      "Lemonade", "Consomme en Tasse", "Liqueurs", "Iced Tea", "Canadian Club", "Radis", "Escarole Salad",
+      "Preserved figs", "Potatoes, baked", "Macedoine salad")).toIterator
     def getPhotoBlob: PhotoBlob = {
-      val title = "A Starry Night"
-      val desc = "shiny!"
+      val title = stuffI.next
+      val desc = foodI.next
+      // FIXME: randomize date
       val date = "2016-02-22T19:04:13+00:00"
       PhotoBlob(None, title, desc, date, None)
     }
@@ -71,16 +82,22 @@ object QuerySpec extends
       personCanonicalV --- DescribedBy --> personV
       photoBlobV --- AuthoredBy --> personCanonicalV
 
-      // add decoy objects that we shouldn't see
-      // val extraPerson = getPerson
-      // val extraCanonical = ...
+      // add decoy objects that we shouldn't see in a subtree
+      val extraPhotoBlob = getPhotoBlob
+      val extraPhotoBlobV = graph + extraPhotoBlob
+      val extraPhotoBlobCanonical = Canonical.create
+      val extraPhotoBlobCanonicalV = graph + extraPhotoBlobCanonical
+      extraPhotoBlobCanonicalV --- DescribedBy --> extraPhotoBlobV
+      extraPhotoBlobCanonicalV --- AuthoredBy --> personCanonicalV
 
       QueryObjects(
         Person(personV).get,
         Canonical(personCanonicalV),
         PhotoBlob(photoBlobV).get,
         Canonical(canonicalV),
-        PhotoBlob(modifiedBlobV).get)
+        PhotoBlob(modifiedBlobV).get,
+        PhotoBlob(extraPhotoBlobV).get,
+        Canonical(extraPhotoBlobCanonicalV))
     }
   }
 
@@ -129,7 +146,11 @@ object QuerySpec extends
       // Person
       (context.q.person.id.flatMap(id => g.V(id).headOption) aka "person" must beSome) and
       // Person canonical
-      (context.q.personCanonical.id.flatMap(id => g.V(id).headOption) aka "person canonical" must beSome)
+      (context.q.personCanonical.id.flatMap(id => g.V(id).headOption) aka "person canonical" must beSome) and
+      // Another photoblob by same author
+      (context.q.extraPhotoBlob.id.flatMap(id => g.V(id).headOption) aka "extra photoblob" must beNone)
+      // Another photoblob's canonical
+      (context.q.extraPhotoBlobCanonical.id.flatMap(id => g.V(id).headOption) aka "extra canonical" must beNone)
     }
   }
 
