@@ -1,9 +1,11 @@
 package org.mediachain.io
 
+import com.fasterxml.jackson.databind.Module.SetupContext
 import com.fasterxml.jackson.databind.ser.Serializers
 import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.core.JsonGenerator
 import org.json4s._
+import org.json4s.jackson.Json4sScalaModule
 
 class SortedObjectSerializer extends JsonSerializer[JValue]{
   def serialize(value: JValue, json: JsonGenerator, provider: SerializerProvider) {
@@ -46,5 +48,13 @@ private object SortedObjectSerializerResolver extends Serializers.Base {
   override def findSerializer(config: SerializationConfig, theType: JavaType, beanDesc: BeanDescription) = {
     if (!JVALUE.isAssignableFrom(theType.getRawClass)) null
     else new SortedObjectSerializer
+  }
+}
+
+
+class Json4sWithSortedObjectsScalaModule extends Json4sScalaModule {
+  override def setupModule(ctxt: SetupContext) {
+    super.setupModule(ctxt)
+    ctxt.addSerializers(SortedObjectSerializerResolver)
   }
 }
