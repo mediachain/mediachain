@@ -102,43 +102,35 @@ object TraversalsSpec extends
   }
 
   def findsCanonicalForRootBlob = { fixtures: TraversalsFixtures =>
-//    val queriedCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
-//      .flatMap(SUT.getCanonical)
-//      .value(Canonical.Keys.canonicalID)
-//      .headOption
-//
-//    queriedCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
-    pending
+    val queriedCanonicalID = SUT.getCanonical(SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo))
+      .value(Canonical.Keys.canonicalID)
+      .headOption
+
+    queriedCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
   }
 
   def findsCanonicalForRevisedBlob = { fixtures: TraversalsFixtures =>
-//    val photoRevCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto)
-//      .flatMap(SUT.getCanonical)
-//      .value(Canonical.Keys.canonicalID)
-//      .headOption
-//
-//    photoRevCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
-    pending
+    val photoRevCanonicalID = SUT.getCanonical(SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto))
+      .value(Canonical.Keys.canonicalID)
+      .headOption
+
+    photoRevCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
   }
 
   def findsAuthorForPhotoBlob = { fixtures: TraversalsFixtures =>
-//    val queriedAuthorCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
-//      .flatMap(SUT.getAuthor)
-//      .value(Canonical.Keys.canonicalID)
-//      .headOption
-//
-//    queriedAuthorCanonicalID must beSome(fixtures.zaphodCanonical.canonicalID)
-    pending
+    val queriedAuthorCanonicalID = SUT.getAuthor(SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo))
+      .value(Canonical.Keys.canonicalID)
+      .headOption
+
+    queriedAuthorCanonicalID must beSome(fixtures.zaphodCanonical.canonicalID)
   }
 
   def findsRawForBlob = { fixtures: TraversalsFixtures =>
-//    val queriedRawString = SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod)
-//      .flatMap(SUT.getRawMetadataForBlob)
-//      .value(RawMetadataBlob.Keys.blob)
-//      .headOption
-//
-//    queriedRawString must beSome(fixtures.rawZaphod.blob)
-    pending
+    val queriedRawString = SUT.getRawMetadataForBlob(SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod))
+      .value(RawMetadataBlob.Keys.blob)
+      .headOption
+
+    queriedRawString must beSome(fixtures.rawZaphod.blob)
   }
 
   def findsRootRevision = { fixtures: TraversalsFixtures =>
