@@ -102,8 +102,7 @@ object TraversalsSpec extends
   }
 
   def findsCanonicalForRootBlob = { fixtures: TraversalsFixtures =>
-    val queriedCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
-      .flatMap(SUT.getCanonical)
+    val queriedCanonicalID = SUT.getCanonical(SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo))
       .value(Canonical.Keys.canonicalID)
       .headOption
 
@@ -111,8 +110,7 @@ object TraversalsSpec extends
   }
 
   def findsCanonicalForRevisedBlob = { fixtures: TraversalsFixtures =>
-    val photoRevCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto)
-      .flatMap(SUT.getCanonical)
+    val photoRevCanonicalID = SUT.getCanonical(SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto))
       .value(Canonical.Keys.canonicalID)
       .headOption
 
@@ -120,8 +118,7 @@ object TraversalsSpec extends
   }
 
   def findsAuthorForPhotoBlob = { fixtures: TraversalsFixtures =>
-    val queriedAuthorCanonicalID = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo)
-      .flatMap(SUT.getAuthor)
+    val queriedAuthorCanonicalID = SUT.getAuthor(SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo))
       .value(Canonical.Keys.canonicalID)
       .headOption
 
@@ -129,8 +126,7 @@ object TraversalsSpec extends
   }
 
   def findsRawForBlob = { fixtures: TraversalsFixtures =>
-    val queriedRawString = SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod)
-      .flatMap(SUT.getRawMetadataForBlob)
+    val queriedRawString = SUT.getRawMetadataForBlob(SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod))
       .value(RawMetadataBlob.Keys.blob)
       .headOption
 
@@ -138,8 +134,7 @@ object TraversalsSpec extends
   }
 
   def findsRootRevision = { fixtures: TraversalsFixtures =>
-    val rootRevV = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto)
-      .flatMap(SUT.getRootRevision)
+    val rootRevV = SUT.getRootRevision(SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto))
       .headOption
 
     rootRevV must beSome(fixtures.photoVertex)

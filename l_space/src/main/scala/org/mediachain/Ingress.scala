@@ -26,9 +26,9 @@ object Ingress {
   def defineAuthorship(blobV: Vertex, authorCanonical: Canonical):
   Xor[AuthorNotFoundError, Unit] = {
     authorCanonical.vertex(blobV.graph).map { authorCanonicalV =>
-      val existingAuthors = Traversals.getAuthor(blobV).toSet
+      val existingAuthor = Traversals.getAuthor(blobV.lift).headOption
 
-      if (!existingAuthors.contains(authorCanonicalV)) {
+      if (!existingAuthor.contains(authorCanonicalV)) {
         blobV --- AuthoredBy --> authorCanonicalV
       }
 
@@ -102,9 +102,10 @@ object Ingress {
         val childVertex = graph + photo
         parentVertex --- ModifiedBy --> childVertex
 
+        // TODO: don't swallow errors
         for {
           author         <- photo.author.flatMap(addPerson(graph, _).toOption)
-          existingAuthor <- Traversals.getAuthor(childVertex)
+          existingAuthor <- Traversals.getAuthor(childVertex.lift)
             .toCC[Canonical].headOption
           if author.canonicalID != existingAuthor.canonicalID
         } yield defineAuthorship(childVertex, author)
