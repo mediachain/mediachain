@@ -1,14 +1,25 @@
 package org.mediachain.io
 
+import java.lang.Iterable
+import java.security.MessageDigest
 import java.util.Base64
 
-import com.fasterxml.jackson.databind.{SerializationFeature, JsonNode, DeserializationFeature, ObjectMapper}
+import com.fasterxml.jackson.databind.Module.SetupContext
+import com.fasterxml.jackson.databind.cfg.SerializerFactoryConfig
+import com.fasterxml.jackson.databind.ser.{SerializerFactory, Serializers, BasicSerializerFactory}
+import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.dataformat.cbor.{CBORGenerator, CBORFactory}
 import org.json4s._
-import org.json4s.jackson.{Json4sScalaModule}
+import org.json4s.jackson.{JValueDeserializerResolver, JValueSerializerResolver, Json4sScalaModule}
 
 import scala.util.control.Exception._
 
+class CborModule extends Json4sScalaModule {
+  override def setupModule(ctxt: SetupContext) {
+    super.setupModule(ctxt)
+    ctxt.addSerializers(SortedObjectSerializerResolver)
+  }
+}
 
 object CborMethods extends org.json4s.JsonMethods[JValue] {
   private[this] lazy val _defaultMapper = {
@@ -16,12 +27,11 @@ object CborMethods extends org.json4s.JsonMethods[JValue] {
     f.configure(CBORGenerator.Feature.WRITE_MINIMAL_INTS, true)
 
     val m = new ObjectMapper(f)
-    m.registerModule(new Json4sScalaModule)
-    m.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-
+    m.registerModule(new CborModule)
     m
   }
   def mapper = _defaultMapper
+
 
   def parse(in: JsonInput, useBigDecimalForDouble: Boolean = false): JValue = {
     // What about side effects?
@@ -60,4 +70,8 @@ object CborMethods extends org.json4s.JsonMethods[JValue] {
 
   def pretty(d: JValue): String = compact(d)
 
+  def sha1String(d: JValue): String = {
+    val md = MessageDigest.getInstance("SHA-1")
+    md.digest(bytes(d)).map("%02x".format(_)).mkString
+  }
 }
