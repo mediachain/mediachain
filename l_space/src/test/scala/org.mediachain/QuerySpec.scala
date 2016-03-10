@@ -13,7 +13,9 @@ case class QueryObjects(
   personCanonical: Canonical,
   photoBlob: PhotoBlob,
   photoBlobCanonical: Canonical,
-  modifiedPhotoBlob: PhotoBlob
+  modifiedPhotoBlob: PhotoBlob,
+  extraPhotoBlob: PhotoBlob,
+  extraPhotoBlobCanonical: Canonical
   )
 
 case class QuerySpecContext(graph: Graph, q: QueryObjects)
@@ -22,50 +24,81 @@ object QuerySpec extends
   Specification with
   ForEach[QuerySpecContext] with
   XorMatchers {
+  import Traversals.{GremlinScalaImplicits, VertexImplicits}
+  object Util {
+    // guarantees returned string is different from input
+    // TODO: accept distance
+    def mutate(s: String): String = {
+      val idx = Random.nextInt(s.length)
+      val chars = ('a' to 'z').toSet
+      val replaced = s.charAt(idx)
+      val replacing = (chars - replaced).toVector(Random.nextInt(chars.size - 1))
+      s.updated(idx, replacing)
+    }
 
-  def setupTree(graph: Graph): QueryObjects = {
+    val stuffI = Random.shuffle(List("can of peas",
+      "wishbone", "pair of glasses", "spool of wire", "wrench", "baseball hat", "television", "food",
+      "wallet", "jar of pickles", "tea cup", "sketch pad", "towel", "game CD", "steak knife", "slipper",
+      "pants", "sand paper", "boom box", "plush unicorn")).toIterator
+    val foodI = Random.shuffle(List("Preserved Peaches", "Brussels Sprouts", "Bananas", "Lettuce Salad",
+      "Olives", "Broiled Ham", "Cigars", "Mixed Green Salad", "Oyster Bay Asparagus", "Roast Lamb, Mint Sauce",
+      "Lemonade", "Consomme en Tasse", "Liqueurs", "Iced Tea", "Canadian Club", "Radis", "Escarole Salad",
+      "Preserved figs", "Potatoes, baked", "Macedoine salad")).toIterator
     def getPhotoBlob: PhotoBlob = {
-      val title = "A Starry Night"
-      val desc = "shiny!"
+      val title = stuffI.next
+      val desc = foodI.next
+      // FIXME: randomize date
       val date = "2016-02-22T19:04:13+00:00"
       PhotoBlob(None, title, desc, date, None)
     }
 
     def getModifiedPhotoBlob: PhotoBlob = {
-      getPhotoBlob.copy(description = "Stars are pretty...")
+      val b = getPhotoBlob
+      b.copy(description = mutate(b.description))
     }
 
-    def getPerson: Person = {
-      val alex = "Alex Grey"
-      Person.create(alex)
+    val bodhisattvasI = Random.shuffle(List("Avalokitesvara",
+      "Manjushri", "Samantabhadra", "Kshitigarbha", "Maitreya", "Mahasthamaprapta", "Ākāśagarbha")).toIterator
+    def getPerson: Person = Person.create(bodhisattvasI.next)
+
+    def setupTree(graph: Graph): QueryObjects = {
+      // add photo and canonical
+      val photoBlob = getPhotoBlob
+      val photoBlobV = graph + photoBlob
+      val photoBlobCanonical = Canonical.create
+      val canonicalV = graph + photoBlobCanonical
+      canonicalV --- DescribedBy --> photoBlobV
+
+      // add a revision to a photo
+      val modifiedBlob = getModifiedPhotoBlob
+      val modifiedBlobV = graph + modifiedBlob
+      photoBlobV --- ModifiedBy --> modifiedBlobV
+
+      // add an author for the photo
+      val person = getPerson
+      val personV = graph + person
+      val personCanonical = Canonical.create
+      val personCanonicalV = graph + personCanonical
+      personCanonicalV --- DescribedBy --> personV
+      photoBlobV --- AuthoredBy --> personCanonicalV
+
+      // add decoy objects that we shouldn't see in a subtree
+      val extraPhotoBlob = getPhotoBlob
+      val extraPhotoBlobV = graph + extraPhotoBlob
+      val extraPhotoBlobCanonical = Canonical.create
+      val extraPhotoBlobCanonicalV = graph + extraPhotoBlobCanonical
+      extraPhotoBlobCanonicalV --- DescribedBy --> extraPhotoBlobV
+      extraPhotoBlobV --- AuthoredBy --> personCanonicalV
+
+      QueryObjects(
+        Person(personV).get,
+        Canonical(personCanonicalV),
+        PhotoBlob(photoBlobV).get,
+        Canonical(canonicalV),
+        PhotoBlob(modifiedBlobV).get,
+        PhotoBlob(extraPhotoBlobV).get,
+        Canonical(extraPhotoBlobCanonicalV))
     }
-
-    // add photo and canonical
-    val photoBlob = getPhotoBlob
-    val photoBlobV = graph + photoBlob
-    val photoBlobCanonical = Canonical.create
-    val canonicalV = graph + photoBlobCanonical
-    canonicalV --- DescribedBy --> photoBlobV
-
-    // add a revision to a photo
-    val modifiedBlob = getModifiedPhotoBlob
-    val modifiedBlobV = graph + modifiedBlob
-    photoBlobV --- ModifiedBy --> modifiedBlobV
-
-    // add an author for the photo
-    val person = getPerson
-    val personV = graph + person
-    val personCanonical = Canonical.create
-    val personCanonicalV = graph + personCanonical
-    personCanonicalV --- DescribedBy --> personV
-    photoBlobV --- AuthoredBy --> personCanonicalV
-
-    QueryObjects(
-      Person(personV).get,
-      Canonical(personCanonicalV),
-      PhotoBlob(photoBlobV).get,
-      Canonical(canonicalV),
-      PhotoBlob(modifiedBlobV).get)
   }
 
   // TODO: can you figure out how to abstract out the connection creation?
@@ -73,7 +106,7 @@ object QuerySpec extends
 
     lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
     try {
-      val queryObjects = setupTree(graph)
+      val queryObjects = Util.setupTree(graph)
       AsResult(f(QuerySpecContext(graph, queryObjects)))
     } finally {
       graph.database().drop()
@@ -101,7 +134,24 @@ object QuerySpec extends
   }
 
   def findsTree = { context: QuerySpecContext =>
-    pending
+    val tree = Query.findTreeForCanonical(context.graph, context.q.photoBlobCanonical)
+    tree.foreach(t => println(t.V.toList()))
+    tree must beRightXor { (g: Graph) =>
+      // Canonical itself
+      (context.q.photoBlobCanonical.id.flatMap(id => g.V(id).headOption) aka "canonical" must beSome) and
+      // PhotoBlob
+      (context.q.photoBlob.id.flatMap(id => g.V(id).headOption) aka "describing photoblob" must beSome) and
+      // Modifying PhotoBlob
+      (context.q.modifiedPhotoBlob.id.flatMap(id => g.V(id).headOption) aka "modifying photoblob" must beSome) and
+      // Person
+      (context.q.person.id.flatMap(id => g.V(id).headOption) aka "person" must beSome) and
+      // Person canonical
+      (context.q.personCanonical.id.flatMap(id => g.V(id).headOption) aka "person canonical" must beSome) and
+      // Another photoblob by same author
+      (context.q.extraPhotoBlob.id.flatMap(id => g.V(id).headOption) aka "extra photoblob" must beNone) and
+      // Another photoblob's canonical
+      (context.q.extraPhotoBlobCanonical.id.flatMap(id => g.V(id).headOption) aka "extra canonical" must beNone)
+    }
   }
 
   def findsPerson = { context: QuerySpecContext =>
@@ -131,18 +181,8 @@ object QuerySpec extends
   }
 
   def doesNotFindPhoto = { context: QuerySpecContext =>
-    // guarantees returned string is different from input
-    // TODO: accept distance
-    def mutate(s: String): String = {
-      val idx = Random.nextInt(s.length)
-      val chars = ('a' to 'z').toSet
-      val replaced = s.charAt(idx)
-      val replacing = (chars - replaced).toVector(Random.nextInt(chars.size - 1))
-      s.updated(idx, replacing)
-    }
-
-    val queryBlob = context.q.photoBlob.copy(
-      description = mutate(context.q.photoBlob.description))
+   val queryBlob = context.q.photoBlob.copy(
+      description = Util.mutate(context.q.photoBlob.description))
 
     val queriedPhoto = Query.findPhotoBlob(context.graph, queryBlob)
 

@@ -11,12 +11,12 @@ trait XorMatchers {
       case Xor.Right(value) =>
         checker(value)
       case _ =>
-        new Failure(s"Value $x was instance of Xor.Left")
+        new Failure(s"Xor value was instance of Xor.Left: $x")
     }
   }
 
   def beRightXor(): Matcher[Xor[_, _]] = { (x: Xor[_, _]) =>
-    (x.isRight, "Xor value was instance of Xor.Left")
+    (x.isRight, s"Xor value was instance of Xor.Left: $x")
   }
 
   def beLeftXor[T](checker: (T => Result)): Matcher[Xor[T, _]] = {
@@ -24,11 +24,11 @@ trait XorMatchers {
       case Xor.Left(value) =>
         checker(value)
       case _ =>
-        new Failure(s"Value $x was instance of Xor.Right")
+        new Failure(s"Xor value was instance of Xor.Right: $x")
     }
   }
 
   def beLeftXor(): Matcher[Xor[_, _]] = { (x: Xor[_, _]) =>
-    (x.isLeft, "Xor value was instance of Xor.Right")
+    (x.isLeft, s"Xor value was instance of Xor.Right: $x")
   }
 }
