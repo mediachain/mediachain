@@ -2,18 +2,23 @@ package org.mediachain.io
 
 import java.util.Base64
 
-import com.fasterxml.jackson.databind.{JsonNode, DeserializationFeature, ObjectMapper}
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory
+import com.fasterxml.jackson.databind.{SerializationFeature, JsonNode, DeserializationFeature, ObjectMapper}
+import com.fasterxml.jackson.dataformat.cbor.{CBORGenerator, CBORFactory}
 import org.json4s._
-import org.json4s.jackson.{Json4sScalaModule, JsonMethods}
+import org.json4s.jackson.{Json4sScalaModule}
 
 import scala.util.control.Exception._
 
 
 object CborMethods extends org.json4s.JsonMethods[JValue] {
   private[this] lazy val _defaultMapper = {
-    val m = new ObjectMapper(new CBORFactory())
+    val f = new CBORFactory()
+    f.configure(CBORGenerator.Feature.WRITE_MINIMAL_INTS, true)
+
+    val m = new ObjectMapper(f)
     m.registerModule(new Json4sScalaModule)
+    m.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+
     m
   }
   def mapper = _defaultMapper
