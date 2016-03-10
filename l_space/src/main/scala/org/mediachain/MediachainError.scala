@@ -13,6 +13,7 @@ object GraphError {
   case class PersonNotFound() extends GraphError
   case class VertexNotFound() extends GraphError
   case class BlobNotFound() extends GraphError
+  case class SubtreeError() extends GraphError
 }
 
 
