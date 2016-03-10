@@ -49,6 +49,11 @@ object Query {
         .getOrElse(Xor.left(CanonicalNotFound()))
   }
 
+  def findTreeForCanonical[T <: Canonical](graph: Graph, canonical: Canonical): Xor[GraphError, Graph] = {
+    canonical.getID.map(id => graph.V(id).findSubtreeXor)
+      .getOrElse(Xor.left(CanonicalNotFound()))
+  }
+
   def findWorks(graph: Graph, p: Person):
   Xor[GraphError, List[Canonical]] = {
     for {

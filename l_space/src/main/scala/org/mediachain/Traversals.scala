@@ -56,6 +56,14 @@ object Traversals {
     gs.out(TranslatedFrom)
   }
 
+  def getSubtree(gs: GremlinScala[Vertex, _], stepLabel: StepLabel[Graph]): GremlinScala[Vertex, _] = {
+      gs
+      .untilWithTraverser(t => (t.get.outE(DescribedBy).notExists()
+        && t.get.outE(ModifiedBy).notExists()
+        && t.get.outE(AuthoredBy).notExists()))
+      .repeat(_.outE.subgraph(stepLabel).inV)
+  }
+
   implicit class VertexImplicits(v: Vertex) {
     /**
       * 'lift' a Vertex into a GremlinScala[Vertex, _] pipeline
@@ -87,5 +95,13 @@ object Traversals {
 
     def findRootRevision: Xor[BlobNotFound, Vertex] =
       traverseAndExtract(getRootRevision) { BlobNotFound() }
+
+    def findSubtreeXor: Xor[SubtreeError, Graph] = {
+      val stepLabel = StepLabel[Graph]("subtree")
+      val result = getSubtree(gs, stepLabel)
+        .cap(stepLabel)
+        .headOption
+      Xor.fromOption(result, SubtreeError())
+    }
   }
 }
