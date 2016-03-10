@@ -50,6 +50,12 @@ object Types {
           VertexNotFound())
       } yield { vertexOption }
     }
+
+    def query(graph: Graph): Xor[VertexNotFound, GremlinScala[Vertex, _]] = {
+      for {
+        id <- Xor.fromOption(getID(), VertexNotFound())
+      } yield { graph.V(id) }
+    }
   }
 
   @label("Canonical")

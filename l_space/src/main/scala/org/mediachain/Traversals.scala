@@ -30,66 +30,62 @@ object Traversals {
       .has(RawMetadataBlob.Keys.blob, raw.blob)
   }
 
-
-  def getCanonical(v: Vertex): GremlinScala[Vertex, _] = {
-    v.lift
-      .untilWithTraverser {t =>
-        t.get.label == "Canonical" ||
-          t.get.in(DescribedBy, ModifiedBy).notExists
-      }
-      .repeat(_.in(ModifiedBy, DescribedBy))
+  def getCanonical(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
+    gs.untilWithTraverser {t =>
+      t.get.label == "Canonical" ||
+        t.get.in(DescribedBy, ModifiedBy).notExists
+    }.repeat(_.in(ModifiedBy, DescribedBy))
   }
 
-  def getAuthor(v: Vertex): GremlinScala[Vertex, _] = {
-    v.lift
-      .untilWithTraverser { t =>
-        t.get().out(AuthoredBy).exists() || t.get().in().notExists()
-      }
+  def getAuthor(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
+    gs.untilWithTraverser { t =>
+      t.get().out(AuthoredBy).exists() || t.get().in().notExists()
+    }
       .repeat(_.in(ModifiedBy))
       .out(AuthoredBy)
   }
 
-  def getRootRevision(v: Vertex): GremlinScala[Vertex, _] = {
-    v.lift
+  def getRootRevision(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
+    gs
       .untilWithTraverser(t => t.get().in(DescribedBy).exists)
       .repeat(_.in(ModifiedBy))
   }
 
-  def getRawMetadataForBlob(v: Vertex): GremlinScala[Vertex, _] = {
-    v.out(TranslatedFrom)
+  def getRawMetadataForBlob(gs: GremlinScala[Vertex, _]):
+  GremlinScala[Vertex, _] = {
+    gs.out(TranslatedFrom)
   }
 
   implicit class VertexImplicits(v: Vertex) {
     /**
       * 'lift' a Vertex into a GremlinScala[Vertex, _] pipeline
+      *
       * @return a query pipeline based on the vertex
       */
     def lift: GremlinScala[Vertex, _] = v.graph.V(v.id)
   }
 
   implicit class GremlinScalaImplicits(gs: GremlinScala[Vertex, _]) {
-    def findCanonicalXor: Xor[CanonicalNotFound, Canonical] = {
-      val result = gs.flatMap(getCanonical)
-        .toCC[Canonical]
-        .headOption
-
-      Xor.fromOption(result, CanonicalNotFound())
+    private def traverseAndExtract[Err <: GraphError]
+    (f: GremlinScala[Vertex, _] => GremlinScala[Vertex, _])(otherwise: Err):
+    Xor[Err, Vertex] = {
+      val result = f(gs).headOption
+      Xor.fromOption(result, otherwise)
     }
 
-    def findAuthorXor: Xor[CanonicalNotFound, Canonical] = {
-      val result = gs.flatMap(getAuthor)
-        .toCC[Canonical]
-        .headOption
+    def findCanonicalXor: Xor[CanonicalNotFound, Canonical] =
+      traverseAndExtract(getCanonical) { CanonicalNotFound() }
+        .map(_.toCC[Canonical])
 
-      Xor.fromOption(result, CanonicalNotFound())
-    }
+    def findAuthorXor: Xor[CanonicalNotFound, Canonical] =
+      traverseAndExtract(getAuthor) { CanonicalNotFound() }
+        .map(_.toCC[Canonical])
 
-    def findRawMetadataXor: Xor[RawMetadataNotFound, RawMetadataBlob] = {
-      val result = gs.flatMap(getRawMetadataForBlob)
-        .toCC[RawMetadataBlob]
-        .headOption
+    def findRawMetadataXor: Xor[RawMetadataNotFound, RawMetadataBlob] =
+      traverseAndExtract(getRawMetadataForBlob) { RawMetadataNotFound() }
+        .map(_.toCC[RawMetadataBlob])
 
-      Xor.fromOption(result, RawMetadataNotFound())
-    }
+    def findRootRevision: Xor[BlobNotFound, Vertex] =
+      traverseAndExtract(getRootRevision) { BlobNotFound() }
   }
 }
