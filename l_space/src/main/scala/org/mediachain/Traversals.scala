@@ -30,7 +30,6 @@ object Traversals {
       .has(RawMetadataBlob.Keys.blob, raw.blob)
   }
 
-
   def getCanonical(v: Vertex): GremlinScala[Vertex, _] = {
     v.lift
       .untilWithTraverser {t =>
@@ -57,6 +56,14 @@ object Traversals {
 
   def getRawMetadataForBlob(v: Vertex): GremlinScala[Vertex, _] = {
     v.out(TranslatedFrom)
+  }
+
+  def getSubtree(gs: GremlinScala[Vertex, _], stepLabel: StepLabel[Graph]): GremlinScala[Vertex, _] = {
+      gs
+      .untilWithTraverser(t => (t.get.outE(DescribedBy).notExists()
+        && t.get.outE(ModifiedBy).notExists()
+        && t.get.outE(AuthoredBy).notExists()))
+      .repeat(_.outE.subgraph(stepLabel).inV)
   }
 
   implicit class VertexImplicits(v: Vertex) {
@@ -90,6 +97,14 @@ object Traversals {
         .headOption
 
       Xor.fromOption(result, RawMetadataNotFound())
+    }
+
+    def findSubtreeXor: Xor[SubtreeError, Graph] = {
+      val stepLabel = StepLabel[Graph]("subtree")
+      val result = getSubtree(gs, stepLabel)
+        .cap(stepLabel)
+        .headOption
+      Xor.fromOption(result, SubtreeError())
     }
   }
 }
