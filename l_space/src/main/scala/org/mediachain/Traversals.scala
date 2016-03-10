@@ -34,7 +34,7 @@ object Traversals {
     gs.untilWithTraverser {t =>
       t.get.label == "Canonical" ||
         t.get.in(DescribedBy, ModifiedBy).notExists
-    }.repeat(_.in(ModifiedBy, DescribedBy))
+    }.repeat(_.in(ModifiedBy, DescribedBy)).hasLabel[Canonical]
   }
 
   def getAuthor(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
