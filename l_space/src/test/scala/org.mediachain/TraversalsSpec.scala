@@ -108,6 +108,7 @@ object TraversalsSpec extends
 //      .headOption
 //
 //    queriedCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
+    pending
   }
 
   def findsCanonicalForRevisedBlob = { fixtures: TraversalsFixtures =>
@@ -117,6 +118,7 @@ object TraversalsSpec extends
 //      .headOption
 //
 //    photoRevCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
+    pending
   }
 
   def findsAuthorForPhotoBlob = { fixtures: TraversalsFixtures =>
@@ -126,6 +128,7 @@ object TraversalsSpec extends
 //      .headOption
 //
 //    queriedAuthorCanonicalID must beSome(fixtures.zaphodCanonical.canonicalID)
+    pending
   }
 
   def findsRawForBlob = { fixtures: TraversalsFixtures =>
@@ -135,16 +138,14 @@ object TraversalsSpec extends
 //      .headOption
 //
 //    queriedRawString must beSome(fixtures.rawZaphod.blob)
+    pending
   }
 
   def findsRootRevision = { fixtures: TraversalsFixtures =>
-    val f = SUT.getRootRevision.compose(SUT.photoBlobsWithExactMatch.tupled)
-//    val rootRevV = SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto)
-//      .flatMap(SUT.getRootRevision)
-//      .headOption
+    val rootRevV = SUT.getRootRevision(SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.revisedPhoto))
+      .headOption
 
-//    rootRevV must beSome(fixtures.photoVertex)
-    ???
+    rootRevV must beSome(fixtures.photoVertex)
   }
 
   def liftsVertex = { fixtures: TraversalsFixtures =>
