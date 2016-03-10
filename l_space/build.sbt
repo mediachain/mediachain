@@ -13,7 +13,8 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats" % "0.4.1",
   "com.chuusai" %% "shapeless" % "2.2.5",
   "org.json4s" %% "json4s-jackson" % "3.2.11",
-  "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.4.0"
+  "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.4.0",
+  "com.jsuereth" % "gpg-library_2.10" % "0.8.3"
 )
 
 
