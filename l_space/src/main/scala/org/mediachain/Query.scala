@@ -26,14 +26,6 @@ object Query {
       .findCanonicalXor
   }
 
-  def rootRevisionVertexForBlob[T <: MetadataBlob](graph: Graph, blob: T):
-  Xor[BlobNotFound, Vertex] = {
-    val result = graph.V.flatMap(Traversals.getRootRevision)
-      .headOption
-
-    Xor.fromOption(result, BlobNotFound())
-  }
-
   def findCanonicalForBlob(graph: Graph, blobID: ElementID):
   Xor[CanonicalNotFound, Canonical] = {
     graph.V(blobID).findCanonicalXor
