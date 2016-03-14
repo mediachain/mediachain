@@ -23,7 +23,7 @@ object MomaLoader {
     )
   }
 
-  def jsonToPhotoBlob(json: JObject): PhotoBlob = {
+  def jsonToPhotoBlob(json: JValue): PhotoBlob = {
     implicit val formats = DefaultFormats
     json.extract[MomaPhotoBlob].asPhotoBlob
   }
@@ -116,6 +116,18 @@ object MomaLoader {
       fields <- parseFields(parser)
       _      <- parseToken(parser, JsonToken.END_OBJECT)
     } yield JObject(fields)
+  }
+
+  def loadPhotoBlobs(filename: String): Streaming[PhotoBlob] = {
+    val jf = new JsonFactory
+    val parser = jf.createParser(new File(filename))
+
+    parser.nextToken
+
+    parseJArray(parser).flatMap {
+      case Xor.Right(json) => Streaming(jsonToPhotoBlob(json))
+      case _ => Streaming.empty
+    }
   }
 }
 
