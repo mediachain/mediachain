@@ -67,7 +67,7 @@ object MultiHash {
 
   def fromBytes(multihash: Array[Byte]): Xor[MultiHashError, MultiHash] = {
     val index = multihash(0)
-    val hash = multihash.slice(2, multihash.length)
+    val hash = multihash.drop(2)
     val hashTypeXor: Xor[MultiHashError, HashType] =
       Xor.fromOption(lookup.get(index), UnknownMultiHashType("Unknown MultiHash type " + index))
 
