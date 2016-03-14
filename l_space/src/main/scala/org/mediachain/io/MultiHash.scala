@@ -95,9 +95,7 @@ class MultiHash private (val hashType: HashType, val hash: Array[Byte]) {
   }
 
   def hex: String = {
-    bytes.map { b: Byte =>
-      String.format("%x", b&0xff)
-    }.foldLeft("")(_ + _)
+    bytes.map("%02x".format(_)).mkString
   }
 
   def base58: String = {
