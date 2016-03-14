@@ -1,10 +1,9 @@
 package org.mediachain.io
 
 
-import java.security.{Security, NoSuchAlgorithmException}
-
 import cats.data.Xor
 import org.mediachain.io.MultiHash.HashType
+
 
 sealed abstract class MultiHashError
 object MultiHashError {
@@ -17,29 +16,23 @@ object MultiHashError {
 object MultiHash {
   import java.security.MessageDigest
   import org.mediachain.io.MultiHashError._
-  import org.bouncycastle.jce.provider.BouncyCastleProvider
-
-  // Add support for SHA-3 and BLAKE2b digests
-  Security.addProvider(new BouncyCastleProvider)
 
   sealed abstract class HashType(val name: String, val index: Byte, val length: Byte)
 
-  case object sha1 extends HashType("SHA1", 0x11, 20)
-  case object sha256 extends HashType("SHA256", 0x12, 32)
-  case object sha512 extends HashType("SHA512", 0x13, 64)
-  case object sha3 extends HashType("SHA3-512", 0x14, 64)
-  case object blake2b extends HashType("BLAKE2b-512", 0x40, 64)
-
-  // Leaving out blake2s, since there's no convenient java implementation
-  // case object blake2s extends HashType("BLAKE2s", 0x41, 32)
+  case object sha1 extends HashType("SHA-1", 0x11, 20)
+  case object sha256 extends HashType("SHA-256", 0x12, 32)
+  case object sha512 extends HashType("SHA-512", 0x13, 64)
+  case object sha3 extends HashType("SHA-3", 0x14, 64)
+  case object blake2b extends HashType("BLAKE2b", 0x40, 64)
+  case object blake2s extends HashType("BLAKE2s", 0x41, 32)
 
   val lookup: Map[Byte, HashType] = Map[Byte, HashType](
     sha1.index -> sha1,
     sha256.index -> sha256,
     sha512.index -> sha512,
     sha3.index -> sha3,
-    blake2b.index -> blake2b
-    // blake2s.index -> blake2s
+    blake2b.index -> blake2b,
+    blake2s.index -> blake2s
   )
 
   /**
@@ -49,37 +42,13 @@ object MultiHash {
     * @param contents an array of bytes to hash
     * @return a MultiHash describing the hashed contents
     */
-  def hashWithSHA256(contents: Array[Byte]): MultiHash = {
-    hashWith(sha256, contents)
-  }
+  def usingSHA_256(contents: Array[Byte]): MultiHash = {
+    val digest = MessageDigest.getInstance("SHA-256")
 
-
-  /**
-    * Return a MultiHash of `contents` using the provided `hashType`
-    *
-    * @param hashType The HashType for the algorithm you want to use
-    * @param contents An array of bytes to hash
-    * @return A MultiHash for `contents` that uses the given digest type
-    */
-  def hashWith(hashType: HashType, contents: Array[Byte]): MultiHash = {
-    val md = MessageDigest.getInstance(hashType.name, "BC")
-
-    fromHash(hashType, md.digest(contents))
-      .getOrElse(throw new Exception("MultiHash creation failed"))
-  }
-
-
-  /**
-    * Check if `contents` produces the same hash output as `multiHash`.
-    *
-    * @param contents An array of bytes to verify
-    * @param multiHash A MultiHash to compare with
-    * @return  a `Boolean` indicating whether `contents` produces the same
-    *         hash output as `multiHash`
-    */
-  def verify(contents: Array[Byte], multiHash: MultiHash): Boolean = {
-    hashWith(multiHash.hashType, contents).bytes
-      .sameElements(multiHash.bytes)
+    // Creating a MultiHash from a valid SHA-256 digest should never fail,
+    // so it seems like a decent candidate for an actual Exception
+    fromHash(sha256, digest.digest(contents))
+      .getOrElse(throw new IllegalStateException("Creation of SHA-256 MultiHash failed."))
   }
 
 
