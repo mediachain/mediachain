@@ -5,61 +5,117 @@ import org.json4s.jackson.JsonMethods._
 import com.fasterxml.jackson.core.{JsonParser, JsonFactory}
 import com.fasterxml.jackson.core.JsonToken
 import java.io.File
-import cats.data.Streaming
+import cats.data.{Xor, Streaming}
 import cats.implicits._
 import org.mediachain.Types.{Person, PhotoBlob}
 
 object MomaLoader {
-  def loadPhotoBlob(parser: JsonParser): PhotoBlob = {
-    var data = Map[String, String]()
-
-    assert(parser.getCurrentToken == JsonToken.START_OBJECT)
-
-    while (parser.nextToken != JsonToken.END_OBJECT) {
-      parser.getCurrentToken match {
-        case JsonToken.FIELD_NAME =>
-          val name = parser.getCurrentName
-          parser.nextToken
-          name match {
-            case "Title" | "Medium" | "Date" | "Artist" =>
-              data = data + (name -> parser.getValueAsString)
-            case _ => ()
-          }
-        case _ => ()
-      }
-    }
-
-    PhotoBlob(
-      None,
-      data.getOrElse("Title", ""),
-      data.getOrElse("Medium", ""),
-      data.getOrElse("Date", ""),
-      Some(Person(None, data.getOrElse("Artist", "")))
+  case class MomaPhotoBlob(Title: String,
+                           Medium: String,
+                           Date: String,
+                           Artist: String) {
+    def asPhotoBlob: PhotoBlob = PhotoBlob(
+      id = None,
+      title = Title,
+      description = Medium,
+      date = Date,
+      author = Some(Person(id = None, Artist))
     )
   }
 
-  def loadBlobList[T](filename: String, objParser: (JsonParser => T)):
-  Streaming[T] = {
-    val jf = new JsonFactory()
-    val parser = jf.createParser(new File(filename))
+  def jsonToPhotoBlob(json: JObject): PhotoBlob = {
+    implicit val formats = DefaultFormats
+    json.extract[MomaPhotoBlob].asPhotoBlob
+  }
 
-    assert(parser.nextToken() == JsonToken.START_ARRAY)
+  def parseToken(parser: JsonParser, token: JsonToken): Xor[String, Unit] = {
+    val curToken = parser.getCurrentToken
+    if (curToken == token) {
+      parser.nextToken
+      Xor.right({})
+    } else {
+      Xor.left(s"Invalid token. Expected $token, got $curToken.")
+    }
+  }
 
-    def getObject: Option[T] = {
-      if (parser.nextToken == JsonToken.END_ARRAY) {
-        None
+  def parseJArray(parser: JsonParser):
+  Streaming[Xor[String, JValue]] = {
+    def helper: Streaming[Xor[String, JValue]] = {
+      if (parser.getCurrentToken == JsonToken.END_ARRAY) {
+        Streaming.empty
       } else {
-        Some(objParser(parser))
+        parseJValue(parser) match {
+          case r@Xor.Right(_) => r %:: helper
+          case l => l %:: Streaming.empty[Xor[String, JValue]]
+        }
       }
     }
 
-    def getObjectStream: Streaming[T] = {
-      getObject match {
-        case Some(obj) => obj %:: getObjectStream
-        case None      => Streaming.empty[T]
+    parseToken(parser, JsonToken.START_ARRAY) match {
+      case Xor.Right(_)  => helper
+      case Xor.Left(msg) => Streaming(Xor.left(msg))
+    }
+  }
+
+  def parseSubJArray(parser: JsonParser): Xor[String, JArray] = {
+    def helper(results: List[JValue]): Xor[String, List[JValue]] = {
+      if (parser.getCurrentToken == JsonToken.END_ARRAY) {
+        Xor.right(results.reverse)
+      } else {
+        parseJValue(parser).flatMap(result => helper(result :: results))
       }
     }
 
-    getObjectStream
+    for {
+      _ <- parseToken(parser, JsonToken.START_ARRAY)
+      objects <- helper(List())
+    } yield JArray(objects)
+  }
+
+  def parseJValue(parser: JsonParser): Xor[String, JValue] = {
+    parser.getCurrentToken match {
+      case JsonToken.START_OBJECT => parseJOBject(parser)
+      case JsonToken.START_ARRAY => parseSubJArray(parser)
+      case JsonToken.VALUE_FALSE | JsonToken.VALUE_TRUE =>
+        Xor.right(JBool(parser.getBooleanValue))
+      case JsonToken.VALUE_STRING => Xor.right(JString(parser.getText))
+      case JsonToken.VALUE_NUMBER_INT => Xor.right(JInt(parser.getIntValue))
+      case JsonToken.VALUE_NUMBER_FLOAT =>
+        Xor.right(JDouble(parser.getDoubleValue))
+      case JsonToken.VALUE_NULL => Xor.right(JNull(0))
+      case tok => Xor.left(s"Unrecognized token: $tok")
+    }
+  }
+
+  def parseField(parser: JsonParser): Xor[String, JField] = {
+    for {
+      _ <- parseToken(parser, JsonToken.FIELD_NAME)
+      field = parser.getCurrentName
+      value <- parseJValue(parser)
+    } yield {
+      parser.nextToken
+      (field, value)
+    }
+  }
+
+  def parseFields(parser: JsonParser): Xor[String, List[JField]] = {
+    def helper(results: List[JField]): Xor[String, List[JField]] = {
+      if (parser.getCurrentToken == JsonToken.FIELD_NAME) {
+        parseField(parser).flatMap(result => helper(result :: results))
+      } else {
+        Xor.right(results.reverse)
+      }
+    }
+
+    helper(List())
+  }
+
+  def parseJOBject(parser: JsonParser): Xor[String, JObject] = {
+    for {
+      _      <- parseToken(parser, JsonToken.START_OBJECT)
+      fields <- parseFields(parser)
+      _      <- parseToken(parser, JsonToken.END_OBJECT)
+    } yield JObject(fields)
   }
 }
+
