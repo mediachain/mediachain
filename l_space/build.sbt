@@ -14,7 +14,8 @@ libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.2.5",
   "org.json4s" %% "json4s-jackson" % "3.2.11",
   "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.4.0",
-  "com.jsuereth" % "gpg-library_2.10" % "0.8.3"
+  "com.jsuereth" % "gpg-library_2.10" % "0.8.3",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.54"
 )
 
 
