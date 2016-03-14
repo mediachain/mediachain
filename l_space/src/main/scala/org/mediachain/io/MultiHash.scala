@@ -20,8 +20,8 @@ object MultiHash {
   sealed abstract class HashType(val name: String, val index: Byte, val length: Byte)
 
   case object sha1 extends HashType("SHA-1", 0x11, 20)
-  case object sha256 extends HashType("SHA-2 256", 0x12, 32)
-  case object sha512 extends HashType("SHA-2 512", 0x13, 64)
+  case object sha256 extends HashType("SHA-256", 0x12, 32)
+  case object sha512 extends HashType("SHA-512", 0x13, 64)
   case object sha3 extends HashType("SHA-3", 0x14, 64)
   case object blake2b extends HashType("BLAKE2b", 0x40, 64)
   case object blake2s extends HashType("BLAKE2s", 0x41, 32)
@@ -60,7 +60,7 @@ object MultiHash {
       Xor.left(InvalidHashLength("Hash type " + hashType.name + " has length of " +
         hashType.length + ", but you gave me " + hash.length))
     } else {
-      Xor.right(new MultiHash(hashType, hash))
+      Xor.right(MultiHash(hashType, hash))
     }
   }
 
@@ -91,7 +91,7 @@ object MultiHash {
 }
 
 
-class MultiHash private (val hashType: HashType, val hash: Array[Byte]) {
+case class MultiHash private (hashType: HashType, hash: Array[Byte]) {
 
   def bytes: Array[Byte] = {
     val header = Array[Byte](hashType.index, hashType.length)
@@ -105,4 +105,6 @@ class MultiHash private (val hashType: HashType, val hash: Array[Byte]) {
   def base58: String = {
     Base58.encode(bytes)
   }
+
+  override def toString: String = s"MultiHash[${hashType.name}]: $base58"
 }
