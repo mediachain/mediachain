@@ -42,9 +42,13 @@ object MultiHash {
     * @param contents an array of bytes to hash
     * @return a MultiHash describing the hashed contents
     */
-  def usingSHA_256(contents: Array[Byte]): Xor[MultiHashError, MultiHash] = {
+  def usingSHA_256(contents: Array[Byte]): MultiHash = {
     val digest = MessageDigest.getInstance("SHA-256")
+
+    // Creating a MultiHash from a valid SHA-256 digest should never fail,
+    // so it seems like a decent candidate for an actual Exception
     fromHash(sha256, digest.digest(contents))
+      .getOrElse(throw new IllegalStateException("Creation of SHA-256 MultiHash failed."))
   }
 
 
