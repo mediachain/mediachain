@@ -1,6 +1,6 @@
 # How to contribute
 
-Welcome to the L-SPACE repo. This is where most work on [Mediachain](https://medium.com/mine-labs/introducing-mediachain-a696f8fd2035) takes place. Please come find us in #tech on the [mediachain slack](https://mediachain-slack.herokuapp.com/)
+Welcome to the L-SPACE repo. This is where most work on [Mediachain](https://medium.com/mine-labs/introducing-mediachain-a696f8fd2035) takes place. Please come find us in [#tech](https://mediachain.slack.com/messages/tech/) on the [mediachain slack](https://mediachain-slack.herokuapp.com/)
 
 Here are some important resources:
 
