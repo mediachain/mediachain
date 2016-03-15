@@ -10,7 +10,6 @@ import org.json4s.JValue
 class SignatureChecker(pubkey: PublicKeyLike) {
   PGP.init
 
-
   def verifySignedString(string: String, signature: String): Boolean = {
     pubkey.verifySignatureString(string, signature)
   }
