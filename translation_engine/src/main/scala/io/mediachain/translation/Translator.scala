@@ -1,4 +1,4 @@
-package org.mediachain.translation
+package io.mediachain.translation
 
 trait Translator {
   val name: String

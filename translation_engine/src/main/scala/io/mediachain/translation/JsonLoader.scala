@@ -1,6 +1,6 @@
-package org.mediachain.translation
+package io.mediachain.translation
 
-import org.mediachain.translation.TranslationError.{ResourceNotReadable, ParsingFailed}
+import io.mediachain.translation.TranslationError.{ResourceNotReadable, ParsingFailed}
 
 
 object JsonLoader {

@@ -1,13 +1,13 @@
-package org.mediachain.translation.moma
+package io.mediachain.translation.moma
 
 import java.io.File
 
 import cats.data.{Streaming, Xor}
 import com.fasterxml.jackson.core.JsonFactory
 import org.json4s._
-import org.mediachain.Types.{Person, PhotoBlob}
-import org.mediachain.translation.JsonLoader.parseJArray
-import org.mediachain.translation.Translator
+import io.mediachain.Types.{Person, PhotoBlob}
+import io.mediachain.translation.JsonLoader.parseJArray
+import io.mediachain.translation.Translator
 
 object MomaTranslator extends Translator {
   val name = "MomaCollectionTranslator"

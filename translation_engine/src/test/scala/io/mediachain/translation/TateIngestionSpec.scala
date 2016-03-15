@@ -1,11 +1,11 @@
-package org.mediachain.translation
+package io.mediachain.translation
 
 import cats.data.Xor
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
-import org.mediachain._
-import org.mediachain.Types._
-import org.mediachain.Traversals.GremlinScalaImplicits
-import org.mediachain.translation.tate.TateTranslator.TateArtworkContext
+import io.mediachain._
+import io.mediachain.Types._
+import io.mediachain.Traversals.GremlinScalaImplicits
+import io.mediachain.translation.tate.TateTranslator.TateArtworkContext
 import org.specs2.Specification
 import gremlin.scala._
 

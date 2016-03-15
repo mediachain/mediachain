@@ -19,10 +19,10 @@ unmanagedClasspath in Test += baseDirectory.value / "test-resources"
 // sbt and orient / gremlin
 testOptions in Test += Tests.Setup( loader => {
   println("test setup")
-  loader.loadClass("org.mediachain.SBTSetupHook").newInstance
+  loader.loadClass("io.mediachain.SBTSetupHook").newInstance
 })
 
 testOptions in Test += Tests.Cleanup( loader => {
   println("test cleanup")
-  loader.loadClass("org.mediachain.SBTCleanupHook").newInstance
+  loader.loadClass("io.mediachain.SBTCleanupHook").newInstance
 })

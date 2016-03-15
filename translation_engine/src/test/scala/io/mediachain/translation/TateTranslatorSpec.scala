@@ -1,7 +1,7 @@
-package org.mediachain.translation
+package io.mediachain.translation
 
-import org.mediachain.Types._
-import org.mediachain.XorMatchers
+import io.mediachain.Types._
+import io.mediachain.XorMatchers
 import org.specs2.Specification
 import tate.{TateTranslator => SUT}
 

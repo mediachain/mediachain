@@ -1,7 +1,7 @@
-package org.mediachain.translation
+package io.mediachain.translation
 
 import cats.data.Xor
-import org.mediachain.Types.{RawMetadataBlob, MetadataBlob}
+import io.mediachain.Types.{RawMetadataBlob, MetadataBlob}
 
 trait TranslationContext[BlobType <: MetadataBlob] {
   val id: String
