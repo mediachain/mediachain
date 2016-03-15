@@ -27,7 +27,7 @@ object JsonParser {
 
   def jsonObjectForHashable[H <: Hashable](h: H): JObject = {
     val asJValue = Extraction.decompose(h)
-    val filtered = asJValue filterField {
+    val filtered = asJValue.filterField {
       case JField(name, _) if h.excludedFields.contains(name) => false
       case _ => true
     }
