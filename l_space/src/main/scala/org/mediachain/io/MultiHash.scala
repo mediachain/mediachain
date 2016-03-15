@@ -2,6 +2,7 @@ package org.mediachain.io
 
 
 import cats.data.Xor
+import org.mediachain.Types.Hashable
 import org.mediachain.io.MultiHash.HashType
 
 
@@ -42,7 +43,7 @@ object MultiHash {
     * @param contents an array of bytes to hash
     * @return a MultiHash describing the hashed contents
     */
-  def usingSHA_256(contents: Array[Byte]): MultiHash = {
+  def hashWithSHA256(contents: Array[Byte]): MultiHash = {
     val digest = MessageDigest.getInstance("SHA-256")
 
     // Creating a MultiHash from a valid SHA-256 digest should never fail,
@@ -51,6 +52,11 @@ object MultiHash {
       .getOrElse(throw new IllegalStateException("Creation of SHA-256 MultiHash failed."))
   }
 
+
+  def forHashable[H <: Hashable](h: H): MultiHash = {
+    val bytes = CborSerializer.bytesForHashable(h)
+    hashWithSHA256(bytes)
+  }
 
   def fromHash(hashType: HashType, hash: Array[Byte]): Xor[MultiHashError, MultiHash] = {
     if (hash.length > 127) {
