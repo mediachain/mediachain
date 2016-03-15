@@ -1,4 +1,4 @@
-package org.mediachain.translation
+package io.mediachain.translation
 
 sealed abstract class TranslationError
 

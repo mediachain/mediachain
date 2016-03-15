@@ -1,4 +1,4 @@
-package org.mediachain.translation
+package io.mediachain.translation
 
 import org.specs2.Specification
 import org.json4s.JObject

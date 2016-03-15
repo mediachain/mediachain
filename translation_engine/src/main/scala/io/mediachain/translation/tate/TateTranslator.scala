@@ -1,6 +1,6 @@
-package org.mediachain.translation.tate
+package io.mediachain.translation.tate
 
-import org.mediachain.translation.{JsonLoader, Translator, TranslationContext}
+import io.mediachain.translation.{JsonLoader, Translator, TranslationContext}
 
 
 object TateTranslator extends Translator {
@@ -8,8 +8,8 @@ object TateTranslator extends Translator {
   val version = 1
 
   import cats.data.Xor
-  import org.mediachain.translation.TranslationError, TranslationError.InvalidFormat
-  import org.mediachain.Types._
+  import io.mediachain.translation.TranslationError, TranslationError.InvalidFormat
+  import io.mediachain.Types._
 
   import org.json4s._
   import com.fasterxml.jackson.core.JsonFactory
