@@ -6,6 +6,7 @@ import java.util
 import cats.data.Xor
 import org.mediachain.Types.Hashable
 import org.mediachain.io.MultiHash.HashType
+import org.mediachain.io.ParsingError.ConversionToJsonFailed
 
 
 sealed abstract class MultiHashError
@@ -56,9 +57,9 @@ object MultiHash {
   }
 
 
-  def forHashable[H <: Hashable](h: H): MultiHash = {
-    val bytes = CborSerializer.bytesForHashable(h)
-    hashWithSHA256(bytes)
+  def forHashable[H <: Hashable](h: H): Xor[ConversionToJsonFailed, MultiHash] = {
+    CborSerializer.bytesForHashable(h)
+        .map(hashWithSHA256)
   }
 
   def fromHash(hashType: HashType, hash: Array[Byte]): Xor[MultiHashError, MultiHash] = {

@@ -35,9 +35,14 @@ class ObjectSigner(signingKey: SecretKey) {
 
 
   def signatureForHashable[H <: Hashable](h: H, passphrase: Array[Char])
-  : Xor[SigningError, String] = {
-    val bytes = CborSerializer.bytesForHashable(h)
-    signBytes(bytes, passphrase)
+  : Xor[MediachainError, String] = {
+    val bytesXor = CborSerializer.bytesForHashable(h)
+        .leftMap(MediachainError.Parsing)
+
+    bytesXor.flatMap { bytes =>
+      signBytes(bytes, passphrase)
+          .leftMap(MediachainError.Signature)
+    }
   }
 
   // TODO: these names are kind of unwieldy... find better ones?
