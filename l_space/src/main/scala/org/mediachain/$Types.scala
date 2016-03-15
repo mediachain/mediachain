@@ -16,6 +16,7 @@ package org.mediachain
 
 import com.orientechnologies.orient.core.id.ORecordId
 import org.mediachain.io.MultiHash
+import org.mediachain.io.ParsingError.ConversionToJsonFailed
 
 object Types {
   import gremlin.scala._
@@ -44,7 +45,7 @@ object Types {
   trait Hashable {
     val excludedFields: List[String] = List("id")
 
-    def multiHash: MultiHash =
+    def multiHash: Xor[ConversionToJsonFailed, MultiHash] =
       MultiHash.forHashable(this)
   }
 

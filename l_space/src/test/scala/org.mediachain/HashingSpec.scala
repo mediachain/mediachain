@@ -1,9 +1,10 @@
 package org.mediachain
 
 import com.orientechnologies.orient.core.id.ORecordId
+import org.mediachain.io.MultiHash
 import org.specs2.Specification
 
-object HashingSpec extends Specification {
+object HashingSpec extends Specification with XorMatchers {
   import org.mediachain.Types._
 
   def is =
@@ -15,7 +16,11 @@ object HashingSpec extends Specification {
     val canonical = Canonical(None, "foobar")
     val canonicalWithId = Canonical(Some(new ORecordId("#0:1")), "foobar")
 
-    canonical.multiHash must_== canonicalWithId.multiHash
+    canonical.multiHash must beRightXor { withoutId: MultiHash =>
+      canonicalWithId.multiHash must beRightXor { withId: MultiHash =>
+        withId must_== withoutId
+      }
+    }
   }
 
 }
