@@ -1,7 +1,8 @@
-package org.mediachain
+package io.mediachain
+
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
-import org.mediachain.Types._
-import org.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
+import io.mediachain.Types._
+import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
 import org.specs2.Specification
 import gremlin.scala._
 import cats.data.Xor

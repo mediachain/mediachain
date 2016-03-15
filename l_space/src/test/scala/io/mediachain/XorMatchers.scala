@@ -1,4 +1,4 @@
-package org.mediachain
+package io.mediachain
 
 import org.specs2.matcher.Matcher
 import org.specs2.execute.{Failure, Result}

@@ -4,7 +4,7 @@ version := "0.0.1-WORKPRINT"
 
 scalaVersion := "2.11.7"
 
-mainClass := Some("org.mediachain.LSpace")
+mainClass := Some("io.mediachain.LSpace")
 
 libraryDependencies ++= Seq(
   "com.michaelpollmeier" % "gremlin-scala_2.11" % "3.1.1-incubating.1",
@@ -24,20 +24,20 @@ libraryDependencies ++= Seq(
 // sbt and orient / gremlin
 testOptions in Test += Tests.Setup( loader => {
   println("test setup")
-  loader.loadClass("org.mediachain.SBTSetupHook").newInstance
+  loader.loadClass("io.mediachain.SBTSetupHook").newInstance
 })
 
 testOptions in Test += Tests.Cleanup( loader => {
   println("test cleanup")
-  loader.loadClass("org.mediachain.SBTCleanupHook").newInstance
+  loader.loadClass("io.mediachain.SBTCleanupHook").newInstance
 })
 
 initialCommands in console :=
   """
     import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
     import gremlin.scala._
-    import org.mediachain.Types._
-    import org.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
+    import io.mediachain.Types._
+    import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
     lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
     println("It's a UNIX system! I know this!")
   """
