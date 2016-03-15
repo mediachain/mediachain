@@ -5,12 +5,13 @@ import java.io.{ByteArrayOutputStream, ByteArrayInputStream}
 import cats.data.Xor
 import com.jsuereth.pgp._
 import org.json4s.JValue
-
+import org.mediachain.MediachainError
+import org.mediachain.io.{CborSerializer, JsonParser}
+import org.mediachain.signatures.SigningError._
 
 
 class ObjectSigner(signingKey: SecretKey) {
-  import org.mediachain.io.{CborMethods => Cbor}
-  import org.mediachain.signatures.SigningError._
+  PGP.init
 
 
   def signText(text: String, passphrase: Array[Char]): Xor[SigningError, String] = {
@@ -19,10 +20,11 @@ class ObjectSigner(signingKey: SecretKey) {
     }
   }
 
+  // TODO: these names are kind of unwieldy... find better ones?
 
   def signCborRepresentationOfJsonValue(json: JValue, passphrase: Array[Char])
   : Xor[SigningError, String] = {
-    val canonicalCbor = Cbor.bytes(Cbor.render(json))
+    val canonicalCbor = CborSerializer.bytesForJsonValue(json)
     catchIncorrectPassphrase {
       val input = new ByteArrayInputStream(canonicalCbor)
       val output = new ByteArrayOutputStream
@@ -32,4 +34,13 @@ class ObjectSigner(signingKey: SecretKey) {
     }
   }
 
+
+  def signCborRepresentationOfJsonText(jsonString: String, passphrase: Array[Char])
+  :Xor[MediachainError, String] = {
+    for {
+      parsed <- JsonParser.parseJsonString(jsonString).leftMap(MediachainError.Parsing)
+      signature <- signCborRepresentationOfJsonValue(parsed, passphrase)
+        .leftMap(MediachainError.Signature)
+    } yield signature
+  }
 }
