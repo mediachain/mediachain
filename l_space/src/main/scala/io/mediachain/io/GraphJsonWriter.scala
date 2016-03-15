@@ -1,4 +1,4 @@
-package org.mediachain.io
+package io.mediachain.io
 
 import java.io._
 

@@ -1,5 +1,4 @@
-package org.mediachain
-
+package io.mediachain
 
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 import org.specs2.Specification
@@ -38,7 +37,7 @@ object TraversalsSpec extends
   Specification with
   ForEach[TraversalsFixtures] with
   XorMatchers {
-  import org.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits, SUT.VertexImplicits
+  import io.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits, SUT.VertexImplicits
 
   def is =
     s2"""

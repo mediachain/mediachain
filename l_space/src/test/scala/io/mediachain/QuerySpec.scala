@@ -1,6 +1,6 @@
-package org.mediachain
+package io.mediachain
 
-import org.mediachain.Types._
+import io.mediachain.Types._
 import org.specs2.Specification
 import gremlin.scala._
 import scala.util.Random

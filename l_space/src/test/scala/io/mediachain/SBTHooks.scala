@@ -1,4 +1,4 @@
-package org.mediachain
+package io.mediachain
 
 import com.orientechnologies.orient.core.Orient
 
