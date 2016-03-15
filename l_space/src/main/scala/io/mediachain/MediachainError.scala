@@ -1,4 +1,4 @@
-package org.mediachain
+package io.mediachain
 
 import gremlin.scala.Vertex
 

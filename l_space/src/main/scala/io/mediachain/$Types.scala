@@ -12,7 +12,7 @@
   */
 
 
-package org.mediachain
+package io.mediachain
 
 import com.orientechnologies.orient.core.id.ORecordId
 
@@ -20,7 +20,7 @@ object Types {
   import gremlin.scala._
   import java.util.UUID
   import cats.data.Xor
-  import org.mediachain.GraphError._
+  import io.mediachain.GraphError._
 
   type ElementID = ORecordId
 

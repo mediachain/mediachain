@@ -1,6 +1,6 @@
-package org.mediachain
+package io.mediachain
 
-import org.mediachain.Types._
+import io.mediachain.Types._
 
 object Query {
   import gremlin.scala._
