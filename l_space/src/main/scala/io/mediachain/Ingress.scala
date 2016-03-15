@@ -8,21 +8,18 @@ import gremlin.scala._
 object Ingress {
   import Traversals.{GremlinScalaImplicits, VertexImplicits}
 
-  def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob):
-  Xor[TooManyRawBlobsError, Unit] = {
+  def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob): Unit = {
     val graph = blobV.graph
 
-    // only allow one TranslatedFrom edge from each blob vertex
-    if (blobV.lift.findRawMetadataXor.isLeft) {
-      // add the raw metadata to the graph if it doesn't already exist
-      val rawV = Traversals.rawMetadataBlobsWithExactMatch(graph.V, raw)
-        .headOption
-        .getOrElse(graph + raw)
+    // add the raw metadata to the graph if it doesn't already exist
+    val rawV = Traversals.rawMetadataBlobsWithExactMatch(graph.V, raw)
+      .headOption
+      .getOrElse(graph + raw)
 
+    // check if there's already an edge from the blob vertex to the raw metadata vertex
+    val existingBlobs = rawV.lift.in(TranslatedFrom).toSet
+    if (!existingBlobs.contains(blobV)) {
       blobV --- TranslatedFrom --> rawV
-      Xor.right({})
-    } else {
-      Xor.left(TooManyRawBlobsError(blobV))
     }
   }
 
@@ -45,7 +42,7 @@ object Ingress {
   def addPerson(graph: Graph,
                 author: Person,
                 raw: Option[RawMetadataBlob] = None):
-  Xor[TooManyRawBlobsError, Canonical] = {
+  Xor[GraphError, Canonical] = {
     // If there's an exact match already, return it,
     // otherwise create a new Person vertex and canonical
     // and return the canonical
@@ -53,17 +50,15 @@ object Ingress {
 
     val personV: Vertex = q.headOption.getOrElse(graph + author)
 
-    for {
-      _ <- raw.map(attachRawMetadata(personV, _)).getOrElse(Xor.right({}))
-    } yield {
-      graph.V(personV.id)
-        .findCanonicalXor
-        .getOrElse {
-          val canonicalV = graph + Canonical.create()
-          canonicalV --- DescribedBy --> personV
-          canonicalV.toCC[Canonical]
-        }
-    }
+    raw.foreach(attachRawMetadata(personV, _))
+
+    graph.V(personV.id)
+      .findCanonicalXor
+      .orElse {
+        val canonicalV = graph + Canonical.create()
+        canonicalV --- DescribedBy --> personV
+        Xor.right(canonicalV.toCC[Canonical])
+      }
   }
 
   def addPhotoBlob(graph: Graph,
@@ -79,10 +74,9 @@ object Ingress {
     val photoV = Traversals.photoBlobsWithExactMatch(graph.V, photo)
         .headOption.getOrElse(graph + photo)
 
+    raw.foreach(attachRawMetadata(photoV, _))
+
     for {
-      _ <- raw
-        .map(attachRawMetadata(photoV, _))
-        .getOrElse(Xor.right({}))
       _ <- author
         .map(x => x.flatMap(defineAuthorship(photoV, _)))
         .getOrElse(Xor.right({}))
