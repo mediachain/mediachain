@@ -1,11 +1,11 @@
-package org.mediachain.io
+package io.mediachain.util
 
 import com.orientechnologies.orient.core.id.ORecordId
-import org.mediachain.XorMatchers
+import io.mediachain.Types._
+import io.mediachain.XorMatchers
 import org.specs2.Specification
 
 object HashingSpec extends Specification with XorMatchers {
-  import org.mediachain.Types._
 
   def is =
     s2"""

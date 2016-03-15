@@ -1,14 +1,14 @@
-package org.mediachain.io
+package io.mediachain.util
 
-import cats.data.Xor
-import org.json4s.{MappingException, DefaultFormats, Extraction, Formats}
-import org.mediachain.Types.Hashable
-import org.mediachain.io.ParsingError.{InvalidJson, ConversionToJsonFailed}
 
 
 object CborSerializer {
+  import cats.data.Xor
+  import io.mediachain.Types.Hashable
+  import org.json4s.{MappingException, DefaultFormats, Extraction, Formats}
+  import ParsingError.{InvalidJson, ConversionToJsonFailed}
   import org.json4s.JValue
-  import org.mediachain.io.{CborMethods => Cbor}
+  import io.mediachain.util.{CborMethods => Cbor}
 
   def bytesForJsonValue(json: JValue): Array[Byte] =
     Cbor.bytes(Cbor.render(json))

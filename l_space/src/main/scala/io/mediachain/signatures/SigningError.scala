@@ -1,4 +1,4 @@
-package org.mediachain.signatures
+package io.mediachain.signatures
 
 import cats.data.Xor
 import com.jsuereth.pgp.IncorrectPassphraseException

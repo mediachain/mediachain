@@ -14,7 +14,9 @@
 
 package io.mediachain
 
+import io.mediachain.util.{ParsingError, MultiHash}
 import com.orientechnologies.orient.core.id.ORecordId
+import ParsingError.ConversionToJsonFailed
 
 object Types {
   import gremlin.scala._
@@ -22,6 +24,7 @@ object Types {
   import cats.data.Xor
   import io.mediachain.core.GraphError
   import io.mediachain.core.GraphError._
+
 
   type ElementID = ORecordId
 
@@ -47,7 +50,14 @@ object Types {
     Option(v.id).map(id => id.asInstanceOf[ElementID])
   }
 
-  trait VertexClass {
+  trait Hashable {
+    val excludedFields: List[String] = List("id")
+
+    def multiHash: Xor[ConversionToJsonFailed, MultiHash] =
+      MultiHash.forHashable(this)
+  }
+
+  trait VertexClass extends Hashable {
     def getID(): Option[ElementID]
 
     def vertex(graph: Graph): Xor[VertexNotFound, Vertex] = {

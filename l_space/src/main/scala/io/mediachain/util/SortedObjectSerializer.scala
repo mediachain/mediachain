@@ -1,9 +1,9 @@
-package org.mediachain.io
+package io.mediachain.util
 
-import com.fasterxml.jackson.databind.Module.SetupContext
-import com.fasterxml.jackson.databind.ser.Serializers
-import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.Module.SetupContext
+import com.fasterxml.jackson.databind._
+import com.fasterxml.jackson.databind.ser.Serializers
 import org.json4s._
 import org.json4s.jackson.Json4sScalaModule
 
