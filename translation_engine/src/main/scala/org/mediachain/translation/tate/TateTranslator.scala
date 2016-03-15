@@ -12,12 +12,19 @@ object TateTranslator extends Translator {
   import org.mediachain.Types._
 
   import org.json4s._
+  import com.fasterxml.jackson.core.JsonFactory
+  import java.io.File
   implicit val formats = org.json4s.DefaultFormats
 
   case class TateArtworkContext(id: String, translator: Translator = TateTranslator)
     extends TranslationContext[PhotoBlob] {
     def translate(source: String): Xor[TranslationError, (PhotoBlob, RawMetadataBlob)] = {
-      JsonLoader.loadObjectFromString(source)
+      val jf = new JsonFactory
+      val parser = jf.createParser(new File(source))
+
+      JsonLoader.parseJOBject(parser)
+        .leftMap(err =>
+          TranslationError.ParsingFailed(new RuntimeException(err)))
         .flatMap(loadArtwork)
         .map(photoBlob => {
           (photoBlob, RawMetadataBlob(None, source))
@@ -30,7 +37,6 @@ object TateTranslator extends Translator {
                              medium: Option[String],
                              dateText: Option[String],
                              contributors: List[Contributor])
-
 
   def loadArtwork(obj: JObject): Xor[TranslationError, PhotoBlob] = {
     val artwork = obj.extractOpt[Artwork]
@@ -50,5 +56,4 @@ object TateTranslator extends Translator {
 
     Xor.fromOption(result, InvalidFormat())
   }
-
 }
