@@ -2,6 +2,8 @@ import sbt._
 import Keys._
 import sbtassembly.AssemblyKeys._
 import sbtassembly._
+import complete.DefaultParsers._
+import sbt.complete._
 
 object ApplicationBuild extends Build {
   override lazy val settings = super.settings ++ Seq(
@@ -13,6 +15,17 @@ object LSpaceBuild extends Build{
   val lSpaceConfigPath = Option(System.getProperty("LSPACE_CONFIG_PATH"))
     .getOrElse("/etc/lspace/")
 
+  val partners: List[Parser[String]] = List("moma", "tate")
+  val partnerParser = partners.reduce(_ | _)
+
+  val acceptArgs = (' ' ~> partnerParser ~ (' ' ~> StringBasic))
+
+  lazy val importDump = inputKey[Unit]("Import static data dump")
+  val importDumpTask = importDump := {
+    val args: (String, String) = acceptArgs.parsed
+    println(args)
+  }
+
   lazy val scalaSettings = Seq(
     scalaVersion := "2.11.7",
     version := "0.0.1-WORKSHOP",
@@ -23,7 +36,8 @@ object LSpaceBuild extends Build{
       "org.scalacheck" %% "scalacheck" % "1.13.0" % "test",
       "com.github.scopt" %% "scopt" % "3.4.0"
     ),
-    scalacOptions in Test ++= Seq("-Yrangepos")
+    scalacOptions in Test ++= Seq("-Yrangepos"),
+    importDumpTask
   )
 
   assemblyMergeStrategy in assembly := {
@@ -39,4 +53,6 @@ object LSpaceBuild extends Build{
 
   lazy val root = (project in file("."))
     .aggregate(l_space)
+
 }
+
