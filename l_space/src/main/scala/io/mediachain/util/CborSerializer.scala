@@ -1,7 +1,5 @@
 package io.mediachain.util
 
-
-
 object CborSerializer {
   import cats.data.Xor
   import io.mediachain.Types.Hashable
