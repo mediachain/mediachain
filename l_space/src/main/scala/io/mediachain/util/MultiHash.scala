@@ -1,12 +1,12 @@
-package org.mediachain.io
-
+package io.mediachain.util
 
 import java.util
 
 import cats.data.Xor
-import org.mediachain.Types.Hashable
-import org.mediachain.io.MultiHash.HashType
-import org.mediachain.io.ParsingError.ConversionToJsonFailed
+import io.mediachain.Types.Hashable
+import io.mediachain.util.MultiHash.HashType
+import io.mediachain.util.MultiHashError._
+import io.mediachain.util.ParsingError.ConversionToJsonFailed
 
 
 sealed abstract class MultiHashError
@@ -19,7 +19,7 @@ object MultiHashError {
 
 object MultiHash {
   import java.security.MessageDigest
-  import org.mediachain.io.MultiHashError._
+
   import scala.language.implicitConversions
 
   sealed abstract class HashType(val name: String, val index: Byte, val length: Byte)

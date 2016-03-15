@@ -1,4 +1,4 @@
-package org.mediachain.io
+package io.mediachain.util
 
 import java.security.MessageDigest
 import java.util.Base64

@@ -1,18 +1,18 @@
-package org.mediachain.io
+package io.mediachain.util
 
 import java.io.IOException
 
-import org.json4s.{MappingException, Extraction}
-import org.json4s.JsonAST.{JObject, JField}
-import org.mediachain.Types.Hashable
-import org.mediachain.io.ParsingError.{ConversionToJsonFailed, InvalidJson}
+import io.mediachain.util.ParsingError.{ConversionToJsonFailed, InvalidJson}
+import org.json4s.JsonAST.{JField, JObject}
+import org.json4s.{Extraction, MappingException}
+import io.mediachain.Types.Hashable
 
 
 object JsonParser {
   import cats.data.Xor
-  import org.json4s.{DefaultFormats, JValue}
-  import org.json4s.jackson.{JsonMethods => Json}
   import com.fasterxml.jackson.core.JsonProcessingException
+  import org.json4s.jackson.{JsonMethods => Json}
+  import org.json4s.{DefaultFormats, JValue}
 
   implicit val formats = DefaultFormats
 

@@ -1,8 +1,8 @@
-package org.mediachain.signatures
+package io.mediachain.signatures
 
 import cats.data.Xor
 import com.jsuereth.pgp._
-import org.mediachain.{MediachainError, XorMatchers}
+import io.mediachain.{MediachainError, XorMatchers}
 import org.specs2.Specification
 
 object SigningSpec extends Specification with XorMatchers {

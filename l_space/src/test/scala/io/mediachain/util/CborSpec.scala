@@ -1,10 +1,10 @@
-package org.mediachain.io
+package io.mediachain.util
 
 import org.specs2.Specification
 
 object CborSpec extends Specification {
   import org.json4s.jackson.{JsonMethods => Json}
-  import org.mediachain.io.{CborMethods => Cbor}
+  import io.mediachain.util.{CborMethods => Cbor}
 
   def is =
     s2"""

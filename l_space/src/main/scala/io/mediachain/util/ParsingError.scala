@@ -1,4 +1,4 @@
-package org.mediachain.io
+package io.mediachain.util
 
 sealed abstract class ParsingError
 object ParsingError {

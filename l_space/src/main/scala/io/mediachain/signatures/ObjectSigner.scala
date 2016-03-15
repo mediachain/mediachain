@@ -1,15 +1,15 @@
-package org.mediachain.signatures
+package io.mediachain.signatures
 
 import java.io.{ByteArrayOutputStream, ByteArrayInputStream}
-import java.nio.charset.StandardCharsets
 
 import cats.data.Xor
 import com.jsuereth.pgp._
+import io.mediachain.MediachainError
+import io.mediachain.signatures.SigningError._
+import io.mediachain.Types.Hashable
+import io.mediachain.util.{CborSerializer, JsonParser}
 import org.json4s.JValue
-import org.mediachain.MediachainError
-import org.mediachain.Types.Hashable
-import org.mediachain.io.{CborSerializer, JsonParser}
-import org.mediachain.signatures.SigningError._
+
 
 
 class ObjectSigner(signingKey: SecretKey) {

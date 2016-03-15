@@ -1,11 +1,11 @@
-package org.mediachain.signatures
+package io.mediachain.signatures
 
 import java.io.ByteArrayInputStream
 
 import cats.data.Xor
 import com.jsuereth.pgp.{PGP, PublicKeyLike}
+import io.mediachain.util.{CborSerializer, ParsingError}
 import org.json4s.JValue
-import org.mediachain.io.{CborSerializer, ParsingError}
 
 class SignatureChecker(pubkey: PublicKeyLike) {
   PGP.init
