@@ -19,6 +19,7 @@ object MultiHashError {
 object MultiHash {
   import java.security.MessageDigest
   import org.mediachain.io.MultiHashError._
+  import scala.language.implicitConversions
 
   sealed abstract class HashType(val name: String, val index: Byte, val length: Byte)
 
@@ -96,6 +97,10 @@ object MultiHash {
 
   def fromBase58(base58: String): Xor[MultiHashError, MultiHash] =
     fromBytes(Base58.decode(base58))
+
+
+  implicit def toByteArray(multiHash: MultiHash): Array[Byte] =
+    multiHash.bytes
 }
 
 
