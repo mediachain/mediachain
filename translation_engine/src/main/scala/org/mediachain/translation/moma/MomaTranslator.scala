@@ -7,8 +7,12 @@ import com.fasterxml.jackson.core.JsonFactory
 import org.json4s._
 import org.mediachain.Types.{Person, PhotoBlob}
 import org.mediachain.translation.JsonLoader.parseJArray
+import org.mediachain.translation.Translator
 
-object MomaLoader {
+object MomaTranslator extends Translator {
+  val name = "MomaCollectionTranslator"
+  val version = 1
+
   /** A convenience case class for parsing JSON blobs into a more abstract form.
     *
     * @param Title Title of the work
