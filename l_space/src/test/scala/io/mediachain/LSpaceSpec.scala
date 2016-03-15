@@ -1,4 +1,4 @@
-package org.mediachain
+package io.mediachain
 
 import org.specs2._
 import org.specs2.execute.{AsResult, Result}
