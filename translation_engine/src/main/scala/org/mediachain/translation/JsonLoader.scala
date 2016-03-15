@@ -70,6 +70,11 @@ object JsonLoader {
     * In the event of a failure, the parse will stop and the end of the stream
     * will be an Xor value containing the error message.
     *
+    * An important note: despite the immutable and sharable nature of the
+    * `Streaming` type, this stream can *only be consumed once*. The `Streaming`
+    * type was chosen because of its laziness, which is important for helping us
+    * avoid memory pressure when parsing large arrays.
+    *
     * @param parser The current parser
     * @return A `Streaming` of either `JValue`s or `String` error messages
     */
