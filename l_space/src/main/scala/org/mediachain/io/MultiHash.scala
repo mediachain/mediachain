@@ -1,6 +1,8 @@
 package org.mediachain.io
 
 
+import java.util
+
 import cats.data.Xor
 import org.mediachain.Types.Hashable
 import org.mediachain.io.MultiHash.HashType
@@ -104,13 +106,25 @@ case class MultiHash private (hashType: HashType, hash: Array[Byte]) {
     header ++ hash
   }
 
+
   def hex: String = {
     bytes.map("%02x".format(_)).mkString
   }
 
+
   def base58: String = {
     Base58.encode(bytes)
   }
+
+
+  override def equals(other: Any): Boolean = other match {
+    case that: MultiHash => that.bytes.sameElements(this.bytes)
+    case _ => false
+  }
+
+
+  override def hashCode = util.Arrays.hashCode(bytes)
+
 
   override def toString: String = s"MultiHash[${hashType.name}]: $base58"
 }
