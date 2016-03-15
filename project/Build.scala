@@ -20,7 +20,8 @@ object LSpaceBuild extends Build{
     libraryDependencies ++= Seq(
       "org.specs2" %% "specs2-core" % "3.7" % "test",
       "org.specs2" %% "specs2-junit" % "3.7" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.13.0" % "test"
+      "org.scalacheck" %% "scalacheck" % "1.13.0" % "test",
+      "com.github.scopt" %% "scopt" % "3.4.0"
     ),
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
