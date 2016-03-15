@@ -56,5 +56,4 @@ object TateTranslator extends Translator {
 
     Xor.fromOption(result, InvalidFormat())
   }
-
 }
