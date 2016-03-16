@@ -64,7 +64,6 @@ object Types {
     // The default marshaller will only store the constructor parameters for a case class.
     // Since the hash is a computed property, it doesn't get stored by default.
     // This method creates a new `Marshallable` that will include the `multiHash`
-    // if it
 
     def marshaller[CC <: Hashable with Product : Marshallable]: Marshallable[CC] = {
       new Marshallable[CC] {
