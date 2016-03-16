@@ -91,13 +91,13 @@ object QuerySpec extends
       extraPhotoBlobV --- AuthoredBy --> personCanonicalV
 
       QueryObjects(
-        Person(personV).get,
-        Canonical(personCanonicalV),
-        PhotoBlob(photoBlobV).get,
-        Canonical(canonicalV),
-        PhotoBlob(modifiedBlobV).get,
-        PhotoBlob(extraPhotoBlobV).get,
-        Canonical(extraPhotoBlobCanonicalV))
+        personV.toCC[Person],
+        personCanonicalV.toCC[Canonical],
+        photoBlobV.toCC[PhotoBlob],
+        canonicalV.toCC[Canonical],
+        modifiedBlobV.toCC[PhotoBlob],
+        extraPhotoBlobV.toCC[PhotoBlob],
+        extraPhotoBlobCanonicalV.toCC[Canonical])
     }
   }
 

@@ -38,7 +38,7 @@ object Types {
   /**
     * Convert from the AnyRef returned by Vertex.id()
     * to an Option[ElementID]
- *
+    *
     * @param v a Vertex
     * @return Some(ElementID), or None if no id exists
     */
@@ -78,13 +78,6 @@ object Types {
     def create(): Canonical = {
       Canonical(None, UUID.randomUUID.toString)
     }
-
-    def apply(v: Vertex): Canonical = {
-      Canonical(
-        vertexId(v),
-        v.value[String]("canonicalID")
-      )
-    }
   }
 
   sealed trait MetadataBlob extends VertexClass
@@ -115,19 +108,6 @@ object Types {
     def create(name: String) = {
       Person(None, name)
     }
-
-    def apply(v: Vertex): Option[Person] = {
-      if (v.label() == "Person") {
-        Some(
-          Person(
-            vertexId(v),
-            name = v.value("name")
-          )
-        )
-      } else {
-        None
-      }
-    }
   }
 
   @label("PhotoBlob")
@@ -144,22 +124,6 @@ object Types {
       val title = Key[String]("title")
       val description = Key[String]("description")
       val date = Key[String]("date")
-    }
-
-    def apply(v: Vertex): Option[PhotoBlob] = {
-      if (v.label() == "PhotoBlob") {
-        Some(
-          PhotoBlob(
-            vertexId(v),
-            title = v.value("title"),
-            description = v.value("description"),
-            date = v.value("date"),
-            author = None // FIXME(yusef)
-          )
-        )
-      } else {
-        None
-      }
     }
   }
 }
