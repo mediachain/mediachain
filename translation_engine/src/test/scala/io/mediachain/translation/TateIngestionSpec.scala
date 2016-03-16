@@ -54,7 +54,7 @@ object TateIngestionSpec extends Specification with Orientable with XorMatchers 
         }
     }
 
-    canonicals must contain (beRightXor { canonical: Canonical =>
+    canonicals.toVector must contain (beRightXor { canonical: Canonical =>
       canonical.id must beSome
     }).forall
   }
