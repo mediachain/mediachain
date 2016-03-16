@@ -5,7 +5,8 @@ import java.io.File
 import cats.data.{Streaming, Xor}
 import com.fasterxml.jackson.core.JsonFactory
 import org.json4s._
-import io.mediachain.Types.{Person, PhotoBlob}
+import org.json4s.jackson.Serialization.write
+import io.mediachain.Types.{RawMetadataBlob, Person, PhotoBlob}
 import io.mediachain.translation.JsonLoader.parseJArray
 import io.mediachain.translation.Translator
 
@@ -38,25 +39,25 @@ object MomaTranslator extends Translator {
     * @param json The JValue representing a work
     * @return A `PhotoBlob` extracted from the JValue
     */
-  def jsonToPhotoBlob(json: JValue): PhotoBlob = {
+  def jsonToPhotoBlobTuple(json: JValue): (PhotoBlob, RawMetadataBlob) = {
     implicit val formats = DefaultFormats
-    json.extract[MomaPhotoBlob].asPhotoBlob
+    (json.extract[MomaPhotoBlob].asPhotoBlob, RawMetadataBlob(None, write(toString)))
   }
 
   /** Given a filename representing a MoMA-schema list of artworks, parse the
     * file into a stream of `PhotoBlob`s.
     *
-    * @param filename The filename to read and parse
+    * @param path The filename to read and parse
     * @return A stream of `PhotoBlob`s
     */
-  def loadPhotoBlobs(filename: String): Streaming[PhotoBlob] = {
+  def loadPhotoBlobs(path: String): Streaming[(PhotoBlob, RawMetadataBlob)] = {
     val jf = new JsonFactory
-    val parser = jf.createParser(new File(filename))
+    val parser = jf.createParser(new File(path))
 
     parser.nextToken
 
     parseJArray(parser).flatMap {
-      case Xor.Right(json) => Streaming(jsonToPhotoBlob(json))
+      case Xor.Right(json) => Streaming(jsonToPhotoBlobTuple(json))
       case _ => Streaming.empty
     }
   }
