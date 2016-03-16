@@ -58,5 +58,5 @@ object TateTranslator extends Translator {
     Xor.fromOption(result, InvalidFormat())
   }
 
-  def loadPhotoBlobs(filename: String): Streaming[PhotoBlob] = ???
+  def loadPhotoBlobs(path: String): Streaming[(PhotoBlob, RawMetadataBlob)] = ???
 }
