@@ -52,10 +52,11 @@ object TateIngestionSpec extends Specification with Orientable with XorMatchers 
         resultXor.flatMap { result: (PhotoBlob, RawMetadataBlob) =>
           Ingress.addPhotoBlob(graph, result._1, Some(result._2))
         }
-    }
+    }.toVector
 
-    canonicals.toVector must contain (beRightXor { canonical: Canonical =>
+    (canonicals must have size(be_>(1))) and
+      (canonicals must contain (beRightXor { canonical: Canonical =>
       canonical.id must beSome
-    }).forall
+    }).forall)
   }
 }
