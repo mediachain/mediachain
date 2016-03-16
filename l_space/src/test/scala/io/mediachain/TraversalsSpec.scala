@@ -12,18 +12,22 @@ class TraversalsFixtures(graph: Graph) {
 
   val rawZaphod = RawMetadataBlob(None, """{"name": "Zaphod Beeblebrox}""")
   val zaphod = Person(None, "Zaphod Beeblebrox")
+  val zaphod2 = Person(None, "Just ziz guy, you know?")
   val photo = PhotoBlob(None, "IMG_2012.jpg", "foo", "1/2/1234", Some(zaphod))
   val revisedPhoto = PhotoBlob(None, "Foo at sunset", "foo", "1/2/1234", Some(zaphod))
 
   val rawZaphodVertex = graph + rawZaphod
   val zaphodVertex = graph + zaphod
+  val zaphod2Vertex = graph + zaphod2
   val photoVertex = graph + photo
   val revisedPhotoVertex = graph + revisedPhoto
 
   val zaphodCanonical = Canonical.create()
+  val zaphod2Canonical = Canonical.create()
   val photoCanonical = Canonical.create()
 
   val zaphodCanonicalVertex = graph + zaphodCanonical
+  val zaphod2CanonicalVertex = graph + zaphod2Canonical
   val photoCanonicalVertex = graph + photoCanonical
 
   zaphodCanonicalVertex --- DescribedBy --> zaphodVertex
@@ -31,6 +35,10 @@ class TraversalsFixtures(graph: Graph) {
   photoVertex --- ModifiedBy --> revisedPhotoVertex
   photoVertex --- AuthoredBy --> zaphodCanonicalVertex
   zaphodVertex --- TranslatedFrom --> rawZaphodVertex
+
+
+  // merge zaphod into zaphod2
+  Merge.mergeCanonicals(graph, zaphodCanonical, zaphod2Canonical)
 }
 
 object TraversalsSpec extends
@@ -48,6 +56,7 @@ object TraversalsSpec extends
 
        Finds the canonical vertex for a blob vertex: $findsCanonicalForRootBlob
        Finds the canonical vertex for a revised blob vertex: $findsCanonicalForRevisedBlob
+       Finds the new canonical for a superseded canonical: $findsSupersededCanonical
        Finds the author vertex for a photo blob vertex: $findsAuthorForPhotoBlob
        Finds the raw metadata vertex for a blob vertex: $findsRawForBlob
        Finds the root revision of a blob vertex: $findsRootRevision
@@ -116,12 +125,23 @@ object TraversalsSpec extends
     photoRevCanonicalID must beSome(fixtures.photoCanonical.canonicalID)
   }
 
+  def findsSupersededCanonical = { fixtures: TraversalsFixtures =>
+    val zaphodCanonicalID =
+      SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod)
+        .findCanonicalXor
+        .map(_.canonicalID)
+
+    zaphodCanonicalID must beRightXor { id: String =>
+      id must_== fixtures.zaphod2Canonical.canonicalID
+    }
+  }
+
   def findsAuthorForPhotoBlob = { fixtures: TraversalsFixtures =>
     val queriedAuthorCanonicalID = SUT.getAuthor(SUT.photoBlobsWithExactMatch(fixtures.g.V, fixtures.photo))
       .value(Canonical.Keys.canonicalID)
       .headOption
 
-    queriedAuthorCanonicalID must beSome(fixtures.zaphodCanonical.canonicalID)
+    queriedAuthorCanonicalID must beSome(fixtures.zaphod2Canonical.canonicalID)
   }
 
   def findsRawForBlob = { fixtures: TraversalsFixtures =>
