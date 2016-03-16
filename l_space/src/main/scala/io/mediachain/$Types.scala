@@ -82,7 +82,8 @@ object Types {
         }
 
         override def toCC(id: Id, valueMap: ValueMap): CC =
-          implicitly[Marshallable[CC]].toCC(id, valueMap)
+          implicitly[Marshallable[CC]]
+            .toCC(id, valueMap + ("id" -> id))
       }
     }
   }
