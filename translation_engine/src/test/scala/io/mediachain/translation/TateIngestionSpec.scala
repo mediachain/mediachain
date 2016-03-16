@@ -1,5 +1,7 @@
 package io.mediachain.translation
 
+import java.io.File
+
 import cats.data.Xor
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import io.mediachain._
@@ -42,7 +44,7 @@ object TateIngestionSpec extends Specification with Orientable with XorMatchers 
     val context = TateArtworkContext("directory ingestion test")
     val files = DirectoryWalker.findWithExtension(SpecResources.Tate.fixtureDir, ".json")
     val jsonStrings = files.map(Source.fromFile(_).mkString)
-    val translated: Vector[Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]] =
+    val translated: Iterable[Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]] =
       jsonStrings.map(context.translate)
 
     val canonicals = translated.map {
