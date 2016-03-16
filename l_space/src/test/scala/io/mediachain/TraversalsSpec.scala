@@ -38,7 +38,9 @@ class TraversalsFixtures(graph: Graph) {
 
 
   // merge zaphod into zaphod2
-  Merge.mergeCanonicals(graph, zaphodCanonical, zaphod2Canonical)
+  Merge.mergeCanonicals(graph,
+    zaphodCanonicalVertex.toCC[Canonical],
+    zaphod2CanonicalVertex.toCC[Canonical])
 }
 
 object TraversalsSpec extends
@@ -179,7 +181,7 @@ object TraversalsSpec extends
       .map(_.canonicalID)
 
     queriedAuthorCanonicalID must beRightXor { x =>
-      x mustEqual fixtures.zaphodCanonical.canonicalID
+      x mustEqual fixtures.zaphod2Canonical.canonicalID
     }
   }
 

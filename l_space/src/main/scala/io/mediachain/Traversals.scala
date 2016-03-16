@@ -30,19 +30,34 @@ object Traversals {
       .has(RawMetadataBlob.Keys.blob, raw.blob)
   }
 
+
+  def getSupersedingCanonical(gs: GremlinScala[Vertex, _])
+  : GremlinScala[Vertex, _] = {
+    gs.hasLabel[Canonical]
+      .untilWithTraverser(t => t.get.outE(SupersededBy).notExists)
+      .repeat(_.out(SupersededBy))
+      .hasLabel[Canonical]
+  }
+
   def getCanonical(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
-    gs.untilWithTraverser {t =>
-      t.get.label == "Canonical" ||
-        t.get.in(DescribedBy, ModifiedBy).notExists
-    }.repeat(_.in(ModifiedBy, DescribedBy)).hasLabel[Canonical]
+    val base =
+      gs.untilWithTraverser {t =>
+        t.get.label == "Canonical" ||
+          t.get.in(DescribedBy, ModifiedBy).notExists
+      }.repeat(_.in(ModifiedBy, DescribedBy))
+
+    getSupersedingCanonical(base)
   }
 
   def getAuthor(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
-    gs.untilWithTraverser { t =>
-      t.get().out(AuthoredBy).exists() || t.get().in().notExists()
-    }
-      .repeat(_.in(ModifiedBy))
-      .out(AuthoredBy)
+    val base =
+      gs.untilWithTraverser { t =>
+        t.get().out(AuthoredBy).exists() || t.get().in(ModifiedBy).notExists()
+      }
+        .repeat(_.in(ModifiedBy))
+        .out(AuthoredBy)
+
+    getSupersedingCanonical(base)
   }
 
   def getRootRevision(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
