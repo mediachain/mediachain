@@ -13,7 +13,7 @@ object Merge {
       childV <- child.vertex(graph)
       parentV <- parent.vertex(graph)
       childRootBlobEdges = childV.outE(DescribedBy).toList
-      childRootBlobVs = childRootBlobEdges.map(_.outVertex)
+      childRootBlobVs = childRootBlobEdges.map(_.inVertex)
     } yield {
       childRootBlobEdges.foreach(_.setProperty(Keys.Deprecated, true))
       childRootBlobVs.foreach(v => parentV --- DescribedBy --> v)

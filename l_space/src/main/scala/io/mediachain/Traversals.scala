@@ -40,13 +40,12 @@ object Traversals {
   }
 
   def getCanonical(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
-    val base =
-      gs.untilWithTraverser {t =>
-        t.get.label == "Canonical" ||
-          t.get.in(DescribedBy, ModifiedBy).notExists
-      }.repeat(_.in(ModifiedBy, DescribedBy))
-
-    getSupersedingCanonical(base)
+    gs.until(_.hasLabel[Canonical])
+      .repeat(
+      _.inE(ModifiedBy, DescribedBy)
+        .or(_.hasNot(Keys.Deprecated), _.hasNot(Keys.Deprecated, true))
+        .outV
+    )
   }
 
   def getAuthor(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
