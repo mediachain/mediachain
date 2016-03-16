@@ -1,5 +1,6 @@
 package io.mediachain.translation.tate
 
+import cats.data.Streaming
 import io.mediachain.translation.{JsonLoader, Translator, TranslationContext}
 
 
@@ -56,4 +57,6 @@ object TateTranslator extends Translator {
 
     Xor.fromOption(result, InvalidFormat())
   }
+
+  def loadPhotoBlobs(filename: String): Streaming[PhotoBlob] = ???
 }
