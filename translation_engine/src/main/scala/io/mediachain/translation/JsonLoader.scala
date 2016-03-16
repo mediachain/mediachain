@@ -41,7 +41,7 @@ object JsonLoader {
   }
 
   def loadObjectsFromDirectoryTree(directory: File, fileExtension: String = ".json")
-  : Vector[Xor[TranslationError, JObject]] = {
+  : Iterable[Xor[TranslationError, JObject]] = {
     val files = DirectoryWalker.findWithExtension(directory, fileExtension)
     files.map(loadObjectFromFile)
   }
