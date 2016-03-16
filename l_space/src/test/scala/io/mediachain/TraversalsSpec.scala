@@ -31,6 +31,7 @@ class TraversalsFixtures(graph: Graph) {
   val photoCanonicalVertex = graph + photoCanonical
 
   zaphodCanonicalVertex --- DescribedBy --> zaphodVertex
+  zaphod2CanonicalVertex --- DescribedBy --> zaphod2Vertex
   photoCanonicalVertex --- DescribedBy --> photoVertex
   photoVertex --- ModifiedBy --> revisedPhotoVertex
   photoVertex --- AuthoredBy --> zaphodCanonicalVertex
@@ -59,6 +60,7 @@ object TraversalsSpec extends
        Finds the canonical vertex for a blob vertex: $findsCanonicalForRootBlob
        Finds the canonical vertex for a revised blob vertex: $findsCanonicalForRevisedBlob
        Finds the new canonical for a superseded canonical: $findsSupersededCanonical
+       Finds the same canonical for blobs of merged canonicals: $findsMergedCanonicalForBlobs
        Finds the author vertex for a photo blob vertex: $findsAuthorForPhotoBlob
        Finds the raw metadata vertex for a blob vertex: $findsRawForBlob
        Finds the root revision of a blob vertex: $findsRootRevision
@@ -135,6 +137,20 @@ object TraversalsSpec extends
 
     zaphodCanonicalID must beRightXor { id: String =>
       id must_== fixtures.zaphod2Canonical.canonicalID
+    }
+  }
+
+  def findsMergedCanonicalForBlobs = { fixtures: TraversalsFixtures =>
+    val c1 = SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod)
+        .findCanonicalXor
+
+    val c2 = SUT.personBlobsWithExactMatch(fixtures.g.V, fixtures.zaphod2)
+      .findCanonicalXor
+
+    c1 must beRightXor { c1: Canonical =>
+      c2 must beRightXor { c2: Canonical =>
+        c1.canonicalID must_== c2.canonicalID
+      }
     }
   }
 
