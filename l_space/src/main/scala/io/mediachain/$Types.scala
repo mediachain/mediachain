@@ -57,6 +57,43 @@ object Types {
       MultiHash.forHashable(this)
   }
 
+  object Hashable {
+    // Extend the default `Marshallable` implementation for `Hashable` case classes
+    // to include the computed `multiHash` as a vertex property.
+    //
+    // The default marshaller will only store the constructor parameters for a case class.
+    // Since the hash is a computed property, it doesn't get stored by default.
+    // This method creates a new `Marshallable` that will include the `multiHash`
+    // if it
+
+    def marshaller[CC <: Hashable with Product : Marshallable]: Marshallable[CC] = {
+      new Marshallable[CC] {
+        override def fromCC(cc: CC): FromCC = {
+          val defaultFromCC = implicitly[Marshallable[CC]].fromCC(cc)
+
+          val valueMap = cc.multiHash match {
+            case Xor.Right(multiHash) =>
+              defaultFromCC.valueMap +
+                ("multiHash" -> multiHash.base58)
+            case _ =>
+              defaultFromCC.valueMap
+          }
+
+          FromCC(defaultFromCC.id, defaultFromCC.label, valueMap)
+        }
+
+        override def toCC(id: Id, valueMap: ValueMap): CC =
+          implicitly[Marshallable[CC]].toCC(id, valueMap)
+      }
+    }
+  }
+
+  implicit val canonicalMarshaller = Hashable.marshaller[Canonical]
+  implicit val rawMetadataBlobMarshaller = Hashable.marshaller[RawMetadataBlob]
+  implicit val photoBlobMarshaller = Hashable.marshaller[PhotoBlob]
+  implicit val personMarshaller = Hashable.marshaller[Person]
+
+  
   trait VertexClass extends Hashable {
     def getID(): Option[ElementID]
 
