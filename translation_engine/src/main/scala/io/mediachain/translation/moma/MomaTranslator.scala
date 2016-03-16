@@ -39,7 +39,7 @@ object MomaTranslator extends Translator {
     * @param json The JValue representing a work
     * @return A `PhotoBlob` extracted from the JValue
     */
-  def jsonToPhotoBlobTuple(json: JValue): (PhotoBlob, RawMetadataBlob) = {
+  def jsonToPhotoBlobTuple(json: JObject): (PhotoBlob, RawMetadataBlob) = {
     implicit val formats = DefaultFormats
     (json.extract[MomaPhotoBlob].asPhotoBlob, RawMetadataBlob(None, write(toString)))
   }
@@ -57,7 +57,7 @@ object MomaTranslator extends Translator {
     parser.nextToken
 
     parseJArray(parser).flatMap {
-      case Xor.Right(json) => Streaming(jsonToPhotoBlobTuple(json))
+      case Xor.Right(json: JObject) => Streaming(jsonToPhotoBlobTuple(json))
       case _ => Streaming.empty
     }
   }
