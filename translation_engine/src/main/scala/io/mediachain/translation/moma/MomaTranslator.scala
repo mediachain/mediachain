@@ -21,7 +21,7 @@ object MomaTranslator extends Translator {
     * @param Date Date of the work
     * @param Artist Artist of the work
     */
-  case class MomaPhotoBlob(Title: String,
+  private case class MomaPhotoBlob(Title: String,
                            Medium: String,
                            Date: String,
                            Artist: String) {
