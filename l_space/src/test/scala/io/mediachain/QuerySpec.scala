@@ -158,8 +158,8 @@ object QuerySpec extends
     val queriedCanonical = Query.findPerson(context.graph, context.q.person)
 
     queriedCanonical must beRightXor { (person: Canonical) =>
-      person.canonicalID == context.q.personCanonical.canonicalID &&
-        person.id.isDefined
+      (person.canonicalID must_== context.q.personCanonical.canonicalID) and
+        (person.id must beSome)
     }
   }
 
@@ -168,7 +168,7 @@ object QuerySpec extends
       Query.findAuthorForBlob(context.graph, context.q.photoBlob)
 
     queriedAuthor must beRightXor { (c: Canonical) =>
-      c.canonicalID == context.q.personCanonical.canonicalID
+      c.canonicalID must_== context.q.personCanonical.canonicalID
     }
   }
 
@@ -176,7 +176,7 @@ object QuerySpec extends
     val queriedWorks = Query.findWorks(context.graph, context.q.person)
 
     queriedWorks must beRightXor { (s: List[Canonical]) =>
-      s.contains(context.q.photoBlobCanonical)
+      s must contain(context.q.photoBlobCanonical)
     }
   }
 
