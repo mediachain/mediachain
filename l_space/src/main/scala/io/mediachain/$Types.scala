@@ -28,6 +28,12 @@ object Types {
   val ModifiedBy  = "modified-by"
   val AuthoredBy  = "authored-by"
   val TranslatedFrom = "translated-from"
+  val SupersededBy = "superseded-by"
+
+  object Keys {
+    val Deprecated = Key[Boolean]("deprecated")
+  }
+
 
   /**
     * Convert from the AnyRef returned by Vertex.id()
