@@ -193,7 +193,7 @@ object QuerySpec extends
 
     val parentCanonical = Query.findPhotoBlob(context.graph, context.q.photoBlob)
     val childCanonical = Query.findCanonicalForBlob(context.graph, context.q.modifiedPhotoBlob)
-    (childCanonical must beRightXor()) and
+    (childCanonical must beRightXor) and
       (childCanonical must_== parentCanonical)
   }
 
