@@ -9,6 +9,8 @@ import io.mediachain.Types.{RawMetadataBlob, PhotoBlob}
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 import org.json4s._
 import com.fasterxml.jackson.core.JsonFactory
+import io.mediachain.translation.JsonLoader.parseJArray
+import org.json4s.jackson.Serialization.write
 
 trait Translator {
   val name: String
@@ -17,14 +19,21 @@ trait Translator {
 }
 
 trait FSLoader {
-  def loadPhotoBlobs: Iterator[(Xor[TranslationError,PhotoBlob], RawMetadataBlob)]
-  val rawI: Iterator[String]
-  val jsonI: Iterator[Xor[TranslationError, JObject]]
+  // TODO: how to make this work?
+  // self: Translator =>
+  def translate(source: JObject): Xor[TranslationError, PhotoBlob]
+
+  val pairI: Iterator[Xor[TranslationError, (JObject, String)]]
+  val path: String
+
+  def loadPhotoBlobs: Iterator[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
+    pairI.map { pairXor => pairXor.flatMap { case (json, raw) =>
+      translate(json).map { (_, RawMetadataBlob(None, raw))}
+    }}
+  }
 }
 
 trait DirectoryWalkerLoader extends FSLoader {
-  self: Translator =>
-  val path: String
   val fileI: Iterator[File] = DirectoryWalker.findWithExtension(new File(path), ".json").iterator
   val rawI = fileI.map(Source.fromFile(_).mkString)
   val jsonI = fileI.map { file =>
@@ -34,11 +43,23 @@ trait DirectoryWalkerLoader extends FSLoader {
         .leftMap(err =>
           TranslationError.ParsingFailed(new RuntimeException(err)))
     }
+  val pairI = jsonI.zip(rawI).map { case (jsonXor, raw) =>
+      jsonXor.map((_,raw))
+  }
+}
 
-  def loadPhotoBlobs: Iterator[(Xor[TranslationError,PhotoBlob], RawMetadataBlob)] = {
-    val combinedI: Iterator[(Xor[ParsingFailed, JObject], String)] = jsonI.zip(rawI)
-    combinedI.map { case (jsonXor, raw) =>
-      (jsonXor.flatMap(translate), RawMetadataBlob(None, raw))
+trait FlatFileLoader extends FSLoader {
+  val pairI = {
+    val jf = new JsonFactory
+    val parser = jf.createParser(new File(path))
+
+    parser.nextToken
+
+    implicit val formats = org.json4s.DefaultFormats
+    parseJArray(parser).map {
+      case Xor.Right(json: JObject) => Xor.right((json, write(json)))
+      case Xor.Left(err) => Xor.left(TranslationError.ParsingFailed(new RuntimeException(err)))
+      case _ => Xor.left(TranslationError.ParsingFailed(new RuntimeException("Bad token type")))
     }
   }
 }
