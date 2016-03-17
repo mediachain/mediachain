@@ -5,6 +5,7 @@ import gremlin.scala._
 import io.mediachain.Types._
 
 object Merge {
+  import io.mediachain.util.GremlinUtils.withTransaction
 
   def mergeCanonicals(graph: Graph, child: Canonical, parent: Canonical)
   : Xor[GraphError, Canonical] = {
@@ -12,12 +13,16 @@ object Merge {
     for {
       childV <- child.vertex(graph)
       parentV <- parent.vertex(graph)
+      childHeadRevisionEdges = childV.outE(HeadRevision)
       childRootBlobEdges = childV.outE(DescribedBy).toList
       childRootBlobVs = childRootBlobEdges.map(_.inVertex)
     } yield {
-      childRootBlobEdges.foreach(_.setProperty(Keys.Deprecated, true))
-      childRootBlobVs.foreach(v => parentV --- DescribedBy --> v)
-      childV --- SupersededBy --> parentV
+      withTransaction(graph) {
+        childHeadRevisionEdges.drop.iterate
+        childRootBlobEdges.foreach(_.setProperty(Keys.Deprecated, true))
+        childRootBlobVs.foreach(v => parentV --- DescribedBy --> v)
+        childV --- SupersededBy --> parentV
+      }
       parent
     }
   }

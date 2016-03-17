@@ -84,6 +84,7 @@ object GraphFixture {
       val modifiedBlob = getModifiedPhotoBlob
       val modifiedBlobV = graph + modifiedBlob
       photoBlobV --- ModifiedBy --> modifiedBlobV
+      canonicalV --- HeadRevision --> modifiedBlobV
 
       // add an author for the photo
       val person = getPerson
@@ -91,6 +92,7 @@ object GraphFixture {
       val personCanonical = Canonical.create()
       val personCanonicalV = graph + personCanonical
       personCanonicalV --- DescribedBy --> personV
+      personCanonicalV --- HeadRevision --> personV
       photoBlobV --- AuthoredBy --> personCanonicalV
 
 
@@ -112,13 +114,14 @@ object GraphFixture {
       val extraPhotoBlobCanonical = Canonical.create()
       val extraPhotoBlobCanonicalV = graph + extraPhotoBlobCanonical
       extraPhotoBlobCanonicalV --- DescribedBy --> extraPhotoBlobV
+      extraPhotoBlobCanonicalV --- HeadRevision --> extraPhotoBlobV
       extraPhotoBlobV --- AuthoredBy --> personCanonicalV
 
       val rawMetadataBlob = getRawMetadataBlob
       val rawMetadataBlobV = graph + rawMetadataBlob
       photoBlobV --- TranslatedFrom --> rawMetadataBlobV
 
-      
+
       Objects(
         personV.toCC[Person],
         personCanonicalV.toCC[Canonical],
