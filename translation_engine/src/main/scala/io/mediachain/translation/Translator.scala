@@ -7,7 +7,7 @@ import cats.data.Streaming
 trait Translator {
   val name: String
   val version: Int
-  def loadPhotoBlobs(path: String): Streaming[(PhotoBlob, RawMetadataBlob)]
+  def loadPhotoBlobs(path: String): Iterable[(PhotoBlob, RawMetadataBlob)]
 }
 
 object TranslatorDispatcher {
