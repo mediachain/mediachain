@@ -31,9 +31,9 @@ trait FSLoader[T <: Translator] {
 }
 
 trait DirectoryWalkerLoader[T <: Translator] extends FSLoader[T] {
-  val fileI: Iterator[File] = DirectoryWalker.findWithExtension(new File(path), ".json").iterator
-  val rawI = fileI.map(Source.fromFile(_).mkString)
-  val jsonI = fileI.map { file =>
+  private val fileI: Iterator[File] = DirectoryWalker.findWithExtension(new File(path), ".json").iterator
+  private val rawI = fileI.map(Source.fromFile(_).mkString)
+  private val jsonI = fileI.map { file =>
       val jf = new JsonFactory
       val parser = jf.createParser(file)
       JsonLoader.parseJOBject(parser)
