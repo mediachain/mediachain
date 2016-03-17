@@ -20,6 +20,7 @@ object MergeSpec extends Specification
    - Deprecates old DescribedBy edges $deprecatesDescribedBy
    - Supersedes old Canonical $supersedesChildCanonical
    - Creates new DescribedBy edges from new Canonical to old canonical's root blobs $createsNewDescribedByEdges
+   - Deletes HeadRevision edge from old canonical $deletesOldHeadRevision
   """
 
 
@@ -67,6 +68,17 @@ object MergeSpec extends Specification
       .toList
 
     blobs must contain(context.objects.duplicatePhotoBlob)
+  }
+
+  def deletesOldHeadRevision = { context: MergeSpecContext =>
+    val duplicatePhotoCanonicalVId = context.objects.duplicatePhotoCanonical
+      .id.getOrElse(throw new IllegalStateException("Test fixture has no id"))
+
+    val edges = context.graph.V(duplicatePhotoCanonicalVId)
+      .outE(HeadRevision)
+      .toList
+
+    edges must beEmpty
   }
 }
 

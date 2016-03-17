@@ -16,6 +16,7 @@ object IngressSpec extends Specification with Orientable with XorMatchers {
         Given a PhotoBlob with an existing Author, doesn't recreate it $findsExistingAuthor
         Given an exact match, don't recreate, only attach RawMetadataBlob $attachesRawMetadata
         Given a new PhotoBlob with a new Author, add new Canonical and new Author $ingestsPhotoBothNew
+        Sets the head revision for a canonical to a given blob $setsHeadRevision
       """
 
   def ingestsPhoto = { graph: OrientGraph =>
@@ -106,4 +107,24 @@ object IngressSpec extends Specification with Orientable with XorMatchers {
   }
 
   def ingestsPhotoBothNew = pending
+
+  def setsHeadRevision = { graph: OrientGraph =>
+    val objs = GraphFixture.Util.setupTree(graph)
+    val photo = objs.photoBlob
+
+    val result =
+      Ingress.setHeadRevisionForCanonical(graph,
+        objs.photoBlobCanonical,
+        photo)
+
+    result must beRightXor
+
+    objs.photoBlobCanonical.query(graph)
+      .map(_.out(HeadRevision).headOption) must beRightXor { v =>
+      v must beSome { (v: Vertex) =>
+        photo.id must beSome((id: ElementID) =>
+          id must_== v.id.asInstanceOf[ElementID])
+      }
+    }
+  }
 }
