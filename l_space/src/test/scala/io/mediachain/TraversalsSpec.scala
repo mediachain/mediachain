@@ -11,28 +11,28 @@ object TraversalsSpec extends
   Specification with
   ForEach[GraphFixture.Context] with
   XorMatchers {
-  import io.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits, SUT.VertexImplicits
+  import io.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits
 
   def is =
-    s2"""
-       Finds a canonical vertex given a canonicalID: $findsCanonicalByID
-       Finds a person vertex exactly matching a Person CC: $findsPersonExact
-       Finds a photo blob vertex exactly matching a PhotoBlob CC: $findsPhotoExact
-       Finds a raw metadata vertex exactly matching a RawMetadataBlob CC: $pending
+  s2"""
+   Finds a canonical vertex given a canonicalID $findsCanonicalByID
+   Finds a person vertex exactly matching a Person CC $findsPersonExact
+   Finds a photo blob vertex exactly matching a PhotoBlob CC $findsPhotoExact
+   Finds a raw metadata vertex exactly matching a RawMetadataBlob CC $findsRawExact
 
-       Finds the canonical vertex for a blob vertex: $findsCanonicalForRootBlob
-       Finds the canonical vertex for a revised blob vertex: $findsCanonicalForRevisedBlob
-       Finds the new canonical for a superseded canonical: $findsSupersededCanonical
-       Finds the same canonical for blobs of merged canonicals: $findsMergedCanonicalForBlobs
-       Finds the author vertex for a photo blob vertex: $findsAuthorForPhotoBlob
-       Finds the raw metadata vertex for a blob vertex: $pending
-       Finds the root revision of a blob vertex: $findsRootRevision
+   Finds the canonical vertex for a blob vertex $findsCanonicalForRootBlob
+   Finds the canonical vertex for a revised blob vertex $findsCanonicalForRevisedBlob
+   Finds the new canonical for a superseded canonical $findsSupersededCanonical
+   Finds the same canonical for blobs of merged canonicals $findsMergedCanonicalForBlobs
+   Finds the author vertex for a photo blob vertex $findsAuthorForPhotoBlob
+   Finds the raw metadata vertex for a blob vertex $findsRawForBlob
+   Finds the root revision of a blob vertex $findsRootRevision
 
-       Extends GremlinScala with implicts:
-        Finds canonical for blob vertex and converts to Canonical CC: $findsCanonicalImplicit
-        Finds author for blob vertex and converts to Canonical CC: $findsAuthorImplicit
-        Finds raw medatata for blob vertex and converts to RawMetadataBlob CC: $pending
-    """
+   Extends GremlinScala with implicits:
+    Finds canonical for blob vertex and converts to Canonical CC $findsCanonicalImplicit
+    Finds author for blob vertex and converts to Canonical CC $findsAuthorImplicit
+    Finds raw metadata for blob vertex and converts to RawMetadataBlob CC $findsRawImplicit
+  """
 
   // TODO: can you figure out how to abstract out the connection creation?
   def foreach[R: AsResult](f: GraphFixture.Context => R): Result = {
@@ -76,13 +76,15 @@ object TraversalsSpec extends
     queriedPhotoId must beSome(context.objects.photoBlob.id.get)
   }
 
-//  def findsRawExact = { context: GraphFixture.Context =>
-//    val queriedVertex =
-//      SUT.rawMetadataBlobsWithExactMatch(context.graph.V, context.objects)
-//      .headOption
-//
-//    queriedVertex must beSome(fixtures.rawZaphodVertex)
-//  }
+  def findsRawExact = { context: GraphFixture.Context =>
+    val rawBlobText =
+      SUT.rawMetadataBlobsWithExactMatch(
+        context.graph.V,
+        context.objects.rawMetadataBlob
+      ).value(RawMetadataBlob.Keys.blob).headOption
+
+    rawBlobText must beSome(context.objects.rawMetadataBlob.blob)
+  }
 
   def findsCanonicalForRootBlob = { context: GraphFixture.Context =>
     val queriedCanonicalID = SUT.getCanonical(
@@ -143,15 +145,15 @@ object TraversalsSpec extends
     queriedAuthorCanonicalID must beSome(context.objects.personCanonical.canonicalID)
   }
 
-//  def findsRawForBlob = { context: GraphFixture.Context =>
-//    val queriedRawString =
-//      SUT.getRawMetadataForBlob(
-//        SUT.personBlobsWithExactMatch(context.graph.V, fixtures.zaphod))
-//      .value(RawMetadataBlob.Keys.blob)
-//      .headOption
-//
-//    queriedRawString must beSome(fixtures.rawZaphod.blob)
-//  }
+  def findsRawForBlob = { context: GraphFixture.Context =>
+    val queriedRawString =
+      SUT.getRawMetadataForBlob(
+        SUT.photoBlobsWithExactMatch(context.graph.V, context.objects.photoBlob))
+      .value(RawMetadataBlob.Keys.blob)
+      .headOption
+
+    queriedRawString must beSome(context.objects.rawMetadataBlob.blob)
+  }
 
   def findsRootRevision = { context: GraphFixture.Context =>
     val rootRevisionId = SUT.getRootRevision(
@@ -186,14 +188,14 @@ object TraversalsSpec extends
     }
   }
 
-//  def findsRawImplicit = { context: GraphFixture.Context =>
-//    val queriedRawString =
-//      SUT.personBlobsWithExactMatch(context.graph.V, fixtures.zaphod)
-//      .findRawMetadataXor
-//      .map(_.blob)
-//
-//    queriedRawString must beRightXor { x =>
-//      x mustEqual fixtures.rawZaphod.blob
-//    }
-//  }
+  def findsRawImplicit = { context: GraphFixture.Context =>
+    val queriedRawString =
+      SUT.photoBlobsWithExactMatch(context.graph.V, context.objects.photoBlob)
+      .findRawMetadataXor
+      .map(_.blob)
+
+    queriedRawString must beRightXor { x =>
+      x mustEqual context.objects.rawMetadataBlob.blob
+    }
+  }
 }
