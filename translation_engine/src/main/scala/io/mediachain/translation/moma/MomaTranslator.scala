@@ -4,11 +4,14 @@ import java.io.File
 
 import cats.data.{Streaming, Xor}
 import com.fasterxml.jackson.core.JsonFactory
+import io.mediachain.translation.TranslationError.ParsingFailed
 import org.json4s._
 import org.json4s.jackson.Serialization.write
 import io.mediachain.Types.{RawMetadataBlob, Person, PhotoBlob}
 import io.mediachain.translation.JsonLoader.parseJArray
-import io.mediachain.translation.Translator
+import io.mediachain.translation.{TranslationError, Translator}
+
+import scala.util.{Try, Success, Failure}
 
 object MomaTranslator extends Translator {
   val name = "MomaCollectionTranslator"
@@ -39,9 +42,13 @@ object MomaTranslator extends Translator {
     * @param json The JValue representing a work
     * @return A `PhotoBlob` extracted from the JValue
     */
-  def jsonToPhotoBlobTuple(json: JObject): (PhotoBlob, RawMetadataBlob) = {
+  def jsonToPhotoBlobTuple(json: JObject): Xor[TranslationError, (PhotoBlob, RawMetadataBlob)] = {
     implicit val formats = DefaultFormats
-    (json.extract[MomaPhotoBlob].asPhotoBlob, RawMetadataBlob(None, write(toString)))
+    val rawBlob = RawMetadataBlob(None, write(json))
+    Try(json.extract[MomaPhotoBlob].asPhotoBlob) match {
+      case Success(blob) => Xor.right((blob, rawBlob))
+      case Failure(exn)  => Xor.left(ParsingFailed(exn))
+    }
   }
 
   /** Given a filename representing a MoMA-schema list of artworks, parse the
@@ -50,15 +57,15 @@ object MomaTranslator extends Translator {
     * @param path The filename to read and parse
     * @return A stream of `PhotoBlob`s
     */
-  def loadPhotoBlobs(path: String): Streaming[(PhotoBlob, RawMetadataBlob)] = {
+  def loadPhotoBlobs(path: String): Iterator[Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]] = {
     val jf = new JsonFactory
     val parser = jf.createParser(new File(path))
 
     parser.nextToken
 
     parseJArray(parser).flatMap {
-      case Xor.Right(json: JObject) => Streaming(jsonToPhotoBlobTuple(json))
-      case _ => Streaming.empty
+      case Xor.Right(json: JObject) => List(jsonToPhotoBlobTuple(json))
+      case _ => List.empty
     }
   }
 }
