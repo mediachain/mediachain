@@ -58,8 +58,7 @@ trait FlatFileLoader extends FSLoader {
     implicit val formats = org.json4s.DefaultFormats
     parseJArray(parser).map {
       case Xor.Right(json: JObject) => Xor.right((json, write(json)))
-      case Xor.Left(err) => Xor.left(TranslationError.ParsingFailed(new RuntimeException(err)))
-      case _ => Xor.left(TranslationError.ParsingFailed(new RuntimeException("Bad token type")))
+      case err @ (Xor.Left(_) | Xor.Right(_)) => Xor.left(TranslationError.ParsingFailed(new RuntimeException(err.toString)))
     }
   }
 }
@@ -68,7 +67,7 @@ object TranslatorDispatcher {
   def dispatch(partner: String, path: String) = {
     //println("partner: " + partner + ", path: " + path)
     val translator: FSLoader = partner match {
-      //case "moma" => moma.MomaTranslator
+      case "moma" => new moma.MomaLoader(path)
       case "tate" => new tate.TateLoader(path)
     }
 
