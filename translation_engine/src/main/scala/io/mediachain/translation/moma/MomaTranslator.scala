@@ -51,13 +51,6 @@ object MomaTranslator extends Translator {
       case Failure(exn)  => Xor.left(ParsingFailed(exn))
     }
   }
-
-  /** Given a filename representing a MoMA-schema list of artworks, parse the
-    * file into a stream of `PhotoBlob`s.
-    *
-    * @param path The filename to read and parse
-    * @return A stream of `PhotoBlob`s
-    */
 }
 
 class MomaLoader(val path: String, implicit val translator: MomaTranslator.type = MomaTranslator) extends FlatFileLoader[MomaTranslator.type]

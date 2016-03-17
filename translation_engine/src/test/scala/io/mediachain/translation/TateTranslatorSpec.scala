@@ -2,6 +2,7 @@ package io.mediachain.translation
 
 import io.mediachain.Types._
 import io.mediachain.XorMatchers
+import org.json4s.JObject
 import org.specs2.Specification
 import tate.{TateLoader, TateTranslator}
 import org.json4s.jackson.JsonMethods._
@@ -23,32 +24,14 @@ object TateTranslatorSpec extends Specification with XorMatchers {
       ok(s"Skipping artwork test for ${expected.jsonFile.getPath}. File does not exist")
     } else {
       val source: String = Source.fromFile(expected.jsonFile).mkString
-      val json = parse(source)
+      val json: JObject = parse(source).asInstanceOf[JObject] // have faith
 
-      val translator = new TateTranslator {}
+      val translated = TateTranslator.translate(json)
 
-      val translated = translator.translate(source)
-
-      translated must beRightXor { result: (PhotoBlob, RawMetadataBlob) =>
-        val (blob, raw) = result
-        blob.title == expected.title &&
-          blob.author.exists(_.name == expected.artistName) &&
-          raw.blob == source
+      translated must beRightXor { blob: PhotoBlob =>
+        (blob.title must_== expected.title) and
+          (blob.author.exists(_.name must_== expected.artistName))
       }
     }
-  }
-
-  def loadsArtworksFromDir = {
-    val jsonResults = JsonLoader.loadObjectsFromDirectoryTree(SpecResources.Tate.fixtureDir)
-
-    val translated = jsonResults.map { result =>
-      for {
-        obj <- result
-        t <- SUT.loadArtwork(obj)
-      } yield t
-    }
-
-    (jsonResults.size must be_>(0)) and
-    (jsonResults.size must_== translated.size)
   }
 }
