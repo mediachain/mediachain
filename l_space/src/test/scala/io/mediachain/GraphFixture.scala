@@ -8,14 +8,16 @@ object GraphFixture {
   import gremlin.scala._
 
   case class Objects(
-     person: Person,
-     personCanonical: Canonical,
-     photoBlob: PhotoBlob,
-     photoBlobCanonical: Canonical,
-     modifiedPhotoBlob: PhotoBlob,
-     extraPhotoBlob: PhotoBlob,
-     extraPhotoBlobCanonical: Canonical
-   )
+    person: Person,
+    personCanonical: Canonical,
+    photoBlob: PhotoBlob,
+    photoBlobCanonical: Canonical,
+    modifiedPhotoBlob: PhotoBlob,
+    extraPhotoBlob: PhotoBlob,
+    extraPhotoBlobCanonical: Canonical,
+    duplicatePerson: Person,
+    duplicatePersonCanonical: Canonical
+  )
 
 
   case class Context(graph: Graph, objects: Objects)
@@ -82,6 +84,19 @@ object GraphFixture {
       personCanonicalV --- DescribedBy --> personV
       photoBlobV --- AuthoredBy --> personCanonicalV
 
+
+      // add a duplicate Person and a Canonical, and merge the
+      // duplicate Canonical into `personCanonical`, so that
+      // `duplicatePersonCanonical` is `SupersededBy` `personCanonical`
+      val duplicatePerson = person.copy(name = Util.mutate(person.name))
+      val duplicatePersonCanonical = Canonical.create()
+      val duplicatePersonV = graph + duplicatePerson
+      val duplicatePersonCanonicalV = graph + duplicatePersonCanonical
+      personCanonicalV --- DescribedBy --> duplicatePersonV
+      duplicatePersonCanonicalV --- (DescribedBy, Keys.Deprecated -> true) --> duplicatePersonV
+      duplicatePersonCanonicalV --- SupersededBy --> personCanonicalV
+
+
       // add decoy objects that we shouldn't see in a subtree
       val extraPhotoBlob = getPhotoBlob
       val extraPhotoBlobV = graph + extraPhotoBlob
@@ -97,7 +112,9 @@ object GraphFixture {
         canonicalV.toCC[Canonical],
         modifiedBlobV.toCC[PhotoBlob],
         extraPhotoBlobV.toCC[PhotoBlob],
-        extraPhotoBlobCanonicalV.toCC[Canonical])
+        extraPhotoBlobCanonicalV.toCC[Canonical],
+        duplicatePersonV.toCC[Person],
+        duplicatePersonCanonicalV.toCC[Canonical])
     }
   }
 
