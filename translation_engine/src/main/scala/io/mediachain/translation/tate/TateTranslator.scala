@@ -1,14 +1,15 @@
 package io.mediachain.translation.tate
 
-import cats.data.Streaming
-import io.mediachain.translation.{JsonLoader, Translator, TranslationContext}
+import io.mediachain.translation._
 import cats.data.Xor
-import io.mediachain.translation.TranslationError, TranslationError.InvalidFormat
+import TranslationError.InvalidFormat
 import io.mediachain.Types._
 
 import org.json4s._
 import com.fasterxml.jackson.core.JsonFactory
 import java.io.File
+
+import scala.io.Source
 
 object TateTranslator extends Translator {
   val name = "TateCreativeCommons"
@@ -58,5 +59,10 @@ object TateTranslator extends Translator {
     Xor.fromOption(result, InvalidFormat())
   }
 
-  def loadPhotoBlobs(path: String): Iterable[(PhotoBlob, RawMetadataBlob)] = ???
+  def loadPhotoBlobs(path: String): Iterable[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
+    val context = TateArtworkContext("directory ingestion test")
+    val files = DirectoryWalker.findWithExtension(new File(path), ".json")
+    val jsonStrings = files.map(Source.fromFile(_).mkString)
+    jsonStrings.map(context.translate)
+  }
 }
