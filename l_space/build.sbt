@@ -34,10 +34,13 @@ testOptions in Test += Tests.Cleanup( loader => {
 
 initialCommands in console :=
   """
+    import com.orientechnologies.orient.core.Orient
     import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
     import gremlin.scala._
     import io.mediachain.Types._
     import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
+
+    Orient.instance.removeShutdownHook()
     lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
     println("It's a UNIX system! I know this!")
   """
@@ -45,4 +48,5 @@ initialCommands in console :=
 cleanupCommands in consoleProject :=
   """
     graph.close()
+    Orient.instance.shutdown()
   """
