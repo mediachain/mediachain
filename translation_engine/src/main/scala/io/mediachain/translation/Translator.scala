@@ -1,13 +1,13 @@
 package io.mediachain.translation
 
+import cats.data.Xor
 import io.mediachain.Types.{RawMetadataBlob, PhotoBlob}
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
-import cats.data.Streaming
 
 trait Translator {
   val name: String
   val version: Int
-  def loadPhotoBlobs(path: String): Iterable[(PhotoBlob, RawMetadataBlob)]
+  def loadPhotoBlobs(path: String): Iterable[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]]
 }
 
 object TranslatorDispatcher {
