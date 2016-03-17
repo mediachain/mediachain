@@ -1,7 +1,6 @@
 package io.mediachain.translation
 
 import java.io.File
-import io.mediachain.translation.TranslationError.ParsingFailed
 
 import scala.io.Source
 import cats.data.Xor
@@ -18,22 +17,20 @@ trait Translator {
   def translate(source: JObject): Xor[TranslationError, PhotoBlob]
 }
 
-trait FSLoader {
-  // TODO: how to make this work?
-  // self: Translator =>
-  def translate(source: JObject): Xor[TranslationError, PhotoBlob]
+trait FSLoader[T <: Translator] {
+  val translator: T
 
   val pairI: Iterator[Xor[TranslationError, (JObject, String)]]
   val path: String
 
   def loadPhotoBlobs: Iterator[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
     pairI.map { pairXor => pairXor.flatMap { case (json, raw) =>
-      translate(json).map { (_, RawMetadataBlob(None, raw))}
+      translator.translate(json).map { (_, RawMetadataBlob(None, raw))}
     }}
   }
 }
 
-trait DirectoryWalkerLoader extends FSLoader {
+trait DirectoryWalkerLoader[T <: Translator] extends FSLoader[T] {
   val fileI: Iterator[File] = DirectoryWalker.findWithExtension(new File(path), ".json").iterator
   val rawI = fileI.map(Source.fromFile(_).mkString)
   val jsonI = fileI.map { file =>
@@ -48,7 +45,7 @@ trait DirectoryWalkerLoader extends FSLoader {
   }
 }
 
-trait FlatFileLoader extends FSLoader {
+trait FlatFileLoader[T <: Translator] extends FSLoader[T] {
   val pairI = {
     val jf = new JsonFactory
     val parser = jf.createParser(new File(path))
@@ -66,8 +63,8 @@ trait FlatFileLoader extends FSLoader {
 object TranslatorDispatcher {
   def dispatch(partner: String, path: String) = {
     //println("partner: " + partner + ", path: " + path)
-    val translator: FSLoader = partner match {
-      case "moma" => new moma.MomaLoader(path)
+    val translator = partner match {
+      //case "moma" => new moma.MomaLoader(path)
       case "tate" => new tate.TateLoader(path)
     }
 

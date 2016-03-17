@@ -3,7 +3,8 @@ package io.mediachain.translation
 import io.mediachain.Types._
 import io.mediachain.XorMatchers
 import org.specs2.Specification
-import tate.{TateLoader => SUT}
+import tate.{TateLoader, TateTranslator}
+import org.json4s.jackson.JsonMethods._
 
 import scala.io.Source
 
@@ -21,9 +22,12 @@ object TateTranslatorSpec extends Specification with XorMatchers {
     if (!expected.jsonFile.exists) {
       ok(s"Skipping artwork test for ${expected.jsonFile.getPath}. File does not exist")
     } else {
-      val source = Source.fromFile(expected.jsonFile).mkString
+      val source: String = Source.fromFile(expected.jsonFile).mkString
+      val json = parse(source)
 
-      val translated = SUT.translate(source)
+      val translator = new TateTranslator {}
+
+      val translated = translator.translate(source)
 
       translated must beRightXor { result: (PhotoBlob, RawMetadataBlob) =>
         val (blob, raw) = result

@@ -7,7 +7,7 @@ import io.mediachain.Types._
 
 import org.json4s._
 
-trait TateTranslator extends Translator {
+object TateTranslator extends Translator {
   val name = "TateCreativeCommons"
   val version = 1
 
@@ -40,4 +40,4 @@ trait TateTranslator extends Translator {
   }
 }
 
-class TateLoader(val path: String) extends TateTranslator with DirectoryWalkerLoader
+class TateLoader(val path: String, implicit val translator: TateTranslator.type = TateTranslator) extends DirectoryWalkerLoader[TateTranslator.type]
