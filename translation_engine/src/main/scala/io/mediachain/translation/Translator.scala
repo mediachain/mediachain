@@ -1,5 +1,7 @@
 package io.mediachain.translation
 
+import java.io.File
+import scala.io.Source
 import cats.data.Xor
 import io.mediachain.Types.{RawMetadataBlob, PhotoBlob}
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
@@ -7,15 +9,28 @@ import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 trait Translator {
   val name: String
   val version: Int
+  def translate(source: String): Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]
+}
+
+trait FSLoader {
   def loadPhotoBlobs(path: String): Iterable[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]]
+}
+
+trait DirectoryWalkerLoader extends FSLoader {
+  self: Translator =>
+  def loadPhotoBlobs(path: String): Iterable[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
+    val files = DirectoryWalker.findWithExtension(new File(path), ".json")
+    val jsonStrings = files.map(Source.fromFile(_).mkString)
+    jsonStrings.map(translate)
+  }
 }
 
 object TranslatorDispatcher {
   def dispatch(partner: String, path: String) = {
     //println("partner: " + partner + ", path: " + path)
-    val translator: Translator = partner match {
-      case "moma" => moma.MomaTranslator
-      case "tate" => tate.TateTranslator
+    val translator: FSLoader = partner match {
+      //case "moma" => moma.MomaTranslator
+      case "tate" => tate.TateLoader
     }
 
     val blobS = translator.loadPhotoBlobs(path)

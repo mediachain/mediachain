@@ -9,9 +9,7 @@ import org.json4s._
 import com.fasterxml.jackson.core.JsonFactory
 import java.io.File
 
-import scala.io.Source
-
-object TateTranslator extends Translator {
+trait TateTranslator extends Translator {
   val name = "TateCreativeCommons"
   val version = 1
 
@@ -23,21 +21,17 @@ object TateTranslator extends Translator {
 
 
   implicit val formats = org.json4s.DefaultFormats
+  def translate(source: String): Xor[TranslationError, (PhotoBlob, RawMetadataBlob)] = {
+    val jf = new JsonFactory
+    val parser = jf.createParser(new File(source))
 
-  case class TateArtworkContext(id: String, translator: Translator = TateTranslator)
-    extends TranslationContext[PhotoBlob] {
-    def translate(source: String): Xor[TranslationError, (PhotoBlob, RawMetadataBlob)] = {
-      val jf = new JsonFactory
-      val parser = jf.createParser(new File(source))
-
-      JsonLoader.parseJOBject(parser)
-        .leftMap(err =>
-          TranslationError.ParsingFailed(new RuntimeException(err)))
-        .flatMap(loadArtwork)
-        .map(photoBlob => {
-          (photoBlob, RawMetadataBlob(None, source))
-        })
-    }
+    JsonLoader.parseJOBject(parser)
+      .leftMap(err =>
+        TranslationError.ParsingFailed(new RuntimeException(err)))
+      .flatMap(loadArtwork)
+      .map(photoBlob => {
+        (photoBlob, RawMetadataBlob(None, source))
+      })
   }
 
   def loadArtwork(obj: JObject): Xor[TranslationError, PhotoBlob] = {
@@ -58,11 +52,6 @@ object TateTranslator extends Translator {
 
     Xor.fromOption(result, InvalidFormat())
   }
-
-  def loadPhotoBlobs(path: String): Iterable[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
-    val context = TateArtworkContext("directory ingestion test")
-    val files = DirectoryWalker.findWithExtension(new File(path), ".json")
-    val jsonStrings = files.map(Source.fromFile(_).mkString)
-    jsonStrings.map(context.translate)
-  }
 }
+
+object TateLoader extends TateTranslator with DirectoryWalkerLoader
