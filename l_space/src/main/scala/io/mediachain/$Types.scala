@@ -24,6 +24,8 @@ object Types {
 
   type ElementID = ORecordId
 
+
+  val HeadRevision = "head-revision"
   val DescribedBy = "described-by"
   val ModifiedBy  = "modified-by"
   val AuthoredBy  = "authored-by"
