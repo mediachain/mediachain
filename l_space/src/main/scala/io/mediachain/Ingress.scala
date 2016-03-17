@@ -7,6 +7,7 @@ import gremlin.scala._
 
 object Ingress {
   import Traversals.{GremlinScalaImplicits, VertexImplicits}
+  import io.mediachain.util.GremlinUtils._
 
   def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob): Unit = {
     val graph = blobV.graph
@@ -114,6 +115,25 @@ object Ingress {
           .map(Xor.right)
           .getOrElse(Xor.left(CanonicalNotFound()))
       }
+  }
+
+  def setHeadRevisionForCanonical[B <: MetadataBlob]
+    (graph: Graph, canonical: Canonical, blob: B)
+    :Xor[GraphError, Canonical] = {
+
+    for {
+      canonicalV <- canonical.vertex(graph)
+      blobV <- blob.vertex(graph)
+      existingEdge = canonicalV.outE(HeadRevision)
+    } yield {
+
+      withTransaction(graph) {
+        existingEdge.drop.iterate
+        canonicalV --- HeadRevision --> blobV
+      }
+
+      canonical
+    }
   }
 }
 
