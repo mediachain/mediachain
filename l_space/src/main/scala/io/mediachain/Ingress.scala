@@ -58,6 +58,7 @@ object Ingress {
       .orElse {
         val canonicalV = graph + Canonical.create()
         canonicalV --- DescribedBy --> personV
+        canonicalV --- HeadRevision --> personV
         Xor.right(canonicalV.toCC[Canonical])
       }
   }
@@ -88,6 +89,7 @@ object Ingress {
         .getOrElse {
           val canonicalVertex = graph + Canonical.create
           canonicalVertex --- DescribedBy --> photoV
+          canonicalVertex --- HeadRevision --> photoV
           canonicalVertex.toCC[Canonical]
         }
     }
