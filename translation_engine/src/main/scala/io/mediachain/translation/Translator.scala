@@ -38,7 +38,7 @@ trait DirectoryWalkerLoader[T <: Translator] extends FSLoader[T] {
       val parser = jf.createParser(file)
       JsonLoader.parseJOBject(parser)
         .leftMap(err =>
-          TranslationError.ParsingFailed(new RuntimeException(err)))
+          TranslationError.ParsingFailed(new RuntimeException(err + " at " + file.toString)))
     }
   val pairI = jsonI.zip(rawI).map { case (jsonXor, raw) =>
       jsonXor.map((_,raw))
