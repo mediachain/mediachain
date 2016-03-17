@@ -15,6 +15,7 @@ object GraphFixture {
     modifiedPhotoBlob: PhotoBlob,
     extraPhotoBlob: PhotoBlob,
     extraPhotoBlobCanonical: Canonical,
+    rawMetadataBlob: RawMetadataBlob,
     duplicatePerson: Person,
     duplicatePersonCanonical: Canonical
   )
@@ -59,6 +60,12 @@ object GraphFixture {
     def getModifiedPhotoBlob: PhotoBlob = {
       val b = getPhotoBlob
       b.copy(description = mutate(b.description))
+    }
+
+    def getRawMetadataBlob: RawMetadataBlob = {
+      val thing = stuff(Random.nextInt(stuff.length))
+      val blobText = s""" {"thing": "$thing"} """
+      RawMetadataBlob(None, blobText)
     }
 
     val bodhisattvas = Random.shuffle(List("Avalokitesvara",
@@ -107,6 +114,11 @@ object GraphFixture {
       extraPhotoBlobCanonicalV --- DescribedBy --> extraPhotoBlobV
       extraPhotoBlobV --- AuthoredBy --> personCanonicalV
 
+      val rawMetadataBlob = getRawMetadataBlob
+      val rawMetadataBlobV = graph + rawMetadataBlob
+      photoBlobV --- TranslatedFrom --> rawMetadataBlobV
+
+      
       Objects(
         personV.toCC[Person],
         personCanonicalV.toCC[Canonical],
@@ -115,6 +127,7 @@ object GraphFixture {
         modifiedBlobV.toCC[PhotoBlob],
         extraPhotoBlobV.toCC[PhotoBlob],
         extraPhotoBlobCanonicalV.toCC[Canonical],
+        rawMetadataBlobV.toCC[RawMetadataBlob],
         duplicatePersonV.toCC[Person],
         duplicatePersonCanonicalV.toCC[Canonical])
     }

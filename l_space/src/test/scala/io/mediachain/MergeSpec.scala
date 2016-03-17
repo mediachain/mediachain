@@ -15,11 +15,12 @@ object MergeSpec extends Specification
 {
 
   def is =
-    s2"""
-         $deprecatesDescribedBy - Merging deprecates old DescribedBy edges
-         $supersedesChildCanonical - Merging supersedes old Canonical
-         $createsNewDescribedByEdges - Merging creates new DescribedBy edges from new Canonical to old canonical's root blobs
-      """
+  s2"""
+  Merging two canonicals:
+   - Deprecates old DescribedBy edges $deprecatesDescribedBy
+   - Supersedes old Canonical $supersedesChildCanonical
+   - Creates new DescribedBy edges from new Canonical to old canonical's root blobs $createsNewDescribedByEdges
+  """
 
 
   def foreach[R: AsResult](f: MergeSpecContext => R): Result = {
