@@ -6,8 +6,6 @@ import TranslationError.InvalidFormat
 import io.mediachain.Types._
 
 import org.json4s._
-import com.fasterxml.jackson.core.JsonFactory
-import java.io.File
 
 trait TateTranslator extends Translator {
   val name = "TateCreativeCommons"
@@ -21,21 +19,9 @@ trait TateTranslator extends Translator {
 
 
   implicit val formats = org.json4s.DefaultFormats
-  def translate(source: String): Xor[TranslationError, (PhotoBlob, RawMetadataBlob)] = {
-    val jf = new JsonFactory
-    val parser = jf.createParser(new File(source))
 
-    JsonLoader.parseJOBject(parser)
-      .leftMap(err =>
-        TranslationError.ParsingFailed(new RuntimeException(err)))
-      .flatMap(loadArtwork)
-      .map(photoBlob => {
-        (photoBlob, RawMetadataBlob(None, source))
-      })
-  }
-
-  def loadArtwork(obj: JObject): Xor[TranslationError, PhotoBlob] = {
-    val artwork = obj.extractOpt[Artwork]
+  def translate(json: JObject): Xor[TranslationError, PhotoBlob] = {
+    val artwork = json.extractOpt[Artwork]
     val result = artwork.map { a =>
 
       val artists = for {
@@ -54,4 +40,4 @@ trait TateTranslator extends Translator {
   }
 }
 
-object TateLoader extends TateTranslator with DirectoryWalkerLoader
+class TateLoader(val path: String) extends TateTranslator with DirectoryWalkerLoader
