@@ -14,7 +14,6 @@ object TateTranslatorSpec extends Specification with XorMatchers {
   def is = skipAllUnless(SpecResources.Tate.sampleDataExists) ^
   s2"""
        $loadsArtwork - Translates Tate artwork json into PhotoBlob
-       $loadsArtworksFromDir - Translates all artworks from a directory structure
     """
 
   def loadsArtwork = {
@@ -35,3 +34,5 @@ object TateTranslatorSpec extends Specification with XorMatchers {
     }
   }
 }
+
+// TODO: MoMA translator spec here too?
