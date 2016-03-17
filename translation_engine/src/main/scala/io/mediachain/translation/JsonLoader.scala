@@ -79,7 +79,7 @@ object JsonLoader {
     * @return A `Streaming` of either `JValue`s or `String` error messages
     */
   def parseJArray(parser: JsonParser):
-  Streaming[Xor[String, JValue]] = {
+  Iterator[Xor[String, JValue]] = {
     def helper: Streaming[Xor[String, JValue]] = {
       if (parser.getCurrentToken == JsonToken.END_ARRAY) {
         Streaming.empty
@@ -91,10 +91,10 @@ object JsonLoader {
       }
     }
 
-    parseToken(parser, JsonToken.START_ARRAY) match {
+    (parseToken(parser, JsonToken.START_ARRAY) match {
       case Xor.Right(_)  => helper
       case Xor.Left(msg) => Streaming(Xor.left(msg))
-    }
+    }).iterator
   }
 
   /** Parses an array of objects strictly, rather than lazily. This is used for
