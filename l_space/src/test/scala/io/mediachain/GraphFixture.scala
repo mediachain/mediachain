@@ -38,17 +38,19 @@ object GraphFixture {
       s.updated(idx, replacing)
     }
 
-    val stuffI = Random.shuffle(List("can of peas",
+    val stuff = Random.shuffle(List("can of peas",
       "wishbone", "pair of glasses", "spool of wire", "wrench", "baseball hat", "television", "food",
       "wallet", "jar of pickles", "tea cup", "sketch pad", "towel", "game CD", "steak knife", "slipper",
-      "pants", "sand paper", "boom box", "plush unicorn")).toIterator
-    val foodI = Random.shuffle(List("Preserved Peaches", "Brussels Sprouts", "Bananas", "Lettuce Salad",
+      "pants", "sand paper", "boom box", "plush unicorn"))
+
+    val food = Random.shuffle(List("Preserved Peaches", "Brussels Sprouts", "Bananas", "Lettuce Salad",
       "Olives", "Broiled Ham", "Cigars", "Mixed Green Salad", "Oyster Bay Asparagus", "Roast Lamb, Mint Sauce",
       "Lemonade", "Consomme en Tasse", "Liqueurs", "Iced Tea", "Canadian Club", "Radis", "Escarole Salad",
-      "Preserved figs", "Potatoes, baked", "Macedoine salad")).toIterator
+      "Preserved figs", "Potatoes, baked", "Macedoine salad"))
+
     def getPhotoBlob: PhotoBlob = {
-      val title = stuffI.next
-      val desc = foodI.next
+      val title = stuff(Random.nextInt(stuff.length))
+      val desc = food(Random.nextInt(stuff.length))
       // FIXME: randomize date
       val date = "2016-02-22T19:04:13+00:00"
       PhotoBlob(None, title, desc, date, None)
@@ -59,9 +61,9 @@ object GraphFixture {
       b.copy(description = mutate(b.description))
     }
 
-    val bodhisattvasI = Random.shuffle(List("Avalokitesvara",
-      "Manjushri", "Samantabhadra", "Kshitigarbha", "Maitreya", "Mahasthamaprapta", "Ākāśagarbha")).toIterator
-    def getPerson: Person = Person.create(bodhisattvasI.next)
+    val bodhisattvas = Random.shuffle(List("Avalokitesvara",
+      "Manjushri", "Samantabhadra", "Kshitigarbha", "Maitreya", "Mahasthamaprapta", "Ākāśagarbha"))
+    def getPerson: Person = Person.create(bodhisattvas(Random.nextInt(bodhisattvas.length)))
 
     def setupTree(graph: Graph): Objects = {
       // add photo and canonical
