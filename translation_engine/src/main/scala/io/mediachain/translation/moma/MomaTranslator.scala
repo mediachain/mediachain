@@ -12,7 +12,7 @@ import io.mediachain.translation.{FlatFileLoader, TranslationError, Translator}
 
 import scala.util.{Try, Success, Failure}
 
-trait MomaTranslator extends Translator {
+object MomaTranslator extends Translator {
   val name = "MomaCollectionTranslator"
   val version = 1
 
@@ -60,5 +60,5 @@ trait MomaTranslator extends Translator {
     */
 }
 
-class MomaLoader(val path: String) extends MomaTranslator with FlatFileLoader
+class MomaLoader(val path: String, implicit val translator: MomaTranslator.type = MomaTranslator) extends FlatFileLoader[MomaTranslator.type]
 
