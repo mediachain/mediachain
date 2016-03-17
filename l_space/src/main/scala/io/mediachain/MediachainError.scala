@@ -14,6 +14,8 @@ object GraphError {
   case class VertexNotFound() extends GraphError
   case class BlobNotFound() extends GraphError
   case class SubtreeError() extends GraphError
+
+  case class TransactionFailed(reason: Throwable) extends GraphError
 }
 
 
