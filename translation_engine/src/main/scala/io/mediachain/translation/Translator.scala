@@ -7,7 +7,7 @@ import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 trait Translator {
   val name: String
   val version: Int
-  def loadPhotoBlobs(path: String): Iterable[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]]
+  def loadPhotoBlobs(path: String): Iterator[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]]
 }
 
 object TranslatorDispatcher {

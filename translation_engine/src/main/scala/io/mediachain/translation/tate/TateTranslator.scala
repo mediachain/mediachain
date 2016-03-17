@@ -59,10 +59,10 @@ object TateTranslator extends Translator {
     Xor.fromOption(result, InvalidFormat())
   }
 
-  def loadPhotoBlobs(path: String): Iterable[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
+  def loadPhotoBlobs(path: String): Iterator[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
     val context = TateArtworkContext("directory ingestion test")
     val files = DirectoryWalker.findWithExtension(new File(path), ".json")
     val jsonStrings = files.map(Source.fromFile(_).mkString)
-    jsonStrings.map(context.translate)
+    jsonStrings.map(context.translate).iterator
   }
 }
