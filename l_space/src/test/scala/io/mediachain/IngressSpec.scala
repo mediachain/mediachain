@@ -7,8 +7,12 @@ import org.specs2.Specification
 import gremlin.scala._
 import cats.data.Xor
 import GraphError._
+import org.specs2.matcher.ThrownExpectations
 
-object IngressSpec extends Specification with Orientable with XorMatchers {
+object IngressSpec extends Specification
+  with Orientable
+  with XorMatchers
+  with ThrownExpectations {
 
   def is =
     s2"""
@@ -17,6 +21,7 @@ object IngressSpec extends Specification with Orientable with XorMatchers {
         Given an exact match, don't recreate, only attach RawMetadataBlob $attachesRawMetadata
         Given a new PhotoBlob with a new Author, add new Canonical and new Author $ingestsPhotoBothNew
         Sets the head revision for a canonical to a given blob $setsHeadRevision
+        Modifies an existing PhotoBlob $modifiesExistingPhotoBlob
       """
 
   def ingestsPhoto = { graph: OrientGraph =>
@@ -98,12 +103,12 @@ object IngressSpec extends Specification with Orientable with XorMatchers {
       case _ => false
     }
 
-    (photoBlobCount must_== 1) and
-      (authorCount must_== 1) and
-      (authorRawMeta.isRight must beTrue) and
-      (photoRawMeta.isRight must beTrue) and
-      (photoMatch must beTrue) and
-      (authorMatch must beTrue)
+    photoBlobCount must_== 1
+    authorCount must_== 1
+    authorRawMeta.isRight must beTrue
+    photoRawMeta.isRight must beTrue
+    photoMatch must beTrue
+    authorMatch must beTrue
   }
 
   def ingestsPhotoBothNew = pending
@@ -124,6 +129,28 @@ object IngressSpec extends Specification with Orientable with XorMatchers {
       v must beSome { (v: Vertex) =>
         photo.id must beSome((id: ElementID) =>
           id must_== v.id.asInstanceOf[ElementID])
+      }
+    }
+  }
+
+  def modifiesExistingPhotoBlob = { graph: OrientGraph =>
+    val objs = GraphFixture.Util.setupTree(graph)
+    val currentHead = objs.modifiedPhotoBlob
+    val newPhoto = currentHead.copy(id = None,
+      title = GraphFixture.Util.mutate(currentHead.title))
+
+    val currentHeadV = currentHead.vertex(graph)
+        .getOrElse(throw new IllegalStateException(
+          "Test fixture can't be retrieved from graph"))
+
+    val resultCanonical = Ingress.modifyPhotoBlob(graph, currentHeadV, newPhoto)
+
+    currentHeadV.inE(HeadRevision).headOption must beNone
+
+    resultCanonical must beRightXor { c: Canonical =>
+      c.vertex(graph) must beRightXor { canonicalV: Vertex =>
+        val newHead = canonicalV.out(HeadRevision).head.toCC[PhotoBlob]
+        newHead.title must_== newPhoto.title
       }
     }
   }

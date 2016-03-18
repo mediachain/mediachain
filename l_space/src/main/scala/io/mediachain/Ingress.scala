@@ -108,7 +108,9 @@ object Ingress {
         if (parentVertex.inE(HeadRevision).exists) {
           parentVertex.lift.findCanonicalXor
             .foreach { parentCanonical =>
-              setHeadRevisionForCanonical(graph, parentCanonical, photo)
+              setHeadRevisionForCanonical(graph,
+                parentCanonical,
+                childVertex.toCC[PhotoBlob])
             }
         }
 
