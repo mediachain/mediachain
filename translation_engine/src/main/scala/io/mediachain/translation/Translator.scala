@@ -8,7 +8,7 @@ import io.mediachain.Types.{Canonical, PhotoBlob, RawMetadataBlob}
 import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
 import org.json4s._
 import com.fasterxml.jackson.core.JsonFactory
-import io.mediachain.core.TranslationError
+import io.mediachain.core.{Error, TranslationError}
 import io.mediachain.Ingress
 import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
@@ -86,10 +86,11 @@ object TranslatorDispatcher {
     val blobI: Iterator[Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]] = translator.loadPhotoBlobs
     val graph = getGraph
 
-    val results: Iterator[Xor[Object, Canonical]] = blobI.map { pairXor =>
+    val results: Iterator[Xor[Error, Canonical]] = blobI.map { pairXor =>
       pairXor.flatMap { case (blob: PhotoBlob, raw: RawMetadataBlob) =>
           Ingress.addPhotoBlob(graph, blob, Some(raw))
       }
     }
+    val errors: Iterator[Error] = results.collect { case Xor.Left(err) => err }
   }
 }
