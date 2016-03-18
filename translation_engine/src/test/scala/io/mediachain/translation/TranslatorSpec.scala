@@ -34,7 +34,7 @@ object FSLoaderSpec extends Specification with XorMatchers {
     val results = loader.pairI.toList
 
     results must contain(
-      beRightXor()
+      beRightXor
     ).forall
 //    val jsonStrings = files.map(Source.fromFile(_).mkString)
 //    val translated: Iterable[Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]] =
