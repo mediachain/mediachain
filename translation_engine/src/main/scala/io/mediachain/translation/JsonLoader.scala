@@ -1,5 +1,6 @@
 package io.mediachain.translation
 
+import com.fasterxml.jackson.core.JsonFactory
 import io.mediachain.core.TranslationError
 import io.mediachain.core.TranslationError.{ResourceNotReadable, ParsingFailed}
 
@@ -14,6 +15,11 @@ object JsonLoader {
   import cats.data.{Streaming, Xor}
   import cats.implicits._
   import com.fasterxml.jackson.core.{JsonParser, JsonToken}
+
+  implicit val factory = new JsonFactory
+
+  def createParser(s: String)(implicit factory: JsonFactory) =
+    Xor.catchNonFatal(factory.createParser(s))
 
   def loadObjectFromString(jsonString: String): Xor[TranslationError, JObject] = {
     Xor.catchNonFatal(parse(jsonString).asInstanceOf[JObject])
@@ -59,9 +65,10 @@ object JsonLoader {
     val curToken = parser.getCurrentToken
     if (curToken == token) {
       if (advance) {
-        parser.nextToken
+        Xor.catchNonFatal(parser.nextToken).leftMap(_.toString).map(_ => {})
+      } else {
+        Xor.right({})
       }
-      Xor.right({})
     } else {
       Xor.left(s"Invalid token. Expected $token, got $curToken.")
     }
