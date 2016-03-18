@@ -34,22 +34,10 @@ object FSLoaderSpec extends Specification with XorMatchers {
     val results = loader.pairI.toList
 
     results must contain(
-      beRightXor
+      beRightXor { pair: (JObject, String) =>
+        pair._2 must startWith("{")
+      }
     ).forall
-//    val jsonStrings = files.map(Source.fromFile(_).mkString)
-//    val translated: Iterable[Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]] =
-//      jsonStrings.map(translate)
-//
-//    val canonicals = translated.map {
-//      resultXor: Xor[TranslationError, (PhotoBlob, RawMetadataBlob)] =>
-//        resultXor.flatMap { result: (PhotoBlob, RawMetadataBlob) =>
-//          Ingress.addPhotoBlob(graph, result._1, Some(result._2))
-//        }
-//    }.toVector
-//
-//    (canonicals must have size(be_>(1))) and
-//      (canonicals must contain (beRightXor { canonical: Canonical =>
-//        canonical.id must beSome
-//      }).forall)
+    results must have size(be_>(1))
   }
 }
