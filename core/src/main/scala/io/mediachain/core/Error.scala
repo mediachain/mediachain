@@ -1,14 +1,16 @@
 package io.mediachain.core
 import gremlin.scala.Vertex
 
-sealed abstract class TranslationError
+sealed abstract class Error
+
+sealed abstract class TranslationError extends Error
 object TranslationError {
   case class ParsingFailed(underlying: Throwable) extends TranslationError
   case class ResourceNotReadable(underlying: Throwable) extends TranslationError
   case class InvalidFormat() extends TranslationError
 }
 
-sealed abstract class GraphError
+sealed abstract class GraphError extends Error
 object GraphError {
   case class TooManyRawBlobsError(vertex: Vertex) extends GraphError
   case class AuthorNotFoundError(vertex: Vertex) extends GraphError
@@ -21,7 +23,7 @@ object GraphError {
   case class SubtreeError() extends GraphError
 }
 
-sealed abstract class MediachainError
+sealed abstract class MediachainError extends Error
 object MediachainError {
   case class Graph(error: GraphError) extends MediachainError
 }
