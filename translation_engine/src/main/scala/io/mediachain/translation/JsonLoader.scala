@@ -53,10 +53,13 @@ object JsonLoader {
     * @param token The token to search for
     * @return Unit or an error
     */
-  def parseToken(parser: JsonParser, token: JsonToken): Xor[String, Unit] = {
+  def parseToken(parser: JsonParser, token: JsonToken, advance: Boolean = true):
+  Xor[String, Unit] = {
     val curToken = parser.getCurrentToken
     if (curToken == token) {
-      parser.nextToken
+      if (advance) {
+        parser.nextToken
+      }
       Xor.right({})
     } else {
       Xor.left(s"Invalid token. Expected $token, got $curToken.")
@@ -145,9 +148,9 @@ object JsonLoader {
     * @return A `JField` or an error message
     */
   def parseField(parser: JsonParser): Xor[String, JField] = {
+    val field = parser.getCurrentName
     for {
       _ <- parseToken(parser, JsonToken.FIELD_NAME)
-      field = parser.getCurrentName
       value <- parseJValue(parser)
     } yield {
       parser.nextToken
@@ -181,7 +184,7 @@ object JsonLoader {
     for {
       _      <- parseToken(parser, JsonToken.START_OBJECT)
       fields <- parseFields(parser)
-      _      <- parseToken(parser, JsonToken.END_OBJECT)
+      _      <- parseToken(parser, JsonToken.END_OBJECT, false)
     } yield JObject(fields)
   }
 }
