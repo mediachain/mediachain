@@ -1,6 +1,5 @@
 package io.mediachain.translation
 
-import cats.data.Xor
 import com.fasterxml.jackson.core.JsonFactory
 import io.mediachain.XorMatchers
 import org.specs2.Specification
@@ -14,8 +13,9 @@ object JsonLoaderSpec extends Specification with XorMatchers {
         Loads json from a URL into an AST $loadsFromURL
         Parses simple $parsesSimple
         Parses key after object $parsesAfterObject
-        Parses objects in an array $parsesObjectInArray
         Parses tate $parsesTate
+        Parses objects in an array $parsesObjectInArray
+        Error on malformed primitive $simpleError
       """
   val jf = new JsonFactory
 
@@ -253,5 +253,23 @@ object JsonLoaderSpec extends Specification with XorMatchers {
     val parsed = JsonLoader.parseJValue(parser)
 
     parsed must beRightXor
+  }
+
+  val simpleMalformed =
+    """
+      | {
+      | "a":
+      |  }
+    """.stripMargin
+  def simpleError = {
+    implicit val factory = new JsonFactory
+    val parserXor = JsonLoader.createParser(simpleMalformed)
+    val parsed = for {
+      parser <- parserXor
+      _ = parser.nextToken
+      parsed <- JsonLoader.parseJValue(parser)
+    } yield parsed
+
+    parsed must beLeftXor
   }
 }
