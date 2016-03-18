@@ -105,6 +105,13 @@ object Ingress {
         val childVertex = graph + photo
         parentVertex --- ModifiedBy --> childVertex
 
+        if (parentVertex.inE(HeadRevision).exists) {
+          parentVertex.lift.findCanonicalXor
+            .foreach { parentCanonical =>
+              setHeadRevisionForCanonical(graph, parentCanonical, photo)
+            }
+        }
+
         // TODO: don't swallow errors
         for {
           author         <- photo.author.flatMap(addPerson(graph, _).toOption)
