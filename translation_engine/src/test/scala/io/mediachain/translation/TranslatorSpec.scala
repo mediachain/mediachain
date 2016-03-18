@@ -31,7 +31,9 @@ object FSLoaderSpec extends Specification with XorMatchers {
   def ingestsDirectory = {
     val loader = new NoopLoader(SpecResources.Tate.fixtureDir.getPath)
 
-    loader.pairI must contain(
+    val results = loader.pairI.toList
+
+    results must contain(
       beRightXor()
     ).forall
 //    val jsonStrings = files.map(Source.fromFile(_).mkString)

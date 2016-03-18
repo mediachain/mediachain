@@ -44,8 +44,9 @@ trait DirectoryWalkerLoader[T <: Translator] extends FSLoader[T] {
           TranslationError.ParsingFailed(new RuntimeException(err + " at " + file.toString)))
     }
   }
-  val pairI = jsonI.zip(rawI).map { case (jsonXor, raw) =>
-      jsonXor.map((_,raw))
+  val pairI = jsonI.zip(rawI).map {
+    case (jsonXor, raw) => jsonXor.map((_,raw))
+    case _ => throw new RuntimeException("Should never get here")
   }
 }
 
