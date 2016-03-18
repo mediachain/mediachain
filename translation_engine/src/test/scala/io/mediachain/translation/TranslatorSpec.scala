@@ -1,17 +1,12 @@
 package io.mediachain.translation
 
-import java.io.File
-
 import cats.data.Xor
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import io.mediachain._
 import io.mediachain.Types._
-import io.mediachain.Traversals.GremlinScalaImplicits
 import org.json4s._
 import org.specs2.Specification
-import gremlin.scala._
+import io.mediachain.core.TranslationError
 
-import scala.io.Source
 object FSLoaderSpec extends Specification with XorMatchers {
 
   object NoopTranslator extends Translator {

@@ -1,14 +1,13 @@
 package io.mediachain.translation.moma
 
-import java.io.File
-
 import cats.data.Xor
-import io.mediachain.translation.TranslationError.ParsingFailed
+import io.mediachain.core.TranslationError
+import io.mediachain.core.TranslationError.ParsingFailed
 import org.json4s._
 
 import io.mediachain.Types.{Person, PhotoBlob}
 
-import io.mediachain.translation.{FlatFileLoader, TranslationError, Translator}
+import io.mediachain.translation.{FlatFileLoader, Translator}
 
 import scala.util.{Try, Success, Failure}
 

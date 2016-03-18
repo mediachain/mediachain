@@ -4,10 +4,12 @@ import java.io.File
 
 import scala.io.Source
 import cats.data.Xor
-import io.mediachain.Types.{RawMetadataBlob, PhotoBlob}
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
+import io.mediachain.Types.{Canonical, PhotoBlob, RawMetadataBlob}
+import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
 import org.json4s._
 import com.fasterxml.jackson.core.JsonFactory
+import io.mediachain.core.TranslationError
+import io.mediachain.Ingress
 import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
 
@@ -66,18 +68,28 @@ trait FlatFileLoader[T <: Translator] extends FSLoader[T] {
 }
 
 object TranslatorDispatcher {
+  // TODO: move + inject me
+  def getGraph: OrientGraph = {
+    val url = sys.env.getOrElse("ORIENTDB_URL", throw new Exception("ORIENTDB_URL required"))
+    val user = sys.env.getOrElse("ORIENTDB_USER", throw new Exception("ORIENTDB_USER required"))
+    val password = sys.env.getOrElse("ORIENTDB_PASSWORD", throw new Exception("ORIENTDB_PASSWORD required"))
+    val graph = new OrientGraphFactory(url, user, password).getNoTx()
+
+    graph
+  }
   def dispatch(partner: String, path: String) = {
-    //println("partner: " + partner + ", path: " + path)
     val translator = partner match {
-      //case "moma" => new moma.MomaLoader(path)
+      case "moma" => new moma.MomaLoader(path)
       case "tate" => new tate.TateLoader(path)
     }
 
-    val blobS = translator.loadPhotoBlobs
+    val blobI: Iterator[Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]] = translator.loadPhotoBlobs
+    val graph = getGraph
 
-    val url = sys.env.get("ORIENTDB_URL").getOrElse(throw new Exception("ORIENTDB_URL required"))
-    val user = sys.env.get("ORIENTDB_USER").getOrElse(throw new Exception("ORIENTDB_USER required"))
-    val password = sys.env.get("ORIENTDB_PASSWORD").getOrElse(throw new Exception("ORIENTDB_PASSWORD required"))
-    val graph = new OrientGraphFactory(url, user, password).getNoTx()
+    val results: Iterator[Xor[Object, Canonical]] = blobI.map { pairXor =>
+      pairXor.flatMap { case (blob: PhotoBlob, raw: RawMetadataBlob) =>
+          Ingress.addPhotoBlob(graph, blob, Some(raw))
+      }
+    }
   }
 }
