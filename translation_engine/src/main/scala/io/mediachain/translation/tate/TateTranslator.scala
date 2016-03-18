@@ -2,7 +2,8 @@ package io.mediachain.translation.tate
 
 import io.mediachain.translation._
 import cats.data.Xor
-import TranslationError.InvalidFormat
+import io.mediachain.core.TranslationError
+import io.mediachain.core.TranslationError.InvalidFormat
 import io.mediachain.Types._
 
 import org.json4s._
