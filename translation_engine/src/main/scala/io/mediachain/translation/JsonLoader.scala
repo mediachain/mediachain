@@ -111,7 +111,10 @@ object JsonLoader {
       if (parser.getCurrentToken == JsonToken.END_ARRAY) {
         Xor.right(results.reverse)
       } else {
-        parseJValue(parser).flatMap(result => helper(result :: results))
+        parseJValue(parser).flatMap { result =>
+          parser.nextToken
+          helper(result :: results)
+        }
       }
     }
 

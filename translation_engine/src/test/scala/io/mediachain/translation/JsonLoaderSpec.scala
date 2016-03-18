@@ -4,7 +4,7 @@ import cats.data.Xor
 import com.fasterxml.jackson.core.JsonFactory
 import io.mediachain.XorMatchers
 import org.specs2.Specification
-import org.json4s.JObject
+import org.json4s.{JObject, JValue, JArray, JInt}
 
 
 object JsonLoaderSpec extends Specification with XorMatchers {
@@ -14,6 +14,7 @@ object JsonLoaderSpec extends Specification with XorMatchers {
         Loads json from a URL into an AST $loadsFromURL
         Parses simple $parsesSimple
         Parses key after object $parsesAfterObject
+        Parses objects in an array $parsesObjectInArray
         Parses tate $parsesTate
       """
   val jf = new JsonFactory
@@ -226,6 +227,30 @@ object JsonLoaderSpec extends Specification with XorMatchers {
     val parser = jf.createParser(tate)
     parser.nextToken()
     val parsed = JsonLoader.parseJOBject(parser)
+
+    parsed must beRightXor { json =>
+      (json \ "contributors") match {
+        case JArray(List(obj)) =>
+          (obj \ "birthYear") must_== JInt(1775)
+        case _ => failure
+      }
+    }
+  }
+
+  val objectInArray =
+    """
+      |{
+      | "a":[
+      |   {"b":1,"c":2}
+      |  ],
+      |  "f": "foo"
+      |}
+    """.stripMargin
+
+  def parsesObjectInArray = {
+    val parser = jf.createParser(objectInArray)
+    parser.nextToken()
+    val parsed = JsonLoader.parseJValue(parser)
 
     parsed must beRightXor
   }
