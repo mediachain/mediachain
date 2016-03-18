@@ -9,9 +9,8 @@ import gremlin.scala._
 import io.mediachain.{Merge => SUT}
 
 
-object MergeSpec extends Specification
+object MergeSpec extends BaseSpec
   with ForEach[MergeSpecContext]
-  with XorMatchers
 {
 
   def is =
