@@ -7,10 +7,8 @@ import Types._
 import org.specs2.execute.{Result, AsResult}
 import org.specs2.specification.ForEach
 
-object TraversalsSpec extends
-  Specification with
-  ForEach[GraphFixture.Context] with
-  XorMatchers {
+object TraversalsSpec extends BaseSpec
+  with ForEach[GraphFixture.Context] {
   import io.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits
 
   def is =

@@ -8,10 +8,8 @@ import org.specs2.execute.{AsResult, Result}
 import org.specs2.specification.ForEach
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 
-object QuerySpec extends
-  Specification with
-  ForEach[GraphFixture.Context] with
-  XorMatchers {
+object QuerySpec extends BaseSpec
+  with ForEach[GraphFixture.Context] {
   import Traversals.{GremlinScalaImplicits, VertexImplicits}
 
 

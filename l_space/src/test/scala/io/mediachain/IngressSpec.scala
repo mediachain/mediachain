@@ -9,10 +9,8 @@ import cats.data.Xor
 import GraphError._
 import org.specs2.matcher.ThrownExpectations
 
-object IngressSpec extends Specification
-  with Orientable
-  with XorMatchers
-  with ThrownExpectations {
+object IngressSpec extends BaseSpec
+  with Orientable {
 
   def is =
     s2"""
