@@ -1,5 +1,7 @@
 package io.mediachain.util.orient
 
+import java.util.Date
+
 import com.orientechnologies.orient.core.metadata.schema.{OProperty, OType, OClass}
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 
@@ -12,10 +14,12 @@ object OrientSchema {
       case _: StringProperty => OType.STRING
       case _: IntProperty => OType.INTEGER
       case _: DoubleProperty => OType.DOUBLE
+      case _: DateProperty => OType.DATETIME
     }
 
     protected var isMandatory = false
     protected var isReadOnly = false
+    protected var defaultValueAsString: Option[String] = None
 
     def mandatory(m: Boolean): this.type = {
       isMandatory = m
@@ -31,13 +35,43 @@ object OrientSchema {
       val prop = cls.createProperty(this.name, this.oType)
       prop.setMandatory(isMandatory)
       prop.setReadonly(isReadOnly)
+      defaultValueAsString.foreach(v => prop.setDefaultValue(v))
       prop
     }
   }
 
-  case class StringProperty(name: String) extends PropertyBuilder
-  case class IntProperty(name: String) extends PropertyBuilder
-  case class DoubleProperty(name: String) extends PropertyBuilder
+  sealed trait TypedPropertyBuilder[T] extends PropertyBuilder {
+    def defaultValue(value: T): this.type = {
+      this.defaultValueAsString = Some(value.toString)
+      this
+    }
+  }
+
+  sealed trait RangedPropertyBuilder[T] extends TypedPropertyBuilder[T] {
+    protected var minValue: Option[T] = None
+    protected var maxValue: Option[T] = None
+    def min(minimumValue: T): this.type = {
+      this.minValue = Some(minimumValue)
+      this
+    }
+
+    def max(maximumValue: T): this.type = {
+      maxValue = Some(maximumValue)
+      this
+    }
+
+    override def addTo(cls: OClass): OProperty = {
+      val prop = super.addTo(cls)
+      minValue.foreach(v => prop.setMin(v.toString))
+      maxValue.foreach(v => prop.setMax(v.toString))
+      prop
+    }
+  }
+
+  case class StringProperty(name: String) extends TypedPropertyBuilder[String]
+  case class IntProperty(name: String) extends RangedPropertyBuilder[Int]
+  case class DoubleProperty(name: String) extends RangedPropertyBuilder[Double]
+  case class DateProperty(name: String) extends TypedPropertyBuilder[Date]
 
   sealed trait ClassBuilder {
     val name: String
