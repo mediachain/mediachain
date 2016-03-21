@@ -36,28 +36,34 @@ object MigrationHelper {
     }
   }
 
+
   def poolWithConfig(config: ODBConnectConfig): ODBConnectionPool =
     new ODBConnectionPool {
       override def dbConfig: Try[ODBConnectConfig] = Success(config)
     }
 
+
+  def poolWithConfigFromEnv: ODBConnectionPool =
+    new ODBConnectionPool {
+      override def dbConfig: Try[ODBConnectConfig] =
+        for {
+          url <- getEnv("ORIENTDB_URL")
+          user <- getEnv("ORIENTDB_USER")
+          pass <- getEnv("ORIENTDB_PASS")
+        } yield ODBConnectConfig(url, user, pass)
+    }
+
+
   def getEnv(key: String): Try[String] =
     Try(sys.env.getOrElse(key,
       throw new RuntimeException(s"$key environment var must be defined")))
 
-  def getDBConfigFromEnv: Try[ODBConnectConfig] =
-    for {
-      url <- getEnv("ORIENTDB_URL")
-      user <- getEnv("ORIENTDB_USER")
-      pass <- getEnv("ORIENTDB_PASS")
-    } yield ODBConnectConfig(url, user, pass)
 
-  def applyToPersistentDB(): Try[Unit] = {
-    for {
-      config <- getDBConfigFromEnv
-      pool = poolWithConfig(config)
-      migrations = new LSpaceMigrations().migrations
-      result <- Migrator.runMigration(migrations)(pool)
-    } yield result
+  def applyToPersistentDB(config: Option[ODBConnectConfig] = None): Try[Unit] = {
+    val pool = config.map(poolWithConfig)
+      .getOrElse(poolWithConfigFromEnv)
+
+    val migrations = new LSpaceMigrations().migrations
+    Migrator.runMigration(migrations)(pool)
   }
 }
