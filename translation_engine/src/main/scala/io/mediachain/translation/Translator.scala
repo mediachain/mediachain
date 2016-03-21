@@ -37,19 +37,26 @@ trait FSLoader[T <: Translator] {
 }
 
 trait DirectoryWalkerLoader[T <: Translator] extends FSLoader[T] {
-  private val fileI: Iterator[File] = DirectoryWalker.findWithExtension(new File(path), ".json")
-  private val rawI = fileI.map(Source.fromFile(_).mkString)
-  private val jsonI = {
-    val jf = new JsonFactory
-    fileI.map { file =>
-      val parser = jf.createParser(file)
-      parser.nextToken
+  val fileI: Iterator[File] = DirectoryWalker.findWithExtension(new File(path), ".json")
 
-      JsonLoader.parseJOBject(parser)
-        .leftMap(err =>
-          TranslationError.ParsingFailed(new RuntimeException(err + " at " + file.toString)))
+  val (jsonI, rawI) = {
+    val (left, right) = fileI.duplicate
+    val jsonI = {
+      val jf = new JsonFactory
+      left.map { file =>
+        val parser = jf.createParser(file)
+        parser.nextToken
+
+        JsonLoader.parseJOBject(parser)
+          .leftMap(err =>
+            TranslationError.ParsingFailed(new RuntimeException(err + " at " + file.toString)))
+      }
     }
+    val rawI = right.map(Source.fromFile(_).mkString)
+
+    (jsonI, rawI)
   }
+
   val pairI = jsonI.zip(rawI).map {
     case (jsonXor, raw) => jsonXor.map((_,raw))
     case _ => throw new RuntimeException("Should never get here")

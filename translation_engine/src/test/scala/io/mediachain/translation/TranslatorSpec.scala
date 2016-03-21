@@ -29,13 +29,12 @@ object FSLoaderSpec extends Specification with XorMatchers with JsonMatchers {
 
     val results = loader.pairI.toList
 
+    results must have size(be_>(999))
     results must contain(
       beRightXor { pair: (JObject, String) =>
         pair._1 must beAnInstanceOf[JObject]
-        pair._2 must /("title")
-        pair._2 must /("id")
+        pair._2 must startWith("{")
       }
     ).forall
-    results must have size(be_>(900))
   }
 }
