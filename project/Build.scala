@@ -33,7 +33,7 @@ object LSpaceBuild extends Build{
 
   Resolver.sonatypeRepo("public")
 
-  val orientdb_migrations_commit = "ac9fb3434ebe7830c83e8c26b134c7a97377d650"
+  val orientdb_migrations_commit = "5f345cefda34f5671e6bb9e6c30312299d11f371"
   lazy val orientdb_migrations = ProjectRef(
     uri("git://github.com/mediachain/orientdb-migrations.git#" +
       orientdb_migrations_commit),
