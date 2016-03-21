@@ -39,6 +39,7 @@ object GraphFixture {
       s.updated(idx, replacing)
     }
 
+    // from https://github.com/dariusk/corpora
     val stuff = Random.shuffle(List("can of peas",
       "wishbone", "pair of glasses", "spool of wire", "wrench", "baseball hat", "television", "food",
       "wallet", "jar of pickles", "tea cup", "sketch pad", "towel", "game CD", "steak knife", "slipper",
