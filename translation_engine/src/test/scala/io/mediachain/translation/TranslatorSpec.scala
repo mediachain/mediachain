@@ -5,9 +5,10 @@ import io.mediachain._
 import io.mediachain.Types._
 import org.json4s._
 import org.specs2.Specification
+import org.specs2.matcher.JsonMatchers
 import io.mediachain.core.TranslationError
 
-object FSLoaderSpec extends Specification with XorMatchers {
+object FSLoaderSpec extends Specification with XorMatchers with JsonMatchers {
 
   object NoopTranslator extends Translator {
     val name = "noop"
@@ -30,9 +31,11 @@ object FSLoaderSpec extends Specification with XorMatchers {
 
     results must contain(
       beRightXor { pair: (JObject, String) =>
-        pair._2 must startWith("{")
+        pair._1 must beAnInstanceOf[JObject]
+        pair._2 must /("title")
+        pair._2 must /("id")
       }
     ).forall
-    results must have size(be_>(1))
+    results must have size(be_>(900))
   }
 }
