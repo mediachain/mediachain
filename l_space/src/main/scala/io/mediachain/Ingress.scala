@@ -58,7 +58,6 @@ object Ingress {
       .orElse {
         val canonicalV = graph + Canonical.create()
         canonicalV --- DescribedBy --> personV
-        canonicalV --- HeadRevision --> personV
         Xor.right(canonicalV.toCC[Canonical])
       }
   }
@@ -89,7 +88,6 @@ object Ingress {
         .getOrElse {
           val canonicalVertex = graph + Canonical.create
           canonicalVertex --- DescribedBy --> photoV
-          canonicalVertex --- HeadRevision --> photoV
           canonicalVertex.toCC[Canonical]
         }
     }
@@ -105,15 +103,6 @@ object Ingress {
         val childVertex = graph + photo
         parentVertex --- ModifiedBy --> childVertex
 
-        if (parentVertex.inE(HeadRevision).exists) {
-          parentVertex.lift.findCanonicalXor
-            .foreach { parentCanonical =>
-              setHeadRevisionForCanonical(graph,
-                parentCanonical,
-                childVertex.toCC[PhotoBlob])
-            }
-        }
-
         // TODO: don't swallow errors
         for {
           author         <- photo.author.flatMap(addPerson(graph, _).toOption)
@@ -126,25 +115,6 @@ object Ingress {
           .map(Xor.right)
           .getOrElse(Xor.left(CanonicalNotFound()))
       }
-  }
-
-  def setHeadRevisionForCanonical[B <: MetadataBlob]
-    (graph: Graph, canonical: Canonical, blob: B)
-    :Xor[GraphError, Canonical] = {
-
-    for {
-      canonicalV <- canonical.vertex(graph)
-      blobV <- blob.vertex(graph)
-      existingEdge = canonicalV.outE(HeadRevision)
-    } yield {
-
-      withTransaction(graph) {
-        existingEdge.drop.iterate
-        canonicalV --- HeadRevision --> blobV
-      }
-
-      canonical
-    }
   }
 }
 

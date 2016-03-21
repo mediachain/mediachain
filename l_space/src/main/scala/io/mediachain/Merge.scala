@@ -13,12 +13,10 @@ object Merge {
     for {
       childV <- child.vertex(graph)
       parentV <- parent.vertex(graph)
-      childHeadRevisionEdges = childV.outE(HeadRevision)
       childRootBlobEdges = childV.outE(DescribedBy).toList
       childRootBlobVs = childRootBlobEdges.map(_.inVertex)
     } yield {
       withTransaction(graph) {
-        childHeadRevisionEdges.drop.iterate
         childRootBlobEdges.foreach(_.setProperty(Keys.Deprecated, true))
         childRootBlobVs.foreach(v => parentV --- DescribedBy --> v)
         childV --- SupersededBy --> parentV

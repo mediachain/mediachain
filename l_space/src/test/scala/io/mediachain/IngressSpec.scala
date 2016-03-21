@@ -18,7 +18,6 @@ object IngressSpec extends BaseSpec
         Given a PhotoBlob with an existing Author, doesn't recreate it $findsExistingAuthor
         Given an exact match, don't recreate, only attach RawMetadataBlob $attachesRawMetadata
         Given a new PhotoBlob with a new Author, add new Canonical and new Author $ingestsPhotoBothNew
-        Sets the head revision for a canonical to a given blob $setsHeadRevision
         Modifies an existing PhotoBlob $modifiesExistingPhotoBlob
       """
 
@@ -111,26 +110,6 @@ object IngressSpec extends BaseSpec
 
   def ingestsPhotoBothNew = pending
 
-  def setsHeadRevision = { graph: OrientGraph =>
-    val objs = GraphFixture.Util.setupTree(graph)
-    val photo = objs.photoBlob
-
-    val result =
-      Ingress.setHeadRevisionForCanonical(graph,
-        objs.photoBlobCanonical,
-        photo)
-
-    result must beRightXor
-
-    objs.photoBlobCanonical.query(graph)
-      .map(_.out(HeadRevision).headOption) must beRightXor { v =>
-      v must beSome { (v: Vertex) =>
-        photo.id must beSome((id: ElementID) =>
-          id must_== v.id.asInstanceOf[ElementID])
-      }
-    }
-  }
-
   def modifiesExistingPhotoBlob = { graph: OrientGraph =>
     val objs = GraphFixture.Util.setupTree(graph)
     val currentHead = objs.modifiedPhotoBlob
@@ -143,13 +122,8 @@ object IngressSpec extends BaseSpec
 
     val resultCanonical = Ingress.modifyPhotoBlob(graph, currentHeadV, newPhoto)
 
-    currentHeadV.inE(HeadRevision).headOption must beNone
-
     resultCanonical must beRightXor { c: Canonical =>
-      c.vertex(graph) must beRightXor { canonicalV: Vertex =>
-        val newHead = canonicalV.out(HeadRevision).head.toCC[PhotoBlob]
-        newHead.title must_== newPhoto.title
-      }
+      c.vertex(graph) must beRightXor
     }
   }
 }
