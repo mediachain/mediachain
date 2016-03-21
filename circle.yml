@@ -19,7 +19,7 @@ test:
     - wget --output-document=$HOME/tate_full.zip https://github.com/tategallery/collection/archive/master.zip
     - unzip -qq $HOME/tate_full.zip -d $HOME/tate_full && rm -rf $HOME/tate_full
     - mkdir -p $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate
-    - for i in `find tate_full/artworks -type f | cut -d "/" -f 2- | shuf | head -1000`; do cp tate_full/$i $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate; done
+    - for i in `find tate_full/artworks -type f | cut -d "/" -f 2- | shuf | head -1000`; do cp --parents tate_full/$i $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate; done
     - rm -rf $HOME/tate_full
   override:
     - sbt -Dspecs2.junit.outdir=$CIRCLE_TEST_REPORTS/junit 'test-only -- junitxml console'
