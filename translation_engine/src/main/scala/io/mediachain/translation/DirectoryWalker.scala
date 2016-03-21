@@ -12,14 +12,6 @@ object DirectoryWalker {
     files.toVector
   }
 
-  def walkTreeFiles(file: File): Iterator[File] = {
-    if (file.isDirectory) {
-      file.listFiles.iterator.flatMap(walkTreeFiles)
-    } else {
-      Iterator(file)
-    }
-  }
-
   def findWithExtension(dir: File, ext: String): Vector[File] = {
     val lowerCaseExt = ext.toLowerCase
     walkTree(dir).filter(_.getName.toLowerCase.endsWith(lowerCaseExt))
