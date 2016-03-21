@@ -18,10 +18,8 @@ object TateTranslator extends Translator {
                              dateText: Option[String],
                              contributors: List[Contributor])
 
-
-  implicit val formats = org.json4s.DefaultFormats
-
   def translate(json: JObject): Xor[TranslationError, PhotoBlob] = {
+    implicit val formats = org.json4s.DefaultFormats
     val artwork = json.extractOpt[Artwork]
     val result = artwork.map { a =>
 
