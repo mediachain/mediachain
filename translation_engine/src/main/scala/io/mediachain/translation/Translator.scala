@@ -26,14 +26,18 @@ trait FSLoader[T <: Translator] {
   val path: String
 
   def loadPhotoBlobs: Iterator[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
-    pairI.map { pairXor => pairXor.flatMap { case (json, raw) =>
-      translator.translate(json).map { (_, RawMetadataBlob(None, raw))}
-    }}
+    pairI.map { pairXor =>
+      pairXor.flatMap { case (json, raw) =>
+        translator.translate(json).map {
+          (_, RawMetadataBlob(None, raw))
+        }
+      }
+    }
   }
 }
 
 trait DirectoryWalkerLoader[T <: Translator] extends FSLoader[T] {
-  private val fileI: Iterator[File] = DirectoryWalker.findWithExtension(new File(path), ".json").iterator
+  private val fileI: Iterator[File] = DirectoryWalker.findWithExtension(new File(path), ".json")
   private val rawI = fileI.map(Source.fromFile(_).mkString)
   private val jsonI = {
     val jf = new JsonFactory

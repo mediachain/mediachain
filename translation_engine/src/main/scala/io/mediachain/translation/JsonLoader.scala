@@ -48,7 +48,7 @@ object JsonLoader {
   }
 
   def loadObjectsFromDirectoryTree(directory: File, fileExtension: String = ".json")
-  : Iterable[Xor[TranslationError, JObject]] = {
+  : Iterator[Xor[TranslationError, JObject]] = {
     val files = DirectoryWalker.findWithExtension(directory, fileExtension)
     files.map(loadObjectFromFile)
   }
@@ -65,7 +65,7 @@ object JsonLoader {
     val curToken = parser.getCurrentToken
     if (curToken == token) {
       if (advance) {
-        Xor.catchNonFatal(parser.nextToken).leftMap(_.toString).map(_ => {})
+        Xor.catchNonFatal(parser.nextToken).leftMap(_.getMessage).map(_ => {})
       } else {
         Xor.right({})
       }
