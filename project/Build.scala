@@ -33,8 +33,16 @@ object LSpaceBuild extends Build{
 
   Resolver.sonatypeRepo("public")
 
+  val orientdb_migrations_commit = "ac9fb3434ebe7830c83e8c26b134c7a97377d650"
+  lazy val orientdb_migrations = ProjectRef(
+    uri("git://github.com/mediachain/orientdb-migrations.git#" +
+      orientdb_migrations_commit),
+    "orientdb-migrations-root"
+  )
+
   lazy val l_space = project
     .settings(scalaSettings: _*)
+    .dependsOn(orientdb_migrations)
 
   lazy val root = (project in file("."))
     .aggregate(l_space)

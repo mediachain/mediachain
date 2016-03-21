@@ -2,10 +2,13 @@ package io.mediachain.util.orient
 
 import java.util.Date
 
+import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
 import com.orientechnologies.orient.core.metadata.schema.{OProperty, OType, OClass}
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
+import springnz.orientdb.ODBScala
 
-object OrientSchema {
+
+trait OrientSchema {
 
   sealed trait PropertyBuilder {
     val name: String
@@ -15,6 +18,7 @@ object OrientSchema {
       case _: IntProperty => OType.INTEGER
       case _: DoubleProperty => OType.DOUBLE
       case _: DateProperty => OType.DATETIME
+      case _: BoolProperty => OType.BOOLEAN
     }
 
     protected var isMandatory = false
@@ -72,6 +76,7 @@ object OrientSchema {
   case class IntProperty(name: String) extends RangedPropertyBuilder[Int]
   case class DoubleProperty(name: String) extends RangedPropertyBuilder[Double]
   case class DateProperty(name: String) extends TypedPropertyBuilder[Date]
+  case class BoolProperty(name: String) extends TypedPropertyBuilder[Boolean]
 
   sealed trait ClassBuilder {
     val name: String
@@ -96,13 +101,12 @@ object OrientSchema {
   }
 
 
-  implicit class OGraphHelper(graph: OrientGraph) {
-    private implicit val db = graph.getRawDatabase
+  implicit class DBSchemaHelper(db: ODatabaseDocumentTx) {
 
     def add(classBuilder: ClassBuilder): OClass = {
       val cls = classBuilder match {
-        case _ : VertexClass => ODBScala.createVertexClass(classBuilder.name)
-        case _ : EdgeClass => ODBScala.createEdgeClass(classBuilder.name)
+        case _ : VertexClass => ODBScala.createVertexClass(classBuilder.name)(db)
+        case _ : EdgeClass => ODBScala.createEdgeClass(classBuilder.name)(db)
       }
       classBuilder.props.foreach(cls.add)
       cls
