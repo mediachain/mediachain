@@ -11,7 +11,10 @@ class LSpaceMigrations extends ODBMigrations with OrientSchema {
     ODBSession { implicit db: ODatabaseDocumentTx =>
     db ++ Seq (
       VertexClass("Canonical",
-        StringProperty("canonicalID").mandatory(true).readOnly(true)
+        StringProperty("canonicalID")
+          .mandatory(true)
+          .readOnly(true)
+          .unique(true)
       ),
 
       VertexClass("PhotoBlob",

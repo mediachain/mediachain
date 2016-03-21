@@ -4,7 +4,6 @@ import java.util.Date
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
 import com.orientechnologies.orient.core.metadata.schema.{OProperty, OType, OClass}
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import springnz.orientdb.ODBScala
 
 
@@ -21,6 +20,7 @@ trait OrientSchema {
       case _: BoolProperty => OType.BOOLEAN
     }
 
+    protected var createUniqueIndex = false
     protected var isMandatory = false
     protected var isReadOnly = false
     protected var defaultValueAsString: Option[String] = None
@@ -35,11 +35,20 @@ trait OrientSchema {
       this
     }
 
+    def unique(u: Boolean): this.type = {
+      createUniqueIndex = u
+      this
+    }
+
     def addTo(cls: OClass): OProperty = {
       val prop = cls.createProperty(this.name, this.oType)
       prop.setMandatory(isMandatory)
       prop.setReadonly(isReadOnly)
       defaultValueAsString.foreach(v => prop.setDefaultValue(v))
+      if (createUniqueIndex) {
+        prop.createIndex(OClass.INDEX_TYPE.UNIQUE)
+      }
+
       prop
     }
   }
