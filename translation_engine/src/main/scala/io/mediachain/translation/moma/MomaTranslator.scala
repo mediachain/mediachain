@@ -43,8 +43,7 @@ object MomaTranslator extends Translator {
     * @return A `PhotoBlob` extracted from the JValue
     */
   def translate(json: JObject): Xor[TranslationError, PhotoBlob] = {
-    //implicit val formats = DefaultFormats
-    //val rawBlob = RawMetadataBlob(None, write(json))
+    implicit val formats = DefaultFormats
     Try(json.extract[MomaPhotoBlob].asPhotoBlob) match {
       case Success(blob) => Xor.right(blob)
       case Failure(exn)  => Xor.left(ParsingFailed(exn))
