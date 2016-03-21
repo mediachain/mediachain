@@ -13,7 +13,6 @@ import gremlin.scala._
 
 trait Orientable extends ForEach[OrientGraph] {
   def foreach[R: AsResult](f: OrientGraph => R): Result = {
-    import java.util.UUID
 
     lazy val graph = MigrationHelper.newInMemoryGraph()
     try AsResult(f(graph))
