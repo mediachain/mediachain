@@ -39,9 +39,10 @@ initialCommands in console :=
     import gremlin.scala._
     import io.mediachain.Types._
     import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
+    import io.mediachain.util.orient.MigrationHelper
 
     Orient.instance.removeShutdownHook()
-    lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
+    lazy val graph = MigrationHelper.newInMemoryGraph()
     println("It's a UNIX system! I know this!")
   """
 
