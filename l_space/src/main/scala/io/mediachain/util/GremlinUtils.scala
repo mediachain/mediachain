@@ -2,8 +2,8 @@ package io.mediachain.util
 
 import cats.data.Xor
 import gremlin.scala._
-import io.mediachain.GraphError
-import io.mediachain.GraphError.TransactionFailed
+import io.mediachain.core.GraphError
+import io.mediachain.core.GraphError.TransactionFailed
 
 object GremlinUtils {
 
