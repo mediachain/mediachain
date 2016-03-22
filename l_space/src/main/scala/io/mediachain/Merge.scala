@@ -2,6 +2,7 @@ package io.mediachain
 
 import cats.data.Xor
 import gremlin.scala._
+import io.mediachain.core.GraphError
 import io.mediachain.Types._
 
 object Merge {
