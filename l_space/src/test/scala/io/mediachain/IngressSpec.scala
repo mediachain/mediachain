@@ -3,11 +3,9 @@ package io.mediachain
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import io.mediachain.Types._
 import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
-import org.specs2.Specification
 import gremlin.scala._
 import cats.data.Xor
-import GraphError._
-import org.specs2.matcher.ThrownExpectations
+import core.GraphError._
 
 object IngressSpec extends BaseSpec
   with Orientable {

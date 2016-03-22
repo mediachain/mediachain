@@ -16,11 +16,13 @@ object LSpaceBuild extends Build{
   lazy val scalaSettings = Seq(
     scalaVersion := "2.11.7",
     version := "0.0.1-WORKSHOP",
-    scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings"),
+    scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings", "-feature"),
     libraryDependencies ++= Seq(
       "org.specs2" %% "specs2-core" % "3.7" % "test",
       "org.specs2" %% "specs2-junit" % "3.7" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.13.0" % "test"
+      "org.specs2" %% "specs2-matcher-extra" % "3.7" % "test",
+      "org.scalacheck" %% "scalacheck" % "1.13.0" % "test",
+      "com.github.scopt" %% "scopt" % "3.4.0"
     ),
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
@@ -35,13 +37,18 @@ object LSpaceBuild extends Build{
 
   lazy val l_space = project
     .settings(scalaSettings: _*)
+    .dependsOn(core)
 
   lazy val translation_engine = project
     .settings(scalaSettings: _*)
     .dependsOn(l_space)
     .dependsOn(l_space % "test->test")
+    .dependsOn(core)
+
+  lazy val core = project
+    .settings(scalaSettings: _*)
 
   lazy val root = (project in file("."))
-    .aggregate(l_space,
+    .aggregate(core, l_space,
       translation_engine)
 }
