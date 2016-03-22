@@ -1,14 +1,8 @@
 package io.mediachain.translation
 
-import com.fasterxml.jackson.core.JsonFactory
 import io.mediachain.XorMatchers
 import org.specs2.Specification
 import org.json4s.{JObject, JValue, JArray, JInt}
-
-trait Implicit {
-  implicit val factory = new JsonFactory
-}
-object `package` extends Implicit
 
 object JsonLoaderSpec extends Specification with XorMatchers {
 
