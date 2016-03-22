@@ -3,12 +3,12 @@ package io.mediachain
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import io.mediachain.Types._
 import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
-import org.specs2.Specification
 import gremlin.scala._
 import cats.data.Xor
 import core.GraphError._
 
-object IngressSpec extends Specification with Orientable with XorMatchers {
+object IngressSpec extends BaseSpec
+  with Orientable {
 
   def is =
     s2"""
@@ -16,6 +16,7 @@ object IngressSpec extends Specification with Orientable with XorMatchers {
         Given a PhotoBlob with an existing Author, doesn't recreate it $findsExistingAuthor
         Given an exact match, don't recreate, only attach RawMetadataBlob $attachesRawMetadata
         Given a new PhotoBlob with a new Author, add new Canonical and new Author $ingestsPhotoBothNew
+        Modifies an existing PhotoBlob $modifiesExistingPhotoBlob
       """
 
   def ingestsPhoto = { graph: OrientGraph =>
@@ -97,13 +98,30 @@ object IngressSpec extends Specification with Orientable with XorMatchers {
       case _ => false
     }
 
-    (photoBlobCount must_== 1) and
-      (authorCount must_== 1) and
-      (authorRawMeta.isRight must beTrue) and
-      (photoRawMeta.isRight must beTrue) and
-      (photoMatch must beTrue) and
-      (authorMatch must beTrue)
+    photoBlobCount must_== 1
+    authorCount must_== 1
+    authorRawMeta.isRight must beTrue
+    photoRawMeta.isRight must beTrue
+    photoMatch must beTrue
+    authorMatch must beTrue
   }
 
   def ingestsPhotoBothNew = pending
+
+  def modifiesExistingPhotoBlob = { graph: OrientGraph =>
+    val objs = GraphFixture.Util.setupTree(graph)
+    val currentHead = objs.modifiedPhotoBlob
+    val newPhoto = currentHead.copy(id = None,
+      title = GraphFixture.Util.mutate(currentHead.title))
+
+    val currentHeadV = currentHead.vertex(graph)
+        .getOrElse(throw new IllegalStateException(
+          "Test fixture can't be retrieved from graph"))
+
+    val resultCanonical = Ingress.modifyPhotoBlob(graph, currentHeadV, newPhoto)
+
+    resultCanonical must beRightXor { c: Canonical =>
+      c.vertex(graph) must beRightXor
+    }
+  }
 }

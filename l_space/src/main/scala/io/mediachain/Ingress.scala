@@ -8,6 +8,7 @@ import gremlin.scala._
 
 object Ingress {
   import Traversals.{GremlinScalaImplicits, VertexImplicits}
+  import io.mediachain.util.GremlinUtils._
 
   def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob): Unit = {
     val graph = blobV.graph
