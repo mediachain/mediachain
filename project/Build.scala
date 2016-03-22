@@ -16,7 +16,7 @@ object LSpaceBuild extends Build{
   lazy val scalaSettings = Seq(
     scalaVersion := "2.11.7",
     version := "0.0.1-WORKSHOP",
-    scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings"),
+    scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings", "-feature"),
     libraryDependencies ++= Seq(
       "org.specs2" %% "specs2-core" % "3.7" % "test",
       "org.specs2" %% "specs2-junit" % "3.7" % "test",
