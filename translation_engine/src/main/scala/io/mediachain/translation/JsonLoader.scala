@@ -128,11 +128,9 @@ object JsonLoader {
       } else {
         for {
           result <- parseJValue(parser)
-          _ <- Xor.catchNonFatal(parser.nextToken).leftMap(_.getMessage)
+          _ <- Xor.catchNonFatal(parser.nextToken()).leftMap(_.getMessage)
           inner <- helper(result :: results)
-        } yield {
-          inner
-        }
+        } yield inner
       }
     }
 
@@ -173,8 +171,8 @@ object JsonLoader {
     for {
       _ <- parseToken(parser, JsonToken.FIELD_NAME)
       value <- parseJValue(parser)
+      _ <- Xor.catchNonFatal(parser.nextToken()).leftMap(_.getMessage)
     } yield {
-      parser.nextToken
       (field, value)
     }
   }
