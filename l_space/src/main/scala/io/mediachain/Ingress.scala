@@ -1,8 +1,9 @@
 package io.mediachain
 
 import cats.data.Xor
-import io.mediachain.Types._
-import io.mediachain.GraphError._
+import Types._
+import core.GraphError
+import core.GraphError._
 import gremlin.scala._
 
 object Ingress {

@@ -15,7 +15,7 @@ trait XorMatchers {
     }
   }
 
-  def beRightXor(): Matcher[Xor[_, _]] = { (x: Xor[_, _]) =>
+  def beRightXor: Matcher[Xor[_, _]] = { (x: Xor[_, _]) =>
     (x.isRight, s"Xor value was instance of Xor.Left: $x")
   }
 
@@ -28,7 +28,7 @@ trait XorMatchers {
     }
   }
 
-  def beLeftXor(): Matcher[Xor[_, _]] = { (x: Xor[_, _]) =>
+  def beLeftXor: Matcher[Xor[_, _]] = { (x: Xor[_, _]) =>
     (x.isLeft, s"Xor value was instance of Xor.Right: $x")
   }
 }

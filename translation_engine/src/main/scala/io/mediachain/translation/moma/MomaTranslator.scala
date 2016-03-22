@@ -1,17 +1,21 @@
 package io.mediachain.translation.moma
 
-import java.io.File
-
-import cats.data.{Streaming, Xor}
-import com.fasterxml.jackson.core.JsonFactory
+import cats.data.Xor
+import io.mediachain.core.TranslationError
+import io.mediachain.core.TranslationError.ParsingFailed
 import org.json4s._
+
 import io.mediachain.Types.{Person, PhotoBlob}
-import io.mediachain.translation.JsonLoader.parseJArray
-import io.mediachain.translation.Translator
+
+import io.mediachain.translation.{FlatFileLoader, Translator}
+
+import scala.util.{Try, Success, Failure}
 
 object MomaTranslator extends Translator {
   val name = "MomaCollectionTranslator"
   val version = 1
+
+  implicit val formats = org.json4s.DefaultFormats
 
   /** A convenience case class for parsing JSON blobs into a more abstract form.
     *
@@ -20,7 +24,7 @@ object MomaTranslator extends Translator {
     * @param Date Date of the work
     * @param Artist Artist of the work
     */
-  case class MomaPhotoBlob(Title: String,
+  private case class MomaPhotoBlob(Title: String,
                            Medium: String,
                            Date: String,
                            Artist: String) {
@@ -38,27 +42,14 @@ object MomaTranslator extends Translator {
     * @param json The JValue representing a work
     * @return A `PhotoBlob` extracted from the JValue
     */
-  def jsonToPhotoBlob(json: JValue): PhotoBlob = {
+  def translate(json: JObject): Xor[TranslationError, PhotoBlob] = {
     implicit val formats = DefaultFormats
-    json.extract[MomaPhotoBlob].asPhotoBlob
-  }
-
-  /** Given a filename representing a MoMA-schema list of artworks, parse the
-    * file into a stream of `PhotoBlob`s.
-    *
-    * @param filename The filename to read and parse
-    * @return A stream of `PhotoBlob`s
-    */
-  def loadPhotoBlobs(filename: String): Streaming[PhotoBlob] = {
-    val jf = new JsonFactory
-    val parser = jf.createParser(new File(filename))
-
-    parser.nextToken
-
-    parseJArray(parser).flatMap {
-      case Xor.Right(json) => Streaming(jsonToPhotoBlob(json))
-      case _ => Streaming.empty
+    Try(json.extract[MomaPhotoBlob].asPhotoBlob) match {
+      case Success(blob) => Xor.right(blob)
+      case Failure(exn)  => Xor.left(ParsingFailed(exn))
     }
   }
 }
+
+class MomaLoader(val path: String, implicit val translator: MomaTranslator.type = MomaTranslator) extends FlatFileLoader[MomaTranslator.type]
 
