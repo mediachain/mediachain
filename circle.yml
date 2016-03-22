@@ -19,7 +19,7 @@ test:
     - wget --output-document=$HOME/tate_full.zip https://github.com/tategallery/collection/archive/master.zip
     - unzip -qq $HOME/tate_full.zip -d $HOME/tate_full && rm $HOME/tate_full.zip
     - mkdir -p $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate
-    - cd $HOME/tate_full/collection-master && for i in `find artworks -type f | shuf | head -1000`; do cp --parents $i $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate; done
+    - cd $HOME/tate_full/collection-master && for i in `find artworks -type f | shuf | head -100`; do cp --parents $i $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate; done
     - mkdir -p $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate/artworks/a/000 && cp $HOME/tate_full/collection-master/artworks/a/000/a00001-1035.json $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate/artworks/a/000
     - rm -rf $HOME/tate_full
   override:
