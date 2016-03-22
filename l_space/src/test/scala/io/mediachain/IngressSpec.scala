@@ -6,7 +6,7 @@ import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
 import org.specs2.Specification
 import gremlin.scala._
 import cats.data.Xor
-import GraphError._
+import core.GraphError._
 
 object IngressSpec extends Specification with Orientable with XorMatchers {
 

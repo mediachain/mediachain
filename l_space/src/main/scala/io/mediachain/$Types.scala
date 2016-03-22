@@ -20,7 +20,8 @@ object Types {
   import gremlin.scala._
   import java.util.UUID
   import cats.data.Xor
-  import io.mediachain.GraphError._
+  import io.mediachain.core.GraphError
+  import io.mediachain.core.GraphError._
 
   type ElementID = ORecordId
 

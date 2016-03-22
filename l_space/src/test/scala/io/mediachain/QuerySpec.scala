@@ -186,7 +186,7 @@ object QuerySpec extends
 
     val queriedPhoto = Query.findPhotoBlob(context.graph, queryBlob)
 
-    queriedPhoto must beLeftXor()
+    queriedPhoto must beLeftXor
   }
 
   def findsCanonicalForModifiedBlob = { context: QuerySpecContext =>
