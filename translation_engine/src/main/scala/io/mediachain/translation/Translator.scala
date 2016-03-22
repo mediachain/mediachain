@@ -7,11 +7,17 @@ import cats.data.Xor
 import io.mediachain.Types.{Canonical, PhotoBlob, RawMetadataBlob}
 import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
 import org.json4s._
-import com.fasterxml.jackson.core.JsonFactory
 import io.mediachain.core.{Error, TranslationError}
 import io.mediachain.Ingress
 import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
+import com.fasterxml.jackson.core.JsonFactory
+import io.mediachain.core.TranslationError.ParsingFailed
+
+trait Implicit {
+  implicit val factory = new JsonFactory
+}
+object `package` extends Implicit
 
 trait Translator {
   val name: String
@@ -42,14 +48,14 @@ trait DirectoryWalkerLoader[T <: Translator] extends FSLoader[T] {
   val (jsonI, rawI) = {
     val (left, right) = fileI.duplicate
     val jsonI = {
-      val jf = new JsonFactory
       left.map { file =>
-        val parser = jf.createParser(file)
-        parser.nextToken
+        val obj = for {
+          parser <- JsonLoader.createParser(file)
+          obj <- JsonLoader.parseJOBject(parser)
+        } yield obj
 
-        JsonLoader.parseJOBject(parser)
-          .leftMap(err =>
-            TranslationError.ParsingFailed(new RuntimeException(err + " at " + file.toString)))
+        obj.leftMap(err =>
+          TranslationError.ParsingFailed(new RuntimeException(err + " at " + file.toString)))
       }
     }
     val rawI = right.map(Source.fromFile(_).mkString)
@@ -65,15 +71,16 @@ trait DirectoryWalkerLoader[T <: Translator] extends FSLoader[T] {
 
 trait FlatFileLoader[T <: Translator] extends FSLoader[T] {
   val pairI = {
-    val jf = new JsonFactory
-    val parser = jf.createParser(new File(path))
-
-    parser.nextToken
-
     implicit val formats = org.json4s.DefaultFormats
-    parseJArray(parser).map {
-      case Xor.Right(json: JObject) => Xor.right((json, write(json)))
-      case err @ (Xor.Left(_) | Xor.Right(_)) => Xor.left(TranslationError.ParsingFailed(new RuntimeException(err.toString)))
+
+    JsonLoader.createParser(new File(path)) match {
+      case err@Xor.Left(_) => Iterator(err)
+      case Xor.Right(parser) => {
+        parseJArray(parser).map {
+          case Xor.Right(json: JObject) => Xor.right((json, write(json)))
+          case err@(Xor.Left(_) | Xor.Right(_)) => Xor.left(TranslationError.ParsingFailed(new RuntimeException(err.toString)))
+        }
+      }
     }
   }
 }

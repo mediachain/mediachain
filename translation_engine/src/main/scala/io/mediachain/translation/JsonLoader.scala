@@ -16,8 +16,17 @@ object JsonLoader {
   import cats.implicits._
   import com.fasterxml.jackson.core.{JsonParser, JsonToken}
 
-  def createParser(s: String)(implicit factory: JsonFactory) =
-    Xor.catchNonFatal(factory.createParser(s))
+  def createParser(s: String)(implicit factory: JsonFactory): Xor[TranslationError, JsonParser] = {
+    val parserXor = Xor.catchNonFatal(factory.createParser(s))
+    parserXor.map(parser => parser.nextToken())
+    parserXor.leftMap(ParsingFailed)
+  }
+
+  def createParser(f: File)(implicit factory: JsonFactory): Xor[TranslationError, JsonParser] = {
+    val parserXor = Xor.catchNonFatal(factory.createParser(f))
+    parserXor.map(parser => parser.nextToken())
+    parserXor.leftMap(ParsingFailed)
+  }
 
   def loadObjectFromString(jsonString: String): Xor[TranslationError, JObject] = {
     Xor.catchNonFatal(parse(jsonString).asInstanceOf[JObject])
