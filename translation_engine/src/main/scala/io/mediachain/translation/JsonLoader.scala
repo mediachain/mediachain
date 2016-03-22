@@ -126,11 +126,12 @@ object JsonLoader {
       if (parser.getCurrentToken == JsonToken.END_ARRAY) {
         Xor.right(results.reverse)
       } else {
-        parseJValue(parser).flatMap { result =>
-          Xor.catchNonFatal(parser.nextToken) match {
-            case Xor.Left(err) => Xor.Left(err.getMessage)
-            case Xor.Right(_) => helper(result :: results)
-          }
+        for {
+          result <- parseJValue(parser)
+          _ <- Xor.catchNonFatal(parser.nextToken).leftMap(_.getMessage)
+          inner <- helper(result :: results)
+        } yield {
+          inner
         }
       }
     }
