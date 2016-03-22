@@ -1,7 +1,6 @@
 package io.mediachain.core
 
 import gremlin.scala.Vertex
-import io.mediachain.signatures.SigningError
 
 sealed abstract class Error
 

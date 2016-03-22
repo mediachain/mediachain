@@ -1,11 +1,13 @@
 package io.mediachain.signatures
 
+import java.security.KeyPairGenerator
+
 import cats.data.Xor
-import com.jsuereth.pgp._
 import io.mediachain.{MediachainError, XorMatchers}
 import org.specs2.Specification
 
-object SigningSpec extends Specification with XorMatchers {
+object SigningSpec extends Specification
+  with XorMatchers  {
 
   def is =
   s2"""
@@ -17,37 +19,28 @@ object SigningSpec extends Specification with XorMatchers {
 
   val passphrase = "I'll never tell!".toCharArray
 
-  lazy val (publicKeyRing, secretKeyRing): (PublicKeyRing, SecretKeyRing)
-    = PGP.makeNewKeyRings("SigningSpec", passphrase)
-
-  lazy val signer = new ObjectSigner(secretKeyRing.secretKey)
-  lazy val checker = new SignatureChecker(secretKeyRing.publicKey)
+  lazy val keygen = KeyPairGenerator.getInstance("RSA")
+  lazy val keypair = keygen.generateKeyPair()
+  lazy val publicKey = keypair.getPublic
+  lazy val privateKey = keypair.getPrivate
 
 
   def signsText = {
     val text = "Sign me, please!"
-    val signatureXor = signer.signText(text, passphrase)
+    val signature = Signer.signText(text, privateKey)
 
-    val valid = for {
-      signature <- signatureXor
-    } yield checker.verifySignedString(text, signature)
-
-    (signatureXor must beRightXor) and
-      (valid must beRightXor { _ must beTrue })
+    val valid = Signer.verifySignedText(text, signature, publicKey)
+    valid must beTrue
   }
 
 
   def doesNotValidateModifiedText = {
     val text = "Sign me, please!"
-    val signatureXor = signer.signText(text, passphrase)
+    val signature = Signer.signText(text, privateKey)
     val modifiedText = text + " Freemasons run the country!"
 
-    val valid = for {
-      signature <- signatureXor
-    } yield checker.verifySignedString(modifiedText, signature)
-
-    (signatureXor must beRightXor) and
-      (valid must beRightXor { _ must beFalse })
+    val valid = Signer.verifySignedText(modifiedText, signature, publicKey)
+    valid must beFalse
   }
 
 
@@ -61,12 +54,12 @@ object SigningSpec extends Specification with XorMatchers {
 
     val results: Xor[MediachainError, (Boolean, Boolean)] =
       for {
-        signature <- signer.signCborRepresentationOfJsonText(jsonString, passphrase)
+        signature <- Signer.signCborRepresentationOfJsonText(jsonString, privateKey)
 
-        originalIsValid <- checker.verifySignedJsonText(jsonString, signature)
+        originalIsValid <- Signer.verifySignedJsonText(jsonString, signature, publicKey)
           .leftMap(MediachainError.Parsing)
 
-        reorderedIsValid <- checker.verifySignedJsonText(reorderedJsonString, signature)
+        reorderedIsValid <- Signer.verifySignedJsonText(reorderedJsonString, signature, publicKey)
           .leftMap(MediachainError.Parsing)
       } yield (originalIsValid, reorderedIsValid)
 
