@@ -127,8 +127,10 @@ object JsonLoader {
         Xor.right(results.reverse)
       } else {
         parseJValue(parser).flatMap { result =>
-          parser.nextToken
-          helper(result :: results)
+          Xor.catchNonFatal(parser.nextToken) match {
+            case Xor.Left(err) => Xor.Left(err.getMessage)
+            case Xor.Right(_) => helper(result :: results)
+          }
         }
       }
     }
