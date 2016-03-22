@@ -2,8 +2,10 @@ package io.mediachain.translation
 
 import io.mediachain.Types._
 import io.mediachain.XorMatchers
+import org.json4s.JObject
 import org.specs2.Specification
-import tate.{TateTranslator => SUT}
+import tate.{TateLoader, TateTranslator}
+import org.json4s.jackson.JsonMethods._
 
 import scala.io.Source
 
@@ -12,7 +14,6 @@ object TateTranslatorSpec extends Specification with XorMatchers {
   def is = skipAllUnless(SpecResources.Tate.sampleDataExists) ^
   s2"""
        $loadsArtwork - Translates Tate artwork json into PhotoBlob
-       $loadsArtworksFromDir - Translates all artworks from a directory structure
     """
 
   def loadsArtwork = {
@@ -21,31 +22,17 @@ object TateTranslatorSpec extends Specification with XorMatchers {
     if (!expected.jsonFile.exists) {
       ok(s"Skipping artwork test for ${expected.jsonFile.getPath}. File does not exist")
     } else {
-      val source = Source.fromFile(expected.jsonFile).mkString
-      val context = SUT.TateArtworkContext("testing")
+      val source: String = Source.fromFile(expected.jsonFile).mkString
+      val json: JObject = parse(source).asInstanceOf[JObject] // have faith
 
-      val translated = context.translate(source)
+      val translated = TateTranslator.translate(json)
 
-      translated must beRightXor { result: (PhotoBlob, RawMetadataBlob) =>
-        val (blob, raw) = result
-        blob.title == expected.title &&
-          blob.author.exists(_.name == expected.artistName) &&
-          raw.blob == source
+      translated must beRightXor { blob: PhotoBlob =>
+        (blob.title must_== expected.title) and
+          (blob.author.exists(_.name must_== expected.artistName))
       }
     }
   }
-
-  def loadsArtworksFromDir = {
-    val jsonResults = JsonLoader.loadObjectsFromDirectoryTree(SpecResources.Tate.fixtureDir)
-
-    val translated = jsonResults.map { result =>
-      for {
-        obj <- result
-        t <- SUT.loadArtwork(obj)
-      } yield t
-    }
-
-    (jsonResults.size must be_>(0)) and
-    (jsonResults.size must_== translated.size)
-  }
 }
+
+// TODO: MoMA translator spec here too?
