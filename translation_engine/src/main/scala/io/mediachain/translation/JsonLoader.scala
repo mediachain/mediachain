@@ -1,7 +1,9 @@
 package io.mediachain.translation
 
-import io.mediachain.translation.TranslationError.{ResourceNotReadable, ParsingFailed}
+import com.fasterxml.jackson.core.JsonFactory
 
+import io.mediachain.core.TranslationError
+import io.mediachain.core.TranslationError.{ResourceNotReadable, ParsingFailed}
 
 object JsonLoader {
 
@@ -13,6 +15,18 @@ object JsonLoader {
   import cats.data.{Streaming, Xor}
   import cats.implicits._
   import com.fasterxml.jackson.core.{JsonParser, JsonToken}
+
+  def createParser(s: String)(implicit factory: JsonFactory): Xor[TranslationError, JsonParser] = {
+    val parserXor = Xor.catchNonFatal(factory.createParser(s))
+    parserXor.map(parser => parser.nextToken())
+    parserXor.leftMap(ParsingFailed)
+  }
+
+  def createParser(f: File)(implicit factory: JsonFactory): Xor[TranslationError, JsonParser] = {
+    val parserXor = Xor.catchNonFatal(factory.createParser(f))
+    parserXor.map(parser => parser.nextToken())
+    parserXor.leftMap(ParsingFailed)
+  }
 
   def loadObjectFromString(jsonString: String): Xor[TranslationError, JObject] = {
     Xor.catchNonFatal(parse(jsonString).asInstanceOf[JObject])
@@ -41,7 +55,7 @@ object JsonLoader {
   }
 
   def loadObjectsFromDirectoryTree(directory: File, fileExtension: String = ".json")
-  : Vector[Xor[TranslationError, JObject]] = {
+  : Iterator[Xor[TranslationError, JObject]] = {
     val files = DirectoryWalker.findWithExtension(directory, fileExtension)
     files.map(loadObjectFromFile)
   }
@@ -53,11 +67,15 @@ object JsonLoader {
     * @param token The token to search for
     * @return Unit or an error
     */
-  def parseToken(parser: JsonParser, token: JsonToken): Xor[String, Unit] = {
+  def parseToken(parser: JsonParser, token: JsonToken, advance: Boolean = true):
+  Xor[String, Unit] = {
     val curToken = parser.getCurrentToken
     if (curToken == token) {
-      parser.nextToken
-      Xor.right({})
+      if (advance) {
+        Xor.catchNonFatal(parser.nextToken).leftMap(_.getMessage).map(_ => {})
+      } else {
+        Xor.right({})
+      }
     } else {
       Xor.left(s"Invalid token. Expected $token, got $curToken.")
     }
@@ -79,7 +97,7 @@ object JsonLoader {
     * @return A `Streaming` of either `JValue`s or `String` error messages
     */
   def parseJArray(parser: JsonParser):
-  Streaming[Xor[String, JValue]] = {
+  Iterator[Xor[String, JValue]] = {
     def helper: Streaming[Xor[String, JValue]] = {
       if (parser.getCurrentToken == JsonToken.END_ARRAY) {
         Streaming.empty
@@ -91,10 +109,10 @@ object JsonLoader {
       }
     }
 
-    parseToken(parser, JsonToken.START_ARRAY) match {
+    (parseToken(parser, JsonToken.START_ARRAY) match {
       case Xor.Right(_)  => helper
       case Xor.Left(msg) => Streaming(Xor.left(msg))
-    }
+    }).iterator
   }
 
   /** Parses an array of objects strictly, rather than lazily. This is used for
@@ -108,7 +126,11 @@ object JsonLoader {
       if (parser.getCurrentToken == JsonToken.END_ARRAY) {
         Xor.right(results.reverse)
       } else {
-        parseJValue(parser).flatMap(result => helper(result :: results))
+        for {
+          result <- parseJValue(parser)
+          _ <- Xor.catchNonFatal(parser.nextToken()).leftMap(_.getMessage)
+          inner <- helper(result :: results)
+        } yield inner
       }
     }
 
@@ -145,12 +167,12 @@ object JsonLoader {
     * @return A `JField` or an error message
     */
   def parseField(parser: JsonParser): Xor[String, JField] = {
+    val field = parser.getCurrentName
     for {
       _ <- parseToken(parser, JsonToken.FIELD_NAME)
-      field = parser.getCurrentName
       value <- parseJValue(parser)
+      _ <- Xor.catchNonFatal(parser.nextToken()).leftMap(_.getMessage)
     } yield {
-      parser.nextToken
       (field, value)
     }
   }
@@ -181,7 +203,7 @@ object JsonLoader {
     for {
       _      <- parseToken(parser, JsonToken.START_OBJECT)
       fields <- parseFields(parser)
-      _      <- parseToken(parser, JsonToken.END_OBJECT)
+      _      <- parseToken(parser, JsonToken.END_OBJECT, false)
     } yield JObject(fields)
   }
 }

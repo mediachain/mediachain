@@ -5,7 +5,8 @@ import io.mediachain.Types._
 object Query {
   import gremlin.scala._
   import Traversals.GremlinScalaImplicits
-  import GraphError._
+  import core.GraphError
+  import core.GraphError._
   import cats.data.Xor
 
   /** Finds a vertex with label "Person" and traits matching `p` in the graph
