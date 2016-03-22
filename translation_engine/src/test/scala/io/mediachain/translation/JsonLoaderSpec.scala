@@ -264,7 +264,6 @@ object JsonLoaderSpec extends Specification with XorMatchers {
     val parserXor = JsonLoader.createParser(simpleMalformed)
     val parsed = for {
       parser <- parserXor
-      _ = parser.nextToken
       parsed <- JsonLoader.parseJValue(parser)
     } yield parsed
 
