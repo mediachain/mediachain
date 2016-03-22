@@ -69,8 +69,8 @@ object QuerySpec extends BaseSpec
     val queriedCanonical = Query.findPerson(context.graph, context.objects.person)
 
     queriedCanonical must beRightXor { (person: Canonical) =>
-      person.canonicalID == context.objects.personCanonical.canonicalID &&
-        person.id.isDefined
+      (person.canonicalID must_== context.objects.personCanonical.canonicalID) and
+        (person.id must beSome)
     }
   }
 
@@ -79,7 +79,7 @@ object QuerySpec extends BaseSpec
       Query.findAuthorForBlob(context.graph, context.objects.photoBlob)
 
     queriedAuthor must beRightXor { (c: Canonical) =>
-      c.canonicalID == context.objects.personCanonical.canonicalID
+      c.canonicalID must_== context.objects.personCanonical.canonicalID
     }
   }
 
@@ -87,7 +87,7 @@ object QuerySpec extends BaseSpec
     val queriedWorks = Query.findWorks(context.graph, context.objects.person)
 
     queriedWorks must beRightXor { (s: List[Canonical]) =>
-      s.contains(context.objects.photoBlobCanonical)
+      s must contain(context.objects.photoBlobCanonical)
     }
   }
 
@@ -104,7 +104,7 @@ object QuerySpec extends BaseSpec
 
     val parentCanonical = Query.findPhotoBlob(context.graph, context.objects.photoBlob)
     val childCanonical = Query.findCanonicalForBlob(context.graph, context.objects.modifiedPhotoBlob)
-    (childCanonical must beRightXor()) and
+    (childCanonical must beRightXor) and
       (childCanonical must_== parentCanonical)
   }
 

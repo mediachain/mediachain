@@ -25,7 +25,7 @@ object IngressSpec extends BaseSpec
     val photoBlob = PhotoBlob(None, "A Starry Night", "shiny!", "1/2/2013", None)
 
     val canonical = Ingress.addPhotoBlob(graph, photoBlob)
-    canonical.isRight must beTrue
+    canonical must beRightXor
     canonical.forall(x => x.id must beSome[ElementID])
   }
 
