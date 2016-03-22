@@ -12,7 +12,6 @@ import io.mediachain.Ingress
 import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
 import com.fasterxml.jackson.core.JsonFactory
-import io.mediachain.core.TranslationError.ParsingFailed
 
 trait Implicit {
   implicit val factory = new JsonFactory
