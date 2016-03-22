@@ -5,6 +5,10 @@ import io.mediachain.XorMatchers
 import org.specs2.Specification
 import org.json4s.{JObject, JValue, JArray, JInt}
 
+trait Implicit {
+  implicit val factory = new JsonFactory
+}
+object `package` extends Implicit
 
 object JsonLoaderSpec extends Specification with XorMatchers {
 
@@ -262,7 +266,6 @@ object JsonLoaderSpec extends Specification with XorMatchers {
       |  }
     """.stripMargin
   def simpleError = {
-    implicit val factory = new JsonFactory
     val parserXor = JsonLoader.createParser(simpleMalformed)
     val parsed = for {
       parser <- parserXor
