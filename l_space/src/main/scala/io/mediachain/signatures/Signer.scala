@@ -7,7 +7,7 @@ import java.security.cert.{CertificateException, X509Certificate}
 import cats.data.Xor
 
 import io.mediachain.Types.{Hashable, Signable}
-import io.mediachain.core.SignatureError.InvalidCertificate
+import io.mediachain.core.SignatureError.{InvalidCertificate, SignatureNotFound}
 import io.mediachain.core.{MediachainError, SignatureError}
 import io.mediachain.core.TranslationError.InvalidFormat
 import io.mediachain.util.{CborSerializer, JsonUtils}
@@ -76,14 +76,6 @@ object Signer {
     )
 
 
-  def verifySignedSignable[S <: Signable](signable: S, signature: String, publicKey: PublicKey)
-  : Boolean =
-    verifySignedBytes(
-      CborSerializer.bytesForSignable(signable),
-      signature,
-      publicKey
-    )
-
   def verifySignedJsonText(jsonText: String, signature: String, publicKey: PublicKey)
   : Xor[InvalidFormat, Boolean] = {
     val canonicalBytes = CborSerializer.bytesForJsonText(jsonText)
@@ -96,9 +88,30 @@ object Signer {
     verifySignedBytes(canonicalBytes, signature, publicKey)
   }
 
+  def verifySignedSignable[S <: Signable]
+  (signable: S, signature: String, publicKey: PublicKey)
+  : Boolean = verifySignedBytes(
+    CborSerializer.bytesForSignable(signable),
+    signature,
+    publicKey
+  )
 
   def validateCertificate(cert: X509Certificate): Xor[SignatureError, Unit] =
     Xor.catchOnly[CertificateException] {
       cert.checkValidity()
     }.leftMap(InvalidCertificate)
+
+
+  def validateSignableWithCertificate[S <: Signable]
+  (signable: S, cert: X509Certificate)
+  : Xor[SignatureError, Boolean] =
+    for {
+      _ <- validateCertificate(cert)
+
+      name = cert.getSubjectDN.getName
+
+      signature <- Xor.fromOption(signable.signatures.get(name),
+        SignatureNotFound(s"No signature by $name exists."))
+
+    } yield verifySignedSignable(signable, signature, cert.getPublicKey)
 }
