@@ -14,11 +14,13 @@
 
 package io.mediachain
 
-import io.mediachain.util.MultiHash
+import java.security.PrivateKey
+
+import io.mediachain.util.{JsonUtils, MultiHash}
 import com.orientechnologies.orient.core.id.ORecordId
-import io.mediachain.core.TranslationError.ConversionToJsonFailed
+import io.mediachain.signatures.Signer
 import org.json4s.FieldSerializer
-import FieldSerializer.ignore
+
 
 object Types {
   import gremlin.scala._
@@ -53,11 +55,22 @@ object Types {
   }
 
   trait Hashable {
-    def multiHash: Xor[ConversionToJsonFailed, MultiHash] =
+    def multiHash: MultiHash =
       MultiHash.forHashable(this)
 
-    def serializer: FieldSerializer[this.type] =
-      FieldSerializer(ignore("id"))
+    // When computing the hash of an object, we want to ignore the
+    // internal graph id, but we do want to include any signatures
+    // attached to the object.
+    def hashSerializer: FieldSerializer[this.type] =
+      JsonUtils.serializerWithIgnoredFields[this.type]("id")
+  }
+
+  type SignatureMap = Map[String, String]
+  trait Signable {
+    // When signing, we need to ignore both the id and any existing
+    // signatures.
+    def signingSerializer: FieldSerializer[this.type] =
+      JsonUtils.serializerWithIgnoredFields[this.type]("id", "signatures")
   }
 
 
@@ -80,9 +93,18 @@ object Types {
   }
 
   @label("Canonical")
-  case class Canonical(@id id: Option[ElementID],
-                       canonicalID: String) extends VertexClass {
+  case class Canonical(
+    @id id: Option[ElementID],
+    canonicalID: String,
+    signatures: SignatureMap = Map()
+  ) extends VertexClass with Signable {
     def getID(): Option[ElementID] = id
+
+    def withSignature(signingIdentity: String, privateKey: PrivateKey)
+    : Canonical = {
+      this.copy(signatures = signatures +
+        (signingIdentity -> Signer.signatureForSignable(this, privateKey)))
+    }
   }
 
   object Canonical {

@@ -4,8 +4,9 @@ import java.nio.charset.StandardCharsets
 import java.security.{PrivateKey, PublicKey, Security, Signature}
 
 import cats.data.Xor
-import io.mediachain.MediachainError
-import io.mediachain.Types.Hashable
+
+import io.mediachain.Types.{Hashable, Signable}
+import io.mediachain.core.MediachainError
 import io.mediachain.core.TranslationError.InvalidFormat
 import io.mediachain.util.{CborSerializer, JsonUtils}
 import org.apache.commons.codec.binary.Hex
@@ -33,11 +34,10 @@ object Signer {
     signBytes(text.getBytes(StandardCharsets.UTF_8), signingKey)
 
 
-  def signatureForHashable[H <: Hashable](h: H, signingKey: PrivateKey)
-  : Xor[InvalidFormat, String] = {
-    val bytesXor = CborSerializer.bytesForHashable(h)
-
-    bytesXor.map(signBytes(_, signingKey))
+  def signatureForSignable[S <: Signable](s: S, signingKey: PrivateKey)
+  : String = {
+    val bytes = CborSerializer.bytesForSignable(s)
+    signBytes(bytes, signingKey)
   }
 
   // TODO: these names are kind of unwieldy... find better ones?

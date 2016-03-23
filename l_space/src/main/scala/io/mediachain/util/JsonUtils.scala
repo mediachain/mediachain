@@ -2,10 +2,12 @@ package io.mediachain.util
 
 import java.io.IOException
 
-import org.json4s.JsonAST.{JField, JObject}
-import org.json4s.{Extraction, MappingException}
-import io.mediachain.Types.Hashable
-import io.mediachain.core.TranslationError.{ConversionToJsonFailed, InvalidFormat}
+import io.mediachain.Types.{Hashable, Signable}
+import io.mediachain.core.TranslationError.InvalidFormat
+import org.json4s.FieldSerializer.ignore
+import org.json4s.JsonAST.JObject
+import org.json4s.jackson.{JsonMethods => Json}
+import org.json4s.{Extraction, FieldSerializer, MappingException}
 
 object JsonUtils {
   import cats.data.Xor
@@ -24,11 +26,48 @@ object JsonUtils {
     }
   }
 
-  def jsonObjectForHashable[H <: Hashable](h: H): Xor[ConversionToJsonFailed, JObject] = {
-    Xor.catchOnly[MappingException] {
-      val formatsWithSerializer = DefaultFormats + h.serializer
+  def jsonObjectForHashable[H <: Hashable](h: H):  JObject = {
+    try {
+      val formatsWithSerializer = DefaultFormats + h.hashSerializer
       val asJValue = Extraction.decompose(h)(formatsWithSerializer)
       asJValue.asInstanceOf[JObject]
-    }.leftMap(e => ConversionToJsonFailed(e.getMessage))
+    } catch {
+      case e: MappingException =>
+        throw new IllegalStateException(
+          "Types extending the Hashable trait must be convertible to " +
+            "JSON objects.  Conversion failed: " + e.getMessage, e)
+      case e: Throwable => throw e
+    }
+  }
+
+
+  def jsonObjectForSignable[S <: Signable](s: S):  JObject = {
+    try {
+      val formatsWithSerializer = DefaultFormats + s.signingSerializer
+      val asJValue = Extraction.decompose(s)(formatsWithSerializer)
+      asJValue.asInstanceOf[JObject]
+    } catch {
+      case e: MappingException =>
+        throw new IllegalStateException(
+          "Types extending the Signable trait must be convertible to " +
+            "JSON objects.  Conversion failed: " + e.getMessage, e)
+      case e: Throwable => throw e
+    }
+  }
+
+
+  def serializerWithIgnoredFields[A](fieldNames: String*)
+    (implicit manifest: Manifest[A])
+  : FieldSerializer[A] =
+  {
+    val emptyPartial: PartialFunction[(String, Any), Option[(String, Any)]] =
+      PartialFunction.empty
+
+    val ignoreFn = fieldNames.foldLeft(emptyPartial) {
+      (pf, name) =>
+        pf orElse ignore(name)
+    }
+
+    FieldSerializer[A](ignoreFn)
   }
 }

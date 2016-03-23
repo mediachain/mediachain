@@ -17,11 +17,7 @@ object HashingSpec extends Specification with XorMatchers {
     val canonical = Canonical(None, "foobar")
     val canonicalWithId = Canonical(Some(new ORecordId("#0:1")), "foobar")
 
-    canonical.multiHash must beRightXor { withoutId: MultiHash =>
-      canonicalWithId.multiHash must beRightXor { withId: MultiHash =>
-        withId must_== withoutId
-      }
-    }
+    canonical.multiHash must_== canonicalWithId.multiHash
   }
 
 
@@ -34,10 +30,6 @@ object HashingSpec extends Specification with XorMatchers {
 
     val blob2 = blob1.copy(date = "March 15th, 2016")
 
-    blob1.multiHash must beRightXor { b1: MultiHash =>
-      blob2.multiHash must beRightXor { b2: MultiHash =>
-        b1 must_!= b2
-      }
-    }
+    blob1.multiHash must_!= blob2.multiHash
   }
 }
