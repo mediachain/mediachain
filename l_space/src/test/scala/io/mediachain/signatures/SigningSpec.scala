@@ -1,10 +1,7 @@
 package io.mediachain.signatures
 
-import java.security.KeyPairGenerator
-
 import cats.data.Xor
 import io.mediachain.Types.Canonical
-import io.mediachain.core.MediachainError
 import io.mediachain.XorMatchers
 import io.mediachain.core.TranslationError.InvalidFormat
 import org.specs2.Specification
@@ -18,15 +15,28 @@ object SigningSpec extends Specification
   - Does not validate signature for modified text $doesNotValidateModifiedText
   - Signs a String containing json text, first converting to canonical CBOR $signsJsonText
   - Signs a Canonical case class $signsCanonical
+  - Validates a signed Canonical with an X509 certificate $validatesWithCertificate
       """
 
-  val passphrase = "I'll never tell!".toCharArray
 
-  lazy val keygen = KeyPairGenerator.getInstance("RSA")
-  lazy val keypair = keygen.generateKeyPair()
-  lazy val publicKey = keypair.getPublic
-  lazy val privateKey = keypair.getPrivate
+  lazy val privateKeyStream =
+    getClass.getResourceAsStream("/test-private-key.pem")
 
+  lazy val certificateStream =
+    getClass.getResourceAsStream("/test-cert.pem")
+
+  lazy val privateKey =
+    PEMFileUtil.privateKeyFromInputStream(privateKeyStream)
+    .getOrElse(throw new IllegalStateException(
+      "Can't read testing private key from classpath"))
+
+  lazy val cert =
+    PEMFileUtil.certificateFromInputStream(certificateStream)
+    .getOrElse(throw new IllegalStateException(
+      "Can't read testing certificate from classpath"))
+
+
+  lazy val publicKey = cert.getPublicKey
 
   def signsText = {
     val text = "Sign me, please!"
@@ -70,9 +80,20 @@ object SigningSpec extends Specification
   }
 
   def signsCanonical = {
-    val c = Canonical.create().withSignature("Test Lord", privateKey)
-    val sig = c.signatures("Test Lord")
+    val signerIdentity = cert.getSubjectDN.getName
+    val c = Canonical.create().withSignature(signerIdentity, privateKey)
+    val sig = c.signatures(signerIdentity)
 
     Signer.verifySignedSignable(c, sig, publicKey) must beTrue
+  }
+
+
+  def validatesWithCertificate = {
+    val signerIdentity = cert.getSubjectDN.getName
+    val c = Canonical.create().withSignature(signerIdentity, privateKey)
+
+    val result = Signer.validateSignableWithCertificate(c, cert)
+
+    result must beRightXor(_ must beTrue)
   }
 }
