@@ -85,18 +85,6 @@ object Types {
       Signer.signatureForSignable(this, privateKey)
     }
 
-    def validateWithCertificate(cert: X509Certificate)
-    : Xor[SignatureError, Boolean] =
-    for {
-      _ <- Signer.validateCertificate(cert)
-
-      name = cert.getSubjectDN.getName
-
-      signature <- Xor.fromOption(this.signatures.get(name),
-        SignatureNotFound(s"No signature by ${name} exists."))
-
-    } yield Signer.verifySignedSignable(this, signature, cert.getPublicKey)
-
   }
 
 
