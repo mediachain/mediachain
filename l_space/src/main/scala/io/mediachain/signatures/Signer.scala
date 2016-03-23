@@ -1,12 +1,14 @@
 package io.mediachain.signatures
 
 import java.nio.charset.StandardCharsets
-import java.security.{PrivateKey, PublicKey, Security, Signature}
+import java.security._
+import java.security.cert.{CertificateException, X509Certificate}
 
 import cats.data.Xor
 
 import io.mediachain.Types.{Hashable, Signable}
-import io.mediachain.core.MediachainError
+import io.mediachain.core.SignatureError.InvalidCertificate
+import io.mediachain.core.{MediachainError, SignatureError}
 import io.mediachain.core.TranslationError.InvalidFormat
 import io.mediachain.util.{CborSerializer, JsonUtils}
 import org.apache.commons.codec.binary.Hex
@@ -74,16 +76,29 @@ object Signer {
     )
 
 
-    def verifySignedJsonText(jsonText: String, signature: String, publicKey: PublicKey)
-    : Xor[InvalidFormat, Boolean] = {
-      val canonicalBytes = CborSerializer.bytesForJsonText(jsonText)
-      canonicalBytes.map(verifySignedBytes(_, signature, publicKey))
-    }
+  def verifySignedSignable[S <: Signable](signable: S, signature: String, publicKey: PublicKey)
+  : Boolean =
+    verifySignedBytes(
+      CborSerializer.bytesForSignable(signable),
+      signature,
+      publicKey
+    )
 
-    def verifySignedJsonObject(json: JValue, signature: String, publicKey: PublicKey)
-    : Boolean = {
-      val canonicalBytes = CborSerializer.bytesForJsonValue(json)
-      verifySignedBytes(canonicalBytes, signature, publicKey)
-    }
+  def verifySignedJsonText(jsonText: String, signature: String, publicKey: PublicKey)
+  : Xor[InvalidFormat, Boolean] = {
+    val canonicalBytes = CborSerializer.bytesForJsonText(jsonText)
+    canonicalBytes.map(verifySignedBytes(_, signature, publicKey))
+  }
 
+  def verifySignedJsonObject(json: JValue, signature: String, publicKey: PublicKey)
+  : Boolean = {
+    val canonicalBytes = CborSerializer.bytesForJsonValue(json)
+    verifySignedBytes(canonicalBytes, signature, publicKey)
+  }
+
+
+  def validateCertificate(cert: X509Certificate): Xor[SignatureError, Unit] =
+    Xor.catchOnly[CertificateException] {
+      cert.checkValidity()
+    }.leftMap(InvalidCertificate)
 }
