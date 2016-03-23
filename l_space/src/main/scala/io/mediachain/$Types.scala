@@ -62,7 +62,7 @@ object Types {
     // internal graph id, but we do want to include any signatures
     // attached to the object.
     def hashSerializer: FieldSerializer[this.type] =
-      JsonUtils.serializerWithIgnoredFields[this.type]("id")
+      FieldSerializer[this.type](ignore("id"))
   }
 
   type SignatureMap = Map[String, String]
@@ -70,7 +70,9 @@ object Types {
     // When signing, we need to ignore both the id and any existing
     // signatures.
     def signingSerializer: FieldSerializer[this.type] =
-      JsonUtils.serializerWithIgnoredFields[this.type]("id", "signatures")
+      FieldSerializer[this.type](
+        ignore("id") orElse ignore("signatures")
+      )
   }
 
 
