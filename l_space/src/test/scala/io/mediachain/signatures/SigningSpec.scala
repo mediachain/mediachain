@@ -3,8 +3,10 @@ package io.mediachain.signatures
 import java.security.KeyPairGenerator
 
 import cats.data.Xor
+import io.mediachain.Types.Canonical
 import io.mediachain.core.MediachainError
 import io.mediachain.XorMatchers
+import io.mediachain.core.TranslationError.InvalidFormat
 import org.specs2.Specification
 
 object SigningSpec extends Specification
@@ -12,11 +14,11 @@ object SigningSpec extends Specification
 
   def is =
   s2"""
-       $signsText - Signs a text string
-       $doesNotValidateModifiedText - Does not validate signature for modified text
-
-       $signsJsonText - Signs a String containing json text, first converting to canonical CBOR
-    """
+  - Signs a text string $signsText
+  - Does not validate signature for modified text $doesNotValidateModifiedText
+  - Signs a String containing json text, first converting to canonical CBOR $signsJsonText
+  - Signs a Canonical case class $signsCanonical
+      """
 
   val passphrase = "I'll never tell!".toCharArray
 
@@ -53,19 +55,24 @@ object SigningSpec extends Specification
         | "title": "Harder Better Faster Stronger"
         |}""".stripMargin
 
-    val results: Xor[MediachainError, (Boolean, Boolean)] =
+    val results: Xor[InvalidFormat, (Boolean, Boolean)] =
       for {
         signature <- Signer.signCborRepresentationOfJsonText(jsonString, privateKey)
 
         originalIsValid <- Signer.verifySignedJsonText(jsonString, signature, publicKey)
-          .leftMap(MediachainError.Parsing)
 
         reorderedIsValid <- Signer.verifySignedJsonText(reorderedJsonString, signature, publicKey)
-          .leftMap(MediachainError.Parsing)
       } yield (originalIsValid, reorderedIsValid)
 
     results must beRightXor { results =>
       (results._1 must beTrue) and (results._2 must beTrue)
     }
+  }
+
+  def signsCanonical = {
+    val c = Canonical.create().withSignature("Test Lord", privateKey)
+    val sig = c.signatures("Test Lord")
+
+    Signer.verifySignedSignable(c, sig, publicKey) must beTrue
   }
 }
