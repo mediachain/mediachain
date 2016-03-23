@@ -6,7 +6,8 @@ import java.security.{PrivateKey, PublicKey, Security, Signature}
 import cats.data.Xor
 import io.mediachain.MediachainError
 import io.mediachain.Types.Hashable
-import io.mediachain.util.{CborSerializer, JsonParser, ParsingError}
+import io.mediachain.core.TranslationError.InvalidFormat
+import io.mediachain.util.{CborSerializer, JsonUtils}
 import org.apache.commons.codec.binary.Hex
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.json4s._
@@ -33,9 +34,8 @@ object Signer {
 
 
   def signatureForHashable[H <: Hashable](h: H, signingKey: PrivateKey)
-  : Xor[MediachainError, String] = {
+  : Xor[InvalidFormat, String] = {
     val bytesXor = CborSerializer.bytesForHashable(h)
-      .leftMap(MediachainError.Parsing)
 
     bytesXor.map(signBytes(_, signingKey))
   }
@@ -49,9 +49,8 @@ object Signer {
 
 
   def signCborRepresentationOfJsonText(jsonString: String, signingKey: PrivateKey)
-  :Xor[MediachainError, String] =
-    JsonParser.parseJsonString(jsonString)
-      .leftMap(MediachainError.Parsing)
+  :Xor[InvalidFormat, String] =
+    JsonUtils.parseJsonString(jsonString)
       .map(parsed => signCborRepresentationOfJsonValue(parsed, signingKey))
 
 
@@ -76,7 +75,7 @@ object Signer {
 
 
     def verifySignedJsonText(jsonText: String, signature: String, publicKey: PublicKey)
-    : Xor[ParsingError, Boolean] = {
+    : Xor[InvalidFormat, Boolean] = {
       val canonicalBytes = CborSerializer.bytesForJsonText(jsonText)
       canonicalBytes.map(verifySignedBytes(_, signature, publicKey))
     }

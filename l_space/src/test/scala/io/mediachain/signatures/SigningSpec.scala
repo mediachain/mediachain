@@ -3,7 +3,8 @@ package io.mediachain.signatures
 import java.security.KeyPairGenerator
 
 import cats.data.Xor
-import io.mediachain.{MediachainError, XorMatchers}
+import io.mediachain.core.MediachainError
+import io.mediachain.XorMatchers
 import org.specs2.Specification
 
 object SigningSpec extends Specification

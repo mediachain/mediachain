@@ -1,5 +1,7 @@
 package io.mediachain.util
 
+import io.mediachain.core.TranslationError.{ConversionToJsonFailed, InvalidFormat}
+
 object CborSerializer {
   import cats.data.Xor
   import io.mediachain.Types.Hashable
@@ -14,12 +16,13 @@ object CborSerializer {
   def sha1StringForJsonValue(json: JValue): String =
     Cbor.sha1String(Cbor.render(json))
 
-  def bytesForJsonText(jsonString: String): Xor[InvalidJson, Array[Byte]] =
-    JsonParser.parseJsonString(jsonString)
+
+  def bytesForJsonText(jsonString: String): Xor[InvalidFormat, Array[Byte]] =
+    JsonUtils.parseJsonString(jsonString)
       .map(bytesForJsonValue)
 
-  def sha1StringForJsonText(jsonString: String): Xor[InvalidJson, String] =
-    JsonParser.parseJsonString(jsonString)
+  def sha1StringForJsonText(jsonString: String): Xor[InvalidFormat, String] =
+    JsonUtils.parseJsonString(jsonString)
       .map(sha1StringForJsonValue)
 
   def bytesForValue[A <: AnyRef](a: A)(implicit formats: Formats = DefaultFormats)
@@ -32,7 +35,7 @@ object CborSerializer {
   }
 
   def bytesForHashable[H <: Hashable](h: H): Xor[ConversionToJsonFailed, Array[Byte]] = {
-    val jObjectXor = JsonParser.jsonObjectForHashable(h)
+    val jObjectXor = JsonUtils.jsonObjectForHashable(h)
 
     jObjectXor.map(bytesForJsonValue)
   }
