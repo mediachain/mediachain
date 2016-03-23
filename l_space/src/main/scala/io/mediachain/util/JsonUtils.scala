@@ -54,20 +54,4 @@ object JsonUtils {
       case e: Throwable => throw e
     }
   }
-
-
-  def serializerWithIgnoredFields[A](fieldNames: String*)
-    (implicit manifest: Manifest[A])
-  : FieldSerializer[A] =
-  {
-    val emptyPartial: PartialFunction[(String, Any), Option[(String, Any)]] =
-      PartialFunction.empty
-
-    val ignoreFn = fieldNames.foldLeft(emptyPartial) {
-      (pf, name) =>
-        pf orElse ignore(name)
-    }
-
-    FieldSerializer[A](ignoreFn)
-  }
 }
