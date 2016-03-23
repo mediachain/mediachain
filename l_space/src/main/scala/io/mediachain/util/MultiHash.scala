@@ -7,6 +7,7 @@ import io.mediachain.Types.Hashable
 import io.mediachain.util.MultiHash.HashType
 import io.mediachain.util.MultiHashError._
 import io.mediachain.util.ParsingError.ConversionToJsonFailed
+import io.mediachain.core.TranslationError.ConversionToJsonFailed
 
 
 sealed abstract class MultiHashError

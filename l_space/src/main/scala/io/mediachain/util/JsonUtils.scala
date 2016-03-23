@@ -26,13 +26,9 @@ object JsonUtils {
 
   def jsonObjectForHashable[H <: Hashable](h: H): Xor[ConversionToJsonFailed, JObject] = {
     Xor.catchOnly[MappingException] {
-      val asJValue = Extraction.decompose(h)
-      val filtered = asJValue.filterField {
-        case JField(name, _) if h.excludedFields.contains(name) => false
-        case _ => true
-      }
-
-      JObject(filtered)
-    }
-  }.leftMap(e => ConversionToJsonFailed(e.getMessage))
+      val formatsWithSerializer = DefaultFormats + h.serializer
+      val asJValue = Extraction.decompose(h)(formatsWithSerializer)
+      asJValue.asInstanceOf[JObject]
+    }.leftMap(e => ConversionToJsonFailed(e.getMessage))
+  }
 }
