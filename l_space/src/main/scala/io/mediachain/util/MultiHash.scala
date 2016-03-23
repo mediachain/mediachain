@@ -58,9 +58,8 @@ object MultiHash {
   }
 
 
-  def forHashable[H <: Hashable](h: H): Xor[ConversionToJsonFailed, MultiHash] = {
-    CborSerializer.bytesForHashable(h)
-        .map(hashWithSHA256)
+  def forHashable[H <: Hashable](h: H): MultiHash = {
+    hashWithSHA256(CborSerializer.bytesForHashable(h))
   }
 
   def fromHash(hashType: HashType, hash: Array[Byte]): Xor[MultiHashError, MultiHash] = {
