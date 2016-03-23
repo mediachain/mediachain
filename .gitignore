@@ -16,3 +16,10 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 .idea/
+
+
+# mediachain specific
+
+# ignore test datasets for translation engine
+translation_engine/test-resources/datasets/*
+!translation_engine/test-resources/datasets/README.md
