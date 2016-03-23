@@ -15,18 +15,21 @@
 package io.mediachain
 
 import java.security.PrivateKey
+import java.security.cert.X509Certificate
 
-import io.mediachain.util.{JsonUtils, MultiHash}
 import com.orientechnologies.orient.core.id.ORecordId
+import io.mediachain.core.SignatureError
+import io.mediachain.core.SignatureError.SignatureNotFound
 import io.mediachain.signatures.Signer
+import io.mediachain.util.MultiHash
 import org.json4s.FieldSerializer
-
+import org.json4s.FieldSerializer.ignore
 
 object Types {
-  import gremlin.scala._
   import java.util.UUID
+
   import cats.data.Xor
-  import io.mediachain.core.GraphError
+  import gremlin.scala._
   import io.mediachain.core.GraphError._
 
 
@@ -67,12 +70,33 @@ object Types {
 
   type SignatureMap = Map[String, String]
   trait Signable {
+    val signatures: SignatureMap
+
     // When signing, we need to ignore both the id and any existing
     // signatures.
+    // the `ignore` partial functions are chained with `orElse`, so if
+    // first `ignore` is not defined for a field, it will try the second.
     def signingSerializer: FieldSerializer[this.type] =
       FieldSerializer[this.type](
         ignore("id") orElse ignore("signatures")
       )
+
+    def signature(privateKey: PrivateKey): String = {
+      Signer.signatureForSignable(this, privateKey)
+    }
+
+    def validateWithCertificate(cert: X509Certificate)
+    : Xor[SignatureError, Boolean] =
+    for {
+      _ <- Signer.validateCertificate(cert)
+
+      name = cert.getSubjectDN.getName
+
+      signature <- Xor.fromOption(this.signatures.get(name),
+        SignatureNotFound(s"No signature by ${name} exists."))
+
+    } yield Signer.verifySignedSignable(this, signature, cert.getPublicKey)
+
   }
 
 
@@ -105,7 +129,7 @@ object Types {
     def withSignature(signingIdentity: String, privateKey: PrivateKey)
     : Canonical = {
       this.copy(signatures = signatures +
-        (signingIdentity -> Signer.signatureForSignable(this, privateKey)))
+        (signingIdentity -> this.signature(privateKey)))
     }
   }
 

@@ -27,6 +27,14 @@ object GraphError {
   case class TransactionFailed(reason: Throwable) extends GraphError
 }
 
+
+sealed abstract class SignatureError extends Error
+object SignatureError {
+  case class InvalidCertificate(underlying: Throwable) extends SignatureError
+  case class SignatureNotFound(message: String) extends SignatureError
+  case class InvalidSignature() extends SignatureError
+}
+
 sealed abstract class MediachainError extends Error
 object MediachainError {
   case class Graph(error: GraphError) extends MediachainError
