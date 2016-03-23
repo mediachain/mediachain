@@ -72,9 +72,11 @@ object Ingress {
       addPerson(graph, p, raw)
     }
 
+    val strippedPhoto = photo.copy(author = None)
+
     // check to see if a duplicate entry exists
-    val photoV = Traversals.photoBlobsWithExactMatch(graph.V, photo)
-        .headOption.getOrElse(graph + photo)
+    val photoV = Traversals.photoBlobsWithExactMatch(graph.V, strippedPhoto)
+        .headOption.getOrElse(graph + strippedPhoto)
 
     raw.foreach(attachRawMetadata(photoV, _))
 
