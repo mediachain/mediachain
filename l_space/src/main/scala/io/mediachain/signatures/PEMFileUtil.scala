@@ -3,7 +3,7 @@ package io.mediachain.signatures
 import java.io._
 import java.security.cert.{CertificateException, CertificateFactory, X509Certificate}
 import java.security.spec.{InvalidKeySpecException, PKCS8EncodedKeySpec}
-import java.security.{KeyFactory, PrivateKey}
+import java.security.{KeyFactory, PrivateKey, Security}
 
 import cats.data.Xor
 import io.mediachain.core.SignatureError
@@ -12,11 +12,14 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.util.io.pem.PemReader
 
 object PEMFileUtil {
-  val keyFactory: KeyFactory =
-    KeyFactory.getInstance("RSA", new BouncyCastleProvider)
+  Security.addProvider(new BouncyCastleProvider)
+  val CRYPTO_PROVIDER = BouncyCastleProvider.PROVIDER_NAME
 
-  val certFactory: CertificateFactory =
-    CertificateFactory.getInstance("X.509", new BouncyCastleProvider)
+  private val keyFactory: KeyFactory =
+    KeyFactory.getInstance("RSA", CRYPTO_PROVIDER)
+
+  private val certFactory: CertificateFactory =
+    CertificateFactory.getInstance("X.509", CRYPTO_PROVIDER)
 
   def certificateFromInputStream(inStream: InputStream)
   : Xor[SignatureError, X509Certificate] =

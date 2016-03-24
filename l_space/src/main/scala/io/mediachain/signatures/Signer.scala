@@ -16,12 +16,14 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.json4s._
 
 object Signer {
+  Security.addProvider(new BouncyCastleProvider)
   val SIGNING_ALGORITHM = "SHA512withRSA"
-  val CRYPTO_PROVIDER = new BouncyCastleProvider
-  Security.addProvider(CRYPTO_PROVIDER)
+  val CRYPTO_PROVIDER = BouncyCastleProvider.PROVIDER_NAME
 
-  def makeSigner(): Signature =
+  private def makeSigner(): Signature =
     Signature.getInstance(SIGNING_ALGORITHM, CRYPTO_PROVIDER)
+
+
   /// SIGN
 
   def signBytes(bytes: Array[Byte], signingKey: PrivateKey): String = {
