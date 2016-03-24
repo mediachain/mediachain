@@ -111,7 +111,7 @@ object TranslatorDispatcher {
     val errors: Iterator[Error] = results.collect { case Xor.Left(err) => err }
     val canonicals: Iterator[Canonical] = results.collect { case Xor.Right(c) => c }
 
-    println(s"Import finished: ${canonicals.length} canonicals imported ${errors} errors reported (see below)")
+    println(s"Import finished: ${canonicals.length} canonicals imported ${errors.length} errors reported (see below)")
     println(errors)
   }
 }
