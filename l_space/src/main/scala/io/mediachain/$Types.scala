@@ -85,6 +85,8 @@ object Types {
       Signer.signatureForSignable(this, privateKey)
     }
 
+    def withSignature(signingIdentity: String, privateKey: PrivateKey)
+    : this.type
   }
 
 
@@ -115,9 +117,10 @@ object Types {
     def getID(): Option[ElementID] = id
 
     def withSignature(signingIdentity: String, privateKey: PrivateKey)
-    : Canonical = {
+    : this.type = {
       this.copy(signatures = signatures +
         (signingIdentity -> this.signature(privateKey)))
+        .asInstanceOf[this.type]
     }
   }
 
@@ -131,12 +134,21 @@ object Types {
     }
   }
 
-  sealed trait MetadataBlob extends VertexClass
+  sealed trait MetadataBlob extends VertexClass with Signable
 
   @label("RawMetadataBlob")
-  case class RawMetadataBlob(@id id: Option[ElementID],
-                             blob: String) extends MetadataBlob {
+  case class RawMetadataBlob(
+    @id id: Option[ElementID],
+    blob: String,
+    signatures: SignatureMap = Map()
+  ) extends MetadataBlob {
     def getID(): Option[ElementID] = id
+
+    def withSignature(signingIdentity: String, privateKey: PrivateKey)
+    : this.type =
+      this.copy(signatures = signatures +
+        (signingIdentity -> this.signature(privateKey)))
+        .asInstanceOf[this.type]
   }
 
   object RawMetadataBlob {
@@ -146,9 +158,18 @@ object Types {
   }
 
   @label("Person")
-  case class Person(@id id: Option[ElementID],
-                    name: String) extends MetadataBlob {
+  case class Person(
+    @id id: Option[ElementID],
+    name: String,
+    signatures: SignatureMap = Map()
+  ) extends MetadataBlob {
     def getID(): Option[ElementID] = id
+
+    def withSignature(signingIdentity: String, privateKey: PrivateKey)
+    : this.type =
+      this.copy(signatures = signatures +
+        (signingIdentity -> this.signature(privateKey)))
+        .asInstanceOf[this.type]
   }
 
   object Person {
@@ -162,12 +183,21 @@ object Types {
   }
 
   @label("PhotoBlob")
-  case class PhotoBlob(@id id: Option[ElementID],
-                       title: String,
-                       description: String,
-                       date: String,
-                       author: Option[Person]) extends MetadataBlob {
+  case class PhotoBlob(
+    @id id: Option[ElementID],
+    title: String,
+    description: String,
+    date: String,
+    author: Option[Person],
+    signatures: SignatureMap = Map()
+  ) extends MetadataBlob {
     def getID(): Option[ElementID] = id
+
+    def withSignature(signingIdentity: String, privateKey: PrivateKey)
+    : this.type =
+      this.copy(signatures = signatures +
+        (signingIdentity -> this.signature(privateKey)))
+        .asInstanceOf[this.type]
   }
 
   object PhotoBlob {
