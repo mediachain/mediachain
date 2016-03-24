@@ -23,4 +23,7 @@ test:
     - mkdir -p $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate/artworks/a/000 && cp $HOME/tate_full/collection-master/artworks/a/000/a00001-1035.json $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate/artworks/a/000
     - rm -rf $HOME/tate_full
   override:
-    - sbt -Dspecs2.junit.outdir=$CIRCLE_TEST_REPORTS/junit 'test-only -- junitxml console'
+    - sbt -Dspecs2.junit.outdir=$CIRCLE_TEST_REPORTS/junit 'coverage test-only -- junitxml console'
+  post:
+    - sbt 'coverageReport'
+    - sbt 'coverageAggregate' 
