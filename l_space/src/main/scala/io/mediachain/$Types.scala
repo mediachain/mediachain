@@ -231,6 +231,10 @@ object Types {
     override def hashSerializer: FieldSerializer[this.type] =
       FieldSerializer[this.type](ignore("id") orElse ignore("author"))
 
+    override def signingSerializer: FieldSerializer[this.type] =
+      FieldSerializer[this.type](
+        ignore("id") orElse ignore("signatures") orElse ignore("author"))
+
     def getID(): Option[ElementID] = id
 
     def withSignature(signingIdentity: String, privateKey: PrivateKey)
