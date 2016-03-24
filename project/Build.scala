@@ -49,7 +49,7 @@ object LSpaceBuild extends Build{
   lazy val core = project
     .settings(scalaSettings: _*)
 
-  val orientdb_migrations_commit = "5f345cefda34f5671e6bb9e6c30312299d11f371"
+  val orientdb_migrations_commit = "6901a09cd323f7b43f9a70831017c0cda85ab1b4"
   lazy val orientdb_migrations = ProjectRef(
     uri("git://github.com/mediachain/orientdb-migrations.git#" +
       orientdb_migrations_commit),
