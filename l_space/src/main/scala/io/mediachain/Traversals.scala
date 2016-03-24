@@ -14,21 +14,19 @@ object Traversals {
 
   def personBlobsWithExactMatch(q: GremlinScala[Vertex, _], p: Person): GremlinScala[Vertex, _] = {
     q.hasLabel[Person]
-      .has(Person.Keys.name, p.name)
+      .has(Keys.MultiHash, p.multiHash.base58)
   }
 
   def photoBlobsWithExactMatch(q: GremlinScala[Vertex, _], blob: PhotoBlob)
   : GremlinScala[Vertex, _] = {
     q.hasLabel[PhotoBlob]
-      .has(PhotoBlob.Keys.title, blob.title)
-      .has(PhotoBlob.Keys.description, blob.description)
-      .has(PhotoBlob.Keys.date, blob.date)
+      .has(Keys.MultiHash, blob.multiHash.base58)
   }
 
   def rawMetadataBlobsWithExactMatch(q: GremlinScala[Vertex, _], raw: RawMetadataBlob)
   : GremlinScala[Vertex, _] = {
     q.hasLabel[RawMetadataBlob]
-      .has(RawMetadataBlob.Keys.blob, raw.blob)
+      .has(Keys.MultiHash, raw.multiHash.base58)
   }
 
 

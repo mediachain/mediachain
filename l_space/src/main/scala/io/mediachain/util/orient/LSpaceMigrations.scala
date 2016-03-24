@@ -9,36 +9,44 @@ class LSpaceMigrations extends ODBMigrations with OrientSchema {
 
   def migration0: ODBSession[Unit] =
     ODBSession { implicit db: ODatabaseDocumentTx =>
-    db ++ Seq (
-      VertexClass("Canonical",
-        StringProperty("canonicalID")
-          .mandatory(true)
-          .readOnly(true)
-          .unique(true)
-      ),
 
-      VertexClass("PhotoBlob",
-        StringProperty("title").readOnly(true),
-        StringProperty("description").readOnly(true),
-        StringProperty("date").readOnly(true)
-      ),
+      val multiHashProp =
+        StringProperty("multiHash").mandatory(true).readOnly(true).unique(true)
 
-      VertexClass("Person",
-        StringProperty("name").mandatory(true).readOnly(true)
-      ),
+      db ++ Seq (
+        VertexClass("Canonical",
+          multiHashProp,
+          StringProperty("canonicalID")
+            .mandatory(true)
+            .readOnly(true)
+            .unique(true)
+        ),
 
-      VertexClass("RawMetadataBlob",
-        StringProperty("blob").mandatory(true).readOnly(true)
-      ),
+        VertexClass("PhotoBlob",
+          multiHashProp,
+          StringProperty("title").readOnly(true),
+          StringProperty("description").readOnly(true),
+          StringProperty("date").readOnly(true)
+        ),
 
-      EdgeClass(DescribedBy),
-      EdgeClass(ModifiedBy),
-      EdgeClass(TranslatedFrom),
-      EdgeClass(AuthoredBy)
-    )
+        VertexClass("Person",
+          multiHashProp,
+          StringProperty("name").mandatory(true).readOnly(true)
+        ),
 
-    () // explicitly return unit
-  }
+        VertexClass("RawMetadataBlob",
+          multiHashProp,
+          StringProperty("blob").mandatory(true).readOnly(true)
+        ),
+
+        EdgeClass(DescribedBy),
+        EdgeClass(ModifiedBy),
+        EdgeClass(TranslatedFrom),
+        EdgeClass(AuthoredBy)
+      )
+
+      () // explicitly return unit
+    }
 
   override def migrations: Seq[Migration] = Seq (
     Migration(0, migration0)

@@ -43,6 +43,7 @@ object Types {
 
   object Keys {
     val Deprecated = Key[Boolean]("deprecated")
+    val MultiHash = Key[String]("multiHash")
   }
 
 
