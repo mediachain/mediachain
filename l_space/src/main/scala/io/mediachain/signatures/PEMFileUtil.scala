@@ -1,8 +1,8 @@
 package io.mediachain.signatures
 
-import java.io.{FileInputStream, IOError, InputStream, InputStreamReader}
-import java.security.cert.{CertificateFactory, X509Certificate}
-import java.security.spec.PKCS8EncodedKeySpec
+import java.io._
+import java.security.cert.{CertificateException, CertificateFactory, X509Certificate}
+import java.security.spec.{InvalidKeySpecException, PKCS8EncodedKeySpec}
 import java.security.{KeyFactory, PrivateKey}
 
 import cats.data.Xor
@@ -19,30 +19,30 @@ object PEMFileUtil {
     CertificateFactory.getInstance("X.509", new BouncyCastleProvider)
 
   def certificateFromInputStream(inStream: InputStream)
-  : Xor[SignatureError, X509Certificate] = {
-    Xor.catchNonFatal {
-      certFactory.generateCertificate(inStream)
-        .asInstanceOf[X509Certificate]
-    }.leftMap(PEMIOError)
-      .flatMap {
-        case null => Xor.left(InvalidCertificate(
-          new RuntimeException(
-            s"Unable to create X509 certificate")))
-        case valid: X509Certificate => Xor.right(valid)
+  : Xor[SignatureError, X509Certificate] =
+    Xor.catchOnly[CertificateException] {
+      val cert =
+        certFactory.generateCertificate(inStream).asInstanceOf[X509Certificate]
+      if (cert == null) {
+        throw new CertificateException("Unable to create X509 certificate")
       }
-  }
+      cert
+    }.leftMap(InvalidCertificate)
 
 
   def privateKeyFromInputStream(inStream: InputStream)
   : Xor[SignatureError, PrivateKey] = {
-    Xor.catchNonFatal {
+    Xor.catchOnly[IOException] {
       val reader = new PemReader(new InputStreamReader(inStream))
       val pem = reader.readPemObject()
       reader.close()
-
-      val keySpec = new PKCS8EncodedKeySpec(pem.getContent)
-      keyFactory.generatePrivate(keySpec)
+      new PKCS8EncodedKeySpec(pem.getContent)
     }.leftMap(PEMIOError)
+      .flatMap { keySpec =>
+        Xor.catchOnly[InvalidKeySpecException] {
+          keyFactory.generatePrivate(keySpec)
+        }.leftMap(InvalidCertificate)
+      }
   }
 
 
