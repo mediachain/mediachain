@@ -34,15 +34,20 @@ testOptions in Test += Tests.Cleanup( loader => {
 
 initialCommands in console :=
   """
+    import com.orientechnologies.orient.core.Orient
     import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
     import gremlin.scala._
     import io.mediachain.Types._
     import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
-    lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
+    import io.mediachain.util.orient.MigrationHelper
+
+    Orient.instance.removeShutdownHook()
+    lazy val graph = MigrationHelper.newInMemoryGraph()
     println("It's a UNIX system! I know this!")
   """
 
 cleanupCommands in consoleProject :=
   """
     graph.close()
+    Orient.instance.shutdown()
   """

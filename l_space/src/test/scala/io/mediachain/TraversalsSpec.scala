@@ -1,5 +1,6 @@
 package io.mediachain
 
+import io.mediachain.util.orient.MigrationHelper
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 import org.specs2.Specification
 import gremlin.scala._
@@ -35,7 +36,7 @@ object TraversalsSpec extends BaseSpec
   // TODO: can you figure out how to abstract out the connection creation?
   def foreach[R: AsResult](f: GraphFixture.Context => R): Result = {
 
-    lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
+    lazy val graph = MigrationHelper.newInMemoryGraph()
     try {
       AsResult(f(GraphFixture.Context(graph)))
     } finally {

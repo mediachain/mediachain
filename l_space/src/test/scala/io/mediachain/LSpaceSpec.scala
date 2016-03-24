@@ -1,5 +1,6 @@
 package io.mediachain
 
+import _root_.io.mediachain.util.orient.MigrationHelper
 import org.specs2._
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.specification.ForEach
@@ -12,9 +13,8 @@ import gremlin.scala._
 
 trait Orientable extends ForEach[OrientGraph] {
   def foreach[R: AsResult](f: OrientGraph => R): Result = {
-    import java.util.UUID
 
-    lazy val graph = new OrientGraphFactory(s"memory:test-${UUID.randomUUID}").getNoTx()
+    lazy val graph = MigrationHelper.newInMemoryGraph()
     try AsResult(f(graph))
     finally {
       graph.database().drop()

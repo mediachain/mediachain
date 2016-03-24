@@ -1,6 +1,7 @@
 package io.mediachain
 
 import io.mediachain.Types._
+import io.mediachain.util.orient.MigrationHelper
 import org.specs2.Specification
 import gremlin.scala._
 import scala.util.Random
@@ -16,7 +17,7 @@ object QuerySpec extends BaseSpec
   // TODO: can you figure out how to abstract out the connection creation?
   def foreach[R: AsResult](f: GraphFixture.Context => R): Result = {
 
-    lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}").getNoTx()
+    lazy val graph = MigrationHelper.newInMemoryGraph()
     try {
       AsResult(f(GraphFixture.Context(graph)))
     } finally {
