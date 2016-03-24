@@ -227,6 +227,10 @@ object Types {
     author: Option[Person],
     signatures: SignatureMap = Map()
   ) extends MetadataBlob {
+
+    override def hashSerializer: FieldSerializer[this.type] =
+      FieldSerializer[this.type](ignore("id") orElse ignore("author"))
+
     def getID(): Option[ElementID] = id
 
     def withSignature(signingIdentity: String, privateKey: PrivateKey)
