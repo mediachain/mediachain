@@ -59,7 +59,7 @@ object LSpaceBuild extends Build{
 
   lazy val root = (project in file("."))
     .aggregate(core, l_space,
-      translation_engine, orientdb_migrations)
+      translation_engine)
     .dependsOn(core, l_space,
-      translation_engine, orientdb_migrations)
+      translation_engine)
 }
