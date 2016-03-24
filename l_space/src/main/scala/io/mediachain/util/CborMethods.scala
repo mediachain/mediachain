@@ -22,9 +22,10 @@ object CborMethods extends org.json4s.JsonMethods[JValue] {
   def mapper = _defaultMapper
 
 
-  def parse(in: JsonInput, useBigDecimalForDouble: Boolean = false): JValue = {
+  def parse(in: JsonInput, useBigDecimalForDouble: Boolean = false, useBigIntForLong: Boolean = true): JValue = {
     // What about side effects?
     mapper.configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, useBigDecimalForDouble)
+    mapper.configure(DeserializationFeature.USE_BIG_INTEGER_FOR_INTS, useBigIntForLong)
     in match {
       case StringInput(s) =>
         val bytes = Base64.getDecoder.decode(s)
@@ -35,8 +36,8 @@ object CborMethods extends org.json4s.JsonMethods[JValue] {
     }
   }
 
-  def parseOpt(in: JsonInput, useBigDecimalForDouble: Boolean = false): Option[JValue] =  allCatch opt {
-    parse(in, useBigDecimalForDouble)
+  def parseOpt(in: JsonInput, useBigDecimalForDouble: Boolean = false, useBigIntForLong: Boolean = true): Option[JValue] =  allCatch opt {
+    parse(in, useBigDecimalForDouble, useBigIntForLong)
   }
 
   def render(value: JValue)(implicit formats: Formats = DefaultFormats): JValue =
