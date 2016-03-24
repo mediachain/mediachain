@@ -1,5 +1,6 @@
 package io.mediachain.signatures
 
+
 import cats.data.Xor
 import io.mediachain.Types.Canonical
 import io.mediachain.XorMatchers
@@ -80,7 +81,7 @@ object SigningSpec extends Specification
   }
 
   def signsCanonical = {
-    val signerIdentity = cert.getSubjectDN.getName
+    val signerIdentity = CertificateUtil.canonicalName(cert)
     val c = Canonical.create().withSignature(signerIdentity, privateKey)
     val sig = c.signatures(signerIdentity)
 
@@ -89,7 +90,7 @@ object SigningSpec extends Specification
 
 
   def validatesWithCertificate = {
-    val signerIdentity = cert.getSubjectDN.getName
+    val signerIdentity = CertificateUtil.canonicalName(cert)
     val c = Canonical.create().withSignature(signerIdentity, privateKey)
 
     val result = Signer.validateSignableWithCertificate(c, cert)
