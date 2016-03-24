@@ -68,6 +68,41 @@ object Types {
       FieldSerializer[this.type](ignore("id"))
   }
 
+  object Hashable {
+    // Extend the default `Marshallable` implementation for `Hashable` case classes
+    // to include the computed `multiHash` as a vertex property.
+    //
+    // The default marshaller will only store the constructor parameters for a case class.
+    // Since the hash is a computed property, it doesn't get stored by default.
+    // This method creates a new `Marshallable` that will include the `multiHash`
+
+    def marshaller[CC <: Hashable with Product : Marshallable]: Marshallable[CC] = {
+      new Marshallable[CC] {
+        override def fromCC(cc: CC): FromCC = {
+          val defaultFromCC = implicitly[Marshallable[CC]].fromCC(cc)
+
+          val valueMap =  defaultFromCC.valueMap +
+            ("multiHash" -> cc.multiHash.base58)
+
+          FromCC(defaultFromCC.id, defaultFromCC.label, valueMap)
+        }
+
+        override def toCC(id: Id, valueMap: ValueMap): CC =
+          implicitly[Marshallable[CC]]
+            .toCC(id, valueMap + ("id" -> id))
+      }
+    }
+    def serializer: FieldSerializer[this.type] =
+      FieldSerializer(ignore("id"))
+  }
+
+  implicit val canonicalMarshaller = Hashable.marshaller[Canonical]
+  implicit val rawMetadataBlobMarshaller = Hashable.marshaller[RawMetadataBlob]
+  implicit val photoBlobMarshaller = Hashable.marshaller[PhotoBlob]
+  implicit val personMarshaller = Hashable.marshaller[Person]
+
+
+
   type SignatureMap = Map[String, String]
   trait Signable {
     val signatures: SignatureMap
