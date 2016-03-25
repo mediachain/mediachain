@@ -32,6 +32,7 @@ sealed abstract class SignatureError extends Error
 object SignatureError {
   case class PEMIOError(underlying: Throwable) extends SignatureError
   case class InvalidCertificate(underlying: Throwable) extends SignatureError
+  case class CertificateLacksCommonName() extends SignatureError
   case class SignatureNotFound(message: String) extends SignatureError
   case class InvalidSignature() extends SignatureError
 }

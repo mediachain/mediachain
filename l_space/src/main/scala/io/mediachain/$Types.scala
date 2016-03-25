@@ -165,10 +165,10 @@ object Types {
   ) extends MetadataBlob {
     def getID(): Option[ElementID] = id
 
-    def withSignature(signingIdentity: String, privateKey: PrivateKey)
+    def withSignature(signerCommonName: String, privateKey: PrivateKey)
     : this.type =
       this.copy(signatures = signatures +
-        (signingIdentity -> this.signature(privateKey)))
+        (signerCommonName -> this.signature(privateKey)))
         .asInstanceOf[this.type]
   }
 

@@ -81,19 +81,20 @@ object SigningSpec extends Specification
   }
 
   def signsCanonical = {
-    val signerIdentity = CertificateUtil.canonicalName(cert)
-    val c = Canonical.create().withSignature(signerIdentity, privateKey)
-    val sig = c.signatures(signerIdentity)
+    val commonName = "foo.bar.baz"
+    val c = Canonical.create().withSignature(commonName, privateKey)
+    val sig = c.signatures(commonName)
 
     Signer.verifySignedSignable(c, sig, publicKey) must beTrue
   }
 
 
   def validatesWithCertificate = {
-    val signerIdentity = CertificateUtil.canonicalName(cert)
-    val c = Canonical.create().withSignature(signerIdentity, privateKey)
-
-    val result = Signer.validateSignableWithCertificate(c, cert)
+    val result = for {
+      commonName <- CertificateUtil.commonName(cert)
+      canonical = Canonical.create().withSignature(commonName, privateKey)
+      result <- Signer.validateSignableWithCertificate(canonical, cert)
+    } yield result
 
     result must beRightXor(_ must beTrue)
   }
