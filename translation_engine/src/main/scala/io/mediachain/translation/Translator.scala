@@ -1,6 +1,7 @@
 package io.mediachain.translation
 
 import java.io.File
+import java.security.PrivateKey
 
 import scala.io.Source
 import cats.data.Xor
@@ -12,11 +13,14 @@ import io.mediachain.Ingress
 import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
 import com.fasterxml.jackson.core.JsonFactory
+import io.mediachain.signatures.PEMFileUtil
 
 trait Implicit {
   implicit val factory = new JsonFactory
 }
 object `package` extends Implicit
+
+case class Signatory(commonName: String, privateKey: PrivateKey)
 
 trait Translator {
   val name: String
@@ -30,11 +34,20 @@ trait FSLoader[T <: Translator] {
   val pairI: Iterator[Xor[TranslationError, (JObject, String)]]
   val path: String
 
-  def loadPhotoBlobs: Iterator[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
+  def loadPhotoBlobs(signatory: Option[Signatory] = None)
+  : Iterator[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
     pairI.map { pairXor =>
       pairXor.flatMap { case (json, raw) =>
-        translator.translate(json).map {
-          (_, RawMetadataBlob(None, raw))
+        translator.translate(json).map { photoBlob: PhotoBlob =>
+          val rawBlob = RawMetadataBlob (None, raw)
+
+          signatory match {
+            case Some(Signatory(commonName, privateKey)) =>
+              (photoBlob.withSignature(commonName, privateKey),
+                rawBlob.withSignature(commonName, privateKey))
+            case _ =>
+              (photoBlob, rawBlob)
+          }
         }
       }
     }
@@ -94,18 +107,33 @@ object TranslatorDispatcher {
 
     graph
   }
-  def dispatch(partner: String, path: String) = {
+  def dispatch(partner: String, path: String, signingIdentity: String, privateKeyPath: String) = {
     val translator = partner match {
       case "moma" => new moma.MomaLoader(path)
       case "tate" => new tate.TateLoader(path)
     }
 
-    val blobI: Iterator[Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]] = translator.loadPhotoBlobs
+    val privateKeyXor = PEMFileUtil.privateKeyFromFile(privateKeyPath)
+
+    privateKeyXor match {
+      case Xor.Left(err) =>
+        println(s"Unable to load private key for $signingIdentity from $privateKeyPath: " +
+          err + "\nStatements will not be signed.")
+      case _ => ()
+    }
+
+    val signatory: Option[Signatory] = privateKeyXor
+      .toOption
+      .map(Signatory(signingIdentity, _))
+
+    val blobI: Iterator[Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]] =
+      translator.loadPhotoBlobs(signatory)
+
     val graph = getGraph
 
     val results: Iterator[Xor[Error, Canonical]] = blobI.map { pairXor =>
       pairXor.flatMap { case (blob: PhotoBlob, raw: RawMetadataBlob) =>
-          Ingress.addPhotoBlob(graph, blob, Some(raw))
+        Ingress.addPhotoBlob(graph, blob, Some(raw))
       }
     }
     val errors: Iterator[Error] = results.collect { case Xor.Left(err) => err }
