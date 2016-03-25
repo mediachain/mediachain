@@ -36,7 +36,6 @@ object SigningSpec extends Specification
     .getOrElse(throw new IllegalStateException(
       "Can't read testing certificate from classpath"))
 
-
   lazy val publicKey = cert.getPublicKey
 
   def signsText = {
