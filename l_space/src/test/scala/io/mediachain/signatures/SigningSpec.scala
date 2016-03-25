@@ -20,11 +20,11 @@ object SigningSpec extends Specification
       """
 
 
-  lazy val privateKeyStream =
-    getClass.getResourceAsStream("/test-private-key.pem")
+  lazy val privateKeyStream = getClass.getResourceAsStream(
+    "/private-keys/lspace.mine.nyc/private-key.pem")
 
-  lazy val certificateStream =
-    getClass.getResourceAsStream("/test-cert.pem")
+  lazy val certificateStream = getClass.getResourceAsStream(
+    "/certificates/lspace.mine.nyc/certificate.pem")
 
   lazy val privateKey =
     PEMFileUtil.privateKeyFromInputStream(privateKeyStream)
