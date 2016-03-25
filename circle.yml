@@ -23,7 +23,7 @@ test:
     - mkdir -p $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate/artworks/a/000 && cp $HOME/tate_full/collection-master/artworks/a/000/a00001-1035.json $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate/artworks/a/000
     - rm -rf $HOME/tate_full
   override:
-    - case $(($CIRCLE_NODE_INDEX % 2)) in 0) PROJECT="l_space" 1) PROJECT="translation_engine";; esac:
+    - case $(($CIRCLE_NODE_INDEX % 2)) in 0) PROJECT="l_space";; 1) PROJECT="translation_engine";; esac:
           parallel: true
     - sbt -Dspecs2.junit.outdir=$CIRCLE_TEST_REPORTS/junit project $PROJECT coverage 'test-only -- junitxml console'
   post:
