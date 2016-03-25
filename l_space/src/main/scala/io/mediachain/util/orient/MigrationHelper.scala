@@ -1,11 +1,12 @@
 package io.mediachain.util.orient
 
 import com.orientechnologies.orient.core.db.ODatabaseFactory
-import org.apache.tinkerpop.gremlin.orientdb.{OrientGraphFactory, OrientGraph}
+import io.mediachain.util.Env
+import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
 import springnz.orientdb.migration.Migrator
-import springnz.orientdb.pool.{ODBConnectionPool, ODBConnectConfig}
+import springnz.orientdb.pool.{ODBConnectConfig, ODBConnectionPool}
 
-import scala.util.{Failure, Success, Try, Random}
+import scala.util.{Failure, Random, Success, Try}
 
 object MigrationHelper {
 
@@ -47,16 +48,13 @@ object MigrationHelper {
     new ODBConnectionPool {
       override def dbConfig: Try[ODBConnectConfig] =
         for {
-          url <- getEnv("ORIENTDB_URL")
-          user <- getEnv("ORIENTDB_USER")
-          pass <- getEnv("ORIENTDB_PASS")
+          url <- Env.getString("ORIENTDB_URL")
+          user <- Env.getString("ORIENTDB_USER")
+          pass <- Env.getString("ORIENTDB_PASS")
         } yield ODBConnectConfig(url, user, pass)
     }
 
 
-  def getEnv(key: String): Try[String] =
-    Try(sys.env.getOrElse(key,
-      throw new RuntimeException(s"$key environment var must be defined")))
 
 
   def applyToPersistentDB(config: Option[ODBConnectConfig] = None): Try[Unit] = {
