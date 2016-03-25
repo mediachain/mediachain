@@ -3,6 +3,8 @@ package io.mediachain.signatures
 import java.security.cert.X509Certificate
 import javax.security.auth.x500.X500Principal
 
+import cats.data.Xor
+import io.mediachain.core.SignatureError.CertificateLacksCommonName
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x500.style.{BCStyle, IETFUtils}
 
@@ -17,4 +19,10 @@ object CertificateUtil {
     val rdns = name.getRDNs(BCStyle.CN)
     rdns.map(IETFUtils.valueToString).toList
   }
+
+
+  def commonName(cert: X509Certificate)
+  : Xor[CertificateLacksCommonName, String] =
+    Xor.fromOption(commonNames(cert).headOption, CertificateLacksCommonName())
+
 }

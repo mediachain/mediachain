@@ -110,7 +110,7 @@ object Signer {
     for {
       _ <- validateCertificate(cert)
 
-      name = CertificateUtil.canonicalName(cert)
+      name <- CertificateUtil.commonName(cert)
 
       signature <- Xor.fromOption(signable.signatures.get(name),
         SignatureNotFound(s"No signature by $name exists."))
