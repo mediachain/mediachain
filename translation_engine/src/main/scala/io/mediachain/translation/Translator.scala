@@ -119,6 +119,7 @@ object TranslatorDispatcher {
       case Xor.Left(err) =>
         println(s"Unable to load private key for $signingIdentity from $privateKeyPath: " +
           err + "\nStatements will not be signed.")
+      case _ => ()
     }
 
     val signatory: Option[Signatory] = privateKeyXor
