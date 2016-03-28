@@ -1,15 +1,11 @@
 package io.mediachain
 
-import io.mediachain.util.orient.MigrationHelper
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
-import org.specs2.Specification
+
 import gremlin.scala._
 import Types._
-import org.specs2.execute.{Result, AsResult}
-import org.specs2.specification.ForEach
 
 object TraversalsSpec extends BaseSpec
-  with ForEach[GraphFixture.Context] {
+  with ForEachGraph[GraphFixture.Context] {
   import io.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits
 
   def is =
@@ -33,16 +29,7 @@ object TraversalsSpec extends BaseSpec
     Finds raw metadata for blob vertex and converts to RawMetadataBlob CC $findsRawImplicit
   """
 
-  // TODO: can you figure out how to abstract out the connection creation?
-  def foreach[R: AsResult](f: GraphFixture.Context => R): Result = {
-
-    lazy val graph = MigrationHelper.newInMemoryGraph()
-    try {
-      AsResult(f(GraphFixture.Context(graph)))
-    } finally {
-      graph.database().drop()
-    }
-  }
+  def forEachGraph(graph: Graph) = GraphFixture.Context(graph)
 
   def findsCanonicalByID = { context: GraphFixture.Context =>
     val queriedCanonicalID =

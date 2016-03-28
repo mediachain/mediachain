@@ -1,16 +1,12 @@
 package io.mediachain
 
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
-import org.specs2.Specification
-import org.specs2.execute.{Result, AsResult}
-import org.specs2.specification.ForEach
 import io.mediachain.Types._
 import gremlin.scala._
 import io.mediachain.{Merge => SUT}
 
 
 object MergeSpec extends BaseSpec
-  with ForEach[MergeSpecContext]
+  with ForEachGraph[MergeSpecContext]
 {
 
   def is =
@@ -22,15 +18,7 @@ object MergeSpec extends BaseSpec
   """
 
 
-  def foreach[R: AsResult](f: MergeSpecContext => R): Result = {
-    lazy val graph = new OrientGraphFactory(s"memory:test-${math.random}")
-      .getNoTx()
-    try {
-      AsResult(f(MergeSpecContext(graph)))
-    } finally {
-      graph.database().drop()
-    }
-  }
+  def forEachGraph(graph: Graph) = MergeSpecContext(graph)
 
 
   def deprecatesDescribedBy = { context: MergeSpecContext =>
