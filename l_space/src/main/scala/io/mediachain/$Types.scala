@@ -133,7 +133,10 @@ object Types {
     // first `ignore` is not defined for a field, it will try the second.
     def signingSerializer: FieldSerializer[this.type] =
       FieldSerializer[this.type](
-        ignore("id") orElse ignore("signatures")
+        {
+          case ("id", _) => None
+          case ("signatures", _) => None
+        }
       )
 
     def signature(privateKey: PrivateKey): String = {
@@ -248,11 +251,19 @@ object Types {
   ) extends MetadataBlob {
 
     override def hashSerializer: FieldSerializer[this.type] =
-      FieldSerializer[this.type](ignore("id") orElse ignore("author"))
+      FieldSerializer[this.type](
+        {
+          case ("id", _) => None
+          case ("author", _) => None
+        })
 
     override def signingSerializer: FieldSerializer[this.type] =
       FieldSerializer[this.type](
-        ignore("id") orElse ignore("signatures") orElse ignore("author"))
+        {
+          case ("id", _) => None
+          case ("author", _) => None
+          case ("signatures", _) => None
+        })
 
     def getID(): Option[ElementID] = id
 
