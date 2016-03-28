@@ -1,16 +1,74 @@
 package io.mediachain.util
 
 import java.io._
+import java.util
 
+import com.orientechnologies.orient.core.db.record.OTrackedMap
 import gremlin.scala._
 import org.apache.tinkerpop.gremlin.structure.Direction
 import org.apache.tinkerpop.gremlin.structure.io.IoCore
-import org.json4s.JObject
-import org.json4s.jackson.{JsonMethods => Json}
+import org.json4s._
+import org.json4s.jackson.{Serialization, JsonMethods => Json}
+import org.json4s.jackson.Serialization.{write => JsonWrite}
 
 import scala.collection.JavaConversions._
 
 object GraphJsonWriter {
+
+  case class D3Node(label: String, id: String, properties: Map[String, Any])
+  case class D3Link(label: String, id: String, properties: Map[String, Any],
+    source: Int, target: Int, sourceId: String, targetId: String)
+
+  case class D3Graph(nodes: List[D3Node], links: List[D3Link])
+
+  class EmbeddedMapSerializer extends
+    CustomSerializer[util.LinkedHashMap[_, _]](format => (
+    {
+      case JObject(fields) => {
+        val m = new util.LinkedHashMap[String, String]()
+        fields.foreach[Unit] { field =>
+          val (key: String, jValue: org.json4s.JsonAST.JValue) = field
+          m.put(key, Json.compact(jValue))
+        }
+        m
+      }
+    },
+    {
+      case m: util.LinkedHashMap[_, _] =>
+        JObject(
+          m.entrySet().map { entry =>
+            val key = entry.getKey.toString
+            val stringVal = entry.getValue.toString
+            JField(key, JString(stringVal))
+          }.toList
+        )
+    }
+    ))
+
+  def graphToD3JSONString(graph: Graph): String = {
+    val noGremlinScalaProp = { name: String =>
+      name != "__gs"
+    }
+
+    val nodes: List[D3Node] = graph.V.map { v: Vertex =>
+      D3Node(v.label, v.id.toString, v.valueMap.filterKeys(noGremlinScalaProp))
+    }.toList
+
+    val edges: List[D3Link] = graph.E.map { e: Edge =>
+      val inVertexId = e.inVertex().id.toString
+      val outVertexId = e.outVertex().id.toString
+      val inVertexIndex = nodes.indexWhere(_.id == inVertexId)
+      val outVertexIndex = nodes.indexWhere(_.id == outVertexId)
+
+      D3Link(e.label, e.id.toString, e.valueMap.filterKeys(noGremlinScalaProp),
+        inVertexIndex, outVertexIndex, inVertexId, outVertexId)
+    }.toList
+
+    val d3Graph = D3Graph(nodes, edges)
+    val formats = Serialization.formats(NoTypeHints) + new EmbeddedMapSerializer
+    JsonWrite(d3Graph)(formats)
+  }
+
 
   implicit class GraphIOImplicits(graph: Graph) {
     lazy val writer = graph.io(IoCore.graphson).writer.create
@@ -24,6 +82,14 @@ object GraphJsonWriter {
     def printGraphson(): Unit = {
       writer.writeGraph(System.out, graph)
     }
+
+    def toD3JsonString: String =
+      graphToD3JSONString(graph)
+
+    def printD3JsonString(): Unit = {
+      println(toD3JsonString)
+    }
+
   }
 
   implicit class VertexIOImplicits(vertex: Vertex) {
