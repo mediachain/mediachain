@@ -3,7 +3,7 @@ package io.mediachain.util
 import java.io.IOException
 
 import io.mediachain.Types.{Hashable, Signable}
-import io.mediachain.core.TranslationError.InvalidFormat
+import io.mediachain.core.TranslationError.{ConversionToJsonFailed, InvalidFormat}
 import org.json4s.FieldSerializer.ignore
 import org.json4s.JsonAST.JObject
 import org.json4s.jackson.{JsonMethods => Json}
@@ -54,4 +54,11 @@ object JsonUtils {
       case e: Throwable => throw e
     }
   }
+
+
+  def jsonObjectForMap[Key, Value](m: Map[Key, Value]): Xor[ConversionToJsonFailed, JObject] =
+    Xor.catchOnly[MappingException] {
+      Extraction.decompose(m).asInstanceOf[JObject]
+    }.leftMap(e => ConversionToJsonFailed(e.getMessage))
+
 }

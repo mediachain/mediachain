@@ -17,6 +17,7 @@ package io.mediachain
 import java.security.PrivateKey
 import java.security.cert.X509Certificate
 
+import com.orientechnologies.orient.core.db.record.OTrackedMap
 import com.orientechnologies.orient.core.id.ORecordId
 import io.mediachain.core.SignatureError
 import io.mediachain.core.SignatureError.SignatureNotFound
@@ -25,13 +26,14 @@ import io.mediachain.util.MultiHash
 import org.json4s.FieldSerializer
 import org.json4s.FieldSerializer.ignore
 
+import scala.collection.JavaConversions._
+
 object Types {
   import java.util.UUID
 
   import cats.data.Xor
   import gremlin.scala._
   import io.mediachain.core.GraphError._
-
 
   type ElementID = ORecordId
 
@@ -83,14 +85,25 @@ object Types {
           val defaultFromCC = implicitly[Marshallable[CC]].fromCC(cc)
 
           val valueMap =  defaultFromCC.valueMap +
-            ("multiHash" -> cc.multiHash.base58)
+            ("multiHash" -> cc.multiHash.base58) +
+            ("signatures" -> defaultFromCC.valueMap.get("signatures")
+              .map(sigs =>
+                mapAsJavaMap(sigs.asInstanceOf[Map[String,String]]))
+              .orNull)
+
+
 
           FromCC(defaultFromCC.id, defaultFromCC.label, valueMap)
         }
 
         override def toCC(id: Id, valueMap: ValueMap): CC =
           implicitly[Marshallable[CC]]
-            .toCC(id, valueMap + ("id" -> id))
+            .toCC(id, valueMap + ("id" -> id)
+              + ("signatures" ->
+              valueMap.get("signatures")
+                .map(_.asInstanceOf[OTrackedMap[String]])
+                .map(orientMapToScalaMap)
+                .orNull))
       }
     }
     def serializer: FieldSerializer[this.type] =
@@ -102,6 +115,12 @@ object Types {
   implicit val imageBlobMarshaller = Hashable.marshaller[ImageBlob]
   implicit val personMarshaller = Hashable.marshaller[Person]
 
+
+  def orientMapToScalaMap(orientMap: OTrackedMap[String])
+  : Map[String, String] =
+    orientMap.toList
+      .map { case (k: AnyRef, v: String) => k.asInstanceOf[String] -> v }
+      .toMap
 
 
   type SignatureMap = Map[String, String]
