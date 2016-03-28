@@ -15,18 +15,15 @@
 package io.mediachain
 
 import java.security.PrivateKey
-import java.security.cert.X509Certificate
 
-import com.orientechnologies.orient.core.db.record.OTrackedMap
 import com.orientechnologies.orient.core.id.ORecordId
-import io.mediachain.core.SignatureError
-import io.mediachain.core.SignatureError.SignatureNotFound
 import io.mediachain.signatures.Signer
 import io.mediachain.util.MultiHash
 import org.json4s.FieldSerializer
 import org.json4s.FieldSerializer.ignore
 
 import scala.collection.JavaConversions._
+
 
 object Types {
   import java.util.UUID
@@ -101,8 +98,7 @@ object Types {
             .toCC(id, valueMap + ("id" -> id)
               + ("signatures" ->
               valueMap.get("signatures")
-                .map(_.asInstanceOf[OTrackedMap[String]])
-                .map(orientMapToScalaMap)
+                .map(_.asInstanceOf[java.util.Map[String, String]].toMap)
                 .orNull))
       }
     }
@@ -115,12 +111,6 @@ object Types {
   implicit val imageBlobMarshaller = Hashable.marshaller[ImageBlob]
   implicit val personMarshaller = Hashable.marshaller[Person]
 
-
-  def orientMapToScalaMap(orientMap: OTrackedMap[String])
-  : Map[String, String] =
-    orientMap.toList
-      .map { case (k: AnyRef, v: String) => k.asInstanceOf[String] -> v }
-      .toMap
 
 
   type SignatureMap = Map[String, String]
