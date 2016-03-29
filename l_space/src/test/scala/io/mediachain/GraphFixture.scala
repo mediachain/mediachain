@@ -1,5 +1,7 @@
 package io.mediachain
 
+import java.util.Date
+
 import scala.util.Random
 
 
@@ -53,13 +55,11 @@ object GraphFixture {
     def getImageBlob: ImageBlob = {
       val title = stuff(Random.nextInt(stuff.length))
       val desc = food(Random.nextInt(stuff.length))
-      // FIXME: randomize date
-      val date = "2016-02-22T19:04:13+00:00"
+      val date = new Date(Random.nextLong).toString
       ImageBlob(None, title, desc, date, None)
     }
 
-    def getModifiedImageBlob: ImageBlob = {
-      val b = getImageBlob
+    def getModifiedImageBlob(b: ImageBlob): ImageBlob = {
       b.copy(description = mutate(b.description))
     }
 
@@ -82,7 +82,7 @@ object GraphFixture {
       canonicalV --- DescribedBy --> imageBlobV
 
       // add a revision to a photo
-      val modifiedBlob = getModifiedImageBlob
+      val modifiedBlob = getModifiedImageBlob(imageBlob)
       val modifiedBlobV = graph + modifiedBlob
       imageBlobV --- ModifiedBy --> modifiedBlobV
 
