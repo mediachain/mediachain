@@ -1,7 +1,6 @@
 package io.mediachain.translation
 
 import java.io.File
-import java.security.PrivateKey
 
 import scala.io.Source
 import cats.data.Xor
@@ -13,7 +12,7 @@ import io.mediachain.Ingress
 import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
 import com.fasterxml.jackson.core.JsonFactory
-import io.mediachain.signatures.PEMFileUtil
+import io.mediachain.signatures.{PEMFileUtil, Signatory}
 import io.mediachain.util.orient.MigrationHelper
 
 trait Implicit {
@@ -21,7 +20,6 @@ trait Implicit {
 }
 object `package` extends Implicit
 
-case class Signatory(commonName: String, privateKey: PrivateKey)
 
 trait Translator {
   val name: String
