@@ -99,7 +99,7 @@ object Types {
 
   implicit val canonicalMarshaller = Hashable.marshaller[Canonical]
   implicit val rawMetadataBlobMarshaller = Hashable.marshaller[RawMetadataBlob]
-  implicit val photoBlobMarshaller = Hashable.marshaller[PhotoBlob]
+  implicit val imageBlobMarshaller = Hashable.marshaller[ImageBlob]
   implicit val personMarshaller = Hashable.marshaller[Person]
 
 
@@ -218,8 +218,8 @@ object Types {
     }
   }
 
-  @label("PhotoBlob")
-  case class PhotoBlob(
+  @label("ImageBlob")
+  case class ImageBlob(
     @id id: Option[ElementID],
     title: String,
     description: String,
@@ -244,7 +244,7 @@ object Types {
         .asInstanceOf[this.type]
   }
 
-  object PhotoBlob {
+  object ImageBlob {
     object Keys {
       val title = Key[String]("title")
       val description = Key[String]("description")

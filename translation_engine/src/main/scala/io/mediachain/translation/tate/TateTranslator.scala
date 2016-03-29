@@ -18,7 +18,7 @@ object TateTranslator extends Translator {
                              dateText: Option[String],
                              contributors: List[Contributor])
 
-  def translate(json: JObject): Xor[TranslationError, PhotoBlob] = {
+  def translate(json: JObject): Xor[TranslationError, ImageBlob] = {
     implicit val formats = org.json4s.DefaultFormats
     val artwork = json.extractOpt[Artwork]
     val result = artwork.map { a =>
@@ -28,7 +28,7 @@ object TateTranslator extends Translator {
         if c.role == "artist"
       } yield Person(None, c.fc)
 
-      PhotoBlob(None,
+      ImageBlob(None,
         a.title,
         a.medium.getOrElse(""),
         a.dateText.getOrElse(""),

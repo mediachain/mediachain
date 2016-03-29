@@ -19,12 +19,12 @@ object TateIngestionSpec extends Specification with Orientable with XorMatchers 
 
   def ingestsDirectory = { graph: OrientGraph =>
     val loader = new TateLoader(SpecResources.Tate.fixtureDir.getPath)
-    val translated = loader.loadPhotoBlobs()
+    val translated = loader.loadImageBlobs()
 
     val canonicals = translated.map {
-      resultXor: Xor[TranslationError, (PhotoBlob, RawMetadataBlob)] =>
-        resultXor.flatMap { result: (PhotoBlob, RawMetadataBlob) =>
-          Ingress.addPhotoBlob(graph, result._1, Some(result._2))
+      resultXor: Xor[TranslationError, (ImageBlob, RawMetadataBlob)] =>
+        resultXor.flatMap { result: (ImageBlob, RawMetadataBlob) =>
+          Ingress.addImageBlob(graph, result._1, Some(result._2))
         }
     }.toVector
 

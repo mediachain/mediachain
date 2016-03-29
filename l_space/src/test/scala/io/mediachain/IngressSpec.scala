@@ -12,30 +12,30 @@ object IngressSpec extends BaseSpec
 
   def is =
     s2"""
-        Ingests a PhotoBlob with no Author $ingestsPhoto
-        Given a PhotoBlob with an existing Author, doesn't recreate it $findsExistingAuthor
+        Ingests a ImageBlob with no Author $ingestsPhoto
+        Given a ImageBlob with an existing Author, doesn't recreate it $findsExistingAuthor
         Given an exact match, don't recreate, only attach RawMetadataBlob $attachesRawMetadata
-        Given a new PhotoBlob with a new Author, add new Canonical and new Author $ingestsPhotoBothNew
-        Modifies an existing PhotoBlob $modifiesExistingPhotoBlob
+        Given a new ImageBlob with a new Author, add new Canonical and new Author $ingestsPhotoBothNew
+        Modifies an existing ImageBlob $modifiesExistingImageBlob
       """
 
   def ingestsPhoto = { graph: OrientGraph =>
-    val photoBlob = PhotoBlob(None, "A Starry Night", "shiny!", "1/2/2013", None)
+    val imageBlob = ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013", None)
 
-    val canonical = Ingress.addPhotoBlob(graph, photoBlob)
+    val canonical = Ingress.addImageBlob(graph, imageBlob)
     canonical must beRightXor
     canonical.forall(x => x.id must beSome[ElementID])
   }
 
   def findsExistingAuthor = { graph: OrientGraph =>
-    val photoBlobs = List(
-      PhotoBlob(None, "A Starry Night", "shiny!", "1/2/2013",
+    val imageBlobs = List(
+      ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013",
         Some(Person(None, "Fooman Bars"))),
-      PhotoBlob(None, "A Starrier Night", "shiny!", "1/2/2013",
+      ImageBlob(None, "A Starrier Night", "shiny!", "1/2/2013",
         Some(Person(None, "Fooman Bars")))
     )
 
-    photoBlobs.foreach(Ingress.addPhotoBlob(graph, _))
+    imageBlobs.foreach(Ingress.addImageBlob(graph, _))
     graph.commit
 
     val people = graph.V.hasLabel[Person].toCC[Person].toList
@@ -48,7 +48,7 @@ object IngressSpec extends BaseSpec
     val photos = graph.V(person.id.get)
       .in(DescribedBy)
       .in(AuthoredBy)
-      .toCC[PhotoBlob].toList()
+      .toCC[ImageBlob].toList()
 
     photos.size shouldEqual 2
 
@@ -65,24 +65,24 @@ object IngressSpec extends BaseSpec
           "author": "Leonardo da Vinci"}""".stripMargin
     val raw = RawMetadataBlob(None, rawString)
     val leo = Person(None, "Leonardo da Vinci")
-    val blob = PhotoBlob(None,
+    val blob = ImageBlob(None,
       "The Last Supper",
       "Why is everyone sitting on the same side of the table?",
       "c. 1495",
       Some(leo))
 
     // First add without raw metadata
-    Ingress.addPhotoBlob(graph, blob)
+    Ingress.addImageBlob(graph, blob)
 
     // add again with raw metadata
-    Ingress.addPhotoBlob(graph, blob, Some(raw))
+    Ingress.addImageBlob(graph, blob, Some(raw))
     graph.commit()
 
     // These should both == 1, since adding again doesn't recreate the blob vertices
-    val photoBlobCount = Traversals.photoBlobsWithExactMatch(graph.V, blob).count.head
+    val imageBlobCount = Traversals.imageBlobsWithExactMatch(graph.V, blob).count.head
     val authorCount = Traversals.personBlobsWithExactMatch(graph.V, leo).count.head
 
-    val photoV = Traversals.photoBlobsWithExactMatch(graph.V, blob)
+    val photoV = Traversals.imageBlobsWithExactMatch(graph.V, blob)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve photo blob"))
     val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
@@ -98,7 +98,7 @@ object IngressSpec extends BaseSpec
       case _ => false
     }
 
-    photoBlobCount must_== 1
+    imageBlobCount must_== 1
     authorCount must_== 1
     authorRawMeta.isRight must beTrue
     photoRawMeta.isRight must beTrue
@@ -108,9 +108,9 @@ object IngressSpec extends BaseSpec
 
   def ingestsPhotoBothNew = pending
 
-  def modifiesExistingPhotoBlob = { graph: OrientGraph =>
+  def modifiesExistingImageBlob = { graph: OrientGraph =>
     val objs = GraphFixture.Util.setupTree(graph)
-    val currentHead = objs.modifiedPhotoBlob
+    val currentHead = objs.modifiedImageBlob
     val newPhoto = currentHead.copy(id = None,
       title = GraphFixture.Util.mutate(currentHead.title))
 
@@ -118,7 +118,7 @@ object IngressSpec extends BaseSpec
         .getOrElse(throw new IllegalStateException(
           "Test fixture can't be retrieved from graph"))
 
-    val resultCanonical = Ingress.modifyPhotoBlob(graph, currentHeadV, newPhoto)
+    val resultCanonical = Ingress.modifyImageBlob(graph, currentHeadV, newPhoto)
 
     resultCanonical must beRightXor { c: Canonical =>
       c.vertex(graph) must beRightXor

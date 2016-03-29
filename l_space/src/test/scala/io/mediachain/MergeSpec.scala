@@ -57,22 +57,22 @@ object MergeSpec extends BaseSpec
   }
 
   def createsNewDescribedByEdges = { context: MergeSpecContext =>
-    val photoCanonicalVId = context.base.objects.photoBlobCanonical
+    val photoCanonicalVId = context.base.objects.imageBlobCanonical
       .id.getOrElse(throw new IllegalStateException("Test fixture has no id"))
 
     val blobs = context.graph.V(photoCanonicalVId)
       .out(DescribedBy)
-      .toCC[PhotoBlob]
+      .toCC[ImageBlob]
       .toList
 
-    blobs must contain(context.objects.duplicatePhotoBlob)
+    blobs must contain(context.objects.duplicateImageBlob)
   }
 }
 
 
 
 case class MergeSpecObjects(
-  val duplicatePhotoBlob: PhotoBlob,
+  val duplicateImageBlob: ImageBlob,
   val duplicatePhotoCanonical: Canonical
 )
 
@@ -91,7 +91,7 @@ object MergeSpecContext {
 
   def setup(context: GraphFixture.Context): MergeSpecObjects = {
     val graph = context.graph
-    val photo = context.objects.photoBlob
+    val photo = context.objects.imageBlob
     val duplicatePhoto =
       photo.copy(id = None, title = GraphFixture.Util.mutate(photo.title))
 
@@ -101,10 +101,10 @@ object MergeSpecContext {
     val duplicatePhotoCanonicalV = graph + duplicatePhotoCanonical
     duplicatePhotoCanonicalV --- DescribedBy --> duplicatePhotoV
 
-    val savedPhoto = duplicatePhotoV.toCC[PhotoBlob]
+    val savedPhoto = duplicatePhotoV.toCC[ImageBlob]
     val savedCanonical = duplicatePhotoCanonicalV.toCC[Canonical]
 
-    SUT.mergeCanonicals(graph, savedCanonical, context.objects.photoBlobCanonical)
+    SUT.mergeCanonicals(graph, savedCanonical, context.objects.imageBlobCanonical)
     MergeSpecObjects(savedPhoto, savedCanonical)
   }
 }

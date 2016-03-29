@@ -63,8 +63,8 @@ object Ingress {
       }
   }
 
-  def addPhotoBlob(graph: Graph,
-                   photo: PhotoBlob,
+  def addImageBlob(graph: Graph,
+                   photo: ImageBlob,
                    raw: Option[RawMetadataBlob] = None):
   Xor[GraphError, Canonical] = {
     // extract author & add if they don't exist in the graph already
@@ -75,7 +75,7 @@ object Ingress {
     val strippedPhoto = photo.copy(author = None)
 
     // check to see if a duplicate entry exists
-    val photoV = Traversals.photoBlobsWithExactMatch(graph.V, strippedPhoto)
+    val photoV = Traversals.imageBlobsWithExactMatch(graph.V, strippedPhoto)
         .headOption.getOrElse(graph + strippedPhoto)
 
     raw.foreach(attachRawMetadata(photoV, _))
@@ -97,9 +97,9 @@ object Ingress {
   }
 
 
-  def modifyPhotoBlob(graph: Graph, parentVertex: Vertex, photo: PhotoBlob):
+  def modifyImageBlob(graph: Graph, parentVertex: Vertex, photo: ImageBlob):
   Xor[GraphError, Canonical] = {
-    Traversals.photoBlobsWithExactMatch(graph.V, photo)
+    Traversals.imageBlobsWithExactMatch(graph.V, photo)
       .findCanonicalXor
       .map(Xor.right)
       .getOrElse {
