@@ -104,7 +104,7 @@ object SigningSpec extends Specification
 
 
   def validatesWithCertificateStore = {
-    val blob = GraphFixture.Util.getPhotoBlob.withSignature("lspace.mine.nyc", privateKey)
+    val blob = GraphFixture.Util.getImageBlob.withSignature("lspace.mine.nyc", privateKey)
     val result = Signer.validateSignableWithCertificateStore(blob, certificateStore)
 
     result must beRightXor(_ must beTrue)
