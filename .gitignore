@@ -20,6 +20,7 @@ project/plugins/project/
 
 # mediachain specific
 private
+.env
 
 # ignore test datasets for translation engine
 translation_engine/test-resources/datasets/*
