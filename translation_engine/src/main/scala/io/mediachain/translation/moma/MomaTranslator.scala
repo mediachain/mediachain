@@ -5,7 +5,7 @@ import io.mediachain.core.TranslationError
 import io.mediachain.core.TranslationError.ParsingFailed
 import org.json4s._
 
-import io.mediachain.Types.{Person, PhotoBlob}
+import io.mediachain.Types.{Person, ImageBlob}
 
 import io.mediachain.translation.{FlatFileLoader, Translator}
 
@@ -24,11 +24,11 @@ object MomaTranslator extends Translator {
     * @param Date Date of the work
     * @param Artist Artist of the work
     */
-  private case class MomaPhotoBlob(Title: String,
+  private case class MomaImageBlob(Title: String,
                            Medium: String,
                            Date: String,
                            Artist: String) {
-    def asPhotoBlob: PhotoBlob = PhotoBlob(
+    def asImageBlob: ImageBlob = ImageBlob(
       id = None,
       title = Title,
       description = Medium,
@@ -37,14 +37,14 @@ object MomaTranslator extends Translator {
     )
   }
 
-  /** Casts a JValue to a PhotoBlob using `extract` and `asPhotoBlob`
+  /** Casts a JValue to a ImageBlob using `extract` and `asImageBlob`
     *
     * @param json The JValue representing a work
-    * @return A `PhotoBlob` extracted from the JValue
+    * @return A `ImageBlob` extracted from the JValue
     */
-  def translate(json: JObject): Xor[TranslationError, PhotoBlob] = {
+  def translate(json: JObject): Xor[TranslationError, ImageBlob] = {
     implicit val formats = DefaultFormats
-    Try(json.extract[MomaPhotoBlob].asPhotoBlob) match {
+    Try(json.extract[MomaImageBlob].asImageBlob) match {
       case Success(blob) => Xor.right(blob)
       case Failure(exn)  => Xor.left(ParsingFailed(exn))
     }

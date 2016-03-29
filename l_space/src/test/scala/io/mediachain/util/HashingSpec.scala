@@ -22,7 +22,7 @@ object HashingSpec extends Specification with XorMatchers {
 
 
   def differentDataDifferentHash = {
-    val blob1 = PhotoBlob(None,
+    val blob1 = ImageBlob(None,
       "Dogs playing backgammon",
       "Awww, they think they're people!",
       "March 15th 2016",

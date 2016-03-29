@@ -22,7 +22,7 @@ class LSpaceMigrations extends ODBMigrations with OrientSchema {
             .unique(true)
         ),
 
-        VertexClass("PhotoBlob",
+        VertexClass("ImageBlob",
           multiHashProp,
           StringProperty("title").readOnly(true),
           StringProperty("description").readOnly(true),

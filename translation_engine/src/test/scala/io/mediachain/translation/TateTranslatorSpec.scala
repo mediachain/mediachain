@@ -13,7 +13,7 @@ object TateTranslatorSpec extends Specification with XorMatchers {
 
   def is = skipAllUnless(SpecResources.Tate.sampleDataExists) ^
   s2"""
-       $loadsArtwork - Translates Tate artwork json into PhotoBlob
+       $loadsArtwork - Translates Tate artwork json into ImageBlob
     """
 
   def loadsArtwork = {
@@ -27,7 +27,7 @@ object TateTranslatorSpec extends Specification with XorMatchers {
 
       val translated = TateTranslator.translate(json)
 
-      translated must beRightXor { blob: PhotoBlob =>
+      translated must beRightXor { blob: ImageBlob =>
         (blob.title must_== expected.title) and
           (blob.author.exists(_.name must_== expected.artistName))
       }

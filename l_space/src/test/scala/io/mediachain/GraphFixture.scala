@@ -10,11 +10,11 @@ object GraphFixture {
   case class Objects(
     person: Person,
     personCanonical: Canonical,
-    photoBlob: PhotoBlob,
-    photoBlobCanonical: Canonical,
-    modifiedPhotoBlob: PhotoBlob,
-    extraPhotoBlob: PhotoBlob,
-    extraPhotoBlobCanonical: Canonical,
+    imageBlob: ImageBlob,
+    imageBlobCanonical: Canonical,
+    modifiedImageBlob: ImageBlob,
+    extraImageBlob: ImageBlob,
+    extraImageBlobCanonical: Canonical,
     rawMetadataBlob: RawMetadataBlob,
     duplicatePerson: Person,
     duplicatePersonCanonical: Canonical
@@ -50,16 +50,16 @@ object GraphFixture {
       "Lemonade", "Consomme en Tasse", "Liqueurs", "Iced Tea", "Canadian Club", "Radis", "Escarole Salad",
       "Preserved figs", "Potatoes, baked", "Macedoine salad"))
 
-    def getPhotoBlob: PhotoBlob = {
+    def getImageBlob: ImageBlob = {
       val title = stuff(Random.nextInt(stuff.length))
       val desc = food(Random.nextInt(stuff.length))
       // FIXME: randomize date
       val date = "2016-02-22T19:04:13+00:00"
-      PhotoBlob(None, title, desc, date, None)
+      ImageBlob(None, title, desc, date, None)
     }
 
-    def getModifiedPhotoBlob: PhotoBlob = {
-      val b = getPhotoBlob
+    def getModifiedImageBlob: ImageBlob = {
+      val b = getImageBlob
       b.copy(description = mutate(b.description))
     }
 
@@ -75,16 +75,16 @@ object GraphFixture {
 
     def setupTree(graph: Graph): Objects = {
       // add photo and canonical
-      val photoBlob = getPhotoBlob
-      val photoBlobV = graph + photoBlob
-      val photoBlobCanonical = Canonical.create
-      val canonicalV = graph + photoBlobCanonical
-      canonicalV --- DescribedBy --> photoBlobV
+      val imageBlob = getImageBlob
+      val imageBlobV = graph + imageBlob
+      val imageBlobCanonical = Canonical.create
+      val canonicalV = graph + imageBlobCanonical
+      canonicalV --- DescribedBy --> imageBlobV
 
       // add a revision to a photo
-      val modifiedBlob = getModifiedPhotoBlob
+      val modifiedBlob = getModifiedImageBlob
       val modifiedBlobV = graph + modifiedBlob
-      photoBlobV --- ModifiedBy --> modifiedBlobV
+      imageBlobV --- ModifiedBy --> modifiedBlobV
 
       // add an author for the photo
       val person = getPerson
@@ -92,7 +92,7 @@ object GraphFixture {
       val personCanonical = Canonical.create()
       val personCanonicalV = graph + personCanonical
       personCanonicalV --- DescribedBy --> personV
-      photoBlobV --- AuthoredBy --> personCanonicalV
+      imageBlobV --- AuthoredBy --> personCanonicalV
 
 
       // add a duplicate Person and a Canonical, and merge the
@@ -108,26 +108,26 @@ object GraphFixture {
 
 
       // add decoy objects that we shouldn't see in a subtree
-      val extraPhotoBlob = getPhotoBlob
-      val extraPhotoBlobV = graph + extraPhotoBlob
-      val extraPhotoBlobCanonical = Canonical.create()
-      val extraPhotoBlobCanonicalV = graph + extraPhotoBlobCanonical
-      extraPhotoBlobCanonicalV --- DescribedBy --> extraPhotoBlobV
-      extraPhotoBlobV --- AuthoredBy --> personCanonicalV
+      val extraImageBlob = getImageBlob
+      val extraImageBlobV = graph + extraImageBlob
+      val extraImageBlobCanonical = Canonical.create()
+      val extraImageBlobCanonicalV = graph + extraImageBlobCanonical
+      extraImageBlobCanonicalV --- DescribedBy --> extraImageBlobV
+      extraImageBlobV --- AuthoredBy --> personCanonicalV
 
       val rawMetadataBlob = getRawMetadataBlob
       val rawMetadataBlobV = graph + rawMetadataBlob
-      photoBlobV --- TranslatedFrom --> rawMetadataBlobV
+      imageBlobV --- TranslatedFrom --> rawMetadataBlobV
 
 
       Objects(
         personV.toCC[Person],
         personCanonicalV.toCC[Canonical],
-        photoBlobV.toCC[PhotoBlob],
+        imageBlobV.toCC[ImageBlob],
         canonicalV.toCC[Canonical],
-        modifiedBlobV.toCC[PhotoBlob],
-        extraPhotoBlobV.toCC[PhotoBlob],
-        extraPhotoBlobCanonicalV.toCC[Canonical],
+        modifiedBlobV.toCC[ImageBlob],
+        extraImageBlobV.toCC[ImageBlob],
+        extraImageBlobCanonicalV.toCC[Canonical],
         rawMetadataBlobV.toCC[RawMetadataBlob],
         duplicatePersonV.toCC[Person],
         duplicatePersonCanonicalV.toCC[Canonical])

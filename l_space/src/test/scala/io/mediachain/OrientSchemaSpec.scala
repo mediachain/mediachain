@@ -55,8 +55,8 @@ object OrientSchemaSpec extends Specification
 
 
   def enforcesReadOnly = { graph: OrientGraph =>
-    val photoV = graph + PhotoBlob(None, "title", "desc", "date", None)
+    val photoV = graph + ImageBlob(None, "title", "desc", "date", None)
 
-    photoV.setProperty(PhotoBlob.Keys.title, "new Title") must throwA[OValidationException]
+    photoV.setProperty(ImageBlob.Keys.title, "new Title") must throwA[OValidationException]
   }
 }

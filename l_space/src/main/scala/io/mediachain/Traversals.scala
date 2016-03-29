@@ -17,9 +17,9 @@ object Traversals {
       .has(Keys.MultiHash, p.multiHash.base58)
   }
 
-  def photoBlobsWithExactMatch(q: GremlinScala[Vertex, _], blob: PhotoBlob)
+  def imageBlobsWithExactMatch(q: GremlinScala[Vertex, _], blob: ImageBlob)
   : GremlinScala[Vertex, _] = {
-    q.hasLabel[PhotoBlob]
+    q.hasLabel[ImageBlob]
       .has(Keys.MultiHash, blob.multiHash.base58)
   }
 

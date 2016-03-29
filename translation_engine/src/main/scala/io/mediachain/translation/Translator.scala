@@ -5,7 +5,7 @@ import java.security.PrivateKey
 
 import scala.io.Source
 import cats.data.Xor
-import io.mediachain.Types.{Canonical, PhotoBlob, RawMetadataBlob}
+import io.mediachain.Types.{Canonical, ImageBlob, RawMetadataBlob}
 import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
 import org.json4s._
 import io.mediachain.core.{Error, TranslationError}
@@ -25,7 +25,7 @@ case class Signatory(commonName: String, privateKey: PrivateKey)
 trait Translator {
   val name: String
   val version: Int
-  def translate(source: JObject): Xor[TranslationError, PhotoBlob]
+  def translate(source: JObject): Xor[TranslationError, ImageBlob]
 }
 
 trait FSLoader[T <: Translator] {
@@ -34,19 +34,19 @@ trait FSLoader[T <: Translator] {
   val pairI: Iterator[Xor[TranslationError, (JObject, String)]]
   val path: String
 
-  def loadPhotoBlobs(signatory: Option[Signatory] = None)
-  : Iterator[Xor[TranslationError,(PhotoBlob, RawMetadataBlob)]] = {
+  def loadImageBlobs(signatory: Option[Signatory] = None)
+  : Iterator[Xor[TranslationError,(ImageBlob, RawMetadataBlob)]] = {
     pairI.map { pairXor =>
       pairXor.flatMap { case (json, raw) =>
-        translator.translate(json).map { photoBlob: PhotoBlob =>
+        translator.translate(json).map { imageBlob: ImageBlob =>
           val rawBlob = RawMetadataBlob (None, raw)
 
           signatory match {
             case Some(Signatory(commonName, privateKey)) =>
-              (photoBlob.withSignature(commonName, privateKey),
+              (imageBlob.withSignature(commonName, privateKey),
                 rawBlob.withSignature(commonName, privateKey))
             case _ =>
-              (photoBlob, rawBlob)
+              (imageBlob, rawBlob)
           }
         }
       }
@@ -126,14 +126,14 @@ object TranslatorDispatcher {
       .toOption
       .map(Signatory(signingIdentity, _))
 
-    val blobI: Iterator[Xor[TranslationError, (PhotoBlob, RawMetadataBlob)]] =
-      translator.loadPhotoBlobs(signatory)
+    val blobI: Iterator[Xor[TranslationError, (ImageBlob, RawMetadataBlob)]] =
+      translator.loadImageBlobs(signatory)
 
     val graph = getGraph
 
     val results: Iterator[Xor[Error, Canonical]] = blobI.map { pairXor =>
-      pairXor.flatMap { case (blob: PhotoBlob, raw: RawMetadataBlob) =>
-        Ingress.addPhotoBlob(graph, blob, Some(raw))
+      pairXor.flatMap { case (blob: ImageBlob, raw: RawMetadataBlob) =>
+        Ingress.addImageBlob(graph, blob, Some(raw))
       }
     }
     val errors: Iterator[Error] = results.collect { case Xor.Left(err) => err }

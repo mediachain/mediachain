@@ -21,9 +21,9 @@ object Query {
       .findCanonicalXor
   }
 
-  def findPhotoBlob(graph: Graph, p: PhotoBlob):
+  def findImageBlob(graph: Graph, p: ImageBlob):
   Xor[CanonicalNotFound, Canonical] = {
-    Traversals.photoBlobsWithExactMatch(graph.V, p)
+    Traversals.imageBlobsWithExactMatch(graph.V, p)
       .findCanonicalXor
   }
 
