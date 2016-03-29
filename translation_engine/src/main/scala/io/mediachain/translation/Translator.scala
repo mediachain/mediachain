@@ -5,8 +5,8 @@ import java.security.PrivateKey
 
 import scala.io.Source
 import cats.data.Xor
-import io.mediachain.Types.{Canonical, ImageBlob, RawMetadataBlob}
-import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
+import io.mediachain.Types._
+import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import org.json4s._
 import io.mediachain.core.{Error, TranslationError}
 import io.mediachain.Ingress
@@ -43,11 +43,19 @@ trait FSLoader[T <: Translator] {
           val rawBlob = RawMetadataBlob (None, raw)
 
           signatory match {
-            case Some(Signatory(commonName, privateKey)) =>
-              (imageBlob.withSignature(commonName, privateKey),
-                rawBlob.withSignature(commonName, privateKey))
-            case _ =>
-              (imageBlob, rawBlob)
+            case Some(Signatory(commonName, privateKey)) => {
+              val author = imageBlob.author.map(
+                _.withSignature(commonName, privateKey))
+
+              val signedImageBlob = imageBlob.copy(author = author)
+                .withSignature(commonName, privateKey)
+
+              val signedRawBlob = rawBlob.withSignature(commonName, privateKey)
+
+              (signedImageBlob, signedRawBlob)
+            }
+
+            case _ => (imageBlob, rawBlob)
           }
         }
       }
@@ -100,19 +108,9 @@ trait FlatFileLoader[T <: Translator] extends FSLoader[T] {
 
 object TranslatorDispatcher {
   // TODO: move + inject me
-  def getGraph: OrientGraph = {
-    val url = sys.env.getOrElse("ORIENTDB_URL", throw new Exception("ORIENTDB_URL required"))
-    val user = sys.env.getOrElse("ORIENTDB_USER", throw new Exception("ORIENTDB_USER required"))
-    val password = sys.env.getOrElse("ORIENTDB_PASSWORD", throw new Exception("ORIENTDB_PASSWORD required"))
+  def getGraph: OrientGraph =
+    MigrationHelper.getMigratedPersistentGraph().get
 
-    if (MigrationHelper.applyToPersistentDB(url, user, password).isFailure) {
-      println("Failed to migrate persistent db")
-    }
-
-    val graph = new OrientGraphFactory(url, user, password).getNoTx()
-
-    graph
-  }
   def dispatch(partner: String, path: String, signingIdentity: String, privateKeyPath: String) = {
     val translator = partner match {
       case "moma" => new moma.MomaLoader(path)
