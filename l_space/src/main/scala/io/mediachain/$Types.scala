@@ -15,14 +15,13 @@
 package io.mediachain
 
 import java.security.PrivateKey
-
 import com.orientechnologies.orient.core.id.ORecordId
 import io.mediachain.signatures.Signer
 import io.mediachain.util.MultiHash
 import org.json4s.FieldSerializer
 import org.json4s.FieldSerializer.ignore
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 
 object Types {
@@ -81,14 +80,13 @@ object Types {
         override def fromCC(cc: CC): FromCC = {
           val defaultFromCC = implicitly[Marshallable[CC]].fromCC(cc)
 
+          val signatureMap = defaultFromCC.valueMap.get("signatures")
+            .map(_.asInstanceOf[SignatureMap].asJava)
+            .orNull
+
           val valueMap =  defaultFromCC.valueMap +
             ("multiHash" -> cc.multiHash.base58) +
-            ("signatures" -> defaultFromCC.valueMap.get("signatures")
-              .map(sigs =>
-                mapAsJavaMap(sigs.asInstanceOf[Map[String,String]]))
-              .orNull)
-
-
+            ("signatures" -> signatureMap)
 
           FromCC(defaultFromCC.id, defaultFromCC.label, valueMap)
         }
@@ -98,7 +96,7 @@ object Types {
             .toCC(id, valueMap + ("id" -> id)
               + ("signatures" ->
               valueMap.get("signatures")
-                .map(_.asInstanceOf[java.util.Map[String, String]].toMap)
+                .map(_.asInstanceOf[java.util.Map[String, String]].asScala.toMap)
                 .orNull))
       }
     }
@@ -110,7 +108,6 @@ object Types {
   implicit val rawMetadataBlobMarshaller = Hashable.marshaller[RawMetadataBlob]
   implicit val imageBlobMarshaller = Hashable.marshaller[ImageBlob]
   implicit val personMarshaller = Hashable.marshaller[Person]
-
 
 
   type SignatureMap = Map[String, String]
