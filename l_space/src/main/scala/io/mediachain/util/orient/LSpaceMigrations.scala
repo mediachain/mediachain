@@ -4,10 +4,10 @@ import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
 import springnz.orientdb.migration.{Migration, ODBMigrations}
 import springnz.orientdb.session.ODBSession
 import io.mediachain.Types._
-import springnz.orientdb.ODBScala
 
 class LSpaceMigrations extends ODBMigrations with OrientSchema {
 
+  // Create initial set of vertex and edge classes
   def migration0: ODBSession[Unit] =
     ODBSession { implicit db: ODatabaseDocumentTx =>
 
@@ -49,6 +49,7 @@ class LSpaceMigrations extends ODBMigrations with OrientSchema {
       () // explicitly return unit
     }
 
+  // Add "signatures" property as an embedded map
   def migration1: ODBSession[Unit] =
     ODBSession {implicit db: ODatabaseDocumentTx =>
 
@@ -58,19 +59,33 @@ class LSpaceMigrations extends ODBMigrations with OrientSchema {
 
 
       val classNames =
-        List("Canonical", "PhotoBlob", "Person", "RawMetadataBlob")
+        List("Canonical", "ImageBlob", "Person", "RawMetadataBlob")
         .map("V_" + _)
 
       val classOpts = classNames.map(db.findClass)
       for (classOpt <- classOpts)
         yield for (klass <- classOpt)
           yield klass + signaturesProp
-
       ()
+    }
+
+  // Make index on keys of the "signatures" property for each vertex class
+  def migration2: ODBSession[Unit] =
+    ODBSession { implicit db: ODatabaseDocumentTx =>
+      val classNames =
+        List("Canonical", "ImageBlob", "Person", "RawMetadataBlob")
+
+      classNames.foreach { klass =>
+        val sql =
+          s"CREATE INDEX ${klass}SignatureCommonNameIndex " +
+            s"ON V_$klass (signatures BY KEY) NOTUNIQUE_HASH_INDEX STRING"
+        db.executeSqlCommand[Long](sql)
+      }
     }
 
   override def migrations: Seq[Migration] = Seq (
     Migration(0, migration0),
-    Migration(1, migration1)
+    Migration(1, migration1),
+    Migration(2, migration2)
   )
 }

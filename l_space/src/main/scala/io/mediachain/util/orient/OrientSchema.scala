@@ -5,6 +5,7 @@ import java.util.Date
 import cats.data.Xor
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
 import com.orientechnologies.orient.core.metadata.schema.{OClass, OProperty, OType}
+import com.orientechnologies.orient.core.sql.OCommandSQL
 import io.mediachain.core.TranslationError.ConversionToJsonFailed
 import io.mediachain.util.JsonUtils
 import org.json4s.DefaultFormats
@@ -12,7 +13,7 @@ import org.json4s.jackson.JsonMethods
 import springnz.orientdb.ODBScala
 
 
-trait OrientSchema {
+trait OrientSchema extends ODBScala {
 
   sealed trait PropertyBuilder {
     val name: String
@@ -138,8 +139,8 @@ trait OrientSchema {
 
     def add(classBuilder: ClassBuilder): OClass = {
       val cls = classBuilder match {
-        case _ : VertexClass => ODBScala.createVertexClass(classBuilder.name)(db)
-        case _ : EdgeClass => ODBScala.createEdgeClass(classBuilder.name)(db)
+        case _ : VertexClass => createVertexClass(classBuilder.name)(db)
+        case _ : EdgeClass => createEdgeClass(classBuilder.name)(db)
       }
       classBuilder.props.foreach(cls.add)
       cls
@@ -152,6 +153,10 @@ trait OrientSchema {
 
     def findClass(name: String): Option[OClass] =
       Option(ODBScala.findClass(name)(db))
+
+    def executeSqlCommand[T](sql: String, params: AnyRef*): T =
+      db.command(new OCommandSQL(sql)).execute[T](params:_*)
+
   }
 
 }
