@@ -50,11 +50,9 @@ object MigrationHelper {
         for {
           url <- Env.getString("ORIENTDB_URL")
           user <- Env.getString("ORIENTDB_USER")
-          pass <- Env.getString("ORIENTDB_PASS")
+          pass <- Env.getString("ORIENTDB_PASSWORD")
         } yield ODBConnectConfig(url, user, pass)
     }
-
-
 
 
   def applyToPersistentDB(config: Option[ODBConnectConfig] = None): Try[Unit] = {
@@ -64,4 +62,9 @@ object MigrationHelper {
     val migrations = new LSpaceMigrations().migrations
     Migrator.runMigration(migrations)(pool)
   }
+
+
+  def applyToPersistentDB(url: String, user: String, password: String)
+  : Try[Unit] =
+    applyToPersistentDB(Some(ODBConnectConfig(url, user, password)))
 }
