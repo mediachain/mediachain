@@ -40,6 +40,8 @@ object SigningSpec extends Specification
     .getOrElse(throw new IllegalStateException(
       "Can't read testing certificate from local certificate store"))
 
+  lazy val signatory = Signatory("lspace.mine.nyc", privateKey)
+
   lazy val publicKey = cert.getPublicKey
 
   def signsText = {
@@ -95,7 +97,7 @@ object SigningSpec extends Specification
   def validatesWithCertificate = {
     val result = for {
       commonName <- CertificateUtil.commonName(cert)
-      canonical = Canonical.create().withSignature(commonName, privateKey)
+      canonical = Canonical.create().withSignature(signatory)
       result <- Signer.validateSignableWithCertificate(canonical, cert)
     } yield result
 
@@ -104,7 +106,7 @@ object SigningSpec extends Specification
 
 
   def validatesWithCertificateStore = {
-    val blob = GraphFixture.Util.getImageBlob.withSignature("lspace.mine.nyc", privateKey)
+    val blob = GraphFixture.Util.getImageBlob.withSignature(signatory)
     val result = Signer.validateSignableWithCertificateStore(blob, certificateStore)
 
     result must beRightXor(_ must beTrue)

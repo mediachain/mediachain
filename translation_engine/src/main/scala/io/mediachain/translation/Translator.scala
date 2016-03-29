@@ -37,15 +37,14 @@ trait FSLoader[T <: Translator] {
     signatory: Signatory,
     imageBlob: ImageBlob,
     rawBlob: RawMetadataBlob): (ImageBlob, RawMetadataBlob) = {
-    val Signatory(commonName, privateKey) = signatory
 
     val author = imageBlob.author.map(
-      _.withSignature(commonName, privateKey))
+      _.withSignature(signatory))
 
     val signedImageBlob = imageBlob.copy(author = author)
-      .withSignature(commonName, privateKey)
+      .withSignature(signatory)
 
-    val signedRawBlob = rawBlob.withSignature(commonName, privateKey)
+    val signedRawBlob = rawBlob.withSignature(signatory)
 
     (signedImageBlob, signedRawBlob)
   }
