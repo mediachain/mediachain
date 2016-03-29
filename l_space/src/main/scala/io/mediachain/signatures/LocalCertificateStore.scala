@@ -54,7 +54,7 @@ class LocalCertificateStore(rootDirectoryPath: String)
     val certFile = filePath.toFile
     for {
       _ <- if (certFile.exists) Xor.Right({})
-           else Xor.Left(CertificateNotFound())
+           else Xor.Left(CertificateNotFound(commonName))
       cert <- PEMFileUtil.certificateFromFile(certFile.getAbsolutePath)
       commonNameInCert <- CertificateUtil.commonName(cert)
       _ <- if (commonNameInCert == commonName) Xor.Right({})
