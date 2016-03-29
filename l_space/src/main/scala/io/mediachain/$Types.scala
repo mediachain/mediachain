@@ -15,8 +15,9 @@
 package io.mediachain
 
 import java.security.PrivateKey
+
 import com.orientechnologies.orient.core.id.ORecordId
-import io.mediachain.signatures.Signer
+import io.mediachain.signatures.{Signatory, Signer}
 import io.mediachain.util.MultiHash
 import org.json4s.FieldSerializer
 import org.json4s.FieldSerializer.ignore
@@ -132,6 +133,9 @@ object Types {
 
     def withSignature(signingIdentity: String, privateKey: PrivateKey)
     : this.type
+
+    def withSignature(signatory: Signatory): this.type =
+      withSignature(signatory.commonName, signatory.privateKey)
   }
 
 
