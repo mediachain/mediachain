@@ -35,6 +35,23 @@ trait FSLoader[T <: Translator] {
   val pairI: Iterator[Xor[TranslationError, (JObject, String)]]
   val path: String
 
+  def signedBlobs(
+    signatory: Signatory,
+    imageBlob: ImageBlob,
+    rawBlob: RawMetadataBlob): (ImageBlob, RawMetadataBlob) = {
+    val Signatory(commonName, privateKey) = signatory
+
+    val author = imageBlob.author.map(
+      _.withSignature(commonName, privateKey))
+
+    val signedImageBlob = imageBlob.copy(author = author)
+      .withSignature(commonName, privateKey)
+
+    val signedRawBlob = rawBlob.withSignature(commonName, privateKey)
+
+    (signedImageBlob, signedRawBlob)
+  }
+
   def loadImageBlobs(signatory: Option[Signatory] = None)
   : Iterator[Xor[TranslationError,(ImageBlob, RawMetadataBlob)]] = {
     pairI.map { pairXor =>
@@ -42,21 +59,9 @@ trait FSLoader[T <: Translator] {
         translator.translate(json).map { imageBlob: ImageBlob =>
           val rawBlob = RawMetadataBlob (None, raw)
 
-          signatory match {
-            case Some(Signatory(commonName, privateKey)) => {
-              val author = imageBlob.author.map(
-                _.withSignature(commonName, privateKey))
-
-              val signedImageBlob = imageBlob.copy(author = author)
-                .withSignature(commonName, privateKey)
-
-              val signedRawBlob = rawBlob.withSignature(commonName, privateKey)
-
-              (signedImageBlob, signedRawBlob)
-            }
-
-            case _ => (imageBlob, rawBlob)
-          }
+          signatory
+            .map(signedBlobs(_, imageBlob, rawBlob))
+            .getOrElse((imageBlob, rawBlob))
         }
       }
     }
