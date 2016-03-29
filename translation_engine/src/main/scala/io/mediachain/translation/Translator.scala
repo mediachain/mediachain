@@ -14,6 +14,7 @@ import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
 import com.fasterxml.jackson.core.JsonFactory
 import io.mediachain.signatures.PEMFileUtil
+import io.mediachain.util.orient.MigrationHelper
 
 trait Implicit {
   implicit val factory = new JsonFactory
@@ -103,6 +104,11 @@ object TranslatorDispatcher {
     val url = sys.env.getOrElse("ORIENTDB_URL", throw new Exception("ORIENTDB_URL required"))
     val user = sys.env.getOrElse("ORIENTDB_USER", throw new Exception("ORIENTDB_USER required"))
     val password = sys.env.getOrElse("ORIENTDB_PASSWORD", throw new Exception("ORIENTDB_PASSWORD required"))
+
+    if (MigrationHelper.applyToPersistentDB(url, user, password).isFailure) {
+      println("Failed to migrate persistent db")
+    }
+
     val graph = new OrientGraphFactory(url, user, password).getNoTx()
 
     graph
