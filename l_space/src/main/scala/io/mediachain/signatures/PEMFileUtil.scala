@@ -50,14 +50,14 @@ object PEMFileUtil {
 
 
   def certificateFromFile(path: String): Xor[SignatureError, X509Certificate] = {
-    Xor.catchOnly[IOError](new FileInputStream(path))
+    Xor.catchOnly[IOException](new FileInputStream(path))
       .leftMap(PEMIOError)
       .flatMap(certificateFromInputStream)
   }
 
 
   def privateKeyFromFile(path: String): Xor[SignatureError, PrivateKey] = {
-    Xor.catchOnly[IOError](new FileInputStream(path))
+    Xor.catchOnly[IOException](new FileInputStream(path))
       .leftMap(PEMIOError)
       .flatMap(privateKeyFromInputStream)
   }
