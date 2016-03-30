@@ -103,7 +103,8 @@ object Ingress {
       .findCanonicalXor
       .map(Xor.right)
       .getOrElse {
-        val childVertex = graph + photo
+        val strippedPhoto = photo.copy(author = None)
+        val childVertex = graph + strippedPhoto
         parentVertex --- ModifiedBy --> childVertex
 
         raw.foreach(attachRawMetadata(childVertex, _))
