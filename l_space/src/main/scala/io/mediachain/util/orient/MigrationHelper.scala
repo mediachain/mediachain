@@ -1,13 +1,19 @@
 package io.mediachain.util.orient
 
 import com.orientechnologies.orient.core.db.ODatabaseFactory
-import org.apache.tinkerpop.gremlin.orientdb.{OrientGraphFactory, OrientGraph}
+import io.mediachain.util.Env
+import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
 import springnz.orientdb.migration.Migrator
-import springnz.orientdb.pool.{ODBConnectionPool, ODBConnectConfig}
+import springnz.orientdb.pool.{ODBConnectConfig, ODBConnectionPool}
 
-import scala.util.{Failure, Success, Try, Random}
+import scala.util.{Failure, Random, Success, Try}
 
 object MigrationHelper {
+  object EnvVars {
+    val ORIENTDB_URL = "ORIENTDB_URL"
+    val ORIENTDB_USER = "ORIENTDB_USER"
+    val ORIENTDB_PASSWORD = "ORIENTDB_PASSWORD"
+  }
 
   def newInMemoryGraph(transactional: Boolean = true): OrientGraph = {
     val dbname = s"memory:in-memory-${Random.nextInt()}"
@@ -42,21 +48,19 @@ object MigrationHelper {
       override def dbConfig: Try[ODBConnectConfig] = Success(config)
     }
 
+  def configFromEnv: Try[ODBConnectConfig] =
+    for {
+      url <- Env.getString(EnvVars.ORIENTDB_URL)
+      user <- Env.getString(EnvVars.ORIENTDB_USER)
+      pass <- Env.getString(EnvVars.ORIENTDB_PASSWORD)
+    } yield ODBConnectConfig(url, user, pass)
+
 
   def poolWithConfigFromEnv: ODBConnectionPool =
     new ODBConnectionPool {
       override def dbConfig: Try[ODBConnectConfig] =
-        for {
-          url <- getEnv("ORIENTDB_URL")
-          user <- getEnv("ORIENTDB_USER")
-          pass <- getEnv("ORIENTDB_PASS")
-        } yield ODBConnectConfig(url, user, pass)
+        configFromEnv
     }
-
-
-  def getEnv(key: String): Try[String] =
-    Try(sys.env.getOrElse(key,
-      throw new RuntimeException(s"$key environment var must be defined")))
 
 
   def applyToPersistentDB(config: Option[ODBConnectConfig] = None): Try[Unit] = {
@@ -66,4 +70,43 @@ object MigrationHelper {
     val migrations = new LSpaceMigrations().migrations
     Migrator.runMigration(migrations)(pool)
   }
+
+
+  def applyToPersistentDB(url: String, user: String, password: String)
+  : Try[Unit] =
+    applyToPersistentDB(Some(ODBConnectConfig(url, user, password)))
+
+  def graphWithOptionalConfig(
+    configOpt: Option[ODBConnectConfig],
+    transactional: Boolean = true): Try[OrientGraph] = {
+    val config = configOpt.orElse(configFromEnv.toOption)
+
+    config match {
+      case Some(ODBConnectConfig(url, user, pass)) =>
+        Try({
+          val factory = new OrientGraphFactory(url, user, pass)
+          if (transactional) {
+            factory.getTx(false, true)
+          } else {
+            factory.getNoTx(false, true)
+          }
+        })
+
+      case None =>
+        Failure(new IllegalStateException(
+          "Unable to get graph instance.  Either pass in a configuration, "+
+            "or set the required environment variables " +
+            s"${EnvVars.ORIENTDB_URL}, ${EnvVars.ORIENTDB_USER}, and " +
+            s"${EnvVars.ORIENTDB_PASSWORD}"))
+    }
+  }
+
+  def getMigratedPersistentGraph(
+    config: Option[ODBConnectConfig] = None,
+    transactional: Boolean = true
+  ): Try[OrientGraph] =
+    for {
+      _ <- applyToPersistentDB(config)
+      graph <- graphWithOptionalConfig(config, transactional)
+    } yield graph
 }

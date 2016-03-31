@@ -3,7 +3,7 @@ package io.mediachain.signatures
 
 import cats.data.Xor
 import io.mediachain.Types.Canonical
-import io.mediachain.XorMatchers
+import io.mediachain.{GraphFixture, XorMatchers}
 import io.mediachain.core.TranslationError.InvalidFormat
 import org.specs2.Specification
 
@@ -17,14 +17,18 @@ object SigningSpec extends Specification
   - Signs a String containing json text, first converting to canonical CBOR $signsJsonText
   - Signs a Canonical case class $signsCanonical
   - Validates a signed Canonical with an X509 certificate $validatesWithCertificate
+  - Validates a signed PhotoBlob with a certificate store $validatesWithCertificateStore
       """
 
+  lazy val certificateStoreRootDirPath = getClass.getResource("/certificates")
+    .toURI.getPath
 
-  lazy val privateKeyStream =
-    getClass.getResourceAsStream("/test-private-key.pem")
+  lazy val certificateStore =
+    LocalCertificateStore.getInstance(Some(certificateStoreRootDirPath))
 
-  lazy val certificateStream =
-    getClass.getResourceAsStream("/test-cert.pem")
+  lazy val privateKeyStream = getClass.getResourceAsStream(
+    "/private-keys/lspace.mine.nyc/private-key.pem")
+
 
   lazy val privateKey =
     PEMFileUtil.privateKeyFromInputStream(privateKeyStream)
@@ -32,10 +36,11 @@ object SigningSpec extends Specification
       "Can't read testing private key from classpath"))
 
   lazy val cert =
-    PEMFileUtil.certificateFromInputStream(certificateStream)
+    certificateStore.certificateForCommonName("lspace.mine.nyc")
     .getOrElse(throw new IllegalStateException(
-      "Can't read testing certificate from classpath"))
+      "Can't read testing certificate from local certificate store"))
 
+  lazy val signatory = Signatory("lspace.mine.nyc", privateKey)
 
   lazy val publicKey = cert.getPublicKey
 
@@ -92,9 +97,17 @@ object SigningSpec extends Specification
   def validatesWithCertificate = {
     val result = for {
       commonName <- CertificateUtil.commonName(cert)
-      canonical = Canonical.create().withSignature(commonName, privateKey)
+      canonical = Canonical.create().withSignature(signatory)
       result <- Signer.validateSignableWithCertificate(canonical, cert)
     } yield result
+
+    result must beRightXor(_ must beTrue)
+  }
+
+
+  def validatesWithCertificateStore = {
+    val blob = GraphFixture.Util.getImageBlob.withSignature(signatory)
+    val result = Signer.validateSignableWithCertificateStore(blob, certificateStore)
 
     result must beRightXor(_ must beTrue)
   }

@@ -15,15 +15,15 @@
 package io.mediachain
 
 import java.security.PrivateKey
-import java.security.cert.X509Certificate
 
 import com.orientechnologies.orient.core.id.ORecordId
-import io.mediachain.core.SignatureError
-import io.mediachain.core.SignatureError.SignatureNotFound
-import io.mediachain.signatures.Signer
+import io.mediachain.signatures.{Signatory, Signer}
 import io.mediachain.util.MultiHash
 import org.json4s.FieldSerializer
 import org.json4s.FieldSerializer.ignore
+
+import scala.collection.JavaConverters._
+
 
 object Types {
   import java.util.UUID
@@ -31,7 +31,6 @@ object Types {
   import cats.data.Xor
   import gremlin.scala._
   import io.mediachain.core.GraphError._
-
 
   type ElementID = ORecordId
 
@@ -82,15 +81,24 @@ object Types {
         override def fromCC(cc: CC): FromCC = {
           val defaultFromCC = implicitly[Marshallable[CC]].fromCC(cc)
 
+          val signatureMap = defaultFromCC.valueMap.get("signatures")
+            .map(_.asInstanceOf[SignatureMap].asJava)
+            .orNull
+
           val valueMap =  defaultFromCC.valueMap +
-            ("multiHash" -> cc.multiHash.base58)
+            ("multiHash" -> cc.multiHash.base58) +
+            ("signatures" -> signatureMap)
 
           FromCC(defaultFromCC.id, defaultFromCC.label, valueMap)
         }
 
         override def toCC(id: Id, valueMap: ValueMap): CC =
           implicitly[Marshallable[CC]]
-            .toCC(id, valueMap + ("id" -> id))
+            .toCC(id, valueMap + ("id" -> id)
+              + ("signatures" ->
+              valueMap.get("signatures")
+                .map(_.asInstanceOf[java.util.Map[String, String]].asScala.toMap)
+                .orNull))
       }
     }
     def serializer: FieldSerializer[this.type] =
@@ -103,7 +111,6 @@ object Types {
   implicit val personMarshaller = Hashable.marshaller[Person]
 
 
-
   type SignatureMap = Map[String, String]
   trait Signable {
     val signatures: SignatureMap
@@ -114,7 +121,10 @@ object Types {
     // first `ignore` is not defined for a field, it will try the second.
     def signingSerializer: FieldSerializer[this.type] =
       FieldSerializer[this.type](
-        ignore("id") orElse ignore("signatures")
+        {
+          case ("id", _) => None
+          case ("signatures", _) => None
+        }
       )
 
     def signature(privateKey: PrivateKey): String = {
@@ -123,6 +133,9 @@ object Types {
 
     def withSignature(signingIdentity: String, privateKey: PrivateKey)
     : this.type
+
+    def withSignature(signatory: Signatory): this.type =
+      withSignature(signatory.commonName, signatory.privateKey)
   }
 
 
@@ -229,11 +242,19 @@ object Types {
   ) extends MetadataBlob {
 
     override def hashSerializer: FieldSerializer[this.type] =
-      FieldSerializer[this.type](ignore("id") orElse ignore("author"))
+      FieldSerializer[this.type](
+        {
+          case ("id", _) => None
+          case ("author", _) => None
+        })
 
     override def signingSerializer: FieldSerializer[this.type] =
       FieldSerializer[this.type](
-        ignore("id") orElse ignore("signatures") orElse ignore("author"))
+        {
+          case ("id", _) => None
+          case ("author", _) => None
+          case ("signatures", _) => None
+        })
 
     def getID(): Option[ElementID] = id
 

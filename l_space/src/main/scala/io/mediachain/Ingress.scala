@@ -99,14 +99,17 @@ object Ingress {
   }
 
 
-  def modifyImageBlob(graph: Graph, parentVertex: Vertex, photo: ImageBlob):
+  def modifyImageBlob(graph: Graph, parentVertex: Vertex, photo: ImageBlob, raw: Option[RawMetadataBlob] = None):
   Xor[GraphError, Canonical] = {
     Traversals.imageBlobsWithExactMatch(graph.V, photo)
       .findCanonicalXor
       .map(Xor.right)
       .getOrElse {
-        val childVertex = graph + photo
+        val strippedPhoto = photo.copy(author = None)
+        val childVertex = graph + strippedPhoto
         parentVertex --- ModifiedBy --> childVertex
+
+        raw.foreach(attachRawMetadata(childVertex, _))
 
         // TODO: don't swallow errors
         for {

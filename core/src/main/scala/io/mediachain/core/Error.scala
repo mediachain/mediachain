@@ -34,9 +34,9 @@ object SignatureError {
   case class InvalidCertificate(underlying: Throwable) extends SignatureError
   case class CertificateLacksCommonName() extends SignatureError
   case class CommonNameMismatch(expectedName: String, actualName: String) extends SignatureError
-  case class CertificateNotFound() extends SignatureError
+  case class CertificateNotFound(commonName: String) extends SignatureError
   case class SignatureNotFound(message: String) extends SignatureError
-  case class InvalidSignature() extends SignatureError
+  case class InvalidSignature(message: String) extends SignatureError
 }
 
 sealed abstract class MediachainError extends Error
