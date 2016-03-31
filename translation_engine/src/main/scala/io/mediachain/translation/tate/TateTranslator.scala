@@ -16,7 +16,8 @@ object TateTranslator extends Translator {
   private case class Artwork(title: String,
                              medium: Option[String],
                              dateText: Option[String],
-                             contributors: List[Contributor])
+                             contributors: List[Contributor],
+                             id: Int)
 
   def translate(json: JObject): Xor[TranslationError, ImageBlob] = {
     implicit val formats = org.json4s.DefaultFormats
@@ -32,7 +33,9 @@ object TateTranslator extends Translator {
         a.title,
         a.medium.getOrElse(""),
         a.dateText.getOrElse(""),
-        artists.headOption)
+        artists.headOption,
+        external_ids = Map("tate" -> a.id.toString)
+      )
     }
 
     Xor.fromOption(result, InvalidFormat())

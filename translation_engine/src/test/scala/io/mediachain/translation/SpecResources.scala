@@ -20,6 +20,7 @@ object SpecResources {
       val medium = "Watercolour, ink, chalk and graphite on paper. Verso: graphite on paper"
       val dateText = "date not known"
       val artistName = "Robert Blake"
+      val tateId = "1035"
     }
   }
 }

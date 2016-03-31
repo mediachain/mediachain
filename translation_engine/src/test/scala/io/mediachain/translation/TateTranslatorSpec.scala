@@ -29,7 +29,8 @@ object TateTranslatorSpec extends Specification with XorMatchers {
 
       translated must beRightXor { blob: ImageBlob =>
         (blob.title must_== expected.title) and
-          (blob.author.exists(_.name must_== expected.artistName))
+          (blob.author.exists(_.name must_== expected.artistName) and
+            (blob.external_ids.get("tate") must beSome(expected.tateId)))
       }
     }
   }
