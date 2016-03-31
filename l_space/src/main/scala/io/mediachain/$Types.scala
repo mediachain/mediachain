@@ -85,9 +85,14 @@ object Types {
             .map(_.asInstanceOf[SignatureMap].asJava)
             .orNull
 
+          val externalIdMap = defaultFromCC.valueMap.get("external_ids")
+            .map(_.asInstanceOf[IdMap].asJava)
+            .orNull
+
           val valueMap =  defaultFromCC.valueMap +
             ("multiHash" -> cc.multiHash.base58) +
             ("signatures" -> signatureMap)
+            ("external_ids" -> externalIdMap)
 
           FromCC(defaultFromCC.id, defaultFromCC.label, valueMap)
         }
@@ -112,6 +117,8 @@ object Types {
 
 
   type SignatureMap = Map[String, String]
+  type IdMap = Map[String, String]
+
   trait Signable {
     val signatures: SignatureMap
 
@@ -238,7 +245,8 @@ object Types {
     description: String,
     date: String,
     author: Option[Person],
-    signatures: SignatureMap = Map()
+    signatures: SignatureMap = Map(),
+    external_ids: IdMap = Map()
   ) extends MetadataBlob {
 
     override def hashSerializer: FieldSerializer[this.type] =
@@ -270,6 +278,7 @@ object Types {
       val title = Key[String]("title")
       val description = Key[String]("description")
       val date = Key[String]("date")
+      val external_ids = Key[String]("external_ids")
     }
   }
 }
