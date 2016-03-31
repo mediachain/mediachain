@@ -108,11 +108,12 @@ object Ingress {
 
         // TODO: don't swallow errors
         for {
-          author         <- photo.author.flatMap(addPerson(graph, _).toOption)
+          author <- photo.author
+          authorC <- addPerson(graph, author).toOption
           existingAuthor <- Traversals.getAuthor(childVertex.lift)
             .toCC[Canonical].headOption
-          if author.canonicalID != existingAuthor.canonicalID
-        } yield defineAuthorship(childVertex, author)
+          if authorC.canonicalID != existingAuthor.canonicalID
+        } yield defineAuthorship(childVertex, authorC)
 
         childVertex.lift.findCanonicalXor
           .map(Xor.right)
