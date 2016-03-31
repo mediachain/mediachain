@@ -34,7 +34,7 @@ object TateTranslator extends Translator {
         a.medium.getOrElse(""),
         a.dateText.getOrElse(""),
         artists.headOption,
-        external_ids = Map("tate" -> a.id.toString)
+        external_ids = Map("tate:id" -> a.id.toString)
       )
     }
 
