@@ -57,7 +57,7 @@ object IngressSpec extends BaseSpec
     photoTitles must contain("A Starrier Night")
   }
 
-  def attachesRawMetadata = {graph: OrientGraph =>
+  def attachesRawMetadata = skipped {graph: OrientGraph =>
     val rawString =
       """{"title": "The Last Supper",
           "description: "Why is everyone sitting on the same side of the table?",
