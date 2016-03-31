@@ -103,7 +103,9 @@ object JsonLoader {
         Streaming.empty
       } else {
         parseJValue(parser) match {
-          case r@Xor.Right(_) => r %:: helper
+          case r@Xor.Right(_) =>
+            parser.nextToken
+            r %:: helper
           case l => Streaming(l)
         }
       }
@@ -184,14 +186,17 @@ object JsonLoader {
     */
   def parseFields(parser: JsonParser): Xor[String, List[JField]] = {
     def helper(results: List[JField]): Xor[String, List[JField]] = {
-      if (parser.getCurrentToken == JsonToken.FIELD_NAME) {
-        parseField(parser).flatMap(result => helper(result :: results))
-      } else {
-        Xor.right(results.reverse)
+      parser.getCurrentToken match {
+        case JsonToken.FIELD_NAME =>
+          parseField(parser).flatMap(result => helper(result :: results))
+        case JsonToken.END_OBJECT =>
+          Xor.right(results.reverse)
+        case tok =>
+          Xor.left(s"Invalid token. Got: $tok")
       }
     }
 
-    helper(List())
+    helper(Nil)
   }
 
   /** Parse a `JObject`
@@ -203,7 +208,7 @@ object JsonLoader {
     for {
       _      <- parseToken(parser, JsonToken.START_OBJECT)
       fields <- parseFields(parser)
-      _      <- parseToken(parser, JsonToken.END_OBJECT, false)
+      _      <- parseToken(parser, JsonToken.END_OBJECT, advance = false)
     } yield JObject(fields)
   }
 }
