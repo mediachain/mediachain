@@ -1,29 +1,14 @@
 package io.mediachain
 
 import io.mediachain.Types._
-import io.mediachain.util.orient.MigrationHelper
-import org.specs2.Specification
 import gremlin.scala._
-import scala.util.Random
-import org.specs2.execute.{AsResult, Result}
-import org.specs2.specification.ForEach
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 
 object QuerySpec extends BaseSpec
-  with ForEach[GraphFixture.Context] {
+  with ForEachGraph[GraphFixture.Context] {
   import Traversals.{GremlinScalaImplicits, VertexImplicits}
 
 
-  // TODO: can you figure out how to abstract out the connection creation?
-  def foreach[R: AsResult](f: GraphFixture.Context => R): Result = {
-
-    lazy val graph = MigrationHelper.newInMemoryGraph()
-    try {
-      AsResult(f(GraphFixture.Context(graph)))
-    } finally {
-      graph.database().drop()
-    }
-  }
+  def forEachGraph(graph: Graph) = GraphFixture.Context(graph)
 
   def is =
   s2"""

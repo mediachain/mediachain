@@ -5,10 +5,9 @@ import java.security._
 import java.security.cert.{CertificateException, X509Certificate}
 
 import cats.data.Xor
-
-import io.mediachain.Types.{Hashable, Signable}
-import io.mediachain.core.SignatureError.{InvalidCertificate, SignatureNotFound}
-import io.mediachain.core.{MediachainError, SignatureError}
+import io.mediachain.Types.Signable
+import io.mediachain.core.SignatureError
+import io.mediachain.core.SignatureError.{InvalidCertificate, InvalidSignature, SignatureNotFound}
 import io.mediachain.core.TranslationError.InvalidFormat
 import io.mediachain.util.{CborSerializer, JsonUtils}
 import org.apache.commons.codec.binary.Hex
@@ -106,7 +105,7 @@ object Signer {
 
   def validateSignableWithCertificate[S <: Signable]
   (signable: S, cert: X509Certificate)
-  : Xor[SignatureError, Boolean] =
+  : Xor[SignatureError, Boolean] = {
     for {
       _ <- validateCertificate(cert)
 
@@ -115,5 +114,31 @@ object Signer {
       signature <- Xor.fromOption(signable.signatures.get(name),
         SignatureNotFound(s"No signature by $name exists."))
 
-    } yield verifySignedSignable(signable, signature, cert.getPublicKey)
+      valid <- if (verifySignedSignable(signable, signature, cert.getPublicKey)) {
+        Xor.right(true)
+      } else {
+        Xor.left(InvalidSignature(
+          s"The signature by $name is not valid for the object $signable"))
+      }
+    } yield valid
+  }
+
+
+  def validateSignableWithCertificateStore[S <: Signable]
+  (signable: S, certificateStore: CertificateStore)
+  : Xor[SignatureError, Boolean] = {
+    val certs: Iterable[Xor[SignatureError, X509Certificate]] =
+      signable.signatures.keys.map(certificateStore.certificateForCommonName)
+
+    val results = for (certXor <- certs) yield for {
+      c <- certXor
+      valid <- validateSignableWithCertificate(signable, c)
+    } yield valid
+
+    results.foldLeft(Xor.right[SignatureError, Boolean](true)) {
+      case (_, Xor.Left(err)) => Xor.left(err)
+      case (Xor.Left(err), _) => Xor.left(err)
+      case (Xor.Right(a), Xor.Right(valid)) => Xor.right(a && valid)
+    }
+  }
 }

@@ -37,7 +37,7 @@ testOptions in Test += Tests.Cleanup( loader => {
 
 initialCommands in console :=
   """
-    import com.orientechnologies.orient.core.orient
+    import com.orientechnologies.orient.core.Orient
     import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
     import gremlin.scala._
     import io.mediachain.Types._

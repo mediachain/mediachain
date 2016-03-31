@@ -2,12 +2,18 @@ package io.mediachain.util.orient
 
 import java.util.Date
 
+import cats.data.Xor
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
-import com.orientechnologies.orient.core.metadata.schema.{OProperty, OType, OClass}
+import com.orientechnologies.orient.core.metadata.schema.{OClass, OProperty, OType}
+import com.orientechnologies.orient.core.sql.OCommandSQL
+import io.mediachain.core.TranslationError.ConversionToJsonFailed
+import io.mediachain.util.JsonUtils
+import org.json4s.DefaultFormats
+import org.json4s.jackson.JsonMethods
 import springnz.orientdb.ODBScala
 
 
-trait OrientSchema {
+trait OrientSchema extends ODBScala {
 
   sealed trait PropertyBuilder {
     val name: String
@@ -18,6 +24,7 @@ trait OrientSchema {
       case _: DoubleProperty => OType.DOUBLE
       case _: DateProperty => OType.DATETIME
       case _: BoolProperty => OType.BOOLEAN
+      case _: MapProperty => OType.EMBEDDEDMAP
     }
 
     protected var createUniqueIndex = false
@@ -86,6 +93,24 @@ trait OrientSchema {
   case class DoubleProperty(name: String) extends RangedPropertyBuilder[Double]
   case class DateProperty(name: String) extends TypedPropertyBuilder[Date]
   case class BoolProperty(name: String) extends TypedPropertyBuilder[Boolean]
+  case class MapProperty(name: String) extends PropertyBuilder {
+    def defaultValue[T](value: Map[String, T]): this.type = {
+      val jObjectXor = JsonUtils.jsonObjectForMap(value)
+      jObjectXor match {
+        case Xor.Left(ConversionToJsonFailed(message)) =>
+          throw new IllegalArgumentException(
+            s"Can't serialize default value for property ${this.name} to a" +
+              s"json object: $message"
+          )
+        case Xor.Right(jObject) =>
+          this.defaultValueAsString = Some(
+            JsonMethods.compact(JsonMethods.render(jObject)(DefaultFormats))
+          )
+      }
+
+      this
+    }
+  }
 
   sealed trait ClassBuilder {
     val name: String
@@ -114,8 +139,8 @@ trait OrientSchema {
 
     def add(classBuilder: ClassBuilder): OClass = {
       val cls = classBuilder match {
-        case _ : VertexClass => ODBScala.createVertexClass(classBuilder.name)(db)
-        case _ : EdgeClass => ODBScala.createEdgeClass(classBuilder.name)(db)
+        case _ : VertexClass => createVertexClass(classBuilder.name)(db)
+        case _ : EdgeClass => createEdgeClass(classBuilder.name)(db)
       }
       classBuilder.props.foreach(cls.add)
       cls
@@ -125,6 +150,13 @@ trait OrientSchema {
 
     def ++(classBuilders: Seq[ClassBuilder]): Seq[OClass] =
       classBuilders.map(add)
+
+    def findClass(name: String): Option[OClass] =
+      Option(ODBScala.findClass(name)(db))
+
+    def executeSqlCommand[T](sql: String, params: AnyRef*): T =
+      db.command(new OCommandSQL(sql)).execute[T](params:_*)
+
   }
 
 }

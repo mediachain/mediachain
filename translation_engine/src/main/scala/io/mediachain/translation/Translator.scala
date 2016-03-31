@@ -1,26 +1,25 @@
 package io.mediachain.translation
 
 import java.io.File
-import java.security.PrivateKey
 
 import scala.io.Source
 import cats.data.Xor
-import io.mediachain.Types.{Canonical, ImageBlob, RawMetadataBlob}
-import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
+import io.mediachain.Types._
+import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import org.json4s._
 import io.mediachain.core.{Error, TranslationError}
 import io.mediachain.Ingress
 import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
 import com.fasterxml.jackson.core.JsonFactory
-import io.mediachain.signatures.PEMFileUtil
+import io.mediachain.signatures.{PEMFileUtil, Signatory}
+import io.mediachain.util.orient.MigrationHelper
 
 trait Implicit {
   implicit val factory = new JsonFactory
 }
 object `package` extends Implicit
 
-case class Signatory(commonName: String, privateKey: PrivateKey)
 
 trait Translator {
   val name: String
@@ -34,6 +33,22 @@ trait FSLoader[T <: Translator] {
   val pairI: Iterator[Xor[TranslationError, (JObject, String)]]
   val path: String
 
+  def signedBlobs(
+    signatory: Signatory,
+    imageBlob: ImageBlob,
+    rawBlob: RawMetadataBlob): (ImageBlob, RawMetadataBlob) = {
+
+    val author = imageBlob.author.map(
+      _.withSignature(signatory))
+
+    val signedImageBlob = imageBlob.copy(author = author)
+      .withSignature(signatory)
+
+    val signedRawBlob = rawBlob.withSignature(signatory)
+
+    (signedImageBlob, signedRawBlob)
+  }
+
   def loadImageBlobs(signatory: Option[Signatory] = None)
   : Iterator[Xor[TranslationError,(ImageBlob, RawMetadataBlob)]] = {
     pairI.map { pairXor =>
@@ -41,13 +56,9 @@ trait FSLoader[T <: Translator] {
         translator.translate(json).map { imageBlob: ImageBlob =>
           val rawBlob = RawMetadataBlob (None, raw)
 
-          signatory match {
-            case Some(Signatory(commonName, privateKey)) =>
-              (imageBlob.withSignature(commonName, privateKey),
-                rawBlob.withSignature(commonName, privateKey))
-            case _ =>
-              (imageBlob, rawBlob)
-          }
+          signatory
+            .map(signedBlobs(_, imageBlob, rawBlob))
+            .getOrElse((imageBlob, rawBlob))
         }
       }
     }
@@ -99,14 +110,9 @@ trait FlatFileLoader[T <: Translator] extends FSLoader[T] {
 
 object TranslatorDispatcher {
   // TODO: move + inject me
-  def getGraph: OrientGraph = {
-    val url = sys.env.getOrElse("ORIENTDB_URL", throw new Exception("ORIENTDB_URL required"))
-    val user = sys.env.getOrElse("ORIENTDB_USER", throw new Exception("ORIENTDB_USER required"))
-    val password = sys.env.getOrElse("ORIENTDB_PASSWORD", throw new Exception("ORIENTDB_PASSWORD required"))
-    val graph = new OrientGraphFactory(url, user, password).getNoTx()
+  def getGraph: OrientGraph =
+    MigrationHelper.getMigratedPersistentGraph().get
 
-    graph
-  }
   def dispatch(partner: String, path: String, signingIdentity: String, privateKeyPath: String) = {
     val translator = partner match {
       case "moma" => new moma.MomaLoader(path)
