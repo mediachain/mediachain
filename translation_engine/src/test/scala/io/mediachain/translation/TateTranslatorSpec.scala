@@ -37,12 +37,24 @@ abstract class TranslatorSpec extends Specification with XorMatchers with Matche
 
       val translated = translator.translate(json)
 
+      def matchExpectedAuthor(author: Option[Person], expectedAuthor: Option[Person]) = {
+        if(expectedAuthor.isEmpty){
+          author must beNone
+        } else {
+          author must beSome {
+            (_: Person) must matchA[Person]
+              .name(expectedAuthor.get.name)
+              .external_ids(_ must havePairs(expectedAuthor.get.external_ids.toList: _*))
+          }
+        }
+      }
+
       translated must beRightXor { blob: ImageBlob =>
         blob must matchA[ImageBlob]
           .title(expected.title)
           .date(expected.date)
           .description(expected.description)
-          .author { authorO => authorO must beSome((_: Person) must matchA[Person].name(expected.author.get.name)) }
+          .author(author => matchExpectedAuthor(author, expected.author))
           .external_ids(_ must havePairs(expected.external_ids.toList:_*))
       }
     }
