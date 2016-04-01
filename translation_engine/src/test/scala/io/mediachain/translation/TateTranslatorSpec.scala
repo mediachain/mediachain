@@ -19,7 +19,7 @@ abstract class TranslatorSpec extends Specification with XorMatchers with Matche
   val translator: Translator
   val name: String
 
-  def is = skipAllUnless(SpecResources.Tate.sampleDataExists) ^
+  def is =
     s2"""
        $loadsArtwork - Translates $name artwork json into ImageBlob
     """
@@ -28,7 +28,9 @@ abstract class TranslatorSpec extends Specification with XorMatchers with Matche
     val (jsonFile, expected) = resources.sampleArtworks.head
 
     if (!jsonFile.exists) {
-      ok(s"Skipping artwork test for ${jsonFile.getPath}. File does not exist")
+      // FIXME: this should actually use `skipped` but that doesn't seem to work with our matcher style?
+      println(s"Skipping artwork test for ${jsonFile.getPath}. File does not exist")
+      ok
     } else {
       val source: String = Source.fromFile(jsonFile).mkString
       val json: JObject = parse(source).asInstanceOf[JObject] // have faith

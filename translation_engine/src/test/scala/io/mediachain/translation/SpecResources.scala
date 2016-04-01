@@ -37,7 +37,7 @@ object SpecResources {
       fixtureDir.exists && fixtureDir.isDirectory
     }
 
-    val sampleArtworks = List(new File("/small-moma-sample.json") ->
+    val sampleArtworks = List(new File(resourceUrl("/small-moma-sample.json").toURI) ->
       ImageBlob(
         id = None,
         title = "Three Part Large Animals",
