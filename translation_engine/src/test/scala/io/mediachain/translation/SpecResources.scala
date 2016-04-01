@@ -1,6 +1,7 @@
 package io.mediachain.translation
 
 import java.io.File
+import java.net.URI
 
 import io.mediachain.Types.{ImageBlob, Person}
 
@@ -10,11 +11,14 @@ object SpecResources {
   }
 
   def resourceUrl(path: String) = this.getClass.getResource(path)
+  def resourceUri(path: String) =
+    Option(resourceUrl(path)).map(_.toURI)
+    .getOrElse(new URI("file://does/not/exist"))
 
   lazy val simpleTestResourceUrl = resourceUrl("/simple-test.json")
 
   object Tate extends Partner {
-    lazy val fixtureDir = new File(resourceUrl("/datasets/tate").toURI)
+    lazy val fixtureDir = new File(resourceUri("/datasets/tate"))
 
     def sampleDataExists = {
       fixtureDir.exists && fixtureDir.isDirectory
@@ -31,7 +35,7 @@ object SpecResources {
     }
 
   object Moma extends Partner {
-    lazy val fixtureDir = new File(resourceUrl("/datasets/moma").toURI)
+    lazy val fixtureDir = new File(resourceUri("/datasets/moma"))
 
     def sampleDataExists = {
       fixtureDir.exists && fixtureDir.isDirectory
