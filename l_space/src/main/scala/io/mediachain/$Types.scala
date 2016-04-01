@@ -92,7 +92,7 @@ object Types {
 
           val valueMap =  defaultFromCC.valueMap +
             ("multiHash" -> cc.multiHash.base58) +
-            ("signatures" -> signatureMap)
+            ("signatures" -> signatureMap) +
             ("external_ids" -> externalIdMap)
 
           FromCC(defaultFromCC.id, defaultFromCC.label, valueMap)
