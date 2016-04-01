@@ -23,6 +23,7 @@ import org.json4s.FieldSerializer
 import org.json4s.FieldSerializer.ignore
 
 import scala.collection.JavaConverters._
+import java.util.{Map => JMap}
 
 
 object Types {
@@ -279,7 +280,7 @@ object Types {
       val title = Key[String]("title")
       val description = Key[String]("description")
       val date = Key[String]("date")
-      val external_ids = Key[String]("external_ids")
+      val external_ids = Key[JMap[String, String]]("external_ids")
     }
   }
 }
