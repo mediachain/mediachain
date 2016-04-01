@@ -12,7 +12,7 @@ object TateTranslator extends Translator {
   val name = "TateCreativeCommons"
   val version = 1
 
-  private case class Contributor(fc: String, role: String)
+  private case class Contributor(fc: String, role: String, id: String)
   private case class Artwork(title: String,
                              medium: Option[String],
                              dateText: Option[String],
@@ -28,7 +28,7 @@ object TateTranslator extends Translator {
       val artists = for {
         c <- a.contributors
         if c.role == "artist"
-      } yield Person(None, c.fc)
+      } yield Person(None, c.fc, external_ids = Map("tate:id" -> c.id.toString))
 
       ImageBlob(None,
         a.title,
