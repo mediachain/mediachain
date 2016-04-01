@@ -217,7 +217,8 @@ object Types {
   case class Person(
     @id id: Option[ElementID],
     name: String,
-    signatures: SignatureMap = Map()
+    signatures: SignatureMap = Map(),
+    external_ids: IdMap = Map()
   ) extends MetadataBlob {
     def getID(): Option[ElementID] = id
 
