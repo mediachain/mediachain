@@ -106,7 +106,7 @@ class LSpaceMigrations extends ODBMigrations with OrientSchema {
       classNames.foreach { klass =>
         val sql =
           s"CREATE INDEX ${klass}ExternalIdsIndex " +
-            s"ON V_$klass (external_ids BY KEY) NOTUNIQUE_HASH_INDEX STRING"
+            s"ON $klass (external_ids BY KEY) NOTUNIQUE_HASH_INDEX STRING"
         db.executeSqlCommand[Long](sql)
       }
       ()
