@@ -13,7 +13,7 @@ object SpecResources {
   def resourceUrl(path: String) = this.getClass.getResource(path)
   def resourceUri(path: String) =
     Option(resourceUrl(path)).map(_.toURI)
-    .getOrElse(new URI("file://does/not/exist"))
+    .getOrElse(new URI("file:///does/not/exist"))
 
   lazy val simpleTestResourceUrl = resourceUrl("/simple-test.json")
 
