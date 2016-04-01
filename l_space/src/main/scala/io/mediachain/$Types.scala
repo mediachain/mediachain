@@ -104,7 +104,11 @@ object Types {
               + ("signatures" ->
               valueMap.get("signatures")
                 .map(_.asInstanceOf[java.util.Map[String, String]].asScala.toMap)
-                .orNull))
+                .orNull)
+              + ("external_ids" ->
+                valueMap.get("external_ids")
+                  .map(_.asInstanceOf[java.util.Map[String, String]].asScala.toMap)
+                  .orNull))
       }
     }
     def serializer: FieldSerializer[this.type] =
