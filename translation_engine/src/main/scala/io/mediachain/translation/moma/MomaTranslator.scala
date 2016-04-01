@@ -24,7 +24,8 @@ object MomaTranslator extends Translator {
     * @param Date Date of the work
     * @param Artist Artist of the work
     */
-  private case class MomaImageBlob(Title: String,
+  private case class MomaImageBlob(MoMANumber: String,
+                                   Title: String,
                            Medium: String,
                            Date: String,
                            Artist: String) {
@@ -33,7 +34,8 @@ object MomaTranslator extends Translator {
       title = Title,
       description = Medium,
       date = Date,
-      author = Some(Person(id = None, Artist))
+      author = Some(Person(id = None, Artist)),
+      external_ids = Map("moma:MoMANumber" -> MoMANumber)
     )
   }
 
