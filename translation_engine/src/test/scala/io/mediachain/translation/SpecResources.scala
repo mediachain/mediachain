@@ -31,7 +31,7 @@ object SpecResources {
        description = "Watercolour, ink, chalk and graphite on paper. Verso: graphite on paper",
        date = "date not known",
        author = Some(Person(None, name = "Robert Blake")),
-       external_ids = Map("tate:id" -> "1035")))
+       external_ids = Map("tate:id" -> "1035", "acno" -> "A00001")))
     }
 
   object Moma extends Partner {
