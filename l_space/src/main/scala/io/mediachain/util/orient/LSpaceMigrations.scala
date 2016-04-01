@@ -63,9 +63,10 @@ class LSpaceMigrations extends ODBMigrations with OrientSchema {
         .map("V_" + _)
 
       val classOpts = classNames.map(db.findClass)
-      for (classOpt <- classOpts)
-        yield for (klass <- classOpt)
-          yield klass + signaturesProp
+      for {
+        classOpt <- classOpts
+        klass <- classOpt.toList
+      } yield klass + signaturesProp
       ()
     }
 
@@ -83,9 +84,38 @@ class LSpaceMigrations extends ODBMigrations with OrientSchema {
       }
     }
 
+  // add "external_ids" property and index
+  def migration3: ODBSession[Unit] =
+    ODBSession {implicit db: ODatabaseDocumentTx =>
+
+      val idsProp = MapProperty("external_ids")
+        .mandatory(true)
+        .defaultValue(Map[String,String]())
+
+
+      val classNames =
+        List("ImageBlob", "Person")
+          .map("V_" + _)
+
+      val classOpts = classNames.map(db.findClass)
+      for {
+        classOpt <- classOpts
+        klass <- classOpt.toList
+      } yield klass + idsProp
+
+      classNames.foreach { klass =>
+        val sql =
+          s"CREATE INDEX ${klass}ExternalIdsIndex " +
+            s"ON V_$klass (external_ids BY KEY) NOTUNIQUE_HASH_INDEX STRING"
+        db.executeSqlCommand[Long](sql)
+      }
+      ()
+    }
+
   override def migrations: Seq[Migration] = Seq (
     Migration(0, migration0),
     Migration(1, migration1),
-    Migration(2, migration2)
+    Migration(2, migration2),
+    Migration(3, migration3)
   )
 }
