@@ -101,8 +101,9 @@ object Types {
         override def fromCC(cc: CC): FromCC = {
           val defaultFromCC = implicitly[Marshallable[CC]].fromCC(cc)
 
-          val valueMap = convertMapsToJava(defaultFromCC.valueMap) +
-            ("multiHash" -> cc.multiHash.base58)
+          val valueMap = convertMapsToJava(
+            defaultFromCC.valueMap + ("multiHash" -> cc.multiHash.base58))
+
 
           FromCC(defaultFromCC.id, defaultFromCC.label, valueMap)
         }
