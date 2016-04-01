@@ -70,6 +70,25 @@ object Types {
   }
 
   object Hashable {
+
+    def convertMapsToJava(valueMap: Map[String, Any]): Map[String, Any] =
+      valueMap.map { entry =>
+        val (key: String, value: Any) = entry
+        value match {
+          case mapVal: Map[_, _] => (key, mapVal.asJava)
+          case _ => (key, value)
+        }
+      }
+
+    def convertMapsToScala(valueMap: Map[String, Any]): Map[String, Any] =
+      valueMap.map { entry =>
+        val (key: String, value: Any) = entry
+        value match {
+          case mapVal: java.util.Map[_, _] => (key, mapVal.asScala.toMap)
+          case _ => (key, value)
+        }
+      }
+
     // Extend the default `Marshallable` implementation for `Hashable` case classes
     // to include the computed `multiHash` as a vertex property.
     //
@@ -82,33 +101,15 @@ object Types {
         override def fromCC(cc: CC): FromCC = {
           val defaultFromCC = implicitly[Marshallable[CC]].fromCC(cc)
 
-          val signatureMap = defaultFromCC.valueMap.get("signatures")
-            .map(_.asInstanceOf[SignatureMap].asJava)
-            .orNull
-
-          val externalIdMap = defaultFromCC.valueMap.get("external_ids")
-            .map(_.asInstanceOf[IdMap].asJava)
-            .orNull
-
-          val valueMap =  defaultFromCC.valueMap +
-            ("multiHash" -> cc.multiHash.base58) +
-            ("signatures" -> signatureMap) +
-            ("external_ids" -> externalIdMap)
+          val valueMap = convertMapsToJava(defaultFromCC.valueMap) +
+            ("multiHash" -> cc.multiHash.base58)
 
           FromCC(defaultFromCC.id, defaultFromCC.label, valueMap)
         }
 
         override def toCC(id: Id, valueMap: ValueMap): CC =
           implicitly[Marshallable[CC]]
-            .toCC(id, valueMap + ("id" -> id)
-              + ("signatures" ->
-              valueMap.get("signatures")
-                .map(_.asInstanceOf[java.util.Map[String, String]].asScala.toMap)
-                .orNull)
-              + ("external_ids" ->
-                valueMap.get("external_ids")
-                  .map(_.asInstanceOf[java.util.Map[String, String]].asScala.toMap)
-                  .orNull))
+            .toCC(id, convertMapsToScala(valueMap) + ("id" -> id))
       }
     }
     def serializer: FieldSerializer[this.type] =
