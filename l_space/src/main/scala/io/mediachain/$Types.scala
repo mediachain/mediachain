@@ -121,7 +121,9 @@ object Types {
   implicit val personMarshaller = Hashable.marshaller[Person]
 
 
+  // mapping of form "signer" -> "signature"
   type SignatureMap = Map[String, String]
+  // mapping of form "namespace:externalKeyName" -> "externalValue"
   type IdMap = Map[String, String]
 
   trait Signable {
