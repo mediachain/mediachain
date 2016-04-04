@@ -35,6 +35,8 @@ object LSpaceBuild extends Build{
 
   Resolver.sonatypeRepo("public")
 
+  updateOptions := updateOptions.value.withCachedResolution(true)
+
   lazy val l_space = project
     .settings(scalaSettings: _*)
     .dependsOn(orientdb_migrations)
