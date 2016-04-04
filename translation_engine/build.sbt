@@ -9,6 +9,7 @@ libraryDependencies ++= Seq(
   "org.json4s" %% "json4s-jackson" % "3.3.0"
 )
 
+parallelExecution in Test := false
 unmanagedClasspath in Test += baseDirectory.value / "test-resources"
 
 // see http://stackoverflow.com/a/9901616

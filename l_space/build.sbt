@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
   "org.apache.directory.studio" % "org.apache.commons.codec" % "1.8"
 )
 
+parallelExecution in Test := false
 
 // see http://stackoverflow.com/a/9901616
 //
