@@ -9,6 +9,7 @@ dependencies:
     - "~/.sbt"
     - "~/tate_full"
   pre:
+    - if [[ ! -e $HOME/tate_full ]]; then wget --output-document=$HOME/tate_full.zip https://github.com/tategallery/collection/archive/master.zip && unzip -qq $HOME/tate_full.zip -d $HOME/tate_full && rm $HOME/tate_full.zip; fi
     - wget --output-document=$HOME/bin/sbt-launch.jar https://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/"$SBT_VERSION"/sbt-launch.jar
     - echo "java $SBT_OPTS -jar \`dirname \$0\`/sbt-launch.jar \"\$@\"" > $HOME/bin/sbt
     - chmod u+x $HOME/bin/sbt
@@ -17,7 +18,6 @@ dependencies:
 test:
   pre:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
-    - if [[ ! -e $HOME/tate_full ]]; then wget --output-document=$HOME/tate_full.zip https://github.com/tategallery/collection/archive/master.zip && unzip -qq $HOME/tate_full.zip -d $HOME/tate_full && rm $HOME/tate_full.zip; fi
     - mkdir -p $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate
     - cd $HOME/tate_full/collection-master && for i in `find artworks -type f | shuf | head -100`; do cp --parents $i $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate; done
     - mkdir -p $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate/artworks/a/000 && cp $HOME/tate_full/collection-master/artworks/a/000/a00001-1035.json $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate/artworks/a/000
