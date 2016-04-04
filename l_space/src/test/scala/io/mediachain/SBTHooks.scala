@@ -7,13 +7,12 @@ import com.orientechnologies.orient.core.Orient
 // Used in Tests.setup and Tests.cleanup hooks in build.sbt
 
 class SBTSetupHook {
-  // Set the classloader to the JVM default, instead of the restricted sbt classloader
-  Thread.currentThread().setContextClassLoader(this.getClass.getClassLoader)
-
   // The default Orient shutdown hook runs on JVM shutdown, but we want it
   // to run after each test run, otherwise Orient will complain that its
   // beans are already registered
-  // (or something... see https://github.com/orientechnologies/orientdb/issues/4967)
+
+  // Accessing the Orient.instance here also prevents a NoClassDefFound error
+  // during test execution.
   Orient.instance().removeShutdownHook()
 }
 

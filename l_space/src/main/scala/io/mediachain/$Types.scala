@@ -23,6 +23,7 @@ import org.json4s.FieldSerializer
 import org.json4s.FieldSerializer.ignore
 
 import scala.collection.JavaConverters._
+import java.util.{Map => JMap}
 
 
 object Types {
@@ -69,6 +70,25 @@ object Types {
   }
 
   object Hashable {
+
+    def convertMapsToJava(valueMap: Map[String, Any]): Map[String, Any] =
+      valueMap.map { entry =>
+        val (key: String, value: Any) = entry
+        value match {
+          case mapVal: Map[_, _] => (key, mapVal.asJava)
+          case _ => (key, value)
+        }
+      }
+
+    def convertMapsToScala(valueMap: Map[String, Any]): Map[String, Any] =
+      valueMap.map { entry =>
+        val (key: String, value: Any) = entry
+        value match {
+          case mapVal: java.util.Map[_, _] => (key, mapVal.asScala.toMap)
+          case _ => (key, value)
+        }
+      }
+
     // Extend the default `Marshallable` implementation for `Hashable` case classes
     // to include the computed `multiHash` as a vertex property.
     //
@@ -81,24 +101,16 @@ object Types {
         override def fromCC(cc: CC): FromCC = {
           val defaultFromCC = implicitly[Marshallable[CC]].fromCC(cc)
 
-          val signatureMap = defaultFromCC.valueMap.get("signatures")
-            .map(_.asInstanceOf[SignatureMap].asJava)
-            .orNull
+          val valueMap = convertMapsToJava(
+            defaultFromCC.valueMap + ("multiHash" -> cc.multiHash.base58))
 
-          val valueMap =  defaultFromCC.valueMap +
-            ("multiHash" -> cc.multiHash.base58) +
-            ("signatures" -> signatureMap)
 
           FromCC(defaultFromCC.id, defaultFromCC.label, valueMap)
         }
 
         override def toCC(id: Id, valueMap: ValueMap): CC =
           implicitly[Marshallable[CC]]
-            .toCC(id, valueMap + ("id" -> id)
-              + ("signatures" ->
-              valueMap.get("signatures")
-                .map(_.asInstanceOf[java.util.Map[String, String]].asScala.toMap)
-                .orNull))
+            .toCC(id, convertMapsToScala(valueMap) + ("id" -> id))
       }
     }
     def serializer: FieldSerializer[this.type] =
@@ -111,7 +123,11 @@ object Types {
   implicit val personMarshaller = Hashable.marshaller[Person]
 
 
+  // mapping of form "signer" -> "signature"
   type SignatureMap = Map[String, String]
+  // mapping of form "namespace:externalKeyName" -> "externalValue"
+  type IdMap = Map[String, String]
+
   trait Signable {
     val signatures: SignatureMap
 
@@ -210,7 +226,8 @@ object Types {
   case class Person(
     @id id: Option[ElementID],
     name: String,
-    signatures: SignatureMap = Map()
+    signatures: SignatureMap = Map(),
+    external_ids: IdMap = Map()
   ) extends MetadataBlob {
     def getID(): Option[ElementID] = id
 
@@ -238,7 +255,8 @@ object Types {
     description: String,
     date: String,
     author: Option[Person],
-    signatures: SignatureMap = Map()
+    signatures: SignatureMap = Map(),
+    external_ids: IdMap = Map()
   ) extends MetadataBlob {
 
     override def hashSerializer: FieldSerializer[this.type] =
@@ -270,6 +288,7 @@ object Types {
       val title = Key[String]("title")
       val description = Key[String]("description")
       val date = Key[String]("date")
+      val external_ids = Key[JMap[String, String]]("external_ids")
     }
   }
 }
