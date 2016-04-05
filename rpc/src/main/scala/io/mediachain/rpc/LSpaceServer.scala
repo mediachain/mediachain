@@ -20,7 +20,10 @@ object LSpaceServer {
 
   def main(args: Array[String]): Unit = {
     if (ODatabaseRecordThreadLocal.INSTANCE == null) {
-      sys.error("Calling this manually apparently prevent an initialization issue.")
+      sys.error("This should never be reached. " +
+      "Accessing ODatabaseRecordThreadLocal.INSTANCE prevents an " +
+      "initialization error.  see: " +
+      "https://github.com/orientechnologies/orientdb/issues/5146")
     }
 
     val server = new LSpaceServer(ExecutionContext.global)
@@ -67,7 +70,7 @@ class LSpaceServer(executionContext: ExecutionContext) { self =>
     def getGraph: Graph =
     MigrationHelper.getMigratedPersistentGraph() match {
       case Failure(err) => throw new IllegalStateException(
-        "Unable to connect to L-SPACE server", err
+        "Unable to connect to L-SPACE graph db", err
       )
       case Success(graph) => graph
     }
