@@ -2,24 +2,41 @@ package io.mediachain.rpc
 
 import java.util.logging.Logger
 
+import gremlin.scala._
 import io.grpc.{Server, ServerBuilder}
 import io.mediachain.rpc.Services.{CanonicalList, LSpaceServiceGrpc, ListCanonicalsRequest}
 import io.mediachain.rpc.{Types => RPCTypes}
+import io.mediachain.Types._
+import io.mediachain.rpc.TypeConversions._
+import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal
+import io.mediachain.util.orient.MigrationHelper
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object LSpaceServer {
   private val port = 50052
   private val logger = Logger.getLogger(classOf[LSpaceServer].getName)
 
   def main(args: Array[String]): Unit = {
-    val server = new LSpaceServer(ExecutionContext.global)
-    server.start()
-    server.blockUntilShutdown()
+    if (ODatabaseRecordThreadLocal.INSTANCE == null) {
+      sys.error("Calling this manually apparently prevent an initialization issue.")
+    }
+
+    MigrationHelper.getMigratedPersistentGraph() match {
+      case Failure(err) => throw new IllegalStateException(
+        "Unable to connect to L-SPACE server", err
+      )
+      case Success(graph) => {
+        val server = new LSpaceServer(graph, ExecutionContext.global)
+        server.start()
+        server.blockUntilShutdown()
+      }
+    }
   }
 }
 
-class LSpaceServer(executionContext: ExecutionContext) { self =>
+class LSpaceServer(graph: Graph, executionContext: ExecutionContext) { self =>
   private[this] var server: Server = null
 
   private def start(): Unit = {
@@ -54,14 +71,22 @@ class LSpaceServer(executionContext: ExecutionContext) { self =>
 
   private class LSpaceServiceImpl extends LSpaceServiceGrpc.LSpaceService {
     override def listCanonicals(request: ListCanonicalsRequest)
-    : Future[CanonicalList] = {
+    : Future[CanonicalList] = Future {
+      // ignoring request for now and just returning all
+      val canonicals = graph.V
+        .hasLabel[Canonical]
+        .toCC[Canonical]
+        .map(_.toRPC)
+        .toList
 
-      ???
-    }
+      CanonicalList(canonicals = canonicals)
+    }(executionContext)
+
 
     override def subtreeForCanonical(request: RPCTypes.Canonical)
-    : Future[RPCTypes.Graph] = {
-      ???
-    }
+    : Future[RPCTypes.Graph] = Future {
+
+      throw new NotImplementedError("Nothing to see here...")
+    }(executionContext)
   }
 }
