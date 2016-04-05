@@ -23,20 +23,13 @@ object LSpaceServer {
       sys.error("Calling this manually apparently prevent an initialization issue.")
     }
 
-    MigrationHelper.getMigratedPersistentGraph() match {
-      case Failure(err) => throw new IllegalStateException(
-        "Unable to connect to L-SPACE server", err
-      )
-      case Success(graph) => {
-        val server = new LSpaceServer(graph, ExecutionContext.global)
-        server.start()
-        server.blockUntilShutdown()
-      }
-    }
+    val server = new LSpaceServer(ExecutionContext.global)
+    server.start()
+    server.blockUntilShutdown()
   }
 }
 
-class LSpaceServer(graph: Graph, executionContext: ExecutionContext) { self =>
+class LSpaceServer(executionContext: ExecutionContext) { self =>
   private[this] var server: Server = null
 
   private def start(): Unit = {
@@ -70,16 +63,26 @@ class LSpaceServer(graph: Graph, executionContext: ExecutionContext) { self =>
   }
 
   private class LSpaceServiceImpl extends LSpaceServiceGrpc.LSpaceService {
+
+    def getGraph: Graph =
+    MigrationHelper.getMigratedPersistentGraph() match {
+      case Failure(err) => throw new IllegalStateException(
+        "Unable to connect to L-SPACE server", err
+      )
+      case Success(graph) => graph
+    }
+
+
     override def listCanonicals(request: ListCanonicalsRequest)
     : Future[CanonicalList] = Future {
       // ignoring request for now and just returning all
-      val canonicals = graph.V
+      val g = getGraph
+      val canonicals = g.V
         .hasLabel[Canonical]
         .toCC[Canonical]
-        .map(_.toRPC)
         .toList
 
-      CanonicalList(canonicals = canonicals)
+      CanonicalList(canonicals = canonicals.map(_.toRPC))
     }(executionContext)
 
 
