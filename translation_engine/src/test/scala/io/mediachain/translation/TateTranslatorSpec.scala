@@ -1,6 +1,7 @@
 package io.mediachain.translation
 
 import io.mediachain.Types._
+import io.mediachain.BlobBundle
 import io.mediachain.XorMatchers
 import org.json4s.JObject
 import org.specs2.Specification
@@ -48,8 +49,8 @@ abstract class TranslatorSpec extends Specification with XorMatchers with Matche
 //        }
 //      }
 
-      translated must beRightXor { blob: ImageBlob =>
-        blob must matchA[ImageBlob]
+      translated must beRightXor { bundle: BlobBundle =>
+        bundle.content.asInstanceOf[ImageBlob] must matchA[ImageBlob]
           .title(expected.title)
           .date(expected.date)
           .description(expected.description)

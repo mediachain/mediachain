@@ -30,7 +30,6 @@ object SpecResources {
        title = "A Figure Bowing before a Seated Old Man with his Arm Outstretched in Benediction. Verso: Indecipherable Sketch",
        description = "Watercolour, ink, chalk and graphite on paper. Verso: graphite on paper",
        date = "date not known",
-       author = Some(Person(None, name = "Robert Blake", external_ids = Map("tate:id" -> "38"))),
        external_ids = Map("tate:id" -> "1035", "tate:acno" -> "A00001")))
     }
 
@@ -47,7 +46,6 @@ object SpecResources {
         title = "Three Part Large Animals",
         description = "Polyurethane foam and wire",
         date = "1989",
-        author = Some(Person(None, name = "Bruce Nauman")),
         external_ids = Map("moma:MoMANumber" -> "194.1996.a-c")))
   }
 }
