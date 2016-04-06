@@ -39,7 +39,7 @@ object TateIngestionSpec extends BaseSpec with Orientable {
 
   def ingestsDirectory = { graph: OrientGraph =>
     val loader = new TateLoader(SpecResources.Tate.fixtureDir.getPath)
-    val translated = loader.loadImageBlobs(Some(signatory))
+    val translated = loader.loadBlobs(Some(signatory))
 
     val canonicals = translated.map {
       resultXor: Xor[TranslationError, (ImageBlob, RawMetadataBlob)] =>
