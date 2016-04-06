@@ -34,7 +34,6 @@ object MomaTranslator extends Translator {
       title = Title,
       description = Medium,
       date = Date,
-      author = Some(Person(id = None, Artist)),
       external_ids = Map("moma:MoMANumber" -> MoMANumber)
     )
   }

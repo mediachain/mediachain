@@ -56,7 +56,7 @@ object GraphFixture {
       val title = stuff(Random.nextInt(stuff.length))
       val desc = food(Random.nextInt(stuff.length))
       val date = new Date(Random.nextLong).toString
-      ImageBlob(None, title, desc, date, None)
+      ImageBlob(None, title, desc, date)
     }
 
     def getModifiedImageBlob(b: ImageBlob): ImageBlob = {
