@@ -67,35 +67,19 @@ object Ingress {
                    photo: ImageBlob,
                    raw: Option[RawMetadataBlob] = None):
   Xor[GraphError, Canonical] = {
-    // extract author & add if they don't exist in the graph already
-    val author = photo.author.map { p =>
-      addPerson(graph, p, raw)
-    }
 
-    val strippedPhoto = photo.copy(author = None)
-
-    // Disabling this temporarily because of false positives
-    // check to see if a duplicate entry exists
-//    val photoV = Traversals.imageBlobsWithExactMatch(graph.V, strippedPhoto)
-//        .headOption.getOrElse(graph + strippedPhoto)
-    val photoV = graph + strippedPhoto
+    val photoV = Traversals.imageBlobsWithExactMatch(graph.V, photo)
+        .headOption.getOrElse(graph + photo)
 
     raw.foreach(attachRawMetadata(photoV, _))
 
-    for {
-      _ <- author
-        .map(x => x.flatMap(defineAuthorship(photoV, _)))
-        .getOrElse(Xor.right({}))
-    } yield {
-      // return existing canonical for photo vertex, or create one
       graph.V(photoV.id)
         .findCanonicalXor
-        .getOrElse {
+        .orElse {
           val canonicalVertex = graph + Canonical.create
           canonicalVertex --- DescribedBy --> photoV
-          canonicalVertex.toCC[Canonical]
+          Xor.right(canonicalVertex.toCC[Canonical])
         }
-    }
   }
 
 
@@ -105,20 +89,10 @@ object Ingress {
       .findCanonicalXor
       .map(Xor.right)
       .getOrElse {
-        val strippedPhoto = photo.copy(author = None)
-        val childVertex = graph + strippedPhoto
+        val childVertex = graph + photo
         parentVertex --- ModifiedBy --> childVertex
 
         raw.foreach(attachRawMetadata(childVertex, _))
-
-        // TODO: don't swallow errors
-        for {
-          author <- photo.author
-          authorC <- addPerson(graph, author).toOption
-          existingAuthor <- Traversals.getAuthor(childVertex.lift)
-            .toCC[Canonical].headOption
-          if authorC.canonicalID != existingAuthor.canonicalID
-        } yield defineAuthorship(childVertex, authorC)
 
         childVertex.lift.findCanonicalXor
           .map(Xor.right)

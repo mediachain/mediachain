@@ -20,7 +20,7 @@ object IngressSpec extends BaseSpec
       """
 
   def ingestsPhoto = { graph: OrientGraph =>
-    val imageBlob = ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013", None)
+    val imageBlob = ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013")
 
     val canonical = Ingress.addImageBlob(graph, imageBlob)
     canonical must beRightXor
@@ -29,10 +29,8 @@ object IngressSpec extends BaseSpec
 
   def findsExistingAuthor = { graph: OrientGraph =>
     val imageBlobs = List(
-      ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013",
-        Some(Person(None, "Fooman Bars"))),
-      ImageBlob(None, "A Starrier Night", "shiny!", "1/2/2013",
-        Some(Person(None, "Fooman Bars")))
+      ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013"),
+      ImageBlob(None, "A Starrier Night", "shiny!", "1/2/2013")
     )
 
     imageBlobs.foreach(Ingress.addImageBlob(graph, _))
@@ -68,8 +66,7 @@ object IngressSpec extends BaseSpec
     val blob = ImageBlob(None,
       "The Last Supper",
       "Why is everyone sitting on the same side of the table?",
-      "c. 1495",
-      Some(leo))
+      "c. 1495")
 
     // First add without raw metadata
     Ingress.addImageBlob(graph, blob)
@@ -80,30 +77,27 @@ object IngressSpec extends BaseSpec
 
     // These should both == 1, since adding again doesn't recreate the blob vertices
     val imageBlobCount = Traversals.imageBlobsWithExactMatch(graph.V, blob).count.head
-    val authorCount = Traversals.personBlobsWithExactMatch(graph.V, leo).count.head
+//    val authorCount = Traversals.personBlobsWithExactMatch(graph.V, leo).count.head
 
     val photoV = Traversals.imageBlobsWithExactMatch(graph.V, blob)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve photo blob"))
-    val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
-      .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
+//    val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
+//      .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
 
     val photoRawMeta = photoV.lift.findRawMetadataXor
-    val authorRawMeta = authorV.lift.findRawMetadataXor
+//    val authorRawMeta = authorV.lift.findRawMetadataXor
     val photoMatch = photoRawMeta match {
       case Xor.Right(photo) => photo.blob == rawString
       case _ => false
     }
-    val authorMatch = photoRawMeta.toList ++ authorRawMeta.toList match {
-      case List(photo, author) => photo == author
-      case _ => false
-    }
+//    val authorMatch = photoRawMeta.toList ++ authorRawMeta.toList match {
+//      case List(photo, author) => photo == author
+//      case _ => false
+//    }
 
     imageBlobCount must_== 1
-    authorCount must_== 1
-    authorRawMeta.isRight must beTrue
     photoRawMeta.isRight must beTrue
     photoMatch must beTrue
-    authorMatch must beTrue
   }
 
   def ingestsPhotoBothNew = pending

@@ -254,25 +254,10 @@ object Types {
     title: String,
     description: String,
     date: String,
-    author: Option[Person],
     signatures: SignatureMap = Map(),
     external_ids: IdMap = Map()
   ) extends MetadataBlob {
 
-    override def hashSerializer: FieldSerializer[this.type] =
-      FieldSerializer[this.type](
-        {
-          case ("id", _) => None
-          case ("author", _) => None
-        })
-
-    override def signingSerializer: FieldSerializer[this.type] =
-      FieldSerializer[this.type](
-        {
-          case ("id", _) => None
-          case ("author", _) => None
-          case ("signatures", _) => None
-        })
 
     def getID(): Option[ElementID] = id
 
