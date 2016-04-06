@@ -25,8 +25,7 @@ object HashingSpec extends Specification with XorMatchers {
     val blob1 = ImageBlob(None,
       "Dogs playing backgammon",
       "Awww, they think they're people!",
-      "March 15th 2016",
-      None)
+      "March 15th 2016")
 
     val blob2 = blob1.copy(date = "March 15th, 2016")
 

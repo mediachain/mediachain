@@ -42,9 +42,9 @@ object TateIngestionSpec extends BaseSpec with Orientable {
     val translated = loader.loadBlobs(Some(signatory))
 
     val canonicals = translated.map {
-      resultXor: Xor[TranslationError, (ImageBlob, RawMetadataBlob)] =>
-        resultXor.flatMap { result: (ImageBlob, RawMetadataBlob) =>
-          Ingress.addImageBlob(graph, result._1, Some(result._2))
+      resultXor: Xor[TranslationError, (BlobBundle, RawMetadataBlob)] =>
+        resultXor.flatMap { result: (BlobBundle, RawMetadataBlob) =>
+          Ingress.ingestBlobBundle(graph, result._1, Some(result._2))
         }
     }.toVector
 

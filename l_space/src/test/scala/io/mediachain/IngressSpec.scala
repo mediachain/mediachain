@@ -22,19 +22,27 @@ object IngressSpec extends BaseSpec
   def ingestsPhoto = { graph: OrientGraph =>
     val imageBlob = ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013")
 
-    val canonical = Ingress.addImageBlob(graph, imageBlob)
-    canonical must beRightXor
-    canonical.forall(x => x.id must beSome[ElementID])
+    val result = Ingress.addImageBlob(graph, imageBlob)
+    result must beRightXor { res =>
+      val (_, canonical) = res
+      canonical.id must beSome[ElementID]
+    }
   }
 
   def findsExistingAuthor = { graph: OrientGraph =>
-    val imageBlobs = List(
-      ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013"),
-      ImageBlob(None, "A Starrier Night", "shiny!", "1/2/2013")
+
+    val author = Person(None, "Fooman Bars")
+    val bundles = List(
+      BlobBundle(
+        ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013"),
+        BlobBundle.Author(author)),
+      BlobBundle(
+        ImageBlob(None, "A Starrier Night", "shiny!", "1/2/2013"),
+        BlobBundle.Author(author))
     )
 
-    imageBlobs.foreach(Ingress.addImageBlob(graph, _))
-    graph.commit
+    bundles.foreach(Ingress.ingestBlobBundle(graph, _))
+    graph.commit()
 
     val people = graph.V.hasLabel[Person].toCC[Person].toList
     people.size shouldEqual 1
@@ -69,31 +77,32 @@ object IngressSpec extends BaseSpec
       "c. 1495")
 
     // First add without raw metadata
-    Ingress.addImageBlob(graph, blob)
+    val bundle = BlobBundle(blob, BlobBundle.Author(leo))
+    Ingress.ingestBlobBundle(graph, bundle)
 
     // add again with raw metadata
-    Ingress.addImageBlob(graph, blob, Some(raw))
+    Ingress.ingestBlobBundle(graph, bundle, Some(raw))
     graph.commit()
 
     // These should both == 1, since adding again doesn't recreate the blob vertices
     val imageBlobCount = Traversals.imageBlobsWithExactMatch(graph.V, blob).count.head
-//    val authorCount = Traversals.personBlobsWithExactMatch(graph.V, leo).count.head
+    val authorCount = Traversals.personBlobsWithExactMatch(graph.V, leo).count.head
 
     val photoV = Traversals.imageBlobsWithExactMatch(graph.V, blob)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve photo blob"))
-//    val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
-//      .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
+    val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
+      .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
 
     val photoRawMeta = photoV.lift.findRawMetadataXor
-//    val authorRawMeta = authorV.lift.findRawMetadataXor
+    val authorRawMeta = authorV.lift.findRawMetadataXor
     val photoMatch = photoRawMeta match {
       case Xor.Right(photo) => photo.blob == rawString
       case _ => false
     }
-//    val authorMatch = photoRawMeta.toList ++ authorRawMeta.toList match {
-//      case List(photo, author) => photo == author
-//      case _ => false
-//    }
+    val authorMatch = photoRawMeta.toList ++ authorRawMeta.toList match {
+      case List(photo, author) => photo == author
+      case _ => false
+    }
 
     imageBlobCount must_== 1
     photoRawMeta.isRight must beTrue
