@@ -9,44 +9,38 @@ import gremlin.scala._
 object Ingress {
 
   import Traversals.{GremlinScalaImplicits, VertexImplicits}
-  import io.mediachain.util.GremlinUtils._
 
   def ingestBlobBundle(graph: Graph, bundle: BlobBundle
     , rawMetadata: Option[RawMetadataBlob] = None)
   : Xor[GraphError, Canonical] = {
-    withTransactionXor(graph) {
-      val addResultXor: Xor[GraphError, (Vertex, Canonical)] =
-        bundle.content match {
-          case image: ImageBlob => {
-            addImageBlob(graph, image)
+    val addResultXor: Xor[GraphError, (Vertex, Canonical)] =
+      bundle.content match {
+        case image: ImageBlob => {
+          addImageBlob(graph, image, rawMetadata)
+        }
+
+        case person: Person => {
+          addPerson(graph, person, rawMetadata)
+        }
+
+        case _ => Xor.left(SubtreeError()) // TODO, better error type
+      }
+
+    addResultXor.flatMap { addResult =>
+      val (vertex, canonical) = addResult
+
+      val relationshipXors = bundle.relationships.map {
+        case BlobBundle.Author(author) =>
+          addPerson(graph, author, rawMetadata).flatMap { result =>
+            val (_, authorCanonical) = result
+            defineAuthorship(vertex, authorCanonical)
           }
+      }
 
-          case person: Person => {
-            addPerson(graph, person)
-          }
-
-          case _ => Xor.left(SubtreeError()) // TODO, better error type
-        }
-
-      addResultXor.flatMap { addResult =>
-        val (vertex, canonical) = addResult
-        rawMetadata.foreach(attachRawMetadata(vertex, _))
-
-        val relationshipXors = bundle.relationships.map {
-          case BlobBundle.Author(author) =>
-            addPerson(graph, author).flatMap { result =>
-              val (authorV, authorCanonical) = result
-
-              rawMetadata.foreach(attachRawMetadata(authorV, _))
-              defineAuthorship(vertex, authorCanonical)
-            }
-        }
-
-        relationshipXors.foldLeft(Xor.right[GraphError, Canonical](canonical)) {
-          case (Xor.Left(err), _) => Xor.left(err)
-          case (_, Xor.Left(err)) => Xor.left(err)
-          case (_, Xor.Right(_)) => Xor.right(canonical)
-        }
+      relationshipXors.foldLeft(Xor.right[GraphError, Canonical](canonical)) {
+        case (Xor.Left(err), _) => Xor.left(err)
+        case (_, Xor.Left(err)) => Xor.left(err)
+        case (_, Xor.Right(_)) => Xor.right(canonical)
       }
     }
   }
@@ -83,7 +77,7 @@ object Ingress {
   }
 
   // throws?
-  def addPerson(graph: Graph, person: Person):
+  def addPerson(graph: Graph, person: Person, rawMetadata: Option[RawMetadataBlob] = None):
   Xor[GraphError, (Vertex, Canonical)] = {
     // If there's an exact match already, return it,
     // otherwise create a new Person vertex and canonical
@@ -91,6 +85,8 @@ object Ingress {
     val q = Traversals.personBlobsWithExactMatch(graph.V, person)
 
     val personV: Vertex = q.headOption.getOrElse(graph + person)
+
+    rawMetadata.foreach(attachRawMetadata(personV, _))
 
     val canonical = graph.V(personV.id)
       .findCanonicalXor
@@ -103,11 +99,13 @@ object Ingress {
     Xor.right((personV, canonical))
   }
 
-  def addImageBlob(graph: Graph, image: ImageBlob):
+  def addImageBlob(graph: Graph, image: ImageBlob, rawMetadata: Option[RawMetadataBlob] = None):
   Xor[GraphError, (Vertex, Canonical)] = {
 
     val imageV = Traversals.imageBlobsWithExactMatch(graph.V, image)
         .headOption.getOrElse(graph + image)
+
+    rawMetadata.foreach(attachRawMetadata(imageV, _))
 
     val canonical = graph.V(imageV.id)
       .findCanonicalXor
