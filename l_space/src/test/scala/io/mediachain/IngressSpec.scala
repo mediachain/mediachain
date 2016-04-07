@@ -64,7 +64,7 @@ object IngressSpec extends BaseSpec
     photoTitles must contain("A Starrier Night")
   }
 
-  def attachesRawMetadata = skipped {graph: OrientGraph =>
+  def attachesRawMetadata = { graph: OrientGraph =>
     val rawString =
       """{"title": "The Last Supper",
           "description: "Why is everyone sitting on the same side of the table?",
@@ -124,8 +124,8 @@ object IngressSpec extends BaseSpec
 
     val resultCanonical = Ingress.modifyImageBlob(graph, currentHeadV, newPhoto)
 
-    resultCanonical must beRightXor { c: Canonical =>
-      c.vertex(graph) must beRightXor
+    resultCanonical must beRightXor { res: BlobAddResult =>
+      res.canonicalVertex must not beNull
     }
   }
 }

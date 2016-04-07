@@ -137,21 +137,22 @@ object Ingress {
     addMetadataBlob(graph, image, rawMetadata)
 
 
-  def modifyImageBlob(graph: Graph, parentVertex: Vertex, photo: ImageBlob, raw: Option[RawMetadataBlob] = None):
-  Xor[GraphError, Canonical] = {
-    Traversals.imageBlobsWithExactMatch(graph.V, photo)
-      .findCanonicalXor
-      .map(Xor.right)
+  def modifyImageBlob(graph: Graph, parentVertex: Vertex, image: ImageBlob, raw: Option[RawMetadataBlob] = None):
+  Xor[GraphError, BlobAddResult] = withTransactionXor(graph) {
+
+    val childVertex =
+      Traversals.imageBlobsWithExactMatch(graph.V, image).headOption
       .getOrElse {
-        val childVertex = graph + photo
-        parentVertex --- ModifiedBy --> childVertex
-
-        raw.foreach(attachRawMetadata(childVertex, _))
-
-        childVertex.lift.findCanonicalXor
-          .map(Xor.right)
-          .getOrElse(Xor.left(CanonicalNotFound()))
+        val childV = graph + image
+        parentVertex --- ModifiedBy --> childV
+        childV
       }
+
+    val canonicalXor = Xor.fromOption(
+      Traversals.getCanonical(parentVertex.lift).headOption,
+      CanonicalNotFound())
+
+    canonicalXor.map(canonicalV => BlobAddResult(childVertex, canonicalV))
   }
 }
 
