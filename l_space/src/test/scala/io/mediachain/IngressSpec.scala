@@ -6,6 +6,7 @@ import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
 import gremlin.scala._
 import cats.data.Xor
 import core.GraphError._
+import io.mediachain.Ingress.BlobAddResult
 
 object IngressSpec extends BaseSpec
   with Orientable {
@@ -23,7 +24,7 @@ object IngressSpec extends BaseSpec
     val imageBlob = ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013")
 
     val result = Ingress.addImageBlob(graph, imageBlob)
-    result must beRightXor { res =>
+    result must beRightXor { res: BlobAddResult =>
       val canonical = res.canonicalVertex.toCC[Canonical]
       canonical.id must beSome[ElementID]
     }
