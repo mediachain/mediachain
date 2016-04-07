@@ -23,7 +23,7 @@ object Ingress {
           addPerson(graph, person, rawMetadata)
         }
 
-        case _ => Xor.left(SubtreeError()) // TODO, better error type
+        case _ => Xor.left(InvalidBlobBundle())
       }
 
     addResultXor.flatMap { addResult =>
