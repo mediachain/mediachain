@@ -83,7 +83,6 @@ object IngressSpec extends BaseSpec
 
     // add again with raw metadata
     Ingress.ingestBlobBundle(graph, bundle, Some(raw))
-    graph.commit()
 
     // These should both == 1, since adding again doesn't recreate the blob vertices
     val imageBlobCount = Traversals.imageBlobsWithExactMatch(graph.V, blob).count.head
@@ -94,8 +93,8 @@ object IngressSpec extends BaseSpec
     val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
 
-    val photoRawMeta = photoV.lift.findRawMetadataXor
-    val authorRawMeta = authorV.lift.findRawMetadataXor
+    val photoRawMeta = photoV.toPipeline.flatMap(_.findRawMetadataXor)
+    val authorRawMeta = authorV.toPipeline.flatMap(_.findRawMetadataXor)
     val photoMatch = photoRawMeta match {
       case Xor.Right(photo) => photo.blob == rawString
       case _ => false
