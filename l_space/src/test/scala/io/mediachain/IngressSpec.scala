@@ -24,7 +24,7 @@ object IngressSpec extends BaseSpec
 
     val result = Ingress.addImageBlob(graph, imageBlob)
     result must beRightXor { res =>
-      val (_, canonical) = res
+      val canonical = res.canonicalVertex.toCC[Canonical]
       canonical.id must beSome[ElementID]
     }
   }
