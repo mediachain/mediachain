@@ -10,6 +10,7 @@ import Traversals.{GremlinScalaImplicits, VertexImplicits}
 import com.orientechnologies.orient.core.exception.OStorageException
 import com.orientechnologies.orient.core.storage.ORecordDuplicatedException
 
+
 object Ingress {
 
   case class BlobAddResult(blobVertex: Vertex, canonicalVertex: Vertex)
@@ -74,15 +75,15 @@ object Ingress {
 
   def defineAuthorship(blobV: Vertex, authorCanonicalVertex: Vertex):
   Xor[GraphError, Unit] = withTransactionXor(blobV.graph) {
-    val authorshipAlreadyDefined: Xor[GraphError, Boolean] =
-    try {
-      blobV.lift.findAuthorXor.map { authorCanonical: Canonical =>
-        authorCanonical.canonicalID ==
-          authorCanonicalVertex.toCC[Canonical].canonicalID
+
+    val authorshipAlreadyDefined = blobV.toPipeline
+      .flatMap(_.findAuthorXor).map { authorCanonical: Canonical =>
+      authorCanonical.canonicalID ==
+        authorCanonicalVertex.toCC[Canonical].canonicalID
+    }.recover {
+      case _: InvalidElementId => {
+        false
       }
-    } catch {
-      case _: OStorageException => Xor.right(false)
-      case t: Throwable => throw t
     }
 
     authorshipAlreadyDefined.map { defined =>
@@ -91,6 +92,7 @@ object Ingress {
       }
     }
   }
+
 
 
   def addMetadataBlob[T <: MetadataBlob with Product : Marshallable]
@@ -106,10 +108,10 @@ object Ingress {
 
     val resultXor: Xor[GraphError, (Vertex, Vertex)] =
       existingVertex.map { v =>
-        Xor.fromOption(
-          Traversals.getCanonical(v.lift).headOption,
+        v.toPipeline.flatMap { gs: GremlinScala[Vertex, _] =>
+          Xor.fromOption(Traversals.getCanonical(gs).headOption,
           CanonicalNotFound())
-          .map(canonicalV => (v, canonicalV))
+        }.map(canonicalV => (v, canonicalV))
       }.getOrElse {
         val v = graph + blob
         val canonicalV = graph + Canonical.create()
@@ -148,9 +150,10 @@ object Ingress {
         childV
       }
 
-    val canonicalXor = Xor.fromOption(
-      Traversals.getCanonical(parentVertex.lift).headOption,
-      CanonicalNotFound())
+    val canonicalXor =
+      parentVertex.toPipeline.flatMap { gs: GremlinScala[Vertex, _] =>
+        Xor.fromOption(gs.headOption, CanonicalNotFound())
+      }
 
     canonicalXor.map(canonicalV => BlobAddResult(childVertex, canonicalV))
   }

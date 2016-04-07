@@ -24,6 +24,7 @@ object GraphError {
   case class BlobNotFound() extends GraphError
   case class SubtreeError() extends GraphError
   case class InvalidBlobBundle() extends GraphError
+  case class InvalidElementId() extends GraphError
   case class TransactionFailed(reason: Throwable) extends GraphError
 }
 

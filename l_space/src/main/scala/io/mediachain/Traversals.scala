@@ -1,5 +1,8 @@
 package io.mediachain
 
+import com.orientechnologies.orient.core.exception.OStorageException
+import com.orientechnologies.orient.core.id.ORecordId
+
 object Traversals {
   import gremlin.scala._
   import Types._
@@ -81,9 +84,26 @@ object Traversals {
     /**
       * 'lift' a Vertex into a GremlinScala[Vertex, _] pipeline
       *
-      * @return a query pipeline based on the vertex
+      * @return a query pipeline based on the vertex, or an InvalidElementId
+      *         error if the vertex has an invalid or temporary id.
+      *         This will happen if, e.g. the vertex was created during a
+      *         transaction that has not been committed yet.
       */
-    def lift: GremlinScala[Vertex, _] = v.graph.V(v.id)
+    def toPipeline: Xor[InvalidElementId, GremlinScala[Vertex, _]] = {
+      val idValidXor: Xor[InvalidElementId, Unit] = v.id match {
+        case orientId: ORecordId => {
+          if (orientId.isValid && (!orientId.isTemporary)) {
+            Xor.right({})
+          } else {
+            Xor.left(InvalidElementId())
+          }
+        }
+
+        case _ => Xor.right({})
+      }
+
+      idValidXor.map(_ => v.graph.V(v.id))
+    }
   }
 
   implicit class GremlinScalaImplicits(gs: GremlinScala[Vertex, _]) {
