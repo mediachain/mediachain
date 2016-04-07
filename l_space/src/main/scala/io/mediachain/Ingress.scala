@@ -72,14 +72,13 @@ object Ingress {
   }
 
   def defineAuthorship(blobV: Vertex, authorCanonicalVertex: Vertex):
-  Xor[GraphError, Unit] = {
+  Xor[GraphError, Unit] = withTransactionXor(blobV.graph) {
     val authorshipAlreadyDefined: Xor[GraphError, Boolean] =
     try {
       blobV.lift.findAuthorXor.map { authorCanonical: Canonical =>
         authorCanonical.canonicalID ==
           authorCanonicalVertex.toCC[Canonical].canonicalID
       }
-
     } catch {
       case _: OStorageException => Xor.right(false)
       case t: Throwable => throw t
