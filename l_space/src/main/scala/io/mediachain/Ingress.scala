@@ -65,11 +65,8 @@ object Ingress {
       .headOption
       .getOrElse(graph + raw)
 
-    try {
+    upsertEdge(graph) {
       blobV --- TranslatedFrom --> rawV
-    } catch {
-      case _: ORecordDuplicatedException => ()
-      case t: Throwable => throw t
     }
   }
 
@@ -88,11 +85,26 @@ object Ingress {
 
     authorshipAlreadyDefined.map { defined =>
       if (!defined) {
-        blobV --- AuthoredBy --> authorCanonicalVertex
+        upsertEdge(blobV.graph) {
+          blobV --- AuthoredBy --> authorCanonicalVertex
+        }
       }
     }
   }
 
+
+  def upsertEdge(graph: Graph)(f: => Edge): Edge = {
+    try f
+    catch {
+      case e: ORecordDuplicatedException => {
+        val id = e.getRid
+        graph.E(id).headOption.getOrElse(
+          throw new IllegalStateException("Unable to retrieve duplicate edge.")
+        )
+      }
+      case t: Throwable => throw t
+    }
+  }
 
 
   def addMetadataBlob[T <: MetadataBlob with Product : Marshallable]
