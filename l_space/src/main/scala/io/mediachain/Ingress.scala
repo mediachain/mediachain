@@ -8,10 +8,15 @@ import gremlin.scala._
 import io.mediachain.util.GremlinUtils._
 import Traversals.{GremlinScalaImplicits, VertexImplicits}
 import com.orientechnologies.orient.core.exception.OStorageException
+import com.orientechnologies.orient.core.storage.ORecordDuplicatedException
 
 object Ingress {
 
   case class BlobAddResult(blobVertex: Vertex, canonicalVertex: Vertex)
+  object BlobAddResult {
+    def apply(t: Tuple2[Vertex, Vertex]): BlobAddResult =
+      BlobAddResult(t._1, t._2)
+  }
 
   def ingestBlobBundle(graph: Graph, bundle: BlobBundle
     , rawMetadata: Option[RawMetadataBlob] = None)
@@ -49,7 +54,8 @@ object Ingress {
   }
 
 
-  def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob): Unit =
+  def attachRawMetadata(blobV: Vertex, raw: RawMetadataBlob)
+  : Xor[GraphError, Unit] =
   withTransaction(blobV.graph) {
     val graph = blobV.graph
 
@@ -58,16 +64,11 @@ object Ingress {
       .headOption
       .getOrElse(graph + raw)
 
-    // check if there's already an edge from the blob vertex to the raw metadata vertex
-    val existingBlobs: Set[Vertex] = try {
-      rawV.in(TranslatedFrom).toSet
-    } catch {
-      case _: OStorageException => Set()
-      case t: Throwable => throw t
-    }
-
-    if (!existingBlobs.contains(blobV)) {
+    try {
       blobV --- TranslatedFrom --> rawV
+    } catch {
+      case _: ORecordDuplicatedException => ()
+      case t: Throwable => throw t
     }
   }
 
@@ -122,7 +123,7 @@ object Ingress {
       }
     }
 
-    resultXor.map { res => BlobAddResult(res._1, res._2) }
+    resultXor.map(BlobAddResult(_))
   }
 
 
