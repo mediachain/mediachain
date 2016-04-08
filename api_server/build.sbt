@@ -11,7 +11,8 @@ libraryDependencies ++= {
     "io.spray"            %%  "spray-can"     % sprayV,
     "io.spray"            %%  "spray-routing-shapeless2" % sprayV,
     "io.spray"            %%  "spray-httpx"   % sprayV,
-    "io.spray"            %%  "spray-testkit" % sprayV  % "test",
+    // spray's specs2 support doesn't yet play nice with v 3.x of specs2
+    "io.spray"      %%  "spray-testkit" % sprayV  % "test" exclude("org.specs2", "specs2_2.11"),
     "org.parboiled"       %%  "parboiled"     % "2.0.1",
     "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
     "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
