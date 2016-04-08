@@ -1,7 +1,5 @@
 package io.mediachain
 
-import java.util.function.Consumer
-
 import cats.data.Xor
 import Types._
 import core.GraphError
@@ -9,9 +7,6 @@ import core.GraphError._
 import gremlin.scala._
 import io.mediachain.util.GremlinUtils._
 import Traversals.{GremlinScalaImplicits, VertexImplicits}
-import com.orientechnologies.orient.core.exception.OStorageException
-import com.orientechnologies.orient.core.storage.ORecordDuplicatedException
-import org.apache.tinkerpop.gremlin.structure.Direction
 
 
 object Ingress {
@@ -86,7 +81,7 @@ object Ingress {
     } yield {
       author.canonicalID == authorCanonicalVertex.toCC[Canonical].canonicalID
     }
-    
+
     val authorshipAlreadyDefined = alreadyDefinedXor.valueOr(_ => false)
 
     if (!authorshipAlreadyDefined) {
