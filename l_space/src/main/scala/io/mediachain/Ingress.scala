@@ -75,14 +75,14 @@ object Ingress {
   def defineAuthorship(blobV: Vertex, authorCanonicalVertex: Vertex):
   Xor[GraphError, Unit] = withTransaction(blobV.graph) {
 
-    val alreadyDefinedXor = for {
+    val existingAuthorXor = for {
       q <- blobV.toPipeline
       author <- q.findAuthorXor
-    } yield {
-      author.canonicalID == authorCanonicalVertex.toCC[Canonical].canonicalID
-    }
+    } yield author
 
-    val authorshipAlreadyDefined = alreadyDefinedXor.valueOr(_ => false)
+    val authorshipAlreadyDefined = existingAuthorXor.exists(
+      _.canonicalID == authorCanonicalVertex.toCC[Canonical].canonicalID
+    )
 
     if (!authorshipAlreadyDefined) {
       blobV --- AuthoredBy --> authorCanonicalVertex
