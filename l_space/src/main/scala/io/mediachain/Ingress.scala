@@ -1,5 +1,7 @@
 package io.mediachain
 
+import javax.swing.text.html.BlockView
+
 import cats.data.Xor
 import Types._
 import core.GraphError
@@ -94,6 +96,7 @@ object Ingress {
   def addMetadataBlob[T <: MetadataBlob with Product : Marshallable]
   (graph: Graph, blob: T, rawMetadataOpt: Option[RawMetadataBlob] = None):
   Xor[GraphError, BlobAddResult] = withTransactionXor(graph) {
+
     val existingVertex: Option[Vertex] = blob match {
       case image: ImageBlob =>
         Traversals.imageBlobsWithExactMatch(graph.V, image).headOption
@@ -102,26 +105,32 @@ object Ingress {
       case _ => None
     }
 
-    val resultXor: Xor[GraphError, (Vertex, Vertex)] =
-      existingVertex.map { v =>
-        v.toPipeline.flatMap { gs: GremlinScala[Vertex, _] =>
-          Xor.fromOption(Traversals.getCanonical(gs).headOption,
+    val resultForExistingVertex: Option[Xor[GraphError, BlobAddResult]] =
+      for {
+        v <- existingVertex
+      } yield for {
+        pipeline <- v.toPipeline
+        canonicalV <- Xor.fromOption(
+          Traversals.getCanonical(pipeline).headOption,
           CanonicalNotFound())
-        }.map(canonicalV => (v, canonicalV))
-      }.getOrElse {
+      } yield BlobAddResult(v, canonicalV)
+
+    val resultXor: Xor[GraphError, BlobAddResult] =
+      resultForExistingVertex
+      .getOrElse {
         val v = graph + blob
         val canonicalV = graph + Canonical.create()
         canonicalV --- DescribedBy --> v
-        Xor.right((v, canonicalV))
+        Xor.right(BlobAddResult(v, canonicalV))
       }
-    
-    rawMetadataOpt.foreach { raw =>
-      resultXor.foreach { res =>
-        attachRawMetadata(res._1, raw)
+
+    rawMetadataOpt.foreach { raw: RawMetadataBlob =>
+      resultXor.foreach { res: BlobAddResult =>
+        attachRawMetadata(res.blobVertex, raw)
       }
     }
 
-    resultXor.map(BlobAddResult(_))
+    resultXor
   }
 
 
