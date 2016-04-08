@@ -1,5 +1,7 @@
 package io.mediachain
 
+import java.util.function.Consumer
+
 import cats.data.Xor
 import Types._
 import core.GraphError
@@ -9,6 +11,7 @@ import io.mediachain.util.GremlinUtils._
 import Traversals.{GremlinScalaImplicits, VertexImplicits}
 import com.orientechnologies.orient.core.exception.OStorageException
 import com.orientechnologies.orient.core.storage.ORecordDuplicatedException
+import org.apache.tinkerpop.gremlin.structure.Direction
 
 
 object Ingress {
@@ -65,7 +68,11 @@ object Ingress {
       .headOption
       .getOrElse(graph + raw)
 
-    upsertEdge(graph) {
+    val edgeAlreadyExists = blobV.toPipeline
+      .map(_.out(TranslatedFrom).toSet.contains(rawV))
+      .valueOr(_ => false)
+
+    if (!edgeAlreadyExists) {
       blobV --- TranslatedFrom --> rawV
     }
   }
@@ -77,34 +84,15 @@ object Ingress {
       .flatMap(_.findAuthorXor).map { authorCanonical: Canonical =>
       authorCanonical.canonicalID ==
         authorCanonicalVertex.toCC[Canonical].canonicalID
-    }.recover {
-      case _: InvalidElementId => {
-        false
-      }
-    }
+    }.recover { case _: InvalidElementId => false }
 
     authorshipAlreadyDefined.map { defined =>
       if (!defined) {
-        upsertEdge(blobV.graph) {
-          blobV --- AuthoredBy --> authorCanonicalVertex
-        }
+        blobV --- AuthoredBy --> authorCanonicalVertex
       }
     }
   }
 
-
-  def upsertEdge(graph: Graph)(f: => Edge): Edge = {
-    try f
-    catch {
-      case e: ORecordDuplicatedException => {
-        val id = e.getRid
-        graph.E(id).headOption.getOrElse(
-          throw new IllegalStateException("Unable to retrieve duplicate edge.")
-        )
-      }
-      case t: Throwable => throw t
-    }
-  }
 
 
   def addMetadataBlob[T <: MetadataBlob with Product : Marshallable]
