@@ -2,17 +2,21 @@ package io.mediachain.util.orient
 
 import com.orientechnologies.orient.core.db.ODatabaseFactory
 import io.mediachain.util.Env
+import org.apache.commons.configuration.{BaseConfiguration, Configuration}
 import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
+import org.apache.tinkerpop.gremlin.structure.Graph
 import springnz.orientdb.migration.Migrator
 import springnz.orientdb.pool.{ODBConnectConfig, ODBConnectionPool}
 
 import scala.util.{Failure, Random, Success, Try}
 
 object MigrationHelper {
+  val DEFAULT_POOL_MAX = 1
   object EnvVars {
     val ORIENTDB_URL = "ORIENTDB_URL"
     val ORIENTDB_USER = "ORIENTDB_USER"
     val ORIENTDB_PASSWORD = "ORIENTDB_PASSWORD"
+    val ORIENTDB_POOL_MAX = "ORIENTDB_POOL_MAX"
   }
 
   def newInMemoryGraph(transactional: Boolean = true): OrientGraph = {
@@ -76,20 +80,32 @@ object MigrationHelper {
   : Try[Unit] =
     applyToPersistentDB(Some(ODBConnectConfig(url, user, password)))
 
-  def graphWithOptionalConfig(
+
+  def graphFactoryWithOptionalConfig(
     configOpt: Option[ODBConnectConfig],
-    transactional: Boolean = true): Try[OrientGraph] = {
+    poolMaxOpt: Option[Int] = None): Try[OrientGraphFactory] = {
     val config = configOpt.orElse(configFromEnv.toOption)
+
+    val poolMax =
+      poolMaxOpt
+      .getOrElse(Env.getInt(EnvVars.ORIENTDB_POOL_MAX)
+        .getOrElse(DEFAULT_POOL_MAX))
 
     config match {
       case Some(ODBConnectConfig(url, user, pass)) =>
         Try({
-          val factory = new OrientGraphFactory(url, user, pass)
-          if (transactional) {
-            factory.getTx(false, true)
-          } else {
-            factory.getNoTx(false, true)
+          val factoryConfig = new BaseConfiguration {
+            setProperty(Graph.GRAPH, classOf[OrientGraph].getName)
+            setProperty(OrientGraph.CONFIG_URL, url)
+            setProperty(OrientGraph.CONFIG_USER, user)
+            setProperty(OrientGraph.CONFIG_PASS, pass)
+            setProperty(OrientGraph.CONFIG_CREATE, false)
+            setProperty(OrientGraph.CONFIG_OPEN, true)
+            setProperty(OrientGraph.CONFIG_LABEL_AS_CLASSNAME, false)
           }
+          val factory = new OrientGraphFactory(factoryConfig)
+          factory.setupPool(poolMax)
+          factory
         })
 
       case None =>
@@ -101,6 +117,16 @@ object MigrationHelper {
     }
   }
 
+  def graphWithOptionalConfig(
+    configOpt: Option[ODBConnectConfig],
+    transactional: Boolean = true): Try[OrientGraph] = {
+    graphFactoryWithOptionalConfig(configOpt)
+      .map { factory =>
+        if (transactional) factory.getTx(false, true)
+        else factory.getNoTx(false, true)
+      }
+  }
+
   def getMigratedPersistentGraph(
     config: Option[ODBConnectConfig] = None,
     transactional: Boolean = true
@@ -109,4 +135,15 @@ object MigrationHelper {
       _ <- applyToPersistentDB(config)
       graph <- graphWithOptionalConfig(config, transactional)
     } yield graph
+
+
+  def getMigratedPersistentGraphFactory(
+    configOpt: Option[ODBConnectConfig] = None,
+    poolMaxOpt: Option[Int] = None
+  ): Try[OrientGraphFactory] =
+    for {
+      _ <- applyToPersistentDB(configOpt)
+      factory <- graphFactoryWithOptionalConfig(configOpt, poolMaxOpt)
+    } yield factory
+
 }
