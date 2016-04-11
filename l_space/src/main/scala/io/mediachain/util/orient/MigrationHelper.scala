@@ -127,7 +127,7 @@ object MigrationHelper {
       }
   }
 
-  def getMigratedPersistentGraph(
+  def getMigratedGraph(
     config: Option[ODBConnectConfig] = None,
     transactional: Boolean = true
   ): Try[OrientGraph] =
@@ -137,7 +137,7 @@ object MigrationHelper {
     } yield graph
 
 
-  def getMigratedPersistentGraphFactory(
+  def getMigratedGraphFactory(
     configOpt: Option[ODBConnectConfig] = None,
     poolMaxOpt: Option[Int] = None
   ): Try[OrientGraphFactory] =
