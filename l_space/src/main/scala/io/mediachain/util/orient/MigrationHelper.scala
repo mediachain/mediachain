@@ -22,27 +22,15 @@ object MigrationHelper {
   def newInMemoryGraph(transactional: Boolean = true): OrientGraph = {
     val dbname = s"memory:in-memory-${Random.nextInt()}"
     // create the db, but don't open it yet
-    val rawDb = new ODatabaseFactory().createDatabase("graph", dbname)
+    new ODatabaseFactory().createDatabase("graph", dbname)
 
-    // apply the migrations
     val config = ODBConnectConfig(dbname, "admin", "admin")
-    val pool = poolWithConfig(config)
-
-    val migrations = new LSpaceMigrations().migrations
-
-    Migrator.runMigration(migrations)(pool) match {
+    getMigratedGraph(Some(config), transactional) match {
       case Failure(e) =>
         throw new IllegalStateException(
-          s"Unable to apply migrations to in-memory db: ${e.getMessage}"
-        )
-      case _ => ()
-    }
+          s"Unable to apply migrations to in-memory db: ${e.getMessage}", e)
 
-    // return a new graph using the migrated db
-    if (transactional) {
-      new OrientGraphFactory(dbname).getTx(false, true)
-    } else {
-      new OrientGraphFactory(dbname).getNoTx(false, true)
+      case Success(graph) => graph
     }
   }
 
