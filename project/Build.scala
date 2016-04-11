@@ -48,6 +48,12 @@ object LSpaceBuild extends Build{
     .dependsOn(l_space % "test->test")
     .dependsOn(core)
 
+  lazy val api_server = project
+    .settings(scalaSettings: _*)
+    .dependsOn(l_space)
+    .dependsOn(l_space % "test->test")
+    .dependsOn(core)
+
   lazy val core = project
     .settings(scalaSettings: _*)
 

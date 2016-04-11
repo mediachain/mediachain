@@ -10,5 +10,4 @@ object Env {
 
   def getInt(key: String): Try[Int] =
     getString(key).flatMap(str => Try(str.toInt))
-
 }
