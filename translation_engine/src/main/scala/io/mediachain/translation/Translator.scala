@@ -111,7 +111,7 @@ trait FlatFileLoader[T <: Translator] extends FSLoader[T] {
 object TranslatorDispatcher {
   // TODO: move + inject me
   def getGraph: OrientGraph =
-    MigrationHelper.getMigratedPersistentGraph().get
+    MigrationHelper.getMigratedGraph().get
 
   def dispatch(partner: String, path: String, signingIdentity: String, privateKeyPath: String) = {
     val translator = partner match {
