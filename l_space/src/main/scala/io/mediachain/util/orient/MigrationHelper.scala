@@ -11,7 +11,7 @@ import springnz.orientdb.pool.{ODBConnectConfig, ODBConnectionPool}
 import scala.util.{Failure, Random, Success, Try}
 
 object MigrationHelper {
-  val DEFAULT_POOL_MAX = 1
+  val DEFAULT_POOL_MAX = Runtime.getRuntime.availableProcessors()
   object EnvVars {
     val ORIENTDB_URL = "ORIENTDB_URL"
     val ORIENTDB_USER = "ORIENTDB_USER"
