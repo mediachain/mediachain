@@ -25,8 +25,6 @@ object MigrationHelper {
 
   def newInMemoryGraph(transactional: Boolean = true): OrientGraph = {
     val dbname = s"memory:in-memory-${Random.nextInt()}"
-    // create the db, but don't open it yet
-    new ODatabaseFactory().createDatabase("graph", dbname)
 
     val config = ODBConnectConfig(dbname, "admin", "admin")
     getMigratedGraph(Some(config), transactional) match {
@@ -91,8 +89,6 @@ object MigrationHelper {
             setProperty(OrientGraph.CONFIG_URL, url)
             setProperty(OrientGraph.CONFIG_USER, user)
             setProperty(OrientGraph.CONFIG_PASS, pass)
-            setProperty(OrientGraph.CONFIG_CREATE, false)
-            setProperty(OrientGraph.CONFIG_OPEN, true)
             setProperty(OrientGraph.CONFIG_LABEL_AS_CLASSNAME, false)
           }
           val factory = new OrientGraphFactory(factoryConfig)
@@ -114,8 +110,8 @@ object MigrationHelper {
     transactional: Boolean = true): Try[OrientGraph] = {
     graphFactoryWithOptionalConfig(configOpt)
       .map { factory =>
-        if (transactional) factory.getTx(false, true)
-        else factory.getNoTx(false, true)
+        if (transactional) factory.getTx()
+        else factory.getNoTx()
       }
   }
 
