@@ -16,6 +16,7 @@ object MigrationHelper {
   }
 
   val DEFAULT_POOL_MAX = Runtime.getRuntime.availableProcessors()
+
   object EnvVars {
     val ORIENTDB_URL = "ORIENTDB_URL"
     val ORIENTDB_USER = "ORIENTDB_USER"
@@ -24,10 +25,7 @@ object MigrationHelper {
   }
 
   def newInMemoryGraph(transactional: Boolean = true): OrientGraph = {
-    val dbname = s"memory:in-memory-${Random.nextInt()}"
-
-    val config = ODBConnectConfig(dbname, "admin", "admin")
-    getMigratedGraph(Some(config), transactional) match {
+    getMigratedGraph(Some(inMemoryODBConfig), transactional) match {
       case Failure(e) =>
         throw new IllegalStateException(
           s"Unable to apply migrations to in-memory db: ${e.getMessage}", e)
@@ -35,6 +33,20 @@ object MigrationHelper {
       case Success(graph) => graph
     }
   }
+
+
+  def newInMemoryGraphFactory(): OrientGraphFactory =
+    getMigratedGraphFactory(Some(inMemoryODBConfig)) match {
+      case Failure(e) =>
+        throw new IllegalStateException(
+          s"Unable to apply migrations to in-memory graph factory", e)
+
+      case Success(factory) => factory
+    }
+
+
+  def inMemoryODBConfig: ODBConnectConfig =
+    ODBConnectConfig(s"memory:in-memory-${Random.nextInt}", "admin", "admin")
 
 
   def poolWithConfig(config: ODBConnectConfig): ODBConnectionPool =
@@ -71,8 +83,9 @@ object MigrationHelper {
     applyToPersistentDB(Some(ODBConnectConfig(url, user, password)))
 
 
+
   def graphFactoryWithOptionalConfig(
-    configOpt: Option[ODBConnectConfig],
+    configOpt: Option[ODBConnectConfig] = None,
     poolMaxOpt: Option[Int] = None): Try[OrientGraphFactory] = {
     val config = configOpt.orElse(configFromEnv.toOption)
 
