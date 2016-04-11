@@ -25,7 +25,7 @@ object LSpaceServiceSpec extends BaseSpec
 
 
   def returnsFirstCanonical = {
-    Get("/") ~> helloRoute ~> check {
+    Get("/canonicals") ~> baseRoute ~> check {
       responseAs[String] must contain("canonicalID")
     }
   }
