@@ -22,7 +22,7 @@ object Boot extends App {
     }
 
   lazy val service = system.actorOf(
-    HelloServiceActor.props(graphFactory), "hello-service")
+    LSpaceServiceActor.props(graphFactory), "hello-service")
 
   implicit val timeout = Timeout(5.seconds)
 
