@@ -7,8 +7,8 @@ import spray.testkit.Specs2RouteTest
 import gremlin.scala._
 import io.mediachain.util.orient.MigrationHelper
 
-object HelloServiceSpec extends BaseSpec
-  with Specs2RouteTest with HelloService with BeforeAll {
+object LSpaceServiceSpec extends BaseSpec
+  with Specs2RouteTest with LSpaceService with BeforeAll {
   def actorRefFactory = system
 
   val graphFactory = MigrationHelper.newInMemoryGraphFactory()
