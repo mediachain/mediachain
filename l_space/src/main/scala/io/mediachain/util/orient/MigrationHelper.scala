@@ -1,6 +1,6 @@
 package io.mediachain.util.orient
 
-import com.orientechnologies.orient.core.db.ODatabaseFactory
+import com.orientechnologies.orient.core.db.{ODatabaseFactory, ODatabaseRecordThreadLocal}
 import io.mediachain.util.Env
 import org.apache.commons.configuration.{BaseConfiguration, Configuration}
 import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
@@ -11,6 +11,10 @@ import springnz.orientdb.pool.{ODBConnectConfig, ODBConnectionPool}
 import scala.util.{Failure, Random, Success, Try}
 
 object MigrationHelper {
+  if (ODatabaseRecordThreadLocal.INSTANCE == null) {
+    sys.error("Calling this manually apparently prevents an initialization issue.")
+  }
+
   val DEFAULT_POOL_MAX = Runtime.getRuntime.availableProcessors()
   object EnvVars {
     val ORIENTDB_URL = "ORIENTDB_URL"
