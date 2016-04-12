@@ -91,8 +91,13 @@ Reference = {
 
 Signatures = {
  "type" : "signatures"
- <SignatoryCanonical> : <Blob> ...
+ <SignatoryCanonical> : <IPRSSignature> ...
  }
+
+IPRSSignature = {
+ "value" : <Reference>
+ }
+
 ```
 
 ### Chains and Links
@@ -193,8 +198,10 @@ ArtefactReferenceCell = {
  "type" : "artefactReferencedBy"
  "chain" : <Reference>
  "artefact" : <Reference>
- "url" : <URL>
+ ["url" : <URL>]
+ "signatures" : <Signatures>
  <Key> : <Value> ... ; reference metadata
+  }
 ```
 
 ## Mediachain Data Access
