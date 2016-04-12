@@ -8,7 +8,7 @@ import io.mediachain.Types._
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import org.json4s._
 import io.mediachain.core.{Error, TranslationError}
-import io.mediachain.Ingress
+import io.mediachain.{BlobBundle, Ingress}
 import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
 import com.fasterxml.jackson.core.JsonFactory
@@ -24,7 +24,7 @@ object `package` extends Implicit
 trait Translator {
   val name: String
   val version: Int
-  def translate(source: JObject): Xor[TranslationError, ImageBlob]
+  def translate(source: JObject): Xor[TranslationError, BlobBundle]
 }
 
 trait FSLoader[T <: Translator] {
@@ -35,30 +35,26 @@ trait FSLoader[T <: Translator] {
 
   def signedBlobs(
     signatory: Signatory,
-    imageBlob: ImageBlob,
-    rawBlob: RawMetadataBlob): (ImageBlob, RawMetadataBlob) = {
+    bundle: BlobBundle,
+    rawBlob: RawMetadataBlob): (BlobBundle, RawMetadataBlob) = {
 
-    val author = imageBlob.author.map(
-      _.withSignature(signatory))
-
-    val signedImageBlob = imageBlob.copy(author = author)
-      .withSignature(signatory)
+    val signedBundle = bundle.withSignature(signatory)
 
     val signedRawBlob = rawBlob.withSignature(signatory)
 
-    (signedImageBlob, signedRawBlob)
+    (signedBundle, signedRawBlob)
   }
 
-  def loadImageBlobs(signatory: Option[Signatory] = None)
-  : Iterator[Xor[TranslationError,(ImageBlob, RawMetadataBlob)]] = {
+  def loadBlobs(signatory: Option[Signatory] = None)
+  : Iterator[Xor[TranslationError,(BlobBundle, RawMetadataBlob)]] = {
     pairI.map { pairXor =>
       pairXor.flatMap { case (json, raw) =>
-        translator.translate(json).map { imageBlob: ImageBlob =>
+        translator.translate(json).map { bundle: BlobBundle =>
           val rawBlob = RawMetadataBlob (None, raw)
 
           signatory
-            .map(signedBlobs(_, imageBlob, rawBlob))
-            .getOrElse((imageBlob, rawBlob))
+            .map(signedBlobs(_, bundle, rawBlob))
+            .getOrElse((bundle, rawBlob))
         }
       }
     }
@@ -132,14 +128,14 @@ object TranslatorDispatcher {
       .toOption
       .map(Signatory(signingIdentity, _))
 
-    val blobI: Iterator[Xor[TranslationError, (ImageBlob, RawMetadataBlob)]] =
-      translator.loadImageBlobs(signatory)
+    val blobI: Iterator[Xor[TranslationError, (BlobBundle, RawMetadataBlob)]] =
+      translator.loadBlobs(signatory)
 
     val graph = getGraph
 
     val results: Iterator[Xor[Error, Canonical]] = blobI.map { pairXor =>
-      pairXor.flatMap { case (blob: ImageBlob, raw: RawMetadataBlob) =>
-        Ingress.addImageBlob(graph, blob, Some(raw))
+      pairXor.flatMap { case (bundle: BlobBundle, raw: RawMetadataBlob) =>
+        Ingress.ingestBlobBundle(graph, bundle, Some(raw))
       }
     }
     val errors: Iterator[Error] = results.collect { case Xor.Left(err) => err }

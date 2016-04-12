@@ -1,6 +1,7 @@
 package io.mediachain.util.orient
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
+import com.orientechnologies.orient.core.metadata.schema.OClass
 import springnz.orientdb.migration.{Migration, ODBMigrations}
 import springnz.orientdb.session.ODBSession
 import io.mediachain.Types._
@@ -112,10 +113,46 @@ class LSpaceMigrations extends ODBMigrations with OrientSchema {
       ()
     }
 
+  // add edge constraints
+  def migration4: ODBSession[Unit] =
+    ODBSession { implicit db: ODatabaseDocumentTx =>
+
+      // AuthoredBy can go from anything to a Canonical, must have only
+      // one edge per pair of vertices
+      for {
+        authoredBy <- db.findEdgeClass(AuthoredBy)
+        baseVertexClass <- db.findClass("V")
+        canonicalClass <- db.findVertexClass("Canonical")
+      } yield db.addEdgeConstraint(authoredBy,
+          EdgeConstraint(baseVertexClass, canonicalClass, unique = true))
+
+
+      // TranslatedFrom can go from anything to a RawMetadataBlob,
+      // must have only one edge per pair of vertices
+      for {
+        translatedFrom <- db.findEdgeClass(TranslatedFrom)
+        baseVertexClass <- db.findClass("V")
+        rawMetadataClass <- db.findVertexClass("RawMetadataBlob")
+      } yield db.addEdgeConstraint(translatedFrom,
+          EdgeConstraint(baseVertexClass, rawMetadataClass, unique = true))
+
+
+      // Described by can go from a Canonical to anything,
+      // must have only one edge per pair of vertices
+      for {
+        describedBy <- db.findEdgeClass(DescribedBy)
+        canonicalClass <- db.findVertexClass("Canonical")
+        baseVertexClass <- db.findClass("V")
+      } yield db.addEdgeConstraint(describedBy,
+        EdgeConstraint(canonicalClass, baseVertexClass, unique = true))
+
+    }
+
   override def migrations: Seq[Migration] = Seq (
     Migration(0, migration0),
     Migration(1, migration1),
     Migration(2, migration2),
-    Migration(3, migration3)
+    Migration(3, migration3),
+    Migration(4, migration4)
   )
 }

@@ -25,6 +25,8 @@ import org.json4s.FieldSerializer.ignore
 import scala.collection.JavaConverters._
 import java.util.{Map => JMap}
 
+import com.orientechnologies.orient.core.exception.OStorageException
+
 
 object Types {
   import java.util.UUID
@@ -161,8 +163,9 @@ object Types {
     def vertex(graph: Graph): Xor[VertexNotFound, Vertex] = {
       for {
         id <- Xor.fromOption(getID(), VertexNotFound())
-        vertexOption <- Xor.fromOption(graph.V(id).headOption(),
-          VertexNotFound())
+        vertexOption <- Xor.catchOnly[OStorageException](graph.V(id).headOption)
+          .leftMap(_ => VertexNotFound())
+          .flatMap(Xor.fromOption(_, VertexNotFound()))
       } yield { vertexOption }
     }
 
@@ -254,25 +257,10 @@ object Types {
     title: String,
     description: String,
     date: String,
-    author: Option[Person],
     signatures: SignatureMap = Map(),
     external_ids: IdMap = Map()
   ) extends MetadataBlob {
 
-    override def hashSerializer: FieldSerializer[this.type] =
-      FieldSerializer[this.type](
-        {
-          case ("id", _) => None
-          case ("author", _) => None
-        })
-
-    override def signingSerializer: FieldSerializer[this.type] =
-      FieldSerializer[this.type](
-        {
-          case ("id", _) => None
-          case ("author", _) => None
-          case ("signatures", _) => None
-        })
 
     def getID(): Option[ElementID] = id
 

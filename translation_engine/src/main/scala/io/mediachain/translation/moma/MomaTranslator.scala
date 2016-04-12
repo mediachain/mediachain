@@ -1,15 +1,14 @@
 package io.mediachain.translation.moma
 
 import cats.data.Xor
+import io.mediachain.BlobBundle
 import io.mediachain.core.TranslationError
 import io.mediachain.core.TranslationError.ParsingFailed
 import org.json4s._
-
-import io.mediachain.Types.{Person, ImageBlob}
-
+import io.mediachain.Types.{ImageBlob, Person}
 import io.mediachain.translation.{FlatFileLoader, Translator}
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 object MomaTranslator extends Translator {
   val name = "MomaCollectionTranslator"
@@ -29,14 +28,19 @@ object MomaTranslator extends Translator {
                            Medium: String,
                            Date: String,
                            Artist: String) {
-    def asImageBlob: ImageBlob = ImageBlob(
-      id = None,
-      title = Title,
-      description = Medium,
-      date = Date,
-      author = Some(Person(id = None, Artist)),
-      external_ids = Map("moma:MoMANumber" -> MoMANumber)
-    )
+    def asBlobBundle: BlobBundle = {
+      val image = ImageBlob(
+        id = None,
+        title = Title,
+        description = Medium,
+        date = Date,
+        external_ids = Map("moma:MoMANumber" -> MoMANumber)
+      )
+
+      BlobBundle(image, BlobBundle.Author(
+        Person(None, Artist)
+      ))
+    }
   }
 
   /** Casts a JValue to a ImageBlob using `extract` and `asImageBlob`
@@ -44,9 +48,9 @@ object MomaTranslator extends Translator {
     * @param json The JValue representing a work
     * @return A `ImageBlob` extracted from the JValue
     */
-  def translate(json: JObject): Xor[TranslationError, ImageBlob] = {
+  def translate(json: JObject): Xor[TranslationError, BlobBundle] = {
     implicit val formats = DefaultFormats
-    Try(json.extract[MomaImageBlob].asImageBlob) match {
+    Try(json.extract[MomaImageBlob].asBlobBundle) match {
       case Success(blob) => Xor.right(blob)
       case Failure(exn)  => Xor.left(ParsingFailed(exn))
     }
