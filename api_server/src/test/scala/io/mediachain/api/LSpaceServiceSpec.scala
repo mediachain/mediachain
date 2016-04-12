@@ -34,17 +34,23 @@ object LSpaceServiceSpec extends BaseSpec
     }
   }
 
-  private def aRevisionWith(title: Matcher[JsonType]): Matcher[String] =
-    /("title").andHave(title)
+  private def aRevisionWith(blob: ImageBlob): Matcher[String] = {
+    /("title").andHave(blob.title) and
+    /("description").andHave(blob.description) and
+    /("date").andHave(blob.date)
+    // TODO: how to handle external_ids, signatures?
+  }
+
   private def haveRevisions(revisions: Matcher[String]*): Matcher[String] =
-    /("revisions").andHave(allOf(revisions:_*))
+    /("revisions").andHave(exactly(revisions:_*))
 
   def returnsASubtree = {
     val canonicalId = context.objects.imageBlobCanonical.canonicalID
     Get("/canonicals/" + canonicalId + "/history") ~> baseRoute ~> check {
       val r = responseAs[String]
       r aka "canonical ID" must /("canonicalID" -> canonicalId)
-      r aka "revisions list" must haveRevisions(aRevisionWith(title = "Something"))
+      r aka "revisions list" must haveRevisions(
+        List(context.objects.imageBlob, context.objects.modifiedImageBlob).map(aRevisionWith):_*)
     }
   }
 
