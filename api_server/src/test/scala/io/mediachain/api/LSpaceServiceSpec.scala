@@ -4,12 +4,13 @@ import java.util.UUID
 import io.mediachain.BaseSpec
 import io.mediachain.Types._
 import org.specs2.specification.BeforeAll
+import org.specs2.matcher.JsonMatchers
 import spray.testkit.Specs2RouteTest
 import gremlin.scala._
 import io.mediachain.util.orient.MigrationHelper
 
 object LSpaceServiceSpec extends BaseSpec
-  with Specs2RouteTest with LSpaceService with BeforeAll {
+  with Specs2RouteTest with LSpaceService with BeforeAll with JsonMatchers {
   def actorRefFactory = system
 
   val graphFactory = MigrationHelper.newInMemoryGraphFactory()
@@ -30,18 +31,19 @@ object LSpaceServiceSpec extends BaseSpec
 
   def returnsFirstCanonical = {
     Get("/canonicals") ~> baseRoute ~> check {
-      responseAs[String] must contain("canonicalID")
+      responseAs[String] must /#(0) /("canonicalID" -> canonicalId)
     }
   }
 
   def returnsACanonical = pending {
     Get("/canonicals/" + canonicalId) ~> baseRoute ~> check {
-      responseAs[String] must contain("canonicalID")
+      responseAs[String] must /("canonicalID" -> canonicalId)
     }
   }
   def returnsASubtree = pending {
     Get("/canonicals/" + canonicalId + "/history") ~> baseRoute ~> check {
-      responseAs[String] must contain("canonicalID")
+      // TODO: describe tree structure here
+      responseAs[String] must /("canonicalID" -> canonicalId)
     }
   }
 
