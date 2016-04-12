@@ -247,7 +247,7 @@ CanonicalEntry = {
 ChainEntry = {
  "type"  = "update"
  "ref"   = <Reference> ; canonical reference for entity or artefact
- "chain" = <Reference>
+ "chain" = <Reference> ; head of chain for canonical reference
  }
 ```
 
