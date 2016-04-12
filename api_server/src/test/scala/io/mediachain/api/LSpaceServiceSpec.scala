@@ -35,7 +35,7 @@ object LSpaceServiceSpec extends BaseSpec
     }
   }
 
-  def returnsACanonical = pending {
+  def returnsACanonical = {
     Get("/canonicals/" + canonicalId) ~> baseRoute ~> check {
       responseAs[String] must /("canonicalID" -> canonicalId)
     }
