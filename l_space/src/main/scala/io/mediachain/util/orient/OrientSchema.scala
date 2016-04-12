@@ -123,6 +123,8 @@ trait OrientSchema extends ODBScala {
   case class EdgeClass(name: String, props: PropertyBuilder*)
     extends ClassBuilder
 
+  case class EdgeConstraint(sourceVertexClass: OClass, targetVertexClass: OClass, unique: Boolean = false)
+
   implicit class OClassHelper(cls: OClass) {
     def add(prop: PropertyBuilder): OProperty = {
       prop.addTo(cls)
@@ -154,9 +156,25 @@ trait OrientSchema extends ODBScala {
     def findClass(name: String): Option[OClass] =
       Option(ODBScala.findClass(name)(db))
 
+    def findVertexClass(label: String): Option[OClass] =
+      findClass("V_" + label)
+
+    def findEdgeClass(label: String): Option[OClass] =
+      findClass("E_" + label)
+
     def executeSqlCommand[T](sql: String, params: AnyRef*): T =
       db.command(new OCommandSQL(sql)).execute[T](params:_*)
 
+    def addEdgeConstraint(edgeClass: OClass, constraint: EdgeConstraint): Unit =
+    {
+      edgeClass.createProperty("out", OType.LINK, constraint.sourceVertexClass)
+      edgeClass.createProperty("in", OType.LINK, constraint.targetVertexClass)
+      if (constraint.unique) {
+        val clsName = edgeClass.getName
+        val sql = s"CREATE INDEX Unique_$clsName ON $clsName(in, out) UNIQUE"
+        executeSqlCommand[Long](sql)
+      }
+    }
   }
 
 }

@@ -2,10 +2,10 @@ package io.mediachain.translation.tate
 
 import io.mediachain.translation._
 import cats.data.Xor
+import io.mediachain.BlobBundle
 import io.mediachain.core.TranslationError
 import io.mediachain.core.TranslationError.InvalidFormat
 import io.mediachain.Types._
-
 import org.json4s._
 
 object TateTranslator extends Translator {
@@ -20,7 +20,7 @@ object TateTranslator extends Translator {
                              id: Int,
                              acno: String)
 
-  def translate(json: JObject): Xor[TranslationError, ImageBlob] = {
+  def translate(json: JObject): Xor[TranslationError, BlobBundle] = {
     implicit val formats = org.json4s.DefaultFormats
     val artwork = json.extractOpt[Artwork]
     val result = artwork.map { a =>
@@ -30,13 +30,14 @@ object TateTranslator extends Translator {
         if c.role == "artist"
       } yield Person(None, c.fc, external_ids = Map("tate:id" -> c.id.toString))
 
-      ImageBlob(None,
+      val image = ImageBlob(None,
         a.title,
         a.medium.getOrElse(""),
         a.dateText.getOrElse(""),
-        artists.headOption,
-        external_ids = Map("tate:id" -> a.id.toString, "tate:acno" -> a.acno)
-      )
+        external_ids = Map("tate:id" -> a.id.toString, "tate:acno" -> a.acno))
+
+      val authors = artists.map(BlobBundle.Author)
+      BlobBundle(image, authors:_*)
     }
 
     Xor.fromOption(result, InvalidFormat())

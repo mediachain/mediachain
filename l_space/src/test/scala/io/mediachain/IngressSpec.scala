@@ -6,6 +6,7 @@ import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
 import gremlin.scala._
 import cats.data.Xor
 import core.GraphError._
+import io.mediachain.Ingress.BlobAddResult
 
 object IngressSpec extends BaseSpec
   with Orientable {
@@ -20,23 +21,29 @@ object IngressSpec extends BaseSpec
       """
 
   def ingestsPhoto = { graph: OrientGraph =>
-    val imageBlob = ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013", None)
+    val imageBlob = ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013")
 
-    val canonical = Ingress.addImageBlob(graph, imageBlob)
-    canonical must beRightXor
-    canonical.forall(x => x.id must beSome[ElementID])
+    val result = Ingress.addImageBlob(graph, imageBlob)
+    result must beRightXor { res: BlobAddResult =>
+      val canonical = res.canonicalVertex.toCC[Canonical]
+      canonical.id must beSome[ElementID]
+    }
   }
 
   def findsExistingAuthor = { graph: OrientGraph =>
-    val imageBlobs = List(
-      ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013",
-        Some(Person(None, "Fooman Bars"))),
-      ImageBlob(None, "A Starrier Night", "shiny!", "1/2/2013",
-        Some(Person(None, "Fooman Bars")))
+
+    val author = Person(None, "Fooman Bars")
+    val bundles = List(
+      BlobBundle(
+        ImageBlob(None, "A Starry Night", "shiny!", "1/2/2013"),
+        BlobBundle.Author(author)),
+      BlobBundle(
+        ImageBlob(None, "A Starrier Night", "shiny!", "1/2/2013"),
+        BlobBundle.Author(author))
     )
 
-    imageBlobs.foreach(Ingress.addImageBlob(graph, _))
-    graph.commit
+    bundles.foreach(Ingress.ingestBlobBundle(graph, _))
+    graph.commit()
 
     val people = graph.V.hasLabel[Person].toCC[Person].toList
     people.size shouldEqual 1
@@ -57,7 +64,7 @@ object IngressSpec extends BaseSpec
     photoTitles must contain("A Starrier Night")
   }
 
-  def attachesRawMetadata = skipped {graph: OrientGraph =>
+  def attachesRawMetadata = { graph: OrientGraph =>
     val rawString =
       """{"title": "The Last Supper",
           "description: "Why is everyone sitting on the same side of the table?",
@@ -68,15 +75,14 @@ object IngressSpec extends BaseSpec
     val blob = ImageBlob(None,
       "The Last Supper",
       "Why is everyone sitting on the same side of the table?",
-      "c. 1495",
-      Some(leo))
+      "c. 1495")
 
     // First add without raw metadata
-    Ingress.addImageBlob(graph, blob)
+    val bundle = BlobBundle(blob, BlobBundle.Author(leo))
+    Ingress.ingestBlobBundle(graph, bundle)
 
     // add again with raw metadata
-    Ingress.addImageBlob(graph, blob, Some(raw))
-    graph.commit()
+    Ingress.ingestBlobBundle(graph, bundle, Some(raw))
 
     // These should both == 1, since adding again doesn't recreate the blob vertices
     val imageBlobCount = Traversals.imageBlobsWithExactMatch(graph.V, blob).count.head
@@ -87,8 +93,8 @@ object IngressSpec extends BaseSpec
     val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
       .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
 
-    val photoRawMeta = photoV.lift.findRawMetadataXor
-    val authorRawMeta = authorV.lift.findRawMetadataXor
+    val photoRawMeta = photoV.toPipeline.flatMap(_.findRawMetadataXor)
+    val authorRawMeta = authorV.toPipeline.flatMap(_.findRawMetadataXor)
     val photoMatch = photoRawMeta match {
       case Xor.Right(photo) => photo.blob == rawString
       case _ => false
@@ -99,11 +105,8 @@ object IngressSpec extends BaseSpec
     }
 
     imageBlobCount must_== 1
-    authorCount must_== 1
-    authorRawMeta.isRight must beTrue
     photoRawMeta.isRight must beTrue
     photoMatch must beTrue
-    authorMatch must beTrue
   }
 
   def ingestsPhotoBothNew = pending
@@ -120,8 +123,8 @@ object IngressSpec extends BaseSpec
 
     val resultCanonical = Ingress.modifyImageBlob(graph, currentHeadV, newPhoto)
 
-    resultCanonical must beRightXor { c: Canonical =>
-      c.vertex(graph) must beRightXor
+    resultCanonical must beRightXor { res: BlobAddResult =>
+      res.canonicalVertex must not beNull
     }
   }
 }
