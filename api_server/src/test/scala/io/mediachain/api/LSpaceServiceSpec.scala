@@ -1,26 +1,18 @@
 package io.mediachain.api
 
-import java.util.UUID
-import io.mediachain.BaseSpec
+import io.mediachain.{BaseSpec, GraphFixture}
 import io.mediachain.Types._
-import org.specs2.specification.BeforeAll
-import org.specs2.matcher.JsonMatchers
+import org.specs2.matcher.{JsonMatchers, JsonType, Matcher}
 import spray.testkit.Specs2RouteTest
 import gremlin.scala._
 import io.mediachain.util.orient.MigrationHelper
 
 object LSpaceServiceSpec extends BaseSpec
-  with Specs2RouteTest with LSpaceService with BeforeAll with JsonMatchers {
+  with Specs2RouteTest with LSpaceService with JsonMatchers {
   def actorRefFactory = system
 
   val graphFactory = MigrationHelper.newInMemoryGraphFactory()
-
-  val canonicalId = UUID.randomUUID.toString
-
-  def beforeAll: Unit = {
-    val graph = graphFactory.getTx()
-    graph + Canonical(None, canonicalId)
-  }
+  val context = GraphFixture.Context(graphFactory.getTx)
 
   def is =
     s2"""
@@ -31,21 +23,29 @@ object LSpaceServiceSpec extends BaseSpec
 
   def returnsFirstCanonical = {
     Get("/canonicals") ~> baseRoute ~> check {
-      responseAs[String] must /#(0) /("canonicalID" -> canonicalId)
+      responseAs[String] must /#(0) /("canonicalID" -> context.objects.imageBlobCanonical.canonicalID)
     }
   }
 
   def returnsACanonical = {
+    val canonicalId = context.objects.imageBlobCanonical.canonicalID
     Get("/canonicals/" + canonicalId) ~> baseRoute ~> check {
       responseAs[String] must /("canonicalID" -> canonicalId)
     }
   }
-  def returnsASubtree = pending {
+
+  private def aRevisionWith(title: Matcher[JsonType]): Matcher[String] =
+    /("title").andHave(title)
+  private def haveRevisions(revisions: Matcher[String]*): Matcher[String] =
+    /("revisions").andHave(allOf(revisions:_*))
+
+  def returnsASubtree = {
+    val canonicalId = context.objects.imageBlobCanonical.canonicalID
     Get("/canonicals/" + canonicalId + "/history") ~> baseRoute ~> check {
-      // TODO: describe tree structure here
-      responseAs[String] must /("canonicalID" -> canonicalId)
+      val r = responseAs[String]
+      r aka "canonical ID" must /("canonicalID" -> canonicalId)
+      r aka "revisions list" must haveRevisions(aRevisionWith(title = "Something"))
     }
   }
-
 
 }
