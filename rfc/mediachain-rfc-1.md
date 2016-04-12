@@ -35,14 +35,14 @@ CompoundValue = {
  }
 
 ```
-All Mediachain data objects have a mandatory `type` key that represents
+All Mediachain data objects have a mandatory `type` field that represents
 the data type of the object.
 Links can be embedded between data objects by using the IPLD `@link`
 special key, allowing us to construct Merkle DAGs.
 
 ### Entities and Artefacts
 
-There are two principal types of objects in the mediacain:
+There are two principal types of objects in the mediachain:
 entities and artefacts. An _Entity_ represents a person or organization
 who may associate with artefacts, for example by creating or posting
 a reference to the artefact. _Artefacts_ represent media works as tracked
@@ -52,10 +52,13 @@ common media found in the Internet.
 In the Mediachain schema, entities are instances of data objects with
 their type field set to `entity` and a mandatory `name` field.
 Artefacts are instances of data objects with their type field set
-to `artefact`, a mandatory name and an optional description and creation
-date.
+to `artefact`, a mandatory name and optional `description` and creation
+date fields.
+
 Artefacts can also have associated their data stored in IPFS, so that media
 can be directly accessed from references to their Canonicals.
+If this is the case, then the artefact object will contain a link to
+the IPFS datablob in its `type` field
 
 Finally, both types carry a set of cryptographic signatures that assert their
 validity. The signatures come from _signatories_ with known keys in the
@@ -77,9 +80,13 @@ Artefact = {
  "name" : <String>
  ["created" : <Date>]
  ["description" : <String>]
- ["data" : <IPFSReference>]
+ ["data" : <Reference>]
  "signatures" : <Signatures>
  <Key> : <Value> ... ; artefact metadata
+ }
+
+Reference = {
+ "@link" = <Canonical>
  }
 
 Signatures = {
@@ -127,8 +134,8 @@ EntityChainCell = <EntityUpdateCell> | <Nil>
 
 EntityUpdateCell = {
  "type" : "entityUpdate"
- "entity" : <EntityCanonical>
- "entityChain" : { "@link" : <EntityChainCanonical> }
+ "entity" : <Reference>
+ "entityChain" : <Reference>
  "signatures" : <Signatures>
   <Key> : <Value> ... ; metadata updates
  }
@@ -143,43 +150,43 @@ ArtefactChainCell =
  
 ArtefactUpdateCell = {
  "type" : "artefactUpdate"
- "artefact" : <ArtefactCanonical>
- "artefactChain" : { "@link" : <ArtefactChainCanonical> }
+ "artefact" : <Reference>
+ "artefactChain" : <Reference>
  "signatures" : <Signatures>
  <Key> : <Value> ... ; metadata updates
  }
 
 ArtefactCreationCell = {
  "type" : "artefactCreatedBy"
- "artefact" : <ArtefactCanonical>
- "artefactChain" : { "@link" : <ArtefactChainCanonical> }
- "entity" : <EntityCanonical>
+ "artefact" : <Reference>
+ "artefactChain" : <Reference>
+ "entity" : <Reference>
  "signatures" : <Signatures>
  <Key> : <Value> ... ; creation metadata
  }
 
 ArtefactDerivationCell = {
  "type" : "artefactDerivedBy"
- "artefact" : <ArtefactCanonical>
- "artefactOrigin" <ArtefactCanonical> ; the origin of the derivative work
- "artefactChain" : { "@link" : <ArtefactChainCanonical> }
+ "artefact" : <Reference>
+ "artefactOrigin" : <Reference>
+ "artefactChain" : <Reference>
  "signatures" : <Signatures>
  <Key> : <Value> ... ; creation metadata
  }
 
 ArtefactOwnershipCell = {
  "type" : "artefactRightsOwnedBy"
- "artefact" : <ArtefactCanonical>
- "artefactChain" : { "@link" : <ArtefactChainCanonical> }
- "entity" : <EntityCanonical>
+ "artefact" : <Reference>
+ "artefactChain" : <Reference>
+ "entity" : <Reference>
  "signatures" : <Signatures>
  <Key> : <Value> ... ; IP ownership metadata
  }
 
 ArtefactReferenceCell = {
  "type" : "artefactReferencedBy"
- "artefact" : <ArtefactCanonical>
- "artefactChain" : { "@link" : <ArtefactChainCanonical> }
+ "artefact" : <Reference>
+ "artefactChain" : <Reference>
  "url" : <URL>
  <Key> : <Value> ... ; reference metadata
 ```
