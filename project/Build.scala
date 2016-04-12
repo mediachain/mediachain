@@ -64,10 +64,15 @@ object LSpaceBuild extends Build{
     "orientdb-migrations-root"
   )
 
-
   lazy val root = (project in file("."))
     .aggregate(core, l_space,
-      translation_engine)
+      translation_engine, api_server)
     .dependsOn(core, l_space,
-      translation_engine)
+      translation_engine, api_server)
+
+  // for separating work on CircleCI containers (try to keep these balanced)
+  lazy val circle_1 = project
+    .aggregate(translation_engine, api_server)
+  lazy val circle_2 = project
+    .aggregate(core, l_space)
 }
