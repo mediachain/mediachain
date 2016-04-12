@@ -58,7 +58,7 @@ date fields.
 Artefacts can also have associated their data stored in IPFS, so that media
 can be directly accessed from references to their Canonicals.
 If this is the case, then the artefact object will contain a link to
-the IPFS datablob in its `type` field
+the IPFS datablob in its `data` field
 
 Finally, both types carry a set of cryptographic signatures that assert their
 validity. The signatures come from _signatories_ with known keys in the
@@ -109,6 +109,12 @@ through linked lists. Thus for each entity and artefact in the
 system, we also have an associated chain which initially points to the
 canonical of a global `Nil` object:
 ```
+Chain = <ChainCell> | <Nil>
+ChainCell = {
+ "type" : ...
+ "chain" : <Reference>
+ <Key> : <Value> ...
+ }
 Nil = { "type" : "nil" }
 ```
 
@@ -134,8 +140,8 @@ EntityChainCell = <EntityUpdateCell> | <Nil>
 
 EntityUpdateCell = {
  "type" : "entityUpdate"
+ "chain" : <Reference>
  "entity" : <Reference>
- "entityChain" : <Reference>
  "signatures" : <Signatures>
   <Key> : <Value> ... ; metadata updates
  }
@@ -150,16 +156,16 @@ ArtefactChainCell =
  
 ArtefactUpdateCell = {
  "type" : "artefactUpdate"
+ "chain" : <Reference>
  "artefact" : <Reference>
- "artefactChain" : <Reference>
  "signatures" : <Signatures>
  <Key> : <Value> ... ; metadata updates
  }
 
 ArtefactCreationCell = {
  "type" : "artefactCreatedBy"
+ "chain" : <Reference>
  "artefact" : <Reference>
- "artefactChain" : <Reference>
  "entity" : <Reference>
  "signatures" : <Signatures>
  <Key> : <Value> ... ; creation metadata
@@ -167,17 +173,17 @@ ArtefactCreationCell = {
 
 ArtefactDerivationCell = {
  "type" : "artefactDerivedBy"
+ "chain" : <Reference>
  "artefact" : <Reference>
  "artefactOrigin" : <Reference>
- "artefactChain" : <Reference>
  "signatures" : <Signatures>
  <Key> : <Value> ... ; creation metadata
  }
 
 ArtefactOwnershipCell = {
  "type" : "artefactRightsOwnedBy"
+ "chain" : <Reference>
  "artefact" : <Reference>
- "artefactChain" : <Reference>
  "entity" : <Reference>
  "signatures" : <Signatures>
  <Key> : <Value> ... ; IP ownership metadata
@@ -185,8 +191,8 @@ ArtefactOwnershipCell = {
 
 ArtefactReferenceCell = {
  "type" : "artefactReferencedBy"
+ "chain" : <Reference>
  "artefact" : <Reference>
- "artefactChain" : <Reference>
  "url" : <URL>
  <Key> : <Value> ... ; reference metadata
 ```
