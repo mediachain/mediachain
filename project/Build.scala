@@ -64,6 +64,8 @@ object LSpaceBuild extends Build{
     "orientdb-migrations-root"
   )
 
+  // aggregate means commands will cascade to the subprojects
+  // dependsOn means classes will be available
   lazy val root = (project in file("."))
     .aggregate(core, l_space,
       translation_engine, api_server)
