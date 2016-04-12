@@ -60,11 +60,7 @@ trait LSpaceService extends HttpService {
         .headOption
     }
 
-  def historyForCanonical(canonicalID: UUID): JObject = {
-    JObject(List("TODO" -> JString("Implement me!")))
-  }
-
-
+  def historyForCanonical(canonicalID: UUID): JObject = ???
 
   val baseRoute =
     pathPrefix("canonicals") {
