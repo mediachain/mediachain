@@ -204,7 +204,68 @@ ArtefactReferenceCell = {
   }
 ```
 
-## Mediachain Data Access
+## Indexing and Querying the Mediachain
+
+### The Journal
+
+Mediachain data are persistent and available through the IPFS network.
+However they are not _discoverable_ without the help of an index which
+maintains references to entities, artefacts and chain heads.
+
+In order to make the mediachain indexable and discoverable we need to
+maintain a _Journal_ of updates to the data store. The journal is
+very similar to a blockchain in that it acts as a public ledger of all
+Mediachain data transactions in the system. By replaying the journal
+and fetching the data from IPFS, any node in the Internet can bootstrap
+an index that allows it to read and query the Mediachain.
+
+### Appending Data in the Mediachain
+
+The datastore initially is almost empty, containing only the `Nil` object
+as the bottom of all chains 
+For each entity and artefact added to the store, a corresponding entry
+is added to the journal, connecting a canonical reference with its chain
+pointing to the `Nil` object.
+Similarly, for every cell added to a chain, a corresponding entry is
+added to the journal, updating the head of the chain for a canonical
+reference.
+
+Thus the journal contents can be described as a sequence of entries
+with the following schema:
+```
+Journal = <JournalEntry> ...
+
+JournalEntry =
+ <CanonicalEntry>
+ <ChainEntry>
+
+CanonicalEntry = {
+ "type" = "insert"
+ "ref"  = <Reference> ; canonical reference for an entity or artefact
+ }
+ 
+ChainEntry = {
+ "type"  = "update"
+ "ref"   = <Reference> ; canonical reference for entity or artefact
+ "chain" = <Reference>
+ }
+```
+
+### Journal Maintenance
+
+The journal is the critical piece of metadata that connects the
+Mediachain datastore.  So far we have made no mention of how to
+maintain the Journal in a distributed fashion.
+This is purposeful: the scope of this specification is limited to
+describing the primitives of the Mediachain store in sufficient detail
+to allow bootstrap and Open Data access.
+
+The assumption is that during the system bootstrap and scaling, a
+principal entity acts as a gatekeeper responsible for the development
+of the system and maintenance of the journal.  When the system has
+been scaled out enough to warrant distribution of the write a load, a
+separate specification will address the requisite distributed
+protocols for journal maintenance and distribution.
 
 ## An Example Mediachain
 
