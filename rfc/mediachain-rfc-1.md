@@ -273,14 +273,16 @@ JournalEntry =
  <ChainEntry>
 
 CanonicalEntry = {
- "type" = "insert"
- "ref"  = <Reference> ; canonical reference for an entity or artefact
+ "type" : "insert"
+ "ref"  : <Reference> ; canonical reference for an entity or artefact
+ "timestamp" : <Timestamp>
  }
  
 ChainEntry = {
- "type"  = "update"
- "ref"   = <Reference> ; canonical reference for entity or artefact
- "chain" = <Reference> ; head of chain for canonical reference
+ "type"  : "update"
+ "ref"   : <Reference> ; canonical reference for entity or artefact
+ "chain" : <Reference> ; head of chain for canonical reference
+ "timestamp" : <Timestamp>
  }
 ```
 
