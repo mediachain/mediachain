@@ -323,7 +323,7 @@ Qm000... = Nil
 QmAAA... = Entity {
  "type" : "entity"
  "name" : "Hellen Green"
- "key"  : {"@link" : "QmAAABBB..."}
+ "keychain"  : {"@link" : "QmAAABBB..."}
  "platform" : "~cargocollective"
  "cargocollective_user" : "+hellengreen"
  "signatures" : {...}
@@ -350,7 +350,7 @@ QmCCC... = ArtefactCreationCell {
 QmDDD... = Entity {
  "type" : "entity"
  "name" : "Eva Tolkin"
- "key" : {"@link" : "QmDDDBBB..."}
+ "keychain" : {"@link" : "QmDDDBBB..."}
  "platform" : "~pinterest"
  "pinterest_user" : "+evatolkin"
  "signatures" : {...}
@@ -369,7 +369,7 @@ QmEEE... = ArtefactReferenceCell {
 QmFFF... = Entity {
  "type" : "entity"
  "name" : "retrofuture"
- "key" : {"@link" : "QmFFFBBB..."}
+ "keychain" : {"@link" : "QmFFFBBB..."}
  "platform" : "~tumblr"
  "tumblr_user" : "+retrofuture"
  "signatures" : {...}
@@ -405,7 +405,7 @@ QmIII... = ArtefactDerivationCell {
 QmJJJ... = Entity {
  "type" : "entity"
  "name" : "christina99"
- "key" : {"@link" : "QmJJJBBB..."}
+ "keychain" : {"@link" : "QmJJJBBB..."}
  "platform" : "~instagram"
  "instagram_user" : "+christina99"
  "signatures" : {...}
