@@ -4,7 +4,7 @@ import java.util.UUID
 
 import cats.data.Xor
 import gremlin.scala._
-import io.mediachain.Traversals
+import io.mediachain.{Query, Traversals}
 import io.mediachain.Types._
 import io.mediachain.core.GraphError.SubtreeError
 import org.json4s._
@@ -18,19 +18,40 @@ object CanonicalQueries {
 
   val PAGE_SIZE = 20
 
-  def listCanonicals(page: Int)(graph: Graph): List[Canonical] = {
+  def canonicalToBlobObject(graph: Graph, canonical: Canonical)
+  : Option[JObject] = {
+    // FIXME: this is a pretty sad n+1 query
+    val gs = Traversals.canonicalsWithID(graph.V, canonical.canonicalID)
+    val rootBlobOpt: Option[MetadataBlob] =
+      gs.out(DescribedBy).headOption.flatMap { v: Vertex =>
+        v.label match {
+          case "ImageBlob" => Some(v.toCC[ImageBlob])
+          case "Person" => Some(v.toCC[Person])
+          case _ => None
+        }
+      }
+    rootBlobOpt.map(Extraction.decompose)
+      .map(_.asInstanceOf[JObject])
+      .map(_ ~ ("canonicalID" -> canonical.canonicalID))
+  }
+
+  def listCanonicals(page: Int)(graph: Graph): List[JObject] = {
     val first = page * PAGE_SIZE
     val last = first + PAGE_SIZE
 
-    graph.V.hasLabel[Canonical].toCC[Canonical]
+    val canonicals = graph.V.hasLabel[Canonical].toCC[Canonical]
       .range(first, last).toList
+
+    canonicals.flatMap(canonicalToBlobObject(graph, _))
   }
 
 
-  def canonicalWithID(canonicalID: UUID)(graph: Graph): Option[Canonical] =
+
+  def canonicalWithID(canonicalID: UUID)(graph: Graph): Option[JObject] =
     Traversals.canonicalsWithUUID(graph.V, canonicalID)
       .toCC[Canonical]
       .headOption
+      .flatMap(canonicalToBlobObject(graph, _))
 
   def historyForCanonical(canonicalID: UUID)(graph: Graph): Option[JObject] = {
     val treeXor = Traversals.canonicalsWithUUID(graph.V, canonicalID).findSubtreeXor
