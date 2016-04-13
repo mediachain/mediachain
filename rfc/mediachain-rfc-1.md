@@ -302,6 +302,10 @@ been scaled out enough to warrant distribution of the write a load, a
 separate specification will address the requisite distributed
 protocols for journal maintenance and distribution.
 
+Note that it is entirely possible to implement the Journal as another
+chain stored on IPFS. However, such implementation decisions are
+outside the scope of this document.
+
 ## An Example Mediachain
 
 As an example, consider the situation described in [4].
@@ -425,6 +429,82 @@ The rest of the propagation would add references to retrofuture's
 artefact chain. The evolution of the GIF would be traced from
 retrofuture's gif chain to hellegreen's original through the
 `ArtefactDerivationCell`.
+
+The Journal tracking the creation of this Mediachain will have
+the following sequence of entries:
+```
+CanonicalEntry {
+ "type" : "insert"
+ "ref"  : {"@link" : "QmAAA..."}
+ "timestamp" : "..."
+ }
+
+CanonicalEntry {
+ "type" : "insert"
+ "ref"  : {"@link" : "QmBBB..."}
+ "timestamp" : "..."
+ }
+
+ChainEntry {
+ "type"  : "update"
+ "ref"   : {"@link" : "QmBBB..."}
+ "chain" : {"@link" : "QmCCC..."}
+ "timestamp" : "..."
+ }
+
+CanonicalEntry {
+ "type" : "insert"
+ "ref"  : {"@link" : "QmDDD..."}
+ "timestamp" : "..."
+ }
+
+ChainEntry {
+ "type"  : "update"
+ "ref"   : {"@link" : "QmBBB..."}
+ "chain" : {"@link" : "QmEEE..."}
+ "timestamp" : "..."
+ }
+
+CanonicalEntry {
+ "type" : "insert"
+ "ref"  : {"@link" : "QmFFF..."}
+ "timestamp" : "..."
+ }
+
+CanonicalEntry {
+ "type" : "insert"
+ "ref"  : {"@link" : "QmGGG..."}
+ "timestamp" : "..."
+ }
+
+ChainEntry {
+ "type"  : "update"
+ "ref"   : {"@link" : "QmGGG..."}
+ "chain" : {"@link" : "QmHHH..."}
+ "timestamp" : "..."
+ }
+
+ChainEntry {
+ "type"  : "update"
+ "ref"   : {"@link" : "QmGGG..."}
+ "chain" : {"@link" : "QmIII..."}
+ "timestamp" : "..."
+ }
+
+CanonicalEntry {
+ "type" : "insert"
+ "ref"  : {"@link" : "QmJJJ..."}
+ "timestamp" : "..."
+ }
+
+ChainEntry {
+ "type"  : "update"
+ "ref"   : {"@link" : "QmGGG..."}
+ "chain" : {"@link" : "QmKKK..."}
+ "timestamp" : "..."
+ }
+
+```
 
 ## References
 
