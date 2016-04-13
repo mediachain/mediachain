@@ -2,7 +2,7 @@
 
 Status: DRAFT
 
-Author: vyzo
+Author: [vyzo](https://github.com/vyzo)
 
 ## Overview
 
