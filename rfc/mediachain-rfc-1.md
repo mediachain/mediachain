@@ -1,10 +1,22 @@
 # RFC 1: The Mediachain Datastore
 
-Status: WIP
+Status: DRAFT
 
 Author: @vyzo
 
 ## Overview
+
+The Mediachain[1] is a decentralized system designed for tracking
+metadata related to Creative Works and Internet Media.
+It is being developed as an Open Source, Open Data system with
+decentralized stakeholders.
+
+This document serves as a  specification of the Mediachain data
+model and the shape of the distributed store at the heart of
+system.
+It is intended to provide a stable basis for bootstrapping the
+system from a small-scale proof of concept to a fully distributed,
+Open Data Peer-to-Peer network.
 
 ## The Mediachain Data Model
 
