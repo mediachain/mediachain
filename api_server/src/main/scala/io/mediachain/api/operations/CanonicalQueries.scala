@@ -7,6 +7,7 @@ import gremlin.scala._
 import io.mediachain.{Query, Traversals}
 import io.mediachain.Types._
 import io.mediachain.core.GraphError.SubtreeError
+import io.mediachain.util.JsonUtils
 import org.json4s._
 import org.json4s.jackson.Serialization.{read, write}
 import org.json4s.Extraction
@@ -18,21 +19,32 @@ object CanonicalQueries {
 
   val PAGE_SIZE = 20
 
+  def blobToJObject(metadataBlob: MetadataBlob): JObject =
+    JsonUtils.jsonObjectForHashable(metadataBlob) ~
+      ("multiHash" -> metadataBlob.multiHash.base58)
+
+
   def canonicalToBlobObject(graph: Graph, canonical: Canonical)
   : Option[JObject] = {
     // FIXME: this is a pretty sad n+1 query
     val gs = Traversals.canonicalsWithID(graph.V, canonical.canonicalID)
-    val rootBlobOpt: Option[MetadataBlob] =
+    val rootBlobOpt: Option[(String, MetadataBlob)] =
       gs.out(DescribedBy).headOption.flatMap { v: Vertex =>
         v.label match {
-          case "ImageBlob" => Some(v.toCC[ImageBlob])
-          case "Person" => Some(v.toCC[Person])
+          case "ImageBlob" => Some((v.label, v.toCC[ImageBlob]))
+          case "Person" => Some((v.label, v.toCC[Person]))
           case _ => None
         }
       }
-    rootBlobOpt.map(Extraction.decompose)
-      .map(_.asInstanceOf[JObject])
-      .map(_ ~ ("canonicalID" -> canonical.canonicalID))
+
+    rootBlobOpt
+      .map { labelWithBlob =>
+        val (label: String, blob: MetadataBlob) = labelWithBlob
+        val blobObject = blobToJObject(blob)
+
+        ("canonicalID" -> canonical.canonicalID) ~
+          ("artefact" -> (("type" -> label) ~ blobObject))
+      }
   }
 
   def listCanonicals(page: Int)(graph: Graph): List[JObject] = {
