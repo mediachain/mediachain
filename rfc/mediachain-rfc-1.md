@@ -70,7 +70,7 @@ We can make things more concrete with the following schema:
 Entity = {
  "type" : "entity"
  "name" : <String>
- [key : <PublicKey>]
+ [key : <Reference>]
  "signatures" : <Signatures>
  <Key> : <Value> ... ; entity metadata
  }
