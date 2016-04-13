@@ -38,7 +38,7 @@ object LSpaceServiceSpec extends BaseSpec
     /("title").andHave(blob.title) and
     /("description").andHave(blob.description) and
     /("date").andHave(blob.date)
-    // TODO: how to handle external_ids, signatures?
+    // TODO: handle external_ids, signatures, ...
   }
 
   private def haveRevisions(revisions: Matcher[String]*): Matcher[String] =
