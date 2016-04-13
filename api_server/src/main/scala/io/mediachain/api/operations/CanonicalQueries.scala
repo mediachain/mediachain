@@ -2,12 +2,21 @@ package io.mediachain.api.operations
 
 import java.util.UUID
 
+import cats.data.Xor
 import gremlin.scala._
 import io.mediachain.Traversals
+import io.mediachain.Query
 import io.mediachain.Types._
+import io.mediachain.core.GraphError.SubtreeError
 import org.json4s._
+import org.json4s.jackson.Serialization.{read, write}
+import shapeless.HNil
 
 object CanonicalQueries {
+  import Traversals.GremlinScalaImplicits
+  import org.json4s.JsonDSL._
+  implicit val formats = DefaultFormats
+
   val PAGE_SIZE = 20
 
   def listCanonicals(page: Int)(graph: Graph): List[Canonical] = {
@@ -24,5 +33,18 @@ object CanonicalQueries {
       .toCC[Canonical]
       .headOption
 
-  def historyForCanonical(canonicalID: UUID)(graph: Graph): JObject = ???
+  def historyForCanonical(canonicalID: UUID)(graph: Graph): Option[JObject] = {
+    val treeXor = Traversals.canonicalsWithUUID(graph.V, canonicalID).findSubtreeXor
+
+    for {
+      tree <- treeXor.toOption
+      canonicalGS = Traversals.canonicalsWithUUID(tree.V, canonicalID)
+      canonical <- canonicalGS.toCC[Canonical].headOption
+      revisions = Traversals.describingOrModifyingBlobs(tree.V, canonical)
+    } yield {
+      //val revisionsJ = somehowSerialize(revisions)
+      ("canonicalID" -> canonical.canonicalID) ~
+        ("revisions" -> List())
+    }
+  }
 }
