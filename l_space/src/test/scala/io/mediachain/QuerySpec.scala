@@ -10,7 +10,7 @@ object QuerySpec extends BaseSpec
 
   def forEachGraph(graph: Graph) = GraphFixture.Context(graph)
 
-  def is =
+  def is = sequential ^
   s2"""
   Given a MetadataBlob, find the Canonical $findsPhoto
   Given a Canonical, finds full tree $findsTree
