@@ -24,7 +24,7 @@ Open Data Peer-to-Peer network.
 
 The Mediachain is stored in a distributed append-only datastore with
 content addressable access. This maps well to the IPFS[2] peer-to-peer
-network, which names and accesses data using the SHA256 hash of
+network, which names and accesses data using the cryptographic hashes of
 the content. Objects stored in the network are immutable and persistent;
 their hashes become their _Canonical_ identifiers through which they can
 be referenced.
