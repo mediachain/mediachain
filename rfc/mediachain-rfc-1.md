@@ -101,14 +101,11 @@ Reference = {
  "@link" = <Canonical>
  }
 
-Signatures = {
- "_1" : {
-  "entity" : <Reference>
-  "signature" : <IPRSSignature>
- }
- "_2" : ...
- ...
- }
+Signatures = [
+  { "entity" : <Reference>
+    "signature" : <IPRSSignature>
+  } ...
+ ]
 
 IPRSSignature = {
  "value" : <Reference>
