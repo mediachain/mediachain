@@ -2,8 +2,9 @@ package io.mediachain
 
 import com.orientechnologies.orient.core.exception.OStorageException
 import com.orientechnologies.orient.core.id.ORecordId
-
 import java.util.UUID
+
+import shapeless.HNil
 
 object Traversals {
   import gremlin.scala._
@@ -13,54 +14,61 @@ object Traversals {
   import cats.data.Xor
   import shapeless.HList
 
-  def canonicalsWithID[Labels <: HList](q: GremlinScala[Vertex, Labels], canonicalID: String): GremlinScala[Vertex, Labels] = {
+  def canonicalsWithID[Labels <: HList]
+  (q: GremlinScala[Vertex, Labels], canonicalID: String): GremlinScala[Vertex, Labels] =
     q.hasLabel[Canonical]
       .has(Canonical.Keys.canonicalID, canonicalID)
-  }
 
-  def canonicalsWithUUID[Labels <: HList](q: GremlinScala[Vertex, Labels], canonicalID: UUID): GremlinScala[Vertex, Labels] =
+
+  def canonicalsWithUUID[Labels <: HList]
+  (q: GremlinScala[Vertex, Labels], canonicalID: UUID): GremlinScala[Vertex, Labels] =
     canonicalsWithID(q, canonicalID.toString.toLowerCase)
 
-  def personBlobsWithExactMatch(q: GremlinScala[Vertex, _], p: Person): GremlinScala[Vertex, _] = {
+  def personBlobsWithExactMatch[Labels <: HList]
+  (q: GremlinScala[Vertex, Labels], p: Person): GremlinScala[Vertex, Labels] =
     q.hasLabel[Person]
       .has(Keys.MultiHash, p.multiHash.base58)
-  }
 
-  def imageBlobsWithExactMatch(q: GremlinScala[Vertex, _], blob: ImageBlob)
-  : GremlinScala[Vertex, _] = {
+
+  def imageBlobsWithExactMatch[Labels <: HList]
+  (q: GremlinScala[Vertex, Labels], blob: ImageBlob): GremlinScala[Vertex, Labels] =
     q.hasLabel[ImageBlob]
       .has(Keys.MultiHash, blob.multiHash.base58)
-  }
 
-  def rawMetadataBlobsWithExactMatch(q: GremlinScala[Vertex, _], raw: RawMetadataBlob)
-  : GremlinScala[Vertex, _] = {
+
+  def rawMetadataBlobsWithExactMatch[Labels <: HList]
+  (q: GremlinScala[Vertex, Labels], raw: RawMetadataBlob)
+  : GremlinScala[Vertex, Labels] =
     q.hasLabel[RawMetadataBlob]
       .has(Keys.MultiHash, raw.multiHash.base58)
-  }
 
-  def describingOrModifyingBlobs[Labels <: shapeless.HList](q: GremlinScala[Vertex, Labels], canonical: Canonical)
+  def describingOrModifyingBlobs[Labels <: HList]
+  (q: GremlinScala[Vertex, Labels], canonical: Canonical)
   : GremlinScala[Vertex, Labels] = {
     q.hasLabel[ImageBlob] // FIXME: follow edges
   }
 
-  def getSupersedingCanonical(gs: GremlinScala[Vertex, _])
-  : GremlinScala[Vertex, _] = {
+  def getSupersedingCanonical[Labels <: HList]
+  (gs: GremlinScala[Vertex, Labels])
+  : GremlinScala[Vertex, Labels] =
     gs.hasLabel[Canonical]
       .untilWithTraverser(t => t.get.outE(SupersededBy).notExists)
       .repeat(_.out(SupersededBy))
       .hasLabel[Canonical]
-  }
 
-  def getCanonical(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
+
+  def getCanonical[Labels <: HList]
+  (gs: GremlinScala[Vertex, Labels]): GremlinScala[Vertex, Labels] =
     gs.until(_.hasLabel[Canonical])
       .repeat(
       _.inE(ModifiedBy, DescribedBy)
         .or(_.hasNot(Keys.Deprecated), _.hasNot(Keys.Deprecated, true))
         .outV
     )
-  }
 
-  def getAuthor(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
+
+  def getAuthor[Labels <: HList]
+  (gs: GremlinScala[Vertex, Labels]): GremlinScala[Vertex, Labels] = {
     val base =
       gs.untilWithTraverser { t =>
         t.get().out(AuthoredBy).exists() || t.get().in(ModifiedBy).notExists()
@@ -71,24 +79,26 @@ object Traversals {
     getSupersedingCanonical(base)
   }
 
-  def getRootRevision(gs: GremlinScala[Vertex, _]): GremlinScala[Vertex, _] = {
-    gs
-      .untilWithTraverser(t => t.get().in(DescribedBy).exists)
+  def getRootRevision[Labels <: HList]
+  (gs: GremlinScala[Vertex, Labels]): GremlinScala[Vertex, Labels] =
+    gs.untilWithTraverser(t => t.get().in(DescribedBy).exists)
       .repeat(_.in(ModifiedBy))
-  }
 
-  def getRawMetadataForBlob(gs: GremlinScala[Vertex, _]):
-  GremlinScala[Vertex, _] = {
+
+  def getRawMetadataForBlob[Labels <: HList]
+  (gs: GremlinScala[Vertex, Labels]):
+  GremlinScala[Vertex, Labels] =
     gs.out(TranslatedFrom)
-  }
 
-  def getSubtree(gs: GremlinScala[Vertex, _], stepLabel: StepLabel[Graph]): GremlinScala[Vertex, _] = {
-      gs
-      .untilWithTraverser(t => (t.get.outE(DescribedBy).notExists()
-        && t.get.outE(ModifiedBy).notExists()
-        && t.get.outE(AuthoredBy).notExists()))
-      .repeat(_.outE.subgraph(stepLabel).inV)
-  }
+
+  def getSubtree[Labels <: HList]
+  (gs: GremlinScala[Vertex, Labels], stepLabel: StepLabel[Graph])
+  : GremlinScala[Vertex, Labels] =
+    gs.untilWithTraverser(t => (t.get.outE(DescribedBy).notExists()
+      && t.get.outE(ModifiedBy).notExists()
+      && t.get.outE(AuthoredBy).notExists())
+    ).repeat(_.outE.subgraph(stepLabel).inV)
+
 
   implicit class VertexImplicits(v: Vertex) {
     /**
@@ -99,7 +109,7 @@ object Traversals {
       *         This will happen if, e.g. the vertex was created during a
       *         transaction that has not been committed yet.
       */
-    def toPipeline: Xor[InvalidElementId, GremlinScala[Vertex, _]] = {
+    def toPipeline: Xor[InvalidElementId, GremlinScala[Vertex, HNil]] = {
       val idValidXor: Xor[InvalidElementId, Unit] = v.id match {
         case orientId: ORecordId => {
           if (orientId.isValid && (!orientId.isTemporary)) {
@@ -116,9 +126,9 @@ object Traversals {
     }
   }
 
-  implicit class GremlinScalaImplicits(gs: GremlinScala[Vertex, _]) {
+  implicit class GremlinScalaImplicits[Labels <: HList](gs: GremlinScala[Vertex, Labels]) {
     private def traverseAndExtract[Err <: GraphError]
-    (f: GremlinScala[Vertex, _] => GremlinScala[Vertex, _])(otherwise: Err):
+    (f: GremlinScala[Vertex, Labels] => GremlinScala[Vertex, Labels])(otherwise: Err):
     Xor[Err, Vertex] = {
       val result = f(gs).headOption
       Xor.fromOption(result, otherwise)
