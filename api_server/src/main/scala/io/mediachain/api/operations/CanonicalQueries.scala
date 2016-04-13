@@ -26,7 +26,6 @@ object CanonicalQueries {
       .range(first, last).toList
   }
 
-
   def canonicalWithID(canonicalID: UUID)(graph: Graph): Option[Canonical] =
     Traversals.canonicalsWithUUID(graph.V, canonicalID)
       .toCC[Canonical]
