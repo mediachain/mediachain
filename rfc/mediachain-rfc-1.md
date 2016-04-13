@@ -82,7 +82,7 @@ We can make things more concrete with the following schema:
 Entity = {
  "type" : "entity"
  "name" : <String>
- [key : <Reference>]
+ ["key" : <Reference>]
  "signatures" : <Signatures>
  <Key> : <Value> ... ; entity metadata
  }
@@ -142,13 +142,16 @@ Nil = { "type" : "nil" }
 The entity and artefact chains differ on the type of relationships
 they store. They both support metadata update cells, which simply
 provide new metadata to the base object as arbitray key-value pairs.
+
 The entity chain also allows for linking two entities, for example
 having a pseudonymous artist publicly revealing a true name that
 points to another entity in the system.
+
 The artefact chain further stores links to entities that
 represent creation and potential Intellectual Property rights,
 references in the Internet media-space, and derivative relations
 to other artefacts.
+
 Each chain cell carries also carries one or more signatures by
 signatory entities in the system.
 
