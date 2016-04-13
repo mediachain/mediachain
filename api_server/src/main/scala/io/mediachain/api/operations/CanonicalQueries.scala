@@ -5,12 +5,11 @@ import java.util.UUID
 import cats.data.Xor
 import gremlin.scala._
 import io.mediachain.Traversals
-import io.mediachain.Query
 import io.mediachain.Types._
 import io.mediachain.core.GraphError.SubtreeError
 import org.json4s._
 import org.json4s.jackson.Serialization.{read, write}
-import shapeless.HNil
+import org.json4s.Extraction
 
 object CanonicalQueries {
   import Traversals.GremlinScalaImplicits
@@ -40,11 +39,11 @@ object CanonicalQueries {
       tree <- treeXor.toOption
       canonicalGS = Traversals.canonicalsWithUUID(tree.V, canonicalID)
       canonical <- canonicalGS.toCC[Canonical].headOption
-      revisions = Traversals.describingOrModifyingBlobs(tree.V, canonical)
+      revisions = Traversals.describingOrModifyingBlobs(tree.V, canonical).toCC[ImageBlob].toList
     } yield {
-      //val revisionsJ = somehowSerialize(revisions)
+      val revisionsJ = revisions.map(Extraction.decompose)
       ("canonicalID" -> canonical.canonicalID) ~
-        ("revisions" -> List())
+        ("revisions" -> revisionsJ)
     }
   }
 }
