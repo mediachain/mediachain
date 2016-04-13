@@ -11,13 +11,13 @@ Author: @vyzo
 ### Data Objects
 
 The Mediachain is stored in a distributed append-only datastore with
-content addressable access. This maps well to the IPFS peer-to-peer
+content addressable access. This maps well to the IPFS[2] peer-to-peer
 network, which names and accesses data using the SHA256 hash of
 the content. Objects stored in the network are immutable and persistent;
 their hashes become their _Canonical_ identifiers through which they can
 be referenced.
 
-Mediachain objects follow the IPLD[*] data model,
+Mediachain objects follow the IPLD[3] data model,
 allowing for storage of key-valued pairs where keys
 are strings and values are other key-valued pairs or strings.
 
@@ -90,8 +90,12 @@ Reference = {
  }
 
 Signatures = {
- "type" : "signatures"
- <SignatoryCanonical> : <IPRSSignature> ...
+ "_1" : {
+  "entity" : <Reference>
+  "signature" : <IPRSSignature>
+ }
+ "_2" : ...
+ ...
  }
 
 IPRSSignature = {
@@ -126,7 +130,10 @@ Nil = { "type" : "nil" }
 The entity and artefact chains differ on the type of relationships
 they store. They both support metadata update cells, which simply
 provide new metadata to the base object as arbitray key-value pairs.
-However, the artefact chain further stores links to entities that
+The entity chain also allows for linking two entities, for example
+having a pseudonymous artist publicly revealing a true name that
+points to another entity in the system.
+The artefact chain further stores links to entities that
 represent creation and potential Intellectual Property rights,
 references in the Internet media-space, and derivative relations
 to other artefacts.
@@ -141,7 +148,10 @@ functionality of the Mediachain.
 Keeping this in mind, we can model the chains with the following
 schema:
 ```
-EntityChainCell = <EntityUpdateCell> | <Nil>
+EntityChainCell =
+   <EntityUpdateCell>
+ | <EntityLinkCell>
+ | <Nil>
 
 EntityUpdateCell = {
  "type" : "entityUpdate"
@@ -149,6 +159,16 @@ EntityUpdateCell = {
  "entity" : <Reference>
  "signatures" : <Signatures>
   <Key> : <Value> ... ; metadata updates
+ }
+
+EntityLinkCell = {
+ "type" : "entityLink"
+ "chain" : <Reference>
+ "entity" : <Reference>
+ "entityLink" : <Reference>
+ ["relationship" : <Reference>]
+ "signatures" : <Signatures>
+ <Key> : <Value> ... ; entity relationship metadata
  }
 
 ArtefactChainCell =
@@ -198,6 +218,7 @@ ArtefactReferenceCell = {
  "type" : "artefactReferencedBy"
  "chain" : <Reference>
  "artefact" : <Reference>
+ ["entity" : <Reference>]
  ["url" : <URL>]
  "signatures" : <Signatures>
  <Key> : <Value> ... ; reference metadata
@@ -269,4 +290,131 @@ protocols for journal maintenance and distribution.
 
 ## An Example Mediachain
 
+As an example, consider the situation described in [4].
+In that case, a graphic artist created a GIF to commemorate the
+passing of well known actor and musician David Bowie. The GIF
+quickly went viral, mutating along the way, and resulting at a
+complete loss of attribution for the cultural afterfact.
+
+The Mediachain is designed to solve this kind of problems by
+tracking the propagation and evolution of the artefact in the
+datastore.
+Thus, following the viral propagation as described in [4] up
+to retrofuture's creation getting instagramed would result
+to the following records in the datastore:
+```
+Qm000... = Nil
+
+QmAAA... = Entity {
+ "type" : "entity"
+ "name" : "Hellen Green"
+ "key"  : {"@link" : "QmAAABBB..."}
+ "platform" : "~cargocollective"
+ "cargocollective_user" : "+hellengreen"
+ "signatures" : {...}
+}
+
+QmBBB... = Artefact {
+ "type" : "artefact"
+ "name" : "Time May Change Me"
+ "created" : "01/20/2016"
+ "url" : "http://helengreenillustration.com/Time-May-Change-Me"
+ "data" : {"@link" = "QMBBBCCC..."} ; blob in IPFS
+ "signatures" : {...}
+ }
+
+QmCCC... = ArtefactCreationCell {
+ "type" : "artefactCreatedBy"
+ "chain" : {"@link" : Qm000...}
+ "artefact" : {"@link" : QmBBB...}
+ "entity" : {"@link" : QmAAA...}
+ "comment" : "I made this!"
+ "signatures" : {...}
+ }
+
+QmDDD... = Entity {
+ "type" : "entity"
+ "name" : "Eva Tolkin"
+ "key" : {"@link" : "QmDDDBBB..."}
+ "platform" : "~pinterest"
+ "pinterest_user" : "+evatolkin"
+ "signatures" : {...}
+ }
+
+QmEEE... = ArtefactReferenceCell {
+ "type" : "artifactReferencedBy"
+ "chain" : {"@link" : "QmCCC..."}
+ "artefact" : {"@link" : "QmBBB..."}
+ "entity" : {"@link" : "QmDDD..."}
+ "url" : "https://www.pinterest.com/pin/..."
+ "comment" : "I pinned this!"
+ "signatures" : {...}
+ }
+
+QmFFF... = Entity {
+ "type" : "entity"
+ "name" : "retrofuture"
+ "key" : {"@link" : "QmFFFBBB..."}
+ "platform" : "~tumblr"
+ "tumblr_user" : "+retrofuture"
+ "signatures" : {...}
+ }
+
+QmGGG... = Artefact {
+ "type" : "artefact"
+ "name" : "Cool!"
+ "created" : "01/20/2016"
+ "url" : "http://retrofuture.tumblr.com/cool.gif"
+ "data" : {"@link" : "QMGGGCCC..."} ; blob in IPFS
+ "signatures" : {...}
+ }
+
+QmHHH... = ArtefactCreationCell {
+ "type" : "artefactCreatedBy"
+ "chain" : {"@link" : "Qm000..."}
+ "artefact" : {"@link" : "QmGGG..."}
+ "entity" : {"@link" : "QmFFF..."}
+ "comment" : "I created this!"
+ "signatures" : {...}
+ }
+
+QmIII... = ArtefactDerivationCell {
+ "type" : "artefactDerivedBy"
+ "chain" : {"@link" : "QmHHH..."}
+ "artefact" : {"@link" : "QmGGG..."}
+ "artefactOrigin" : {"@link" : "QmBBB..."}
+ "comment" : "I derived it from +hellengreen's GIF.!"
+ "signatures" : {...}
+ }
+
+QmJJJ... = Entity {
+ "type" : "entity"
+ "name" : "christina99"
+ "key" : {"@link" : "QmJJJBBB..."}
+ "platform" : "~instagram"
+ "instagram_user" : "+christina99"
+ "signatures" : {...}
+ }
+
+QmKKK... = ArtefactReferenceCell {
+ "type" : "artifactReferencedBy"
+ "chain" : {"@link" : "QmIII..."}
+ "artefact" : {"@link" : "QmGGG..."}
+ "entity" : {"@link" : "QmJJJ..."}
+ "url" : "https://instagram.com/..."
+ "comment" : "I posted this!"
+ "signatures" : {...}
+ }
+```
+
+The rest of the propagation would add references to retrofuture's
+artefact chain. The evolution of the GIF would be traced from
+retrofuture's gif chain to hellegreen's original through the
+`ArtefactDerivationCell`.
+
 ## References
+
+1. [The Mediachain Blog](https://blog.mine.nyc/)
+2. [IPFS](https://ipfs.io/)
+3. [IPLD](https://github.com/ipfs/specs/tree/master/ipld)
+4. [The GIF that Fell to Earth](https://blog.mine.nyc/the-gif-that-fell-to-earth-eae706c72f1f)
