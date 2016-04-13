@@ -23,6 +23,7 @@ trait ForEachGraph[T] extends FragmentsFactory { outer =>
       f(t)
     } finally {
       graph.database.drop()
+      graph.database.close()
     }
   }
 
