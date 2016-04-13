@@ -11,13 +11,14 @@ object Traversals {
   import core.GraphError
   import core.GraphError._
   import cats.data.Xor
+  import shapeless.HList
 
-  def canonicalsWithID(q: GremlinScala[Vertex, _], canonicalID: String): GremlinScala[Vertex, _] = {
+  def canonicalsWithID[Labels <: HList](q: GremlinScala[Vertex, Labels], canonicalID: String): GremlinScala[Vertex, Labels] = {
     q.hasLabel[Canonical]
       .has(Canonical.Keys.canonicalID, canonicalID)
   }
 
-  def canonicalsWithUUID(q: GremlinScala[Vertex, _], canonicalID: UUID): GremlinScala[Vertex, _] =
+  def canonicalsWithUUID[Labels <: HList](q: GremlinScala[Vertex, Labels], canonicalID: UUID): GremlinScala[Vertex, Labels] =
     canonicalsWithID(q, canonicalID.toString.toLowerCase)
 
   def personBlobsWithExactMatch(q: GremlinScala[Vertex, _], p: Person): GremlinScala[Vertex, _] = {
@@ -37,6 +38,10 @@ object Traversals {
       .has(Keys.MultiHash, raw.multiHash.base58)
   }
 
+  def describingOrModifyingBlobs[Labels <: shapeless.HList](q: GremlinScala[Vertex, Labels], canonical: Canonical)
+  : GremlinScala[Vertex, Labels] = {
+    q.hasLabel[ImageBlob] // FIXME: follow edges
+  }
 
   def getSupersedingCanonical(gs: GremlinScala[Vertex, _])
   : GremlinScala[Vertex, _] = {
