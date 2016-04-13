@@ -74,15 +74,15 @@ the IPFS datablob in its `data` field
 
 Finally, both types carry a set of cryptographic signatures that assert their
 validity. The signatures come from _signatories_ with known keys in the
-system; any entity that contains a public key in its data can act
-as a signatory.
+system; any entity that maintains public keys in the system with a keychain
+pointer can act as a signatory.
 
 We can make things more concrete with the following schema:
 ```
 Entity = {
  "type" : "entity"
  "name" : <String>
- ["key" : <Reference>]
+ ["keychain" : <Reference>]
  "signatures" : <Signatures>
  <Key> : <Value> ... ; entity metadata
  }
