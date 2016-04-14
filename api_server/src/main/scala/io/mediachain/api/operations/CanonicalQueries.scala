@@ -35,25 +35,29 @@ object CanonicalQueries {
   : Option[JObject] = {
     // FIXME: this is a pretty sad n+1 query
     val gs = Traversals.canonicalsWithID(graph.V, canonical.canonicalID)
-    val rootBlobOpt: Option[(String, MetadataBlob, Option[RawMetadataBlob])] =
+    val rootBlobOpt: Option[(String, MetadataBlob, Option[RawMetadataBlob], Option[Person])] =
       gs.out(DescribedBy).headOption.flatMap { v: Vertex =>
         val raw = if(withRaw) {
           v.toPipeline.flatMap(_.findRawMetadataXor).toOption
         } else None
+        val author = v.label match {
+          case "ImageBlob" => v.toPipeline.toOption.flatMap(Traversals.getAuthor(_).out(DescribedBy).toCC[Person].headOption())
+          case _ => None
+        }
         v.label match {
-          case "ImageBlob" => Some((v.label, v.toCC[ImageBlob], raw))
-          case "Person" => Some((v.label, v.toCC[Person], raw))
+          case "ImageBlob" => Some((v.label, v.toCC[ImageBlob], raw, author))
+          case "Person" => Some((v.label, v.toCC[Person], raw, author))
           case _ => None
         }
       }
 
     rootBlobOpt
       .map { labelWithBlob =>
-        val (label: String, blob: MetadataBlob, raw: Option[RawMetadataBlob]) = labelWithBlob
+        val (label: String, blob: MetadataBlob, raw: Option[RawMetadataBlob], author: Option[Person]) = labelWithBlob
         val blobObject = blobToJObject(blob)
 
         ("canonicalID" -> canonical.canonicalID) ~
-          ("artefact" -> (("type" -> label) ~ blobObject)) ~
+          ("artefact" -> (("type" -> label) ~ blobObject ~ ("author" -> author.map(blobToJObject)))) ~
             ("raw" -> raw.map(blobToJObject))
       }
   }
