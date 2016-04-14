@@ -4,12 +4,12 @@ import java.util.UUID
 
 import cats.data.Xor
 import gremlin.scala._
-import io.mediachain.{Query, Traversals}
+import io.mediachain.{Query, Traversals}, Traversals.VertexImplicits
 import io.mediachain.Types._
-import io.mediachain.core.GraphError.SubtreeError
+import io.mediachain.core.GraphError
+import io.mediachain.core.GraphError.CanonicalNotFound
 import io.mediachain.util.JsonUtils
 import org.json4s._
-import org.json4s.jackson.Serialization.{read, write}
 
 
 object CanonicalQueries {
@@ -90,5 +90,26 @@ object CanonicalQueries {
       ("canonicalID" -> canonical.canonicalID) ~
         ("revisions" -> revisionsJ)
     }
+  }
+
+
+  def worksForPersonWithCanonicalID(canonicalID: UUID)(graph: Graph)
+  : Option[JObject] = {
+    val responseXor = for {
+      canonical <- Query.findCanonicalWithUUID(graph, canonicalID)
+
+      canonicalJobject <- Xor.fromOption(
+        canonicalToBlobObject(graph, canonical),
+        CanonicalNotFound())
+
+      canonicalV <- canonical.vertex(graph)
+      canonicalGS <- canonicalV.toPipeline
+      worksCanonicals <- canonicalGS.findWorksXor
+      worksJobjects = worksCanonicals.flatMap(canonicalToBlobObject(graph, _))
+    } yield {
+      canonicalJobject ~ ("works" -> worksJobjects)
+    }
+
+    responseXor.toOption
   }
 }
