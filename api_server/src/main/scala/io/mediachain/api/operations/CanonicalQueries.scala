@@ -13,7 +13,7 @@ import org.json4s._
 
 
 object CanonicalQueries {
-  import Traversals.GremlinScalaImplicits
+  import Traversals.{GremlinScalaImplicits, VertexImplicits}
   import org.json4s.JsonDSL._
   implicit val formats = DefaultFormats
 
@@ -32,26 +32,30 @@ object CanonicalQueries {
       case _ => None
     }
 
-  def canonicalToBlobObject(graph: Graph, canonical: Canonical)
+  def canonicalToBlobObject(graph: Graph, canonical: Canonical, withRaw: Boolean = false)
   : Option[JObject] = {
     // FIXME: this is a pretty sad n+1 query
     val gs = Traversals.canonicalsWithID(graph.V, canonical.canonicalID)
-    val rootBlobOpt: Option[(String, MetadataBlob)] =
+    val rootBlobOpt: Option[(String, MetadataBlob, Option[RawMetadataBlob])] =
       gs.out(DescribedBy).headOption.flatMap { v: Vertex =>
+        val raw = if(withRaw) {
+          v.toPipeline.flatMap(_.findRawMetadataXor).toOption
+        } else None
         v.label match {
-          case "ImageBlob" => Some((v.label, v.toCC[ImageBlob]))
-          case "Person" => Some((v.label, v.toCC[Person]))
+          case "ImageBlob" => Some((v.label, v.toCC[ImageBlob], raw))
+          case "Person" => Some((v.label, v.toCC[Person], raw))
           case _ => None
         }
       }
 
     rootBlobOpt
       .map { labelWithBlob =>
-        val (label: String, blob: MetadataBlob) = labelWithBlob
+        val (label: String, blob: MetadataBlob, raw: Option[RawMetadataBlob]) = labelWithBlob
         val blobObject = blobToJObject(blob)
 
         ("canonicalID" -> canonical.canonicalID) ~
-          ("artefact" -> (("type" -> label) ~ blobObject))
+          ("artefact" -> (("type" -> label) ~ blobObject)) ~
+            ("raw" -> raw.map(blobToJObject))
       }
   }
 
@@ -65,15 +69,11 @@ object CanonicalQueries {
     canonicals.flatMap(canonicalToBlobObject(graph, _))
   }
 
-
-
-  def canonicalWithID(canonicalID: UUID)(graph: Graph): Option[JObject] =
-    Traversals.canonicalsWithUUID(graph.V, canonicalID)
-      .toCC[Canonical]
-      .headOption
-      .flatMap(canonicalToBlobObject(graph, _))
-
-
+  def canonicalWithID(canonicalID: UUID, withRaw: Boolean = false)(graph: Graph): Option[JObject] = {
+      Traversals.canonicalsWithUUID(graph.V, canonicalID).toCC[Canonical]
+        .headOption
+        .flatMap(canonicalToBlobObject(graph, _, withRaw))
+  }
 
   def historyForCanonical(canonicalID: UUID)(graph: Graph): Option[JObject] = {
     val treeXor = Traversals.canonicalsWithUUID(graph.V, canonicalID).findSubtreeXor
