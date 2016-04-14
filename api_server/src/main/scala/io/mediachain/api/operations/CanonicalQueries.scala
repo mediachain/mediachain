@@ -95,14 +95,16 @@ object CanonicalQueries {
   def worksForPersonWithCanonicalID(canonicalID: UUID)(graph: Graph)
   : Option[JObject] = {
     val responseXor = for {
-      canonical <- Traversals.canonicalsWithUUID(graph.V, canonicalID)
-        .findCanonicalXor
+      canonicalV <- Xor.fromOption(
+        Traversals.canonicalsWithUUID(graph.V, canonicalID).headOption,
+        CanonicalNotFound())
+
+      canonical = canonicalV.toCC[Canonical]
 
       canonicalJobject <- Xor.fromOption(
         canonicalToBlobObject(graph, canonical),
         CanonicalNotFound())
 
-      canonicalV <- canonical.vertex(graph)
       canonicalGS <- canonicalV.toPipeline
       worksCanonicals <- canonicalGS.findWorksXor
       worksJobjects = worksCanonicals.flatMap(canonicalToBlobObject(graph, _))

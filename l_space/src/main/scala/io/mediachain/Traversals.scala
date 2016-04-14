@@ -16,14 +16,22 @@ object Traversals {
   import shapeless.HList
 
   def canonicalsWithID[Labels <: HList]
-  (q: GremlinScala[Vertex, Labels], canonicalID: String): GremlinScala[Vertex, Labels] =
-    q.hasLabel[Canonical]
-      .has(Canonical.Keys.canonicalID, canonicalID)
+  (q: GremlinScala[Vertex, Labels], canonicalID: String, allowSuperseded: Boolean = false): GremlinScala[Vertex, Labels] =
+    {
+      val base =
+        q.hasLabel[Canonical]
+          .has(Canonical.Keys.canonicalID, canonicalID)
+      if (allowSuperseded) {
+        base
+      } else {
+        getCanonical(base)
+      }
+    }
 
 
   def canonicalsWithUUID[Labels <: HList]
-  (q: GremlinScala[Vertex, Labels], canonicalID: UUID): GremlinScala[Vertex, Labels] =
-    canonicalsWithID(q, canonicalID.toString.toLowerCase)
+  (q: GremlinScala[Vertex, Labels], canonicalID: UUID, allowSuperseded: Boolean = false): GremlinScala[Vertex, Labels] =
+    canonicalsWithID(q, canonicalID.toString.toLowerCase, allowSuperseded)
 
   def personBlobsWithExactMatch[Labels <: HList]
   (q: GremlinScala[Vertex, Labels], p: Person): GremlinScala[Vertex, Labels] =
