@@ -4,6 +4,7 @@ import io.mediachain.{BaseSpec, GraphFixture}
 import io.mediachain.Types._
 import org.specs2.matcher.{JsonMatchers, JsonType, Matcher}
 import spray.testkit.Specs2RouteTest
+import spray.http.StatusCodes._
 import gremlin.scala._
 import io.mediachain.util.orient.MigrationHelper
 
@@ -24,6 +25,7 @@ object LSpaceServiceSpec extends BaseSpec
 
   def returnsFirstCanonical = {
     Get("/canonicals") ~> baseRoute ~> check {
+      status === OK
       responseAs[String] must /#(0) /("canonicalID" -> context.objects.imageBlobCanonical.canonicalID)
     }
   }
@@ -31,7 +33,15 @@ object LSpaceServiceSpec extends BaseSpec
   def returnsACanonical = {
     val canonicalId = context.objects.imageBlobCanonical.canonicalID
     Get("/canonicals/" + canonicalId) ~> baseRoute ~> check {
+      status === OK
       responseAs[String] must /("canonicalID" -> canonicalId)
+    }
+    Get("/canonicals/" + canonicalId + "?with_raw=1") ~> baseRoute ~> check {
+      status === OK
+      val r = responseAs[String]
+      println(r)
+      r must /("canonicalID" -> canonicalId)
+      r must /("raw" -> startWith("{"))
     }
   }
 
@@ -48,6 +58,7 @@ object LSpaceServiceSpec extends BaseSpec
   def returnsASubtree = {
     val canonicalId = context.objects.imageBlobCanonical.canonicalID
     Get("/canonicals/" + canonicalId + "/history") ~> baseRoute ~> check {
+      status === OK
       val r = responseAs[String]
       r aka "canonical ID" must /("canonicalID" -> canonicalId)
       r aka "revisions list" must haveRevisions(

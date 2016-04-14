@@ -56,8 +56,10 @@ trait LSpaceService extends HttpService {
           pathPrefix(JavaUUID) { canonicalID: UUID =>
             // GET "/canonicals/some-canonical-id"
             pathEnd {
-              complete {
-                withGraph(canonicalWithID(canonicalID))
+              parameter("with_raw" ? 0 ) { with_raw =>
+                complete {
+                  withGraph(canonicalWithID(canonicalID, with_raw == 1))
+                }
               }
             } ~
               // GET "/canonicals/some-canonical-id/history
