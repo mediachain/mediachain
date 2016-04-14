@@ -10,7 +10,7 @@ import io.mediachain.core.GraphError.SubtreeError
 import io.mediachain.util.JsonUtils
 import org.json4s._
 import org.json4s.jackson.Serialization.{read, write}
-import org.json4s.Extraction
+
 
 object CanonicalQueries {
   import Traversals.GremlinScalaImplicits
@@ -23,6 +23,14 @@ object CanonicalQueries {
     JsonUtils.jsonObjectForHashable(metadataBlob) ~
       ("multiHash" -> metadataBlob.multiHash.base58)
 
+
+  def vertexToMetadataBlob(vertex: Vertex): Option[MetadataBlob] =
+    vertex.label match {
+      case "ImageBlob" => Some(vertex.toCC[ImageBlob])
+      case "Person" => Some(vertex.toCC[Person])
+      case "RawMetadataBlob" => Some(vertex.toCC[RawMetadataBlob])
+      case _ => None
+    }
 
   def canonicalToBlobObject(graph: Graph, canonical: Canonical)
   : Option[JObject] = {
@@ -65,6 +73,8 @@ object CanonicalQueries {
       .headOption
       .flatMap(canonicalToBlobObject(graph, _))
 
+
+
   def historyForCanonical(canonicalID: UUID)(graph: Graph): Option[JObject] = {
     val treeXor = Traversals.canonicalsWithUUID(graph.V, canonicalID).findSubtreeXor
 
@@ -72,9 +82,11 @@ object CanonicalQueries {
       tree <- treeXor.toOption
       canonicalGS = Traversals.canonicalsWithUUID(tree.V, canonicalID)
       canonical <- canonicalGS.toCC[Canonical].headOption
-      revisions = Traversals.describingOrModifyingBlobs(tree.V, canonical).toCC[ImageBlob].toList
+
+      revisions = Traversals.describingOrModifyingBlobs(tree.V, canonical).toList
+      revisionBlobs = revisions.flatMap(vertexToMetadataBlob)
     } yield {
-      val revisionsJ = revisions.map(Extraction.decompose)
+      val revisionsJ = revisionBlobs.map(blobToJObject)
       ("canonicalID" -> canonical.canonicalID) ~
         ("revisions" -> revisionsJ)
     }
