@@ -4,9 +4,8 @@ import java.util.UUID
 
 import cats.data.Xor
 import gremlin.scala._
-import io.mediachain.{Query, Traversals}, Traversals.VertexImplicits
+import io.mediachain.Traversals
 import io.mediachain.Types._
-import io.mediachain.core.GraphError
 import io.mediachain.core.GraphError.CanonicalNotFound
 import io.mediachain.util.JsonUtils
 import org.json4s._
@@ -63,8 +62,8 @@ object CanonicalQueries {
     val first = page * PAGE_SIZE
     val last = first + PAGE_SIZE
 
-    val canonicals = graph.V.hasLabel[Canonical].toCC[Canonical]
-      .range(first, last).toList
+    val canonicals = graph.V.hasLabel[Canonical]
+      .range(first, last).toCC[Canonical].toList
 
     canonicals.flatMap(canonicalToBlobObject(graph, _))
   }
@@ -96,7 +95,8 @@ object CanonicalQueries {
   def worksForPersonWithCanonicalID(canonicalID: UUID)(graph: Graph)
   : Option[JObject] = {
     val responseXor = for {
-      canonical <- Query.findCanonicalWithUUID(graph, canonicalID)
+      canonical <- Traversals.canonicalsWithUUID(graph.V, canonicalID)
+        .findCanonicalXor
 
       canonicalJobject <- Xor.fromOption(
         canonicalToBlobObject(graph, canonical),
