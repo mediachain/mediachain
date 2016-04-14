@@ -19,6 +19,7 @@ object LSpaceServiceSpec extends BaseSpec
        returns a canonical from GET "/" $returnsFirstCanonical
        returns a canonical by ID $returnsACanonical
        returns a canonical's rev history by ID $returnsASubtree
+       returns the works by an author $returnsWorks
       """
 
   def returnsFirstCanonical = {
@@ -54,4 +55,22 @@ object LSpaceServiceSpec extends BaseSpec
     }
   }
 
+
+  def returnsWorks = {
+    val personCanonicalID = context.objects.personCanonical.canonicalID
+    val imageBlobCanonicalID = context.objects.imageBlobCanonical.canonicalID
+    val imageByDuplicateAuthorCanonicalID =
+      context.objects.imageByDuplicatePersonCanonical.canonicalID
+
+    Get(s"/canonicals/$personCanonicalID/works") ~> baseRoute ~> check {
+      val r = responseAs[String]
+      r aka "person canonical ID" must /("canonicalID" -> personCanonicalID)
+      r aka "works list" must  /("works").andHave(
+        allOf(
+          /("canonicalID" -> imageBlobCanonicalID),
+          /("canonicalID" -> imageByDuplicateAuthorCanonicalID)
+        )
+      )
+    }
+  }
 }
