@@ -1,5 +1,7 @@
 package io.mediachain
 
+import java.util.UUID
+
 import io.mediachain.Types._
 
 object Query {
@@ -8,6 +10,20 @@ object Query {
   import core.GraphError
   import core.GraphError._
   import cats.data.Xor
+
+  def findCanonicalWithID(graph: Graph, canonicalID: String)
+  : Xor[CanonicalNotFound, Canonical] =
+    Xor.fromOption(
+      Traversals.canonicalsWithID(graph.V, canonicalID)
+        .toCC[Canonical]
+        .headOption,
+      CanonicalNotFound())
+
+
+  def findCanonicalWithUUID(graph: Graph, canonicalID: UUID)
+  : Xor[CanonicalNotFound, Canonical] =
+    findCanonicalWithID(graph, canonicalID.toString.toLowerCase)
+
 
   /** Finds a vertex with label "Person" and traits matching `p` in the graph
     * `g`.

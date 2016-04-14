@@ -65,6 +65,12 @@ trait LSpaceService extends HttpService {
                 complete {
                   withGraph(historyForCanonical(canonicalID))
                 }
+              } ~
+              // GET "/canonicals/persons-canonical-id/works"
+              path("works") {
+                complete {
+                  withGraph(worksForPersonWithCanonicalID(canonicalID))
+                }
               }
           }
       }
