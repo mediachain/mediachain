@@ -18,6 +18,17 @@ libraryDependencies ++= Seq(
   "org.apache.directory.studio" % "org.apache.commons.codec" % "1.8"
 )
 
+excludeDependencies ++= Seq(
+  SbtExclusionRule("commons-logging", "commons-logging"),
+  SbtExclusionRule("org.codehaus.groovy", "groovy"),
+  SbtExclusionRule("org.codehaus.groovy", "groovy-groovysh"),
+  SbtExclusionRule("org.codehaus.groovy", "groovy-console"),
+  SbtExclusionRule("org.codehaus.groovy", "groovy-templates"),
+  SbtExclusionRule("org.codehaus.groovy", "groovy-xml"),
+  SbtExclusionRule("org.codehaus.groovy", "groovy-swing"),
+  SbtExclusionRule("org.codehaus.groovy", "groovy-json"),
+  SbtExclusionRule("org.codehaus.groovy", "groovy-jsr223")
+)
 
 // see http://stackoverflow.com/a/9901616
 //
