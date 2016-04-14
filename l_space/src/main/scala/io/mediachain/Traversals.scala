@@ -3,7 +3,9 @@ package io.mediachain
 import com.orientechnologies.orient.core.id.ORecordId
 import java.util.UUID
 
+import org.apache.tinkerpop.gremlin.process.traversal.step.util.BulkSet
 import shapeless.HNil
+import scala.collection.JavaConverters._
 
 object Traversals {
   import gremlin.scala._
@@ -44,7 +46,12 @@ object Traversals {
   def describingOrModifyingBlobs[Labels <: HList]
   (q: GremlinScala[Vertex, Labels], canonical: Canonical)
   : GremlinScala[Vertex, Labels] = {
-    q.hasLabel[ImageBlob] // FIXME: follow edges
+    canonicalsWithID(q, canonical.canonicalID)
+      .out(DescribedBy).aggregate("blobs")
+      .until(_.not(_.out(ModifiedBy)))
+      .repeat(_.out(ModifiedBy).aggregate("blobs"))
+      .cap("blobs")
+      .unfold[Vertex]
   }
 
   def getSupersedingCanonical[Labels <: HList]
@@ -54,8 +61,6 @@ object Traversals {
       .untilWithTraverser(t => t.get.outE(SupersededBy).notExists)
       .repeat(_.out(SupersededBy))
       .hasLabel[Canonical]
-
-
 
 
   def getAllCanonicalsIncludingSuperseded[Labels <: HList]
