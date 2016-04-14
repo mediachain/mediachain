@@ -4,7 +4,7 @@ import io.mediachain.Types._
 
 object Query {
   import gremlin.scala._
-  import Traversals.GremlinScalaImplicits
+  import Traversals.{GremlinScalaImplicits, VertexImplicits}
   import core.GraphError
   import core.GraphError._
   import cats.data.Xor
@@ -56,14 +56,9 @@ object Query {
   }
 
   def findWorks(graph: Graph, p: Person):
-  Xor[GraphError, List[Canonical]] = {
-    for {
-      personCanonical <- findCanonicalForBlob(graph, p)
-      vertex          <- personCanonical.vertex(graph)
-      items = vertex.in(AuthoredBy)
-        .map(v => findCanonicalForBlob(graph, v))
-        .toList
-    } yield { items.flatMap(_.toList) }
-  }
+  Xor[GraphError, List[Canonical]] =
+    Traversals.personBlobsWithExactMatch(graph.V, p)
+      .findWorksXor
+
 }
 

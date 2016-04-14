@@ -1,6 +1,5 @@
 package io.mediachain
 
-import com.orientechnologies.orient.core.exception.OStorageException
 import com.orientechnologies.orient.core.id.ORecordId
 import java.util.UUID
 
@@ -57,6 +56,18 @@ object Traversals {
       .hasLabel[Canonical]
 
 
+
+
+  def getAllCanonicalsIncludingSuperseded[Labels <: HList]
+  (gs: GremlinScala[Vertex, Labels])
+  : GremlinScala[Vertex, Labels] = {
+        getCanonical(gs).aggregate("canonicals")
+          .until(_.not(_.inE(SupersededBy)))
+          .repeat(_.in(SupersededBy).aggregate("canonicals"))
+          .cap("canonicals")
+          .unfold[Vertex]
+  }
+
   def getCanonical[Labels <: HList]
   (gs: GremlinScala[Vertex, Labels]): GremlinScala[Vertex, Labels] =
     gs.until(_.hasLabel[Canonical])
@@ -77,6 +88,15 @@ object Traversals {
         .out(AuthoredBy)
 
     getSupersedingCanonical(base)
+  }
+
+  def getWorks[Labels <: HList]
+  (gs: GremlinScala[Vertex, Labels]): GremlinScala[Vertex, Labels] = {
+    val works =
+      getAllCanonicalsIncludingSuperseded(gs)
+      .in(AuthoredBy)
+
+    getCanonical(works)
   }
 
   def getRootRevision[Labels <: HList]
@@ -141,6 +161,15 @@ object Traversals {
     def findAuthorXor: Xor[CanonicalNotFound, Canonical] =
       traverseAndExtract(getAuthor) { CanonicalNotFound() }
         .map(_.toCC[Canonical])
+
+    // can this fail, or just return an empty list?
+    // TODO: either handle errors or remove the Xor
+    def findWorksXor: Xor[GraphError, List[Canonical]] =
+      Xor.right(
+        getWorks(gs)
+        .toCC[Canonical]
+        .toList
+      )
 
     def findRawMetadataXor: Xor[RawMetadataNotFound, RawMetadataBlob] =
       traverseAndExtract(getRawMetadataForBlob) { RawMetadataNotFound() }
