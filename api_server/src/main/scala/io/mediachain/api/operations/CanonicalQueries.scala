@@ -81,6 +81,10 @@ object CanonicalQueries {
   def historyForCanonical(canonicalID: UUID)(graph: Graph): Option[JObject] = {
     val treeXor = Traversals.canonicalsWithUUID(graph.V, canonicalID).findSubtreeXor
 
+    val author = StepLabel[Vertex]("author")
+    val raw = StepLabel[Vertex]("raw")
+    val blob = StepLabel[Vertex]("blob")
+
     for {
       tree <- treeXor.toOption
       canonicalGS = Traversals.canonicalsWithUUID(tree.V, canonicalID)
@@ -89,6 +93,7 @@ object CanonicalQueries {
       revisions = Traversals.describingOrModifyingBlobs(tree.V, canonical).toList
       revisionBlobs = revisions.flatMap(vertexToMetadataBlob)
     } yield {
+      val res = tree.V.out(DescribedBy).out(ModifiedBy).as(blob).out(AuthoredBy).as(author).out(TranslatedFrom).as(raw).select((raw, author, blob)).toList
       val revisionsJ = revisionBlobs.map(blobToJObject)
       ("canonicalID" -> canonical.canonicalID) ~
         ("revisions" -> revisionsJ)
