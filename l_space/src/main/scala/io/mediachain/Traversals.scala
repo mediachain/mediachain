@@ -84,21 +84,17 @@ object Traversals {
         *         This will happen if, e.g. the vertex was created during a
         *         transaction that has not been committed yet.
         */
-      def toPipeline: Xor[InvalidElementId, GremlinScala[Vertex, HNil]] = {
-        val idValidXor: Xor[InvalidElementId, Unit] = v.id match {
+      def toPipeline: Xor[InvalidElementId, GremlinScala[Vertex, HNil]] =
+        v.id match {
           case orientId: ORecordId => {
             if (orientId.isValid && (!orientId.isTemporary)) {
-              Xor.right({})
+              Xor.right(v.graph.V(v.id))
             } else {
               Xor.left(InvalidElementId())
             }
           }
-
-          case _ => Xor.right({})
+          case _ => Xor.left(InvalidElementId())
         }
-
-        idValidXor.map(_ => v.graph.V(v.id))
-      }
     }
   }
 
