@@ -185,6 +185,7 @@ EntityLinkCell = {
 
 ArtefactChainCell =
    <ArtefactUpdateCell>
+ | <ArtefactLinkCell>
  | <ArtefactCreationCell>
  | <ArtefactDerivationCell>
  | <ArtefactOwnershipCell>
@@ -197,6 +198,16 @@ ArtefactUpdateCell = {
  "artefact" : <Reference>
  "signatures" : <Signatures>
  <Key> : <Value> ... ; metadata updates
+ }
+
+ArtefactLinkCell = {
+ "type" : "artefactLink"
+ "chain" : <Reference>
+ "artefact" : <Reference>
+ "artefactLink" : <Reference>
+ ["relationship" : <Reference>]
+ "signatures" : <Signatures>
+ <Key> : <Value> ... ; entity relationship metadata
  }
 
 ArtefactCreationCell = {
