@@ -284,11 +284,4 @@ object Traversals {
       && t.get.outE(AuthoredBy).notExists())
     ).repeat(_.outE.subgraph(stepLabel).inV)
 
-
-  def usageExample(graph: Graph) = {
-    val bob = Person(None, "Bob Terwilliger")
-    graph.V ~>
-      personBlobsWithExactMatch(bob) ~>
-      getCanonical
-  }
 }
