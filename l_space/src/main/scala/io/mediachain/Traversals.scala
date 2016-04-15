@@ -21,10 +21,37 @@ object Traversals {
     (val gs: GremlinScala[Vertex, InLabels]) extends AnyVal
     {
       /**
-        * chain together query pipeline operations.
+        * Chain together query pipeline operations.
+        *
         * e.g.
         *
         * graph.V |> personsBlobsWithExactMatch(pablo) |> getCanonical
+        *
+        * The right-hand side of the |> operator must be a function of
+        * `GremlinScala[Vertex, InLabels] => GremlinScala[Vertex, OutLabels]`
+        *
+        * The `InLabels` and `OutLabels` type params may be the same concrete
+        * type, or they may differ, depending on the operation.
+        *
+        * This can be used with partially applied (curried) functions, e.g.:
+        *
+        * def findTheMcGuffin[Labels <: HList]
+        *   (foo: String)(gs: GremlinScala[Vertex, Labels])
+        * : GremlinScala[Vertex, Labels] = gs.has('foo', foo)
+        *
+        * can be chained by partially applying the method:
+        * graph.V |> findTheMcGuffin("bar")
+        *
+        * Note that to call methods on the resulting pipeline, you'll either
+        * need to wrap the chain in parens:
+        * (graph.V |> findKittens).headOption
+        *
+        * or, you can assign the pipeline to a value first:
+        * val gs = graph.V |> findKittens
+        * gs.headOption
+        *
+        * This limitation may be fixable by someone who understands scala's
+        * precedence rules better than myself :)
         */
       def |>[OutLabels <: HList]
       (f: GremlinScala[Vertex, InLabels] => GremlinScala[Vertex, OutLabels]):
@@ -32,10 +59,11 @@ object Traversals {
 
 
       /**
-        * apply a function to a query pipeline, returning some result
+        * Apply a function to a query pipeline, returning some result
+        *
         * e.g.
-        * val q = graph.V |> canonicalsWithID(someID)
-        * val vertexXor = q >> headXor
+        * val q: GremlinScala[Vertex, _] = graph.V |> canonicalsWithID(someID)
+        * val vertexXor: Xor[VertexNotFound, Vertex] = q >> headXor
         *
         * or, if you don't mind the parens:
         * val vertexXor = (graph.V |> canonicalsWithID(someID)) >> headXor
@@ -74,6 +102,8 @@ object Traversals {
 
   import Implicits._
 
+
+  // Extractions - use with the >> operator to pull a value out of a pipeline
 
   def headXor[Labels <: HList]
   (gs: GremlinScala[Vertex, Labels]): Xor[VertexNotFound, Vertex] =
@@ -126,6 +156,8 @@ object Traversals {
     Xor.fromOption(result, SubtreeError())
   }
 
+
+  // Operations - can be chained together with the |> operator
 
   def canonicalsWithID[Labels <: HList]
   (canonicalID: String, allowSuperseded: Boolean = false)
