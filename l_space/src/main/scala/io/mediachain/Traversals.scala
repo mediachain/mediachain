@@ -17,8 +17,8 @@ object Traversals {
 
   object Implicits {
 
-    implicit class VertexQueryImplicits[InLabels <: HList]
-    (val gs: GremlinScala[Vertex, InLabels]) extends AnyVal
+    implicit class GremlinScalaImplicits[End, Labels <: HList]
+    (val gs: GremlinScala[End, Labels]) extends AnyVal
     {
       /**
         * Chain together query pipeline operations.
@@ -50,9 +50,9 @@ object Traversals {
         * graph.V ~> findKittens >> (_.headOption)
         *
         */
-      def ~>[OutLabels <: HList]
-      (f: GremlinScala[Vertex, InLabels] => GremlinScala[Vertex, OutLabels]):
-      GremlinScala[Vertex, OutLabels] = f(gs)
+      def ~>[OutEnd, OutLabels <: HList]
+      (f: GremlinScala[End, Labels] => GremlinScala[OutEnd, OutLabels]):
+      GremlinScala[OutEnd, OutLabels] = f(gs)
 
 
       /**
@@ -67,7 +67,7 @@ object Traversals {
         *
         * graph.V ~> canonicalsWithID(someID) >> (_.headOption)
         */
-      def >>[T](f: GremlinScala[Vertex, InLabels] => T): T = f(gs)
+      def >>[T](f: GremlinScala[End, Labels] => T): T = f(gs)
     }
 
 
