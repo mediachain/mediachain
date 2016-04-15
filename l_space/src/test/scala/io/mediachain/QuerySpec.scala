@@ -5,7 +5,7 @@ import gremlin.scala._
 
 object QuerySpec extends BaseSpec
   with ForEachGraph[GraphFixture.Context] {
-  import Traversals.{GremlinScalaImplicits, VertexImplicits}
+  import Traversals.Implicits._
 
 
   def forEachGraph(graph: Graph) = GraphFixture.Context(graph)
