@@ -86,16 +86,20 @@ object IngressSpec extends BaseSpec
     Ingress.ingestBlobBundle(graph, bundle, Some(raw))
 
     // These should both == 1, since adding again doesn't recreate the blob vertices
-    val imageBlobCount = (graph.V |> imageBlobsWithExactMatch(blob)).count.head
+    val imageBlobCount = graph.V ~>
+      imageBlobsWithExactMatch(blob) >>
+      (_.count.head)
 
-    val authorCount = (graph.V |> personBlobsWithExactMatch(leo)).count.head
+    val authorCount = graph.V ~>
+      personBlobsWithExactMatch(leo) >>
+      (_.count.head)
 
-    val photoV = (graph.V |> imageBlobsWithExactMatch(blob))
+    val photoV = (graph.V ~> imageBlobsWithExactMatch(blob))
       .headOption.getOrElse(
         throw new IllegalStateException("Unable to retrieve photo blob")
       )
 
-    val authorV = (graph.V |> personBlobsWithExactMatch(leo))
+    val authorV = (graph.V ~> personBlobsWithExactMatch(leo))
       .headOption.getOrElse(
         throw new IllegalStateException("Unable to retrieve author blob")
       )
