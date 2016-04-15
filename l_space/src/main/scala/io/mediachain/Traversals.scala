@@ -25,9 +25,9 @@ object Traversals {
         *
         * e.g.
         *
-        * graph.V |> personsBlobsWithExactMatch(pablo) |> getCanonical
+        * graph.V ~> personsBlobsWithExactMatch(pablo) ~> getCanonical
         *
-        * The right-hand side of the |> operator must be a function of
+        * The right-hand side of the ~> operator must be a function of
         * `GremlinScala[Vertex, InLabels] => GremlinScala[Vertex, OutLabels]`
         *
         * The `InLabels` and `OutLabels` type params may be the same concrete
@@ -40,20 +40,17 @@ object Traversals {
         * : GremlinScala[Vertex, Labels] = gs.has('foo', foo)
         *
         * can be chained by partially applying the method:
-        * graph.V |> findTheMcGuffin("bar")
+        * graph.V ~> findTheMcGuffin("bar")
         *
         * Note that to call methods on the resulting pipeline, you'll either
         * need to wrap the chain in parens:
-        * (graph.V |> findKittens).headOption
+        * (graph.V ~> findKittens).headOption
         *
-        * or, you can assign the pipeline to a value first:
-        * val gs = graph.V |> findKittens
-        * gs.headOption
+        * or, you can use the >> operator with an anonymous function:
+        * graph.V ~> findKittens >> (_.headOption)
         *
-        * This limitation may be fixable by someone who understands scala's
-        * precedence rules better than myself :)
         */
-      def |>[OutLabels <: HList]
+      def ~>[OutLabels <: HList]
       (f: GremlinScala[Vertex, InLabels] => GremlinScala[Vertex, OutLabels]):
       GremlinScala[Vertex, OutLabels] = f(gs)
 
@@ -62,11 +59,13 @@ object Traversals {
         * Apply a function to a query pipeline, returning some result
         *
         * e.g.
-        * val q: GremlinScala[Vertex, _] = graph.V |> canonicalsWithID(someID)
-        * val vertexXor: Xor[VertexNotFound, Vertex] = q >> headXor
+        * val vertexXor: Xor[VertexNotFound, Vertex] =
+        *   graph.V ~> canonicalsWithID(someID) >> headXor
         *
-        * or, if you don't mind the parens:
-        * val vertexXor = (graph.V |> canonicalsWithID(someID)) >> headXor
+        * Can also be used to call built-in GremlinScala methods on the final
+        * result of a ~> query chain by combining with an anonymous function:
+        *
+        * graph.V ~> canonicalsWithID(someID) >> (_.headOption)
         */
       def >>[T](f: GremlinScala[Vertex, InLabels] => T): T = f(gs)
     }
@@ -102,7 +101,6 @@ object Traversals {
 
   import Implicits._
 
-
   // Extractions - use with the >> operator to pull a value out of a pipeline
 
   def headXor[Labels <: HList]
@@ -117,23 +115,26 @@ object Traversals {
 
   def findCanonicalXor[Labels <: HList](gs: GremlinScala[Vertex, Labels])
   : Xor[CanonicalNotFound, Canonical] =
-    (gs |> getCanonical) >> typedHeadXor(CanonicalNotFound(), _.toCC[Canonical])
+    gs ~> getCanonical >>
+      typedHeadXor(CanonicalNotFound(), _.toCC[Canonical])
 
 
   def findAuthorXor[Labels <: HList](gs: GremlinScala[Vertex, Labels])
   : Xor[CanonicalNotFound, Canonical] =
-    (gs |> getAuthor) >> typedHeadXor(CanonicalNotFound(), _.toCC[Canonical])
+    gs ~> getAuthor >>
+      typedHeadXor(CanonicalNotFound(), _.toCC[Canonical])
 
 
   def findRawMetadataXor[Labels <: HList](gs: GremlinScala[Vertex, Labels])
   : Xor[RawMetadataNotFound, RawMetadataBlob] =
-    (gs |> getRawMetadataForBlob) >>
+    gs ~> getRawMetadataForBlob >>
       typedHeadXor(RawMetadataNotFound(), _.toCC[RawMetadataBlob])
 
 
   def findRootRevisionXor[Labels <: HList](gs: GremlinScala[Vertex, Labels])
   : Xor[BlobNotFound, Vertex] =
-    (gs |> getRootRevision) >> typedHeadXor(BlobNotFound(), identity)
+    gs ~> getRootRevision >>
+      typedHeadXor(BlobNotFound(), identity)
 
 
   // can this fail, or just return an empty list?
@@ -157,7 +158,7 @@ object Traversals {
   }
 
 
-  // Operations - can be chained together with the |> operator
+  // Operations - can be chained together with the ~> operator
 
   def canonicalsWithID[Labels <: HList]
   (canonicalID: String, allowSuperseded: Boolean = false)
@@ -167,14 +168,14 @@ object Traversals {
       q.hasLabel[Canonical].has(Canonical.Keys.canonicalID, canonicalID)
 
     if (allowSuperseded) base
-    else base |> getSupersedingCanonical
+    else base ~> getSupersedingCanonical
   }
 
 
   def canonicalsWithUUID[Labels <: HList]
   (canonicalID: UUID, allowSuperseded: Boolean = false)
     (q: GremlinScala[Vertex, Labels]): GremlinScala[Vertex, Labels] =
-    q |> canonicalsWithID(canonicalID.toString.toLowerCase, allowSuperseded)
+    q ~> canonicalsWithID(canonicalID.toString.toLowerCase, allowSuperseded)
 
 
   def getCanonical[Labels <: HList]
@@ -286,8 +287,8 @@ object Traversals {
 
   def usageExample(graph: Graph) = {
     val bob = Person(None, "Bob Terwilliger")
-    graph.V |>
-      personBlobsWithExactMatch(bob) |>
+    graph.V ~>
+      personBlobsWithExactMatch(bob) ~>
       getCanonical
   }
 }

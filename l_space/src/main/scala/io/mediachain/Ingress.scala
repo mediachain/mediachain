@@ -60,7 +60,7 @@ object Ingress {
     val graph = blobV.graph
 
     // add the raw metadata to the graph if it doesn't already exist
-    val rawVXor = (graph.V |> rawMetadataBlobsWithExactMatch(raw)) >> headXor
+    val rawVXor = graph.V ~> rawMetadataBlobsWithExactMatch(raw) >> headXor
     val rawV = rawVXor.getOrElse(graph + raw)
 
     val edgeAlreadyExists = blobV.toPipeline
@@ -97,9 +97,9 @@ object Ingress {
 
     val existingVertex: Xor[VertexNotFound, Vertex] = blob match {
       case image: ImageBlob =>
-        (graph.V |> imageBlobsWithExactMatch(image)) >> headXor
+        graph.V ~> imageBlobsWithExactMatch(image) >> headXor
       case person: Person =>
-        (graph.V |> personBlobsWithExactMatch(person)) >> headXor
+        graph.V ~> personBlobsWithExactMatch(person) >> headXor
       case _ => Xor.left(VertexNotFound())
     }
 
@@ -144,7 +144,7 @@ object Ingress {
   def modifyImageBlob(graph: Graph, parentVertex: Vertex, image: ImageBlob, raw: Option[RawMetadataBlob] = None):
   Xor[GraphError, BlobAddResult] = withTransactionXor(graph) {
 
-    val childVertexXor = (graph.V |> imageBlobsWithExactMatch(image)) >> headXor
+    val childVertexXor = graph.V ~> imageBlobsWithExactMatch(image) >> headXor
 
     val childVertex = childVertexXor
       .getOrElse {

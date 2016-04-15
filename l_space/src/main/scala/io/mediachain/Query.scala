@@ -20,13 +20,13 @@ object Query {
     * @return Optional person matching criteria
     */
   def findPerson(graph: Graph, p: Person): Xor[CanonicalNotFound, Canonical] = {
-    (graph.V |> personBlobsWithExactMatch(p)) >>
+    (graph.V ~> personBlobsWithExactMatch(p)) >>
       findCanonicalXor
   }
 
   def findImageBlob(graph: Graph, i: ImageBlob):
   Xor[CanonicalNotFound, Canonical] = {
-    (graph.V |> imageBlobsWithExactMatch(i)) >>
+    (graph.V ~> imageBlobsWithExactMatch(i)) >>
       findCanonicalXor
   }
 
@@ -60,7 +60,7 @@ object Query {
 
   def findWorks(graph: Graph, p: Person):
   Xor[GraphError, List[Canonical]] =
-    (graph.V |> personBlobsWithExactMatch(p)) >>
+    (graph.V ~> personBlobsWithExactMatch(p)) >>
       findWorksXor
 
 }

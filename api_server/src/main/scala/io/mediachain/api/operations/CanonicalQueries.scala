@@ -33,7 +33,7 @@ object CanonicalQueries {
   def canonicalToBlobObject(graph: Graph, canonical: Canonical, withRaw: Boolean = false)
   : Option[JObject] = {
     // FIXME: this is a pretty sad n+1 query
-    val gs = graph.V |> canonicalsWithID(canonical.canonicalID)
+    val gs = graph.V ~> canonicalsWithID(canonical.canonicalID)
     val rootBlobOpt: Option[(String, MetadataBlob, Option[RawMetadataBlob], Option[Person])] =
       gs.out(DescribedBy).headOption.flatMap { v: Vertex =>
         val raw = if(withRaw) {
@@ -72,21 +72,21 @@ object CanonicalQueries {
   }
 
   def canonicalWithID(canonicalID: UUID, withRaw: Boolean = false)(graph: Graph): Option[JObject] = {
-    (graph.V |> canonicalsWithUUID(canonicalID))
+    (graph.V ~> canonicalsWithUUID(canonicalID))
       .toCC[Canonical]
       .headOption
       .flatMap(canonicalToBlobObject(graph, _, withRaw))
   }
 
   def historyForCanonical(canonicalID: UUID)(graph: Graph): Option[JObject] = {
-    val treeXor = (graph.V |> canonicalsWithUUID(canonicalID)) >> findSubtreeXor
+    val treeXor = graph.V ~> canonicalsWithUUID(canonicalID) >> findSubtreeXor
 
     for {
       tree <- treeXor.toOption
-      canonicalGS = tree.V |> canonicalsWithUUID(canonicalID)
+      canonicalGS = tree.V ~> canonicalsWithUUID(canonicalID)
       canonical <- canonicalGS.toCC[Canonical].headOption
 
-      revisions = (tree.V |> describingOrModifyingBlobs(canonical)).toList
+      revisions = (tree.V ~> describingOrModifyingBlobs(canonical)).toList
       revisionBlobs = revisions.flatMap(vertexToMetadataBlob)
     } yield {
       val revisionsJ = revisionBlobs.map(blobToJObject)
@@ -99,7 +99,7 @@ object CanonicalQueries {
   def worksForPersonWithCanonicalID(canonicalID: UUID)(graph: Graph)
   : Option[JObject] = {
     val responseXor = for {
-      canonicalV <- (graph.V |> canonicalsWithUUID(canonicalID)) >> headXor
+      canonicalV <- graph.V ~> canonicalsWithUUID(canonicalID) >> headXor
 
       canonical = canonicalV.toCC[Canonical]
 
