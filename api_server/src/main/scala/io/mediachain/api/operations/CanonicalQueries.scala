@@ -4,7 +4,6 @@ import java.util.UUID
 
 import cats.data.Xor
 import gremlin.scala._
-import io.mediachain.Traversals
 import io.mediachain.Types._
 import io.mediachain.core.GraphError.CanonicalNotFound
 import io.mediachain.util.JsonUtils
@@ -12,7 +11,7 @@ import org.json4s._
 
 
 object CanonicalQueries {
-  import Traversals.{GremlinScalaImplicits, VertexImplicits}
+  import io.mediachain.Traversals, Traversals._, Traversals.Implicits._
   import org.json4s.JsonDSL._
   implicit val formats = DefaultFormats
 
@@ -34,11 +33,11 @@ object CanonicalQueries {
   def canonicalToBlobObject(graph: Graph, canonical: Canonical, withRaw: Boolean = false)
   : Option[JObject] = {
     // FIXME: this is a pretty sad n+1 query
-    val gs = Traversals.canonicalsWithID(graph.V, canonical.canonicalID)
+    val gs = graph.V |> canonicalsWithID(canonical.canonicalID)
     val rootBlobOpt: Option[(String, MetadataBlob, Option[RawMetadataBlob], Option[Person])] =
       gs.out(DescribedBy).headOption.flatMap { v: Vertex =>
         val raw = if(withRaw) {
-          v.toPipeline.flatMap(_.findRawMetadataXor).toOption
+          v.toPipeline.flatMap(_ >> findRawMetadataXor).toOption
         } else None
         val author = v.label match {
           case "ImageBlob" => v.toPipeline.toOption.flatMap(Traversals.getAuthor(_).out(DescribedBy).toCC[Person].headOption())
@@ -73,20 +72,21 @@ object CanonicalQueries {
   }
 
   def canonicalWithID(canonicalID: UUID, withRaw: Boolean = false)(graph: Graph): Option[JObject] = {
-      Traversals.canonicalsWithUUID(graph.V, canonicalID).toCC[Canonical]
-        .headOption
-        .flatMap(canonicalToBlobObject(graph, _, withRaw))
+    (graph.V |> canonicalsWithUUID(canonicalID))
+      .toCC[Canonical]
+      .headOption
+      .flatMap(canonicalToBlobObject(graph, _, withRaw))
   }
 
   def historyForCanonical(canonicalID: UUID)(graph: Graph): Option[JObject] = {
-    val treeXor = Traversals.canonicalsWithUUID(graph.V, canonicalID).findSubtreeXor
+    val treeXor = (graph.V |> canonicalsWithUUID(canonicalID)) >> findSubtreeXor
 
     for {
       tree <- treeXor.toOption
-      canonicalGS = Traversals.canonicalsWithUUID(tree.V, canonicalID)
+      canonicalGS = tree.V |> canonicalsWithUUID(canonicalID)
       canonical <- canonicalGS.toCC[Canonical].headOption
 
-      revisions = Traversals.describingOrModifyingBlobs(tree.V, canonical).toList
+      revisions = (tree.V |> describingOrModifyingBlobs(canonical)).toList
       revisionBlobs = revisions.flatMap(vertexToMetadataBlob)
     } yield {
       val revisionsJ = revisionBlobs.map(blobToJObject)
@@ -99,9 +99,7 @@ object CanonicalQueries {
   def worksForPersonWithCanonicalID(canonicalID: UUID)(graph: Graph)
   : Option[JObject] = {
     val responseXor = for {
-      canonicalV <- Xor.fromOption(
-        Traversals.canonicalsWithUUID(graph.V, canonicalID).headOption,
-        CanonicalNotFound())
+      canonicalV <- (graph.V |> canonicalsWithUUID(canonicalID)) >> headXor
 
       canonical = canonicalV.toCC[Canonical]
 
@@ -110,7 +108,7 @@ object CanonicalQueries {
         CanonicalNotFound())
 
       canonicalGS <- canonicalV.toPipeline
-      worksCanonicals <- canonicalGS.findWorksXor
+      worksCanonicals <- canonicalGS >> findWorksXor
       worksJobjects = worksCanonicals.flatMap(canonicalToBlobObject(graph, _))
     } yield {
       canonicalJobject ~ ("works" -> worksJobjects)
