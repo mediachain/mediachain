@@ -28,10 +28,14 @@ object Traversals {
         * graph.V ~> personsBlobsWithExactMatch(pablo) ~> getCanonical
         *
         * The right-hand side of the ~> operator must be a function of
-        * `GremlinScala[Vertex, InLabels] => GremlinScala[Vertex, OutLabels]`
+        * `GremlinScala[A, InLabels] => GremlinScala[B, OutLabels]`
         *
-        * The `InLabels` and `OutLabels` type params may be the same concrete
-        * type, or they may differ, depending on the operation.
+        * The `A` and `B` type parameters represent the type of value that's
+        * at the "end" of the pipeline; they can be the same type or different
+        * depending on the operation.
+        *
+        * Likewise, the `Labels` and `OutLabels` type params may be the same
+        * concrete type or different types.
         *
         * This can be used with partially applied (curried) functions, e.g.:
         *
