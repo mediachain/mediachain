@@ -3,9 +3,7 @@ package io.mediachain
 import com.orientechnologies.orient.core.id.ORecordId
 import java.util.UUID
 
-import org.apache.tinkerpop.gremlin.process.traversal.step.util.BulkSet
 import shapeless.HNil
-import scala.collection.JavaConverters._
 import gremlin.scala._
 import Types._
 import core.GraphError
@@ -16,6 +14,13 @@ import shapeless.HList
 object Traversals {
 
   object Implicits {
+
+    sealed trait NotAGremlinScala[T]
+    implicit def anything[T <: Any] = new NotAGremlinScala[T] {}
+    implicit def conflictForGremlinScala[T <: GremlinScala[_, _]] =
+      new NotAGremlinScala[T] {}
+    implicit def conflictForGremlinScala2[T <: GremlinScala[_, _]] =
+      new NotAGremlinScala[T] {}
 
     implicit class GremlinScalaImplicits[End, Labels <: HList]
     (val gs: GremlinScala[End, Labels]) extends AnyVal
@@ -71,7 +76,7 @@ object Traversals {
         *
         * graph.V ~> canonicalsWithID(someID) >> (_.headOption)
         */
-      def >>[T](f: GremlinScala[End, Labels] => T): T = f(gs)
+      def >>[T: NotAGremlinScala](f: GremlinScala[End, Labels] => T): T = f(gs)
     }
 
 
