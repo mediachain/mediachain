@@ -28,32 +28,36 @@ object TraversalsSpec extends BaseSpec
 
   def findsCanonicalByID = { context: GraphFixture.Context =>
     val queriedCanonicalID = context.graph.V ~>
-        SUT.canonicalsWithID(context.objects.personCanonical.canonicalID) >>
-      (_.value(Canonical.Keys.canonicalID).headOption)
+        SUT.canonicalsWithID(context.objects.personCanonical.canonicalID) ~>
+      (_.value(Canonical.Keys.canonicalID)) >>
+      (_.headOption)
 
     queriedCanonicalID must beSome(context.objects.personCanonical.canonicalID)
   }
 
   def findsPersonExact = { context: GraphFixture.Context =>
     val queriedPersonId = context.graph.V ~>
-      SUT.personBlobsWithExactMatch(context.objects.person) >>
-      (_.id.headOption)
+      SUT.personBlobsWithExactMatch(context.objects.person) ~>
+      (_.id) >>
+      (_.headOption)
 
     queriedPersonId must beSome(context.objects.person.id.get)
   }
 
   def findsPhotoExact = { context: GraphFixture.Context =>
     val queriedPhotoId = context.graph.V ~>
-      SUT.imageBlobsWithExactMatch(context.objects.imageBlob) >>
-      (_.id.headOption)
+      SUT.imageBlobsWithExactMatch(context.objects.imageBlob) ~>
+      (_.id) >>
+      (_.headOption)
 
     queriedPhotoId must beSome(context.objects.imageBlob.id.get)
   }
 
   def findsRawExact = { context: GraphFixture.Context =>
     val rawBlobText = context.graph.V ~>
-      SUT.rawMetadataBlobsWithExactMatch(context.objects.rawMetadataBlob) >>
-      (_.value(RawMetadataBlob.Keys.blob).headOption)
+      SUT.rawMetadataBlobsWithExactMatch(context.objects.rawMetadataBlob) ~>
+      (_.value(RawMetadataBlob.Keys.blob)) >>
+      (_.headOption)
 
     rawBlobText must beSome(context.objects.rawMetadataBlob.blob)
   }
@@ -61,8 +65,9 @@ object TraversalsSpec extends BaseSpec
   def findsCanonicalForRootBlob = { context: GraphFixture.Context =>
     val queriedCanonicalID = context.graph.V ~>
       SUT.imageBlobsWithExactMatch(context.objects.imageBlob) ~>
-      SUT.getCanonical >>
-      (_.value(Canonical.Keys.canonicalID).headOption)
+      SUT.getCanonical ~>
+      (_.value(Canonical.Keys.canonicalID)) >>
+      (_.headOption)
 
     queriedCanonicalID must
       beSome(context.objects.imageBlobCanonical.canonicalID)
@@ -71,8 +76,9 @@ object TraversalsSpec extends BaseSpec
   def findsCanonicalForRevisedBlob = { context: GraphFixture.Context =>
     val photoRevCanonicalID = context.graph.V ~>
       SUT.imageBlobsWithExactMatch(context.objects.modifiedImageBlob) ~>
-      SUT.getCanonical >>
-      (_.value(Canonical.Keys.canonicalID).headOption)
+      SUT.getCanonical ~>
+      (_.value(Canonical.Keys.canonicalID)) >>
+      (_.headOption)
 
     photoRevCanonicalID must
       beSome(context.objects.imageBlobCanonical.canonicalID)
@@ -109,8 +115,9 @@ object TraversalsSpec extends BaseSpec
     val queriedAuthorCanonicalID =
       context.graph.V ~>
         SUT.imageBlobsWithExactMatch(context.objects.imageBlob) ~>
-        SUT.getAuthor >>
-        (_.value(Canonical.Keys.canonicalID).headOption)
+        SUT.getAuthor ~>
+        (_.value(Canonical.Keys.canonicalID)) >>
+        (_.headOption)
 
     queriedAuthorCanonicalID must beSome(context.objects.personCanonical.canonicalID)
   }
@@ -119,8 +126,9 @@ object TraversalsSpec extends BaseSpec
     val queriedRawString =
       context.graph.V ~>
         SUT.imageBlobsWithExactMatch(context.objects.imageBlob) ~>
-        SUT.getRawMetadataForBlob >>
-        (_.value(RawMetadataBlob.Keys.blob).headOption)
+        SUT.getRawMetadataForBlob ~>
+        (_.value(RawMetadataBlob.Keys.blob)) >>
+        (_.headOption)
 
     queriedRawString must beSome(context.objects.rawMetadataBlob.blob)
   }
@@ -129,8 +137,9 @@ object TraversalsSpec extends BaseSpec
     val rootRevisionId =
       context.graph.V ~>
         SUT.imageBlobsWithExactMatch(context.objects.modifiedImageBlob) ~>
-        SUT.getRootRevision >>
-        (_.id.headOption)
+        SUT.getRootRevision ~>
+        (_.id) >>
+        (_.headOption)
 
     rootRevisionId must beSome(context.objects.imageBlob.id.get)
   }
