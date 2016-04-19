@@ -15,12 +15,37 @@ object Traversals {
 
   object Implicits {
 
+    /** Type that is implicitly convertible from all types *except* for
+      * GremlinScala.  This is used to constrain the `>>` operator so that
+      * it cannot be used to return another GremlinScala pipeline, only to
+      * extract a value from a pipeline at the end of a chain.
+      *
+      * This gives us a clear distinction between the `~>` and `>>` operators.
+      * The `~>` operator is used to chain together GremlinScala operations,
+      * while `>>` is used to extract a value at the end.
+     */
     sealed trait NotAGremlinScala[T]
     implicit def anything[T <: Any] = new NotAGremlinScala[T] {}
+
+    /**
+      * Together with `conflictForGremlinScala2`, prevents a value of
+      * `GremlinScala` from being implicitly converted to `NotAGremlinScala`.
+      *
+      * This works because the compiler will not apply an implicit conversion
+      * if there are two ambiguous implicits in scope.
+      *
+      * Because this is a hack, the resulting compiler error is not helpful;
+      * hopefully this comment will clear things up a bit :)
+      */
     implicit def conflictForGremlinScala[T <: GremlinScala[_, _]] =
       new NotAGremlinScala[T] {}
+
+    /**
+      * @see conflictForGremlinScala
+      */
     implicit def conflictForGremlinScala2[T <: GremlinScala[_, _]] =
       new NotAGremlinScala[T] {}
+
 
     implicit class GremlinScalaImplicits[End, Labels <: HList]
     (val gs: GremlinScala[End, Labels]) extends AnyVal
@@ -66,6 +91,10 @@ object Traversals {
 
       /**
         * Apply a function to a query pipeline, returning some result
+        *
+        * The result can be of any type *except* for `GremlinScala` -
+        * use `~>` to return a `GremlinScala` from an existing `GremlinScala`
+        * pipeline.
         *
         * e.g.
         * val vertexXor: Xor[VertexNotFound, Vertex] =
