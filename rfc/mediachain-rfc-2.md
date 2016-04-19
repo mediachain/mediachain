@@ -8,6 +8,7 @@ Author: vyzo
 
 This document is concerned with the Mediachain[1] architecture
 as it grows from a small prototype to a large peer-to-peer network.
+
 Specifically, we consider the system architecture and protocol
 requirements in order to support the system as it organically
 scales.
@@ -15,6 +16,7 @@ As such, we sketch a tiered architecture that can operate
 both at small and large scale. Then we discuss protocols for
 maintaining the Mediachain Journal in peer-to-peer fashion
 and the fault tolerance characteristics of the system.
+
 The starting point is the Mediachain Datastore as described in [2].
 
 ## A Tiered System Architecture
@@ -25,7 +27,7 @@ Conceptually we distinguish two types of nodes:
 - tier-1 nodes or Mediachain _Peers_.
 - tier-2 nodes or Mediachain _Clients_.
 
-Peer nodes form the Mediachain Core Network responsible for maintaining
+Peer nodes form the Mediachain _Core Network_ responsible for maintaining
 the Mediachain Journal, which represents the canonical view of the Mediachain
 datastore.
 Furthermore, they serve clients with views of the journal and record
@@ -65,7 +67,9 @@ which grants it access to the network.
 ### The Core Network
 
 The Core Network is responsible for cooperatively maintaining and
-updating the Journal.  In order to function, a number of Peer nodes
+updating the Journal.
+
+In order to function, a number of Peer nodes
 bootstrap a connected overlay network, and maintain it live by
 exchanging regular heartbeats and peer identity messages.  Once booted,
 Peer nodes are expected to be long-lived, with a lifespan of months
@@ -74,7 +78,7 @@ and longer except for intermittent failures.
 The overlay can start fully connected with a small number of bootsrap
 nodes, but over time relax the connectivity to an N-cut connected
 model.  That is, with a suitable peer selection strategy, the network
-remains connected for up to N peer failures without forming a
+can tolerate up to N peer failures without forming a
 partition.  The peer identity exchange messages propagate the
 constituency of the network, allowing nodes to learn of all other
 nodes without a direct connection to each one of them.
