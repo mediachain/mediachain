@@ -143,9 +143,9 @@ and mirrored by all Peers forming the bootstrap core network.
 
 The blockchain is extended every time a client requests to commit a
 write transaction. The core network may initially be quiescent, with
-peers exchanging heartbeat messages. As soon as a transaction is
-requested by a client, the receiving peer verifies it before
-proceeding with the Block Commit Protocol.
+peers exchanging heartbeat messages. When a transaction is
+requested by a client, the receiving peer verifies it and then
+proceeds with the Block Commit Protocol.
 
 The transaction consists of a sequence of `JournalEntries`, which
 can be either an `CanonicalEntry` or a `ChainEntry`.
@@ -251,10 +251,6 @@ ArtefactChainLinkCell = {
  "signatures" " <Signatures>
  }
 ```
-
-Chain link cells can conflict with updates or other link cells.
-The conflict resolution proceeds in a similar manner, by selecting a base
-and consing a link to the abandoned chain head.
 
 ## Fault Tolerance
 
