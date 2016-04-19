@@ -135,9 +135,9 @@ index of the mediachain.
 ### The Genesis Block
 
 At birth the datastore contains an initial dataset from public sources,
-together with a single block of `JournalEntry` records that represent
-the Genesis block of the Journal. This initial journal is stored in IPFS
-and mirrored by all Peers forming the bootstrap core network.
+together with a single `Block` of transactions and a chain reference to `Nil`.
+This Genesis block describes the bootstrap datastore and is the first block
+in the Journal blockchain when the core network becomes operational.
 
 ### Extending the Blockchain
 
