@@ -6,7 +6,7 @@ Author: vyzo
 
 ## Overview
 
-This document is concerned with the Mediachain[*] architecture
+This document is concerned with the Mediachain[1] architecture
 as it grows from a small prototype to a large peer-to-peer network.
 Specifically, we consider the system architecture and protocol
 requirements in order to support the system as it organically
@@ -15,7 +15,7 @@ As such, we sketch a tiered architecture that can operate
 both at small and large scale. Then we discuss protocols for
 maintaining the Mediachain Journal in peer-to-peer fashion
 and the fault tolerance characteristics of the system.
-The starting point is the Mediachain Datastore as described in [*].
+The starting point is the Mediachain Datastore as described in [2].
 
 ## A Tiered System Architecture
 
@@ -109,3 +109,6 @@ in the form of a view update.
 
 
 ## References
+
+1. [The Mediachain Blog](https://blog.mine.nyc/)
+2. [Mediachain RFC1: The Mediachain Datastore](https://github.com/mediachain/mediachain/blob/master/rfc/mediachain-rfc-1.md)
