@@ -252,6 +252,29 @@ ArtefactChainLinkCell = {
  }
 ```
 
+In addition, in order to track the conflicting update transactions 
+and allow peers and clients to discern a merged chain we also need to 
+extend the `JournalEntry` to include a `ChainMergeEntry`:
+```
+JournalEntry =
+ ...
+ | <ChainMergeEntry>
+
+ChainMergeEntry = {
+ "type" : "chainLink"
+ "ref"  : <Reference>
+ "chain" : <Reference>     
+ "chainLink" : <Reference> 
+ "chainMerge" : <Reference> ; reference to abandoned head
+ } 
+```
+
+Thus, when two conflicting `ChainEntries` are merged it results into
+a `ChainEntry` and a `ChainMergeEntry` in the Journal.
+A `ChainMergeEntry` can conflict with a `ChainEntry` when they refer
+to the same canonical but with a conflicting `chainLink`; the conflict
+resolution can proceed similar to `ChainEntry` conflicts.
+
 ## Fault Tolerance
 
 TBD
