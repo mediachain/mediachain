@@ -472,7 +472,7 @@ A Client can attempt a poisoning attack by injecting invalid
 transactions. Such transactions may refer to records not written
 to the datastore or be duplicates of older transactions, etc.
 The system can be rendered robust against transaction poisoning
-attacks by means of transaction verification. All peers in the
+attacks by means of transaction verification. All tier-1 peers
 verify Client transactions before broadcasting them to the core
 network, as discussed earlier.
 
