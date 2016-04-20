@@ -279,7 +279,211 @@ resolution can proceed similar to `ChainEntry` conflicts.
 
 ## Fault Tolerance
 
-TBD
+### Failure Modes
+
+Failure and churn is an unavoidable aspect of peer-to-peer system operating
+in the internet. In general, we classify possible failure modes in
+two types:
+- Common Failures, such as node crashes and transient connectivity problems.
+- Byzantine Failures, where nodes exhibit arbitrary behavior.
+
+Common failures are expected with some mean time between failures.
+They can be correlated, leading to connectivity problems within the core
+network. In some occasions, crashes and internet-wide connectivity
+problems can avalanche leading to core network paritions.
+
+On the other hand, byzantine behaviors can appear because of software
+bugs or adversarial actions. Bugs may cause nodes to send or suppress
+arbitrary messages. Even worse, nodes exhibiting adversarial behavior
+may try to poison or disrupt the system with malicious intent.
+Our threat model is not concerned with state actors, but rather 
+simply acknowledges common internet threats, where attacker-controled 
+nodes can become adversarial to the system.
+
+### Common Failures
+
+In general, client crashes are immaterial to the core network.
+Once the data have reached IPFS and a transaction has been inserted
+to the core network, the originating client can crash without
+affecting the commit.
+
+On the other hand, all system protocols must be designed to accomodate
+crashes at inopportune moments. Peers exchange regular heartbeat
+messages, which allow nodes to health-check each other and the 
+current membership to be propagated throughout the network.
+Similarly, the block commit protocol must be fortified with 
+reasonable timeouts so that commits can be restarted on leader
+failures. 
+
+To make the effects of crashes clearer, let's consider all the logical
+steps in the Mediachain write protocol:
+```
+client -> ipfs: datastore write
+client -> peer:  push transaction
+peer -> peer: block commit protocol
+peer -> client: commited block
+client: confirm transaction
+``` 
+
+With each step in the protocol fortified for crash recovery, we
+can be reasonably certain that once the client has written the data
+and pushed a transaction, it will be persisted in the Mediachain.
+The N-cut connectivity property of the core network allows the
+system to withstand random failures without partitioning.
+Transactions propagate using peer-to-peer broadcast, ensuring that
+the integrity of the blockchain in the absence of severe network
+events.
+
+### Network Partitions
+
+During the lifetime of the system, there will be inevitable severe
+network events where correlated failures can parition the core
+network.  In the face of network paritions, the CAP theorem dictactes
+that the blockchain will either be Consistent or Available.
+
+Common consenus protocols in the literature choose consistency in such
+cases. This is an appropriate response for a cluster of tightly
+controlled machines, but inappropriate for a decentralized system.
+Hence, the Mediachain should be designed to be partition tolerant with
+a Partition Healing Protocol.
+
+In effect, a partition causes isolated islands in the core
+network to fork the blockchain into two or more competing chains.
+The partition healing protocol must merge these competing blockchain
+once connectivity is reestablished.
+
+The protocol can proceed by choosing the longest chain, breaking ties
+with a deterministic scheme so that all nodes can make the same
+choices independently.  Once choosing the new primary blockchain, the
+orphaned chains can be merged by replaying necessary transactions and
+rerunning the block commit protocol.
+
+### Byzantine Failures
+
+#### Bug or Malice?
+
+Invariably, the system will experience bugs or malicious behavior with
+arbitrary failure characteristics. We consider cases where the
+adversarial process (be it bug, murphy or a threat actor) controls a
+number of nodes in the system.
+
+In general, the adversarial process is observable to the system
+through message exchange. An adversarial action can be
+a message injection, a broadcast message suppression or an arbitrary
+long combination of the two.
+
+#### Message Suppression Attacks
+
+The peer-to-peer broadcast of transactions in the core network routes
+through multiple paths. As such, it can withstand a number of
+nodes trying to deny or disrupt the service by suppressing
+broadcast messages. 
+
+At worst, clients of adversarial nodes will be denied service.
+Affected clients can easily recover by connecting to another Peer for
+service. If too many nodes are dropping transactions so as to affect
+the system as a whole, the disruption would be big enough for a metric
+event visible to system monitoring. At which point, intervention
+by tier-1 node operators can restore the problem,.
+
+#### Message Injection Attacks
+
+At a base level, protocol implementation can reject injection of all
+obviously invalid messages that do not conform to rpc signatures.
+Nodes injecting such messages can be immediately disconnected and be
+considered failed. In the following we are concerned with the effects
+of well-formed messages that can affect protocol behavior at the
+algorithmic level.
+
+We can further characterize such injections as poisoning
+and flooding attacks. In a poisoning attack, the adversarial
+process attempts to inject messages that can corrupt the state
+of the Mediachain. In a flooding attack, the adversarial
+process attempts to flood the network with messages that
+hijack blockchain algorithms and disrupt service.
+
+#### Client Injection Attacks
+
+The network is open to all clients, thus we are more concerned
+about malicious behavior than genuine bugs in client activity.
+
+A client can attempt a poisoning attack by injecting invalid
+transactions. Such transactions may refer to records not written
+to the datastore or be duplicates of older transactions, etc.
+The system can be rendered robust against transaction poisoning
+attacks by means of transaction verification. All peers verify
+client transactions before broadcasting them to the core network.
+
+One or more clients can also attempt a flooding attack where they
+try to overload the store and core network by pushing a flood of
+transactions.  Such actions can be rendered ineffective by requiring
+Proof of Work to be associated with every transaction.  If the system
+is under too much write stress, additional measures can be taken:
+difficulty for Proof of Work can be adjusted, CAPTCHAs may be
+presented to clients, IP blacklisting etc.
+
+#### Peer Injection Attacks
+
+A Peer can attempt to poison the blockchain by injecting invalid
+transactions with dangling pointers. Similary it can attempt
+to flood the system with duplicate transactions. Both scenarios
+can be simply defended by requiring peers to verify all transactions
+as new, not just client transactions. 
+
+A variation of the poisoning attack is for a peer to attempt to commit
+invalid blocks, containing invalid journal entries or extending an
+arbitrary blockchain. In order to be robust against such cases, peers
+must also verify commited blocks before accepting them as the new
+blockchain pointer.
+
+Another flooding attack scenario is for a peer to attempt to 
+generate a flood of valid transactions without originating
+them from a client. This scenario is mitigated by the requirement
+for all transactions to require Proof of Work regardless of origin.
+Thus, a peer is naturally limited to its flooding rate by hash
+power requirements.
+
+A more subtle flooding attack is for a peer to attempt to hijack
+the Leader Election protocol and become a perpetual commiter.
+This is impossible to mitigate with a pure randomized Leader
+Election protocol -- it can only be mitigated by using a Proof of 
+Work competition for leader election. 
+
+However, given that core network membership is moderated by signing
+Level-1 certificates, problems of this nature should be treated as
+external attacks and be detectable by system monitoring processes.
+This type of attack is indicative of either a serious software bug or
+a possible compromise of the misbehaving node, in which case operator
+intervention is required for resolution and key revocation.
+
+### Scaling Limits
+
+The system architecture described so far should not have problems
+scaling to large number of nodes. Principals and organizations can
+easily add more peers to the core network accomodating the
+demands of client nodes as the system grows.
+
+There is however on potential scaling bottleneck that can lead the
+protocols to fail. This is the storage requirements for the blockchain
+and the journal index. Peer nodes need access to the index to verify
+transactions and the blockchain must be available for peers and clients
+joining the network.
+
+Running a peer node should not have exorbitant hardware requirements:
+it should be possible to run a peer node with a medium instance from
+public cloud providers. With a back of the envelope calculation, the
+index should require some 100 bytes of storage for each canonical to
+chain head mapping. The blockchain could easily be 10 times
+larger, assuming an average of 10 updates per index head. Thus, a
+a billion entities and artefacts in the Mediachain would require about
+1TB of storage; this is readily available in today's public clouds.
+
+A larger scale blockchain and index can be accomodated by sharding.
+If the storage requirements become to large for a commonly available
+cloud instance to handle the entire blockchain, the canonical space
+can be sharded using the canonical identifier bits. In this scenario,
+a different blockchain would be maintained for every shard, thus
+allowing the core network to scale horizontally.
 
 ## References
 
