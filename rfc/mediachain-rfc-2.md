@@ -67,7 +67,8 @@ which grants it access to the network.
 ### The Core Network
 
 The Core Network is responsible for cooperatively maintaining and
-updating the Journal.
+updating the Journal, and providing data persistence for datastore
+records.
 
 In order to function, a number of Peer nodes
 bootstrap a connected overlay network, and maintain it live by
@@ -199,6 +200,11 @@ In the case of competing commits, either because of peer selection algorithm
 or some pathology, one of the commits can be chosen deterministically.
 The other commits can then be merged by replaying their differential transactions
 on top of the selected commit.
+
+Another aspect of the commit would be to persist the blobs pointed by
+the transactions being commited. Small records (less than 1KB) can be
+stored directly in the DHT, but larger ones will need to be persisted
+by the core network.
 
 ### Transaction Merging and Conflict Resolution
 
@@ -414,13 +420,17 @@ The system can be rendered robust against transaction poisoning
 attacks by means of transaction verification. All peers verify
 client transactions before broadcasting them to the core network.
 
-One or more clients can also attempt a flooding attack where they
-try to overload the store and core network by pushing a flood of
+One or more clients can also attempt a flooding attack where they try
+to overload the store and core network by pushing a flood of
 transactions.  Such actions can be rendered ineffective by requiring
-Proof of Work to be associated with every transaction.  If the system
-is under too much write stress, additional measures can be taken:
-difficulty for Proof of Work can be adjusted, CAPTCHAs may be
-presented to clients, IP blacklisting etc.
+Proof of Work to be associated with every transaction.  In addition,
+there should be a limit to the size of blobs acceptable blobs as part
+of the transaction in order to avoid core network storage exhaustion
+by such attacks. 
+
+If the system is under too much write stress, additional measures can
+be taken: difficulty for Proof of Work can be adjusted, CAPTCHAs may
+be presented to clients, IP blacklisting etc.
 
 #### Peer Injection Attacks
 
