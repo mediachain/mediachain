@@ -450,10 +450,9 @@ Election protocol -- it can only be mitigated by using a Proof of
 Work competition for leader election. 
 
 Similarly, a peer node may attempt to build a trivially long blockchain
-attempting to needlessly trigger partition healing protocols. These
+to needlessly trigger partition healing protocols. These
 attacks can be mitigated by treating a block as a transaction, and thus
-requiring Proof of Work by the commiting node before they can be
-accepted. 
+requiring Proof of Work by the commiting node before accepting it.
 
 However, given that core network membership is moderated by signing
 Level-1 certificates, problems of this nature should be treated as
