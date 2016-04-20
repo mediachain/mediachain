@@ -280,11 +280,63 @@ ChainMergeEntry = {
  } 
 ```
 
-Thus, when two conflicting `ChainEntries` are merged it results into
-a `ChainEntry` and a `ChainMergeEntry` in the Journal.
-A `ChainMergeEntry` can conflict with a `ChainEntry` when they refer
-to the same canonical but with a conflicting `chainLink`; the conflict
-resolution can proceed similar to `ChainEntry` conflicts.
+The following example shows a merge of two conflicting `ChainEntries`:
+```
+Qm001... = ChainEntry {
+ "chain" : "QmAAA..."
+ "chainLink" : "QmCCC..."
+ ...
+ }
+
+Qm002... = ChainEntry {
+ "chain" : "QmBBB..."
+ "chainLink" : "QmCCC..."
+ ...
+ }
+
+QmAAA... = ArtefactChainCell {
+ "chain" : "QmCCC..."
+ ...
+ }
+
+QmBBB... = ArtefactChainCell {
+ "chain" : "QmCCC..."
+ ...
+ }
+
+QmCCC... = ArtefactChainCell {
+ "chain" : ...
+}
+```
+
+When the conflicting `ChainEntries` for an artefact chain are merged
+the result is a `ChainEntry` and a `ChainMergeEntry` in the Journal, and a 
+new `ArtefactChainLinkCell` as the head of the chain:
+```
+Qm001 = ChainEntry {
+ "chain" : "QmAAA..."
+ "chainLink" : "QmCCC..."
+ ...
+ }
+
+Qm003 = ChainMergeEntry {
+ "chain" : "QmDDD..."
+ "chainLink" : "QmAAA..."
+ "chaiMerge" : "QmCCC..."
+ ...
+ }
+
+QmDDD = ArtefactChainLinkCell {
+ "chain" : "QmAAA..."
+ "chainMerge" : "QmBBB..."
+ ...
+ }
+```
+
+It should be noted that a `ChainMergeEntry` can also conflict with a
+`ChainEntry` when they refer to the same canonical but with a
+conflicting `chainLink`; the conflict resolution can proceed similar
+to `ChainEntry` conflicts.
 
 ## Fault Tolerance
 
