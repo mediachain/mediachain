@@ -129,9 +129,12 @@ Block = {
 ```
 
 The blockchain can be easily stored in the IPFS datastore, thus solving the
-problem of Journal distribution and persistence. A reference to the last block
-in the store is sufficient to boot a new node that reconstructs an up-to-date
-index of the mediachain.
+problem of Journal distribution and persistence. For additional integrity
+protection and disaster recovery backups, peer nodes may elect to persist
+the blockchain in an outside backing store like S3. 
+
+A reference to the last block in the store is sufficient to boot a new
+node that reconstructs an up-to-date index of the mediachain.
 
 ### The Genesis Block
 
