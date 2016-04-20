@@ -6,7 +6,7 @@ import Types._
 
 object TraversalsSpec extends BaseSpec
   with ForEachGraph[GraphFixture.Context] {
-  import io.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits
+  import io.mediachain.{Traversals => SUT}, SUT.Implicits._
 
   def is = sequential ^
   s2"""
@@ -22,97 +22,87 @@ object TraversalsSpec extends BaseSpec
    Finds the author vertex for a photo blob vertex $findsAuthorForImageBlob
    Finds the raw metadata vertex for a blob vertex $findsRawForBlob
    Finds the root revision of a blob vertex $findsRootRevision
-
-   Extends GremlinScala with implicits:
-    Finds canonical for blob vertex and converts to Canonical CC $findsCanonicalImplicit
-    Finds author for blob vertex and converts to Canonical CC $findsAuthorImplicit
-    Finds raw metadata for blob vertex and converts to RawMetadataBlob CC $findsRawImplicit
   """
 
   def forEachGraph(graph: Graph) = GraphFixture.Context(graph)
 
   def findsCanonicalByID = { context: GraphFixture.Context =>
-    val queriedCanonicalID =
-      SUT.canonicalsWithID(
-        context.graph.V,
-        context.objects.personCanonical.canonicalID
-      ).value(Canonical.Keys.canonicalID)
-        .headOption
+    val queriedCanonicalID = context.graph.V ~>
+        SUT.canonicalsWithID(context.objects.personCanonical.canonicalID) ~>
+      (_.value(Canonical.Keys.canonicalID)) >>
+      (_.headOption)
 
     queriedCanonicalID must beSome(context.objects.personCanonical.canonicalID)
   }
 
   def findsPersonExact = { context: GraphFixture.Context =>
-    val queriedPersonId =
-      SUT.personBlobsWithExactMatch(
-        context.graph.V,
-        context.objects.person
-      ).id
-      .headOption
+    val queriedPersonId = context.graph.V ~>
+      SUT.personBlobsWithExactMatch(context.objects.person) ~>
+      (_.id) >>
+      (_.headOption)
 
     queriedPersonId must beSome(context.objects.person.id.get)
   }
 
   def findsPhotoExact = { context: GraphFixture.Context =>
-    val queriedPhotoId =
-        SUT.imageBlobsWithExactMatch(context.graph.V, context.objects.imageBlob)
-          .id
-          .headOption
+    val queriedPhotoId = context.graph.V ~>
+      SUT.imageBlobsWithExactMatch(context.objects.imageBlob) ~>
+      (_.id) >>
+      (_.headOption)
 
     queriedPhotoId must beSome(context.objects.imageBlob.id.get)
   }
 
   def findsRawExact = { context: GraphFixture.Context =>
-    val rawBlobText =
-      SUT.rawMetadataBlobsWithExactMatch(
-        context.graph.V,
-        context.objects.rawMetadataBlob
-      ).value(RawMetadataBlob.Keys.blob).headOption
+    val rawBlobText = context.graph.V ~>
+      SUT.rawMetadataBlobsWithExactMatch(context.objects.rawMetadataBlob) ~>
+      (_.value(RawMetadataBlob.Keys.blob)) >>
+      (_.headOption)
 
     rawBlobText must beSome(context.objects.rawMetadataBlob.blob)
   }
 
   def findsCanonicalForRootBlob = { context: GraphFixture.Context =>
-    val queriedCanonicalID = SUT.getCanonical(
-      SUT.imageBlobsWithExactMatch(context.graph.V, context.objects.imageBlob)
-    )
-      .value(Canonical.Keys.canonicalID)
-      .headOption
+    val queriedCanonicalID = context.graph.V ~>
+      SUT.imageBlobsWithExactMatch(context.objects.imageBlob) ~>
+      SUT.getCanonical ~>
+      (_.value(Canonical.Keys.canonicalID)) >>
+      (_.headOption)
 
     queriedCanonicalID must
       beSome(context.objects.imageBlobCanonical.canonicalID)
   }
 
   def findsCanonicalForRevisedBlob = { context: GraphFixture.Context =>
-    val photoRevCanonicalID =
-      SUT.getCanonical(
-        SUT.imageBlobsWithExactMatch(context.graph.V,
-          context.objects.modifiedImageBlob)
-      )
-        .value(Canonical.Keys.canonicalID)
-        .headOption
+    val photoRevCanonicalID = context.graph.V ~>
+      SUT.imageBlobsWithExactMatch(context.objects.modifiedImageBlob) ~>
+      SUT.getCanonical ~>
+      (_.value(Canonical.Keys.canonicalID)) >>
+      (_.headOption)
 
     photoRevCanonicalID must
       beSome(context.objects.imageBlobCanonical.canonicalID)
   }
 
   def findsSupersededCanonical = { context: GraphFixture.Context =>
-    val queriedCanonicalID =
-      SUT.personBlobsWithExactMatch(context.graph.V, context.objects.duplicatePerson)
-        .findCanonicalXor
-        .map(_.canonicalID)
+    val queriedCanonicalXor = context.graph.V ~>
+      SUT.personBlobsWithExactMatch(context.objects.duplicatePerson) >>
+      SUT.findCanonicalXor
 
-    queriedCanonicalID must beRightXor { id: String =>
-      id must_== context.objects.personCanonical.canonicalID
+    queriedCanonicalXor must beRightXor { canonical: Canonical =>
+      canonical.canonicalID must_== context.objects.personCanonical.canonicalID
     }
   }
 
   def findsMergedCanonicalForBlobs = { context: GraphFixture.Context =>
-    val c1 = SUT.personBlobsWithExactMatch(context.graph.V, context.objects.person)
-        .findCanonicalXor
+    val c1 = context.graph.V ~>
+      SUT.personBlobsWithExactMatch(context.objects.person) >>
+      SUT.findCanonicalXor
 
-    val c2 = SUT.personBlobsWithExactMatch(context.graph.V, context.objects.duplicatePerson)
-      .findCanonicalXor
+
+    val c2 = context.graph.V ~>
+      SUT.personBlobsWithExactMatch(context.objects.duplicatePerson) >>
+      SUT.findCanonicalXor
 
     c1 must beRightXor { c1: Canonical =>
       c2 must beRightXor { c2: Canonical =>
@@ -123,65 +113,34 @@ object TraversalsSpec extends BaseSpec
 
   def findsAuthorForImageBlob = { context: GraphFixture.Context =>
     val queriedAuthorCanonicalID =
-      SUT.getAuthor(
-        SUT.imageBlobsWithExactMatch(context.graph.V, context.objects.imageBlob))
-      .value(Canonical.Keys.canonicalID)
-      .headOption
+      context.graph.V ~>
+        SUT.imageBlobsWithExactMatch(context.objects.imageBlob) ~>
+        SUT.getAuthor ~>
+        (_.value(Canonical.Keys.canonicalID)) >>
+        (_.headOption)
 
     queriedAuthorCanonicalID must beSome(context.objects.personCanonical.canonicalID)
   }
 
   def findsRawForBlob = { context: GraphFixture.Context =>
     val queriedRawString =
-      SUT.getRawMetadataForBlob(
-        SUT.imageBlobsWithExactMatch(context.graph.V, context.objects.imageBlob))
-      .value(RawMetadataBlob.Keys.blob)
-      .headOption
+      context.graph.V ~>
+        SUT.imageBlobsWithExactMatch(context.objects.imageBlob) ~>
+        SUT.getRawMetadataForBlob ~>
+        (_.value(RawMetadataBlob.Keys.blob)) >>
+        (_.headOption)
 
     queriedRawString must beSome(context.objects.rawMetadataBlob.blob)
   }
 
   def findsRootRevision = { context: GraphFixture.Context =>
-    val rootRevisionId = SUT.getRootRevision(
-      SUT.imageBlobsWithExactMatch(context.graph.V, context.objects.modifiedImageBlob)
-    )
-      .id
-      .headOption
+    val rootRevisionId =
+      context.graph.V ~>
+        SUT.imageBlobsWithExactMatch(context.objects.modifiedImageBlob) ~>
+        SUT.getRootRevision ~>
+        (_.id) >>
+        (_.headOption)
 
     rootRevisionId must beSome(context.objects.imageBlob.id.get)
-  }
-
-
-  def findsCanonicalImplicit = { context: GraphFixture.Context =>
-    val revisedPhotoCanonicalID =
-      SUT.imageBlobsWithExactMatch(context.graph.V, context.objects.imageBlob)
-      .findCanonicalXor
-      .map(_.canonicalID)
-
-    revisedPhotoCanonicalID must beRightXor { x =>
-      x mustEqual context.objects.imageBlobCanonical.canonicalID
-    }
-  }
-
-  def findsAuthorImplicit = { context: GraphFixture.Context =>
-    val queriedAuthorCanonicalID =
-      SUT.imageBlobsWithExactMatch(context.graph.V, context.objects.imageBlob)
-      .findAuthorXor
-      .map(_.canonicalID)
-
-    queriedAuthorCanonicalID must beRightXor { x =>
-      x mustEqual context.objects.personCanonical.canonicalID
-    }
-  }
-
-  def findsRawImplicit = { context: GraphFixture.Context =>
-    val queriedRawString =
-      SUT.imageBlobsWithExactMatch(context.graph.V, context.objects.imageBlob)
-      .findRawMetadataXor
-      .map(_.blob)
-
-    queriedRawString must beRightXor { x =>
-      x mustEqual context.objects.rawMetadataBlob.blob
-    }
   }
 }
