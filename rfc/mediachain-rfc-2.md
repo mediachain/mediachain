@@ -282,13 +282,13 @@ ChainMergeEntry = {
 
 The following example shows a merge of two conflicting `ChainEntries`:
 ```
-Qm001... = ChainEntry {
+ChainEntry {
  "chain" : "QmAAA..."
  "chainLink" : "QmCCC..."
  ...
  }
 
-Qm002... = ChainEntry {
+ChainEntry {
  "chain" : "QmBBB..."
  "chainLink" : "QmCCC..."
  ...
@@ -311,15 +311,15 @@ QmCCC... = ArtefactChainCell {
 
 When the conflicting `ChainEntries` for an artefact chain are merged
 the result is a `ChainEntry` and a `ChainMergeEntry` in the Journal, and a 
-new `ArtefactChainLinkCell` as the head of the chain:
+new `ArtefactChainLinkCell` in the datastore as the head of the chain:
 ```
-Qm001 = ChainEntry {
+ChainEntry {
  "chain" : "QmAAA..."
  "chainLink" : "QmCCC..."
  ...
  }
 
-Qm003 = ChainMergeEntry {
+ChainMergeEntry {
  "chain" : "QmDDD..."
  "chainLink" : "QmAAA..."
  "chaiMerge" : "QmCCC..."
