@@ -81,6 +81,10 @@ object CanonicalQueries {
   def historyForCanonical(canonicalID: UUID)(graph: Graph): Option[JObject] = {
     val treeXor = graph.V ~> canonicalsWithUUID(canonicalID) >> findSubtreeXor
 
+    val author = StepLabel[Vertex]("author")
+    val raw = StepLabel[Vertex]("raw")
+    val blob = StepLabel[Vertex]("blob")
+
     for {
       tree <- treeXor.toOption
       canonicalGS = tree.V ~> canonicalsWithUUID(canonicalID)
