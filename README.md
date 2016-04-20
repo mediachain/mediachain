@@ -9,7 +9,7 @@ The server is at a proof of concept stage and not to be used for anything other 
 
 ### Usage
 ```
-git clone git@github.com:parkan/collection-sans-turner.git
+git clone https://github.com/mediachain/L-SPACE.git
 sbt compile
 sbt console
 ```
