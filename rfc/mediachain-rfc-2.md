@@ -550,7 +550,7 @@ a billion entities and artefacts in the Mediachain would require about
 1TB of storage; this is readily available in today's public clouds.
 
 A larger scale blockchain and index can be accomodated by sharding.
-If the storage requirements become to large for a commonly available
+If the storage requirements become too large for a commonly available
 cloud instance to handle the entire blockchain, the canonical space
 can be sharded using the canonical identifier bits. In this scenario,
 a different blockchain would be maintained for every shard, thus
