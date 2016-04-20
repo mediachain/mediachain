@@ -449,9 +449,15 @@ This is impossible to mitigate with a pure randomized Leader
 Election protocol -- it can only be mitigated by using a Proof of 
 Work competition for leader election. 
 
+Similarly, a peer node may attempt to build a trivially long blockchain
+attempting to needlessly trigger partition healing protocols. These
+attacks can be mitigated by treating a block as a transaction, and thus
+requiring Proof of Work by the commiting node before they can be
+accepted. 
+
 However, given that core network membership is moderated by signing
 Level-1 certificates, problems of this nature should be treated as
-external attacks and be detectable by system monitoring processes.
+major events and be detectable by system monitoring processes.
 This type of attack is indicative of either a serious software bug or
 a possible compromise of the misbehaving nodes, in which case operator
 intervention is required for resolution and key revocation.
