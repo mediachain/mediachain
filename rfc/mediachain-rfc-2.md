@@ -445,7 +445,7 @@ Affected clients can easily recover by connecting to another Peer for
 service. If too many nodes are dropping transactions so as to affect
 the system as a whole, the disruption would be big enough for a metric
 event visible to system monitoring. At which point, intervention
-by tier-1 node operators can restore the problem,.
+by tier-1 node operators can restore the problem.
 
 #### Message Injection Attacks
 
@@ -466,14 +466,15 @@ hijack blockchain algorithms and disrupt service.
 #### Client Injection Attacks
 
 The network is open to all clients, thus we are more concerned
-about malicious behavior than genuine bugs in client activity.
+about malicious behavior than genuine bugs in Client activity.
 
-A client can attempt a poisoning attack by injecting invalid
+A Client can attempt a poisoning attack by injecting invalid
 transactions. Such transactions may refer to records not written
 to the datastore or be duplicates of older transactions, etc.
 The system can be rendered robust against transaction poisoning
-attacks by means of transaction verification. All peers verify
-client transactions before broadcasting them to the core network.
+attacks by means of transaction verification. All peers in the
+verify Client transactions before broadcasting them to the core
+network, as discussed earlier.
 
 One or more clients can also attempt a flooding attack where they try
 to overload the store and core network by pushing a flood of
