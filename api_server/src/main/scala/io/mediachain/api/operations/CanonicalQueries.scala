@@ -93,7 +93,6 @@ object CanonicalQueries {
       revisions = Traversals.describingOrModifyingBlobs(tree.V, canonical).toList
       revisionBlobs = revisions.flatMap(vertexToMetadataBlob)
     } yield {
-      val res = tree.V.out(DescribedBy).out(ModifiedBy).as(blob).out(AuthoredBy).as(author).out(TranslatedFrom).as(raw).select((raw, author, blob)).toList
       val revisionsJ = revisionBlobs.map(blobToJObject)
       ("canonicalID" -> canonical.canonicalID) ~
         ("revisions" -> revisionsJ)
