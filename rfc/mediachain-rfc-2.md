@@ -1,6 +1,6 @@
 # RFC 2: Design Considerations for the Mediachain at Scale
 
-Status: WIP
+Status: DRAFT
 
 Author: vyzo
 
@@ -349,7 +349,7 @@ a Partition Healing Protocol.
 
 In effect, a partition causes isolated islands in the core
 network to fork the blockchain into two or more competing chains.
-The partition healing protocol must merge these competing blockchain
+The partition healing protocol must merge these competing blockchains
 once connectivity is reestablished.
 
 The protocol can proceed by choosing the longest chain, breaking ties
@@ -453,7 +453,7 @@ However, given that core network membership is moderated by signing
 Level-1 certificates, problems of this nature should be treated as
 external attacks and be detectable by system monitoring processes.
 This type of attack is indicative of either a serious software bug or
-a possible compromise of the misbehaving node, in which case operator
+a possible compromise of the misbehaving nodes, in which case operator
 intervention is required for resolution and key revocation.
 
 ### Scaling Limits
