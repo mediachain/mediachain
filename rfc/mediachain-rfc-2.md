@@ -235,9 +235,9 @@ EntityChainCell =
 
 EntityChainLinkCell = {
  "type" : "entityChainLink"
- "chain" : <Reference>
+ "chain" : <Reference>      ; reference to tail of chain
+ "chainMerge" : <Reference>  ; reference to merged orphan head
  "entity" : <Reference>
- "link" : <Reference>
  "signatures" : <Signatures>
  }
 
@@ -247,9 +247,9 @@ ArtefactChainCell =
 
 ArtefactChainLinkCell = {
  "type" : "artefactChainLink"
- "chain" : <Reference>
+ "chain" : <Reference>     ; reference to tail of chain
+ "chainMerge" : <Reference> ; reference to merged orphan head
  "artefact" : <Reference>
- "link" : <Reference>
  "signatures" " <Signatures>
  }
 ```
