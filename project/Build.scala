@@ -1,4 +1,4 @@
-import sbt._
+import sbt.{Tests, _}
 import Keys._
 import sbtassembly.AssemblyKeys._
 import sbtassembly._
@@ -38,23 +38,6 @@ object LSpaceBuild extends Build{
 
   updateOptions := updateOptions.value.withCachedResolution(true)
 
-
-
-  lazy val translation_engine = project
-    .settings(scalaSettings: _*)
-    .dependsOn(l_space)
-    .dependsOn(l_space % "test->test")
-    .dependsOn(core)
-
-  lazy val api_server = project
-    .settings(scalaSettings: _*)
-    .dependsOn(l_space)
-    .dependsOn(l_space % "test->test")
-    .dependsOn(core)
-
-  lazy val core = project
-    .settings(scalaSettings: _*)
-
   val orientdb_migrations_commit = "5f345cefda34f5671e6bb9e6c30312299d11f371"
   lazy val orientdb_migrations = ProjectRef(
     uri("git://github.com/mediachain/orientdb-migrations.git#" +
@@ -62,20 +45,65 @@ object LSpaceBuild extends Build{
     "orientdb-migrations-root"
   )
 
-  // aggregate means commands will cascade to the subprojects
-  // dependsOn means classes will be available
-  lazy val root = (project in file("."))
-    .aggregate(core, l_space,
-      translation_engine, api_server)
-    .dependsOn(core, l_space,
-      translation_engine, api_server)
+  // Projects
+  // schema translator/ingester (candidate to spin out into own project)
+  lazy val translation_engine = Project("translation_engine", file("translation_engine")).settings(scalaSettings ++ List(
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats" % "0.4.1",
+      "org.json4s" %% "json4s-jackson" % "3.3.0"
+    ),
+    unmanagedClasspath in Test += baseDirectory.value / "test-resources",
+    // see http://stackoverflow.com/a/9901616
+    //
+    // instantiating the `SBTSetupHook` and `SBTCleanupHook`
+    // classes causes code to run that prepares the testing
+    // environment & works around some classloader issues with
+    // sbt and orient / gremlin
+    testOptions in Test += Tests.Setup(loader => {
+      println("test setup")
+      loader.loadClass("io.mediachain.SBTSetupHook").newInstance
+    }),
+    testOptions in Test += Tests.Cleanup(loader => {
+      println("test cleanup")
+      loader.loadClass("io.mediachain.SBTCleanupHook").newInstance
+    })
+  )).dependsOn(l_space)
+    .dependsOn(l_space % "test->test")
+    .dependsOn(core)
 
-  // for separating work on CircleCI containers (try to keep these balanced)
-  lazy val circle_1 = project
-    .aggregate(translation_engine, api_server)
-  lazy val circle_2 = project
-    .aggregate(core, l_space)
+  // spray-based API server (may be deprecated in favor of gRPC)
+  lazy val api_server = Project("api_server", file("api_server")).settings(scalaSettings ++ List(
+    libraryDependencies ++= {
+      val akkaV = "2.3.9"
+      val sprayV = "1.3.3"
+      val json4sV = "3.2.11"
 
+      Seq(
+        "io.spray"            %%  "spray-can"     % sprayV,
+        "io.spray"            %%  "spray-routing-shapeless2" % sprayV,
+        "io.spray"            %%  "spray-httpx"   % sprayV,
+        // spray's specs2 support doesn't yet play nice with v 3.x of specs2
+        "io.spray"      %%  "spray-testkit" % sprayV  % "test" exclude("org.specs2", "specs2_2.11"),
+        "org.parboiled"       %%  "parboiled"     % "2.0.1",
+        "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
+        "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
+        "org.json4s" %% "json4s-jackson" % json4sV
+      )
+    }
+  )).dependsOn(l_space)
+    .dependsOn(l_space % "test->test")
+    .dependsOn(core)
+
+  // core types, errors, etc
+  lazy val core = Project("core", file("core")).settings(scalaSettings ++ List(
+    libraryDependencies ++= Seq(
+      "com.michaelpollmeier" % "gremlin-scala_2.11" % "3.1.1-incubating.1",
+      "org.typelevel" %% "cats" % "0.4.1",
+      "org.json4s" %% "json4s-jackson" % "3.3.0"
+    )
+  ))
+
+  // main project
   lazy val predef =  """
   import com.orientechnologies.orient.core.Orient
   import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
@@ -88,10 +116,6 @@ object LSpaceBuild extends Build{
   lazy val graph = MigrationHelper.newInMemoryGraph()
   """.split("\n").mkString("; ")
   lazy val l_space = Project("l_space", file("l_space")).settings(scalaSettings ++ List(
-    version := "0.0.1-WORKPRINT",
-
-    scalaVersion := "2.11.7",
-
     mainClass := Some("io.mediachain.LSpace"),
 
     libraryDependencies ++= Seq(
@@ -132,4 +156,20 @@ object LSpaceBuild extends Build{
     initialCommands in (Test, console) := "ammonite.repl.Main.run(\"" + predef + "\")"
     )).dependsOn(orientdb_migrations)
       .dependsOn(core)
+
+
+    // for separating work on CircleCI containers (try to keep these balanced)
+    lazy val circle_1 = project
+      .aggregate(translation_engine, api_server)
+    lazy val circle_2 = project
+      .aggregate(core, l_space)
+
+    // aggregate means commands will cascade to the subprojects
+    // dependsOn means classes will be available
+    lazy val root = (project in file("."))
+      .aggregate(core, l_space,
+        translation_engine, api_server)
+      .dependsOn(core, l_space,
+        translation_engine, api_server)
+
 }
