@@ -339,7 +339,7 @@ QmDDD = ArtefactChainLinkCell {
  }
 ```
 
-The example is better illustrated in the following fiture:
+The example is better illustrated in the following diagram:
 ![Diagram](images/rfc2-transaction-merge.png)
 
 It should be noted that a `ChainMergeEntry` can also conflict with a
