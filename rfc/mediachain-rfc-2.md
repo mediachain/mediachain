@@ -122,7 +122,7 @@ one or more `JournalEntry` cells forming a block of concurrent transactions:
 Block = {
  "type" : "block"
  "chain" : <Reference>
- "transactions" : [<JournalEntry> ...]
+ "entries" : [<JournalEntry> ...]
  "signatures" : <Signatures>
  }
 ```
@@ -163,7 +163,7 @@ structure defined in [2]:
 ChainEntry = {
  "type" : "update"
  "ref"  : <Reference>
- "chain" : <Reference>
+ "chain" : <Reference>     ; referece to the new chain head
  "chainLink" : <Reference> ; reference to the old chain head
  "timestamp" : <Timestamp>
  }
@@ -213,8 +213,10 @@ single object in the store. If for some reason they refer to the same
 object, they can be reduced to a single `CanonicalEntry`
 
 Two `ChainEntries` however can conflict if they reference the same
-canonical with a different chain pointer, unless the chainLink pointer
-can be chained between the two.
+canonical with an incompatible chain pointer. They are not conflicting
+if they can be linearized and chaining on top of one another, in which
+case the `.chainLink` of one of the entries would point to the `.chain`
+field of the other.
 
 In order to resolve the conflict, one of the two `ChainEntries` must
 be deterministically chosen as the base entry. The other entry can be
@@ -261,11 +263,11 @@ JournalEntry =
  | <ChainMergeEntry>
 
 ChainMergeEntry = {
- "type" : "chainLink"
+ "type" : "chainMerge"
  "ref"  : <Reference>
- "chain" : <Reference>     
- "chainLink" : <Reference> 
- "chainMerge" : <Reference> ; reference to abandoned head
+ "chain" : <Reference>      ; reference to the head of the chain
+ "chainLink" : <Reference>  ; reference to the previous head of the chain
+ "chainMerge" : <Reference> ; reference to merged orphan chain head
  } 
 ```
 
