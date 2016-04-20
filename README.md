@@ -9,7 +9,7 @@ The server is at a proof of concept stage and not to be used for anything other 
 
 ### Usage
 ```
-git clone https://github.com/mediachain/L-SPACE.git
+git clone https://github.com/mediachain/L-SPACE.git && cd L-SPACE
 sbt compile
 sbt console
 ```
