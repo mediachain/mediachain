@@ -173,6 +173,12 @@ ChainEntry = {
  }
 ```
 
+In effect, the `ChainEntry` is a temporary cons cell on top of the
+chain to which it refers. The `.chain` field points to the rest
+of the chain in the datastore, which is the new head of the chain
+in the datastore. The `.chainPrevious` field points to the old chain head,
+which is now the cdr of the `ChainCell` pointed by the `ChainEntry`.
+
 After the Peer verifies the new transaction, it signs and broadcasts
 it to its immediate peers in the core network and proceeds with the
 Block Commit protocol.
@@ -332,6 +338,9 @@ QmDDD = ArtefactChainLinkCell {
  ...
  }
 ```
+
+The example is better illustrated in the following fiture:
+![Diagram](images/rfc2-transaction-merge.png)
 
 It should be noted that a `ChainMergeEntry` can also conflict with a
 `ChainEntry` when they refer to the same canonical but with a
