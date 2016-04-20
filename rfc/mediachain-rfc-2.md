@@ -167,8 +167,8 @@ structure defined in [2]:
 ChainEntry = {
  "type" : "update"
  "ref"  : <Reference>
- "chain" : <Reference>     ; referece to the new chain head
- "chainLink" : <Reference> ; reference to the old chain head
+ "chain" : <Reference>         ; referece to the new chain head
+ "chainPrevious" : <Reference> ; reference to the old chain head
  "timestamp" : <Timestamp>
  }
 ```
@@ -224,7 +224,7 @@ object, they can be reduced to a single `CanonicalEntry`
 Two `ChainEntries` however can conflict if they reference the same
 canonical with an incompatible chain pointer. They are not conflicting
 if they can be linearized and chaining on top of one another, in which
-case the `.chainLink` of one of the entries would point to the `.chain`
+case the `.chainPrevious` of one of the entries would point to the `.chain`
 field of the other.
 
 In order to resolve the conflict, one of the two `ChainEntries` must
@@ -274,9 +274,9 @@ JournalEntry =
 ChainMergeEntry = {
  "type" : "chainMerge"
  "ref"  : <Reference>
- "chain" : <Reference>      ; reference to the head of the chain
- "chainLink" : <Reference>  ; reference to the previous head of the chain
- "chainMerge" : <Reference> ; reference to merged orphan chain head
+ "chain" : <Reference>          ; reference to the head of the chain
+ "chainPrevious" : <Reference>  ; reference to the previous head of the chain
+ "chainMerge" : <Reference>     ; reference to merged orphan chain head
  } 
 ```
 
@@ -284,13 +284,13 @@ The following example shows a merge of two conflicting `ChainEntries`:
 ```
 ChainEntry {
  "chain" : "QmAAA..."
- "chainLink" : "QmCCC..."
+ "chainPrevious" : "QmCCC..."
  ...
  }
 
 ChainEntry {
  "chain" : "QmBBB..."
- "chainLink" : "QmCCC..."
+ "chainPrevious" : "QmCCC..."
  ...
  }
 
@@ -315,13 +315,13 @@ new `ArtefactChainLinkCell` in the datastore as the head of the chain:
 ```
 ChainEntry {
  "chain" : "QmAAA..."
- "chainLink" : "QmCCC..."
+ "chainPrevious" : "QmCCC..."
  ...
  }
 
 ChainMergeEntry {
  "chain" : "QmDDD..."
- "chainLink" : "QmAAA..."
+ "chainPrevious" : "QmAAA..."
  "chaiMerge" : "QmCCC..."
  ...
  }
@@ -335,7 +335,7 @@ QmDDD = ArtefactChainLinkCell {
 
 It should be noted that a `ChainMergeEntry` can also conflict with a
 `ChainEntry` when they refer to the same canonical but with a
-conflicting `chainLink`; the conflict resolution can proceed similar
+conflicting `chainPrevious`; the conflict resolution can proceed similar
 to `ChainEntry` conflicts.
 
 ## Fault Tolerance
