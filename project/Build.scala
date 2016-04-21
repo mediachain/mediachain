@@ -2,6 +2,8 @@ import sbt._
 import Keys._
 
 object MediachainBuild extends Build {
+  updateOptions := updateOptions.value.withCachedResolution(true)
+
   override lazy val settings = super.settings ++ Seq(
     organization := "io.mediachain",
     version := "0.0.1",
