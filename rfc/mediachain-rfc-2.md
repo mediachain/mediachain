@@ -545,10 +545,10 @@ demands of client nodes as the system grows.
 
 There is however on potential scaling bottleneck that can lead the
 protocols to fail. This is the storage requirements for the Journal:
-the blockchain of all Journal transactions and the Index mapping
-canonicals to chain heads. Peer nodes need access to the Index to verify
-transactions and the blockchain must be available for peers and clients
-joining the network.
+the blockchain of all Journal transactions and an index mapping
+canonicals to chain heads. Peer nodes need access to this index in
+order to verify transactions and the blockchain must be available for
+peers and clients joining the network.
 
 Running a peer node should not have exorbitant hardware requirements:
 it should be possible to run a peer node with a medium instance from
