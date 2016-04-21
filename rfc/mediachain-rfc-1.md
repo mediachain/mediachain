@@ -152,6 +152,12 @@ to other artefacts.
 Each chain cell carries also carries one or more signatures by
 signatory entities in the system.
 
+The cells in the chain collectively store the evolving set of
+metadata associated with entities and artefacts. The metadata
+themselves may contain conflicting statements. The interpretation
+and reconciliation strategy for conflicts is open to the users
+of the Mediachain, which preserves them all.
+
 Note that the types of cells that can appear in either type of
 chain it is not limited to the types of relationships described
 above. These are merely the minimum schema to support the
