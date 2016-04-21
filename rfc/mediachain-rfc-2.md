@@ -544,8 +544,9 @@ easily add more peers to the core network accomodating the
 demands of client nodes as the system grows.
 
 There is however on potential scaling bottleneck that can lead the
-protocols to fail. This is the storage requirements for the blockchain
-and the journal index. Peer nodes need access to the index to verify
+protocols to fail. This is the storage requirements for the Journal:
+the blockchain of all Journal transactions and the Index mapping
+canonicals to chain heads. Peer nodes need access to the Index to verify
 transactions and the blockchain must be available for peers and clients
 joining the network.
 
