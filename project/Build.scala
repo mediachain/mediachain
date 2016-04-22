@@ -98,6 +98,8 @@ object LSpaceBuild extends Build{
   lazy val rpc = Project("rpc", file("rpc")).settings(scalaSettings ++
     PB.protobufSettings ++
     List(
+
+      // tell protobuf compiler to use version 3 syntax
       PB.runProtoc in PB.protobufConfig := (args =>
         com.github.os72.protocjar.Protoc.runProtoc("-v300" +: args.toArray)),
 
