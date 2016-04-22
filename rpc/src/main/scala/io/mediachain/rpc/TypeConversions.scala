@@ -35,6 +35,16 @@ object TypeConversions {
   }
 
 
+  implicit class RawMetadataBlobToRPC(raw: RawMetadataBlob) {
+    def toRPC: RPCTypes.RawMetadataBlob = rawMetadataBlobToRPC(raw)
+  }
+
+
+  implicit class RPCToRawMetadataBlob(rpcRaw: RPCTypes.RawMetadataBlob) {
+    def fromRPC: RawMetadataBlob = rawMetadataBlobFromRPC(rpcRaw)
+  }
+
+
   def canonicalToRPC(canonical: Canonical): RPCTypes.Canonical =
     RPCTypes.Canonical(canonicalID = canonical.canonicalID)
 
@@ -66,4 +76,27 @@ object TypeConversions {
   def personFromRPC(rpcPerson: RPCTypes.Person): Person =
     Person(id = None, name = rpcPerson.name)
 
+
+  def rawMetadataBlobToRPC(raw: RawMetadataBlob): RPCTypes.RawMetadataBlob =
+    RPCTypes.RawMetadataBlob(
+      blob = raw.blob
+    )
+
+  def rawMetadataBlobFromRPC(rpcRaw: RPCTypes.RawMetadataBlob): RawMetadataBlob =
+    RawMetadataBlob(None, blob = rpcRaw.blob)
+
+  def metadataBlobToRPC(blob: MetadataBlob): RPCTypes.MetadataBlob =
+    blob match {
+      case image: ImageBlob => RPCTypes.MetadataBlob(
+        blobType = RPCTypes.MetadataBlob.BlobType.ImageBlob,
+        blob = RPCTypes.MetadataBlob.Blob.Image(image.toRPC))
+
+      case person: Person => RPCTypes.MetadataBlob(
+        blobType = RPCTypes.MetadataBlob.BlobType.Person,
+        blob = RPCTypes.MetadataBlob.Blob.Person(person.toRPC))
+
+      case raw: RawMetadataBlob => RPCTypes.MetadataBlob(
+        blobType = RPCTypes.MetadataBlob.BlobType.RawMetadataBlob,
+        blob = RPCTypes.MetadataBlob.Blob.RawMetadata(raw.toRPC))
+    }
 }
