@@ -38,7 +38,15 @@ object LSpaceServer {
 
   def main(args: Array[String]): Unit = {
     val server = new LSpaceServer(defaultGraphFactory)
-    server.start()
+
+    Runtime.getRuntime.addShutdownHook(new Thread() {
+      override def run(): Unit = {
+        System.err.println("*** shutting down gRPC server since JVM is shutting down")
+        server.stop()
+        System.err.println("*** server shut down")
+      }
+    })
+
     server.blockUntilShutdown()
   }
 
@@ -54,10 +62,10 @@ object LSpaceServer {
 class LSpaceServer(
   graphFactory: OrientGraphFactory,
   context: ServerContext = NetworkServerContext())
-{ self =>
-  private[this] var server: Server = null
+{
+  private val server = setup()
 
-  def start(): Unit = {
+  private def setup(): Server = {
     val (builder, msg): (ServerBuilder[_], String) =
 
     context match {
@@ -73,32 +81,23 @@ class LSpaceServer(
 
     val service = new LSpaceServiceImpl(graphFactory, context.executionContext)
     val boundService = LSpaceServiceGrpc.bindService(service, context.executionContext)
-    server = builder.addService(boundService)
+    val server = builder.addService(boundService)
       .asInstanceOf[ServerBuilder[_]]
       .build().start()
 
     LSpaceServer.logger.info(msg)
-
-    Runtime.getRuntime.addShutdownHook(new Thread() {
-      override def run(): Unit = {
-        System.err.println("*** shutting down gRPC server since JVM is shutting down")
-        self.stop()
-        System.err.println("*** server shut down")
-      }
-    })
+    server
   }
+
+
 
   def stop(): Unit = {
-    if (server != null) {
-      server.shutdown()
-    }
+    LSpaceServer.logger.info("Shutting down L-SPACE server")
+    server.shutdown()
   }
 
-  def blockUntilShutdown(): Unit = {
-    if (server != null) {
-      server.awaitTermination()
-    }
-  }
+  def blockUntilShutdown(): Unit = server.awaitTermination()
+
 
   private class LSpaceServiceImpl(
     graphFactory: OrientGraphFactory,
