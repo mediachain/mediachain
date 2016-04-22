@@ -37,13 +37,6 @@ object LSpaceServer {
   private val logger = Logger.getLogger(classOf[LSpaceServer].getName)
 
   def main(args: Array[String]): Unit = {
-    if (ODatabaseRecordThreadLocal.INSTANCE == null) {
-      sys.error("This should never be reached. " +
-      "Accessing ODatabaseRecordThreadLocal.INSTANCE prevents an " +
-      "initialization error.  see: " +
-      "https://github.com/orientechnologies/orientdb/issues/5146")
-    }
-
     val server = new LSpaceServer(defaultGraphFactory)
     server.start()
     server.blockUntilShutdown()
