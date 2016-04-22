@@ -58,30 +58,26 @@ class LSpaceServer(
   private[this] var server: Server = null
 
   def start(): Unit = {
-    val service = new LSpaceServiceImpl(graphFactory, context.executionContext)
-    val boundService = LSpaceServiceGrpc.bindService(service, context.executionContext)
+    val (builder, msg): (ServerBuilder[_], String) =
 
     context match {
       case inProcess: InProcessServerContext => {
-        server = InProcessServerBuilder.forName(inProcess.name)
-          .addService(boundService)
-          .build().start()
-
-        LSpaceServer.logger.info(
+        (InProcessServerBuilder.forName(inProcess.name),
           s"Started in-process server: ${inProcess.name}")
       }
 
-
       case network: NetworkServerContext =>
-        server = ServerBuilder.forPort(network.port)
-          .addService(boundService)
-          .asInstanceOf[ServerBuilder[_]]
-          .build().start()
-
-        LSpaceServer.logger.info(
+        (ServerBuilder.forPort(network.port),
           s"Started network server: listening on localhost:${network.port}")
     }
 
+    val service = new LSpaceServiceImpl(graphFactory, context.executionContext)
+    val boundService = LSpaceServiceGrpc.bindService(service, context.executionContext)
+    server = builder.addService(boundService)
+      .asInstanceOf[ServerBuilder[_]]
+      .build().start()
+
+    LSpaceServer.logger.info(msg)
 
     Runtime.getRuntime.addShutdownHook(new Thread() {
       override def run(): Unit = {
