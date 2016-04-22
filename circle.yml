@@ -3,7 +3,7 @@ machine:
     version: oraclejdk8
   environment:
     SBT_VERSION: 0.13.8
-    SBT_OPTS: "-Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -XX:NewRatio=8 -Dstorage.diskCache.bufferSize=1024"
+    SBT_OPTS: "-Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -XX:NewRatio=8 -Dstorage.diskCache.bufferSize=1024 -Dstorage.keepOpen=false"
 dependencies:
   cache_directories:
     - "~/.sbt"
@@ -19,10 +19,10 @@ test:
   pre:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - mkdir -p $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate
-    - cd $HOME/tate_full/collection-master && for i in `find artworks -type f | shuf | head -100`; do cp --parents $i $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate; done
+    - cd $HOME/tate_full/collection-master && for i in `find artworks -type f | shuf | head -50`; do cp --parents $i $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate; done
     - mkdir -p $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate/artworks/a/000 && cp $HOME/tate_full/collection-master/artworks/a/000/a00001-1035.json $HOME/$CIRCLE_PROJECT_REPONAME/translation_engine/test-resources/datasets/tate/artworks/a/000
   override:
-    - case $(($CIRCLE_NODE_INDEX % 2)) in 0) PROJECT="translation_engine";; 1) PROJECT="l_space";; esac; echo $PROJECT; sbt -Dspecs2.junit.outdir=$CIRCLE_TEST_REPORTS/junit "project $PROJECT" coverage "test-only -- junitxml console":
+    - case $(($CIRCLE_NODE_INDEX % 2)) in 0) PROJECT="circle_1";; 1) PROJECT="circle_2";; esac; echo $PROJECT; sbt -Dspecs2.junit.outdir=$CIRCLE_TEST_REPORTS/junit "project $PROJECT" coverage "test-only -- junitxml console":
         parallel: true
   post:
     - sbt 'coverageReport'

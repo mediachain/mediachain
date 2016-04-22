@@ -2,7 +2,8 @@ package io.mediachain
 
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import io.mediachain.Types._
-import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
+import io.mediachain.Traversals._
+import io.mediachain.Traversals.Implicits._
 import gremlin.scala._
 import cats.data.Xor
 import core.GraphError._
@@ -85,16 +86,26 @@ object IngressSpec extends BaseSpec
     Ingress.ingestBlobBundle(graph, bundle, Some(raw))
 
     // These should both == 1, since adding again doesn't recreate the blob vertices
-    val imageBlobCount = Traversals.imageBlobsWithExactMatch(graph.V, blob).count.head
-    val authorCount = Traversals.personBlobsWithExactMatch(graph.V, leo).count.head
+    val imageBlobCount = graph.V ~>
+      imageBlobsWithExactMatch(blob) >>
+      (_.count.head)
 
-    val photoV = Traversals.imageBlobsWithExactMatch(graph.V, blob)
-      .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve photo blob"))
-    val authorV = Traversals.personBlobsWithExactMatch(graph.V, leo)
-      .headOption.getOrElse(throw new IllegalStateException("Unable to retrieve author blob"))
+    val authorCount = graph.V ~>
+      personBlobsWithExactMatch(leo) >>
+      (_.count.head)
 
-    val photoRawMeta = photoV.toPipeline.flatMap(_.findRawMetadataXor)
-    val authorRawMeta = authorV.toPipeline.flatMap(_.findRawMetadataXor)
+    val photoV = (graph.V ~> imageBlobsWithExactMatch(blob))
+      .headOption.getOrElse(
+        throw new IllegalStateException("Unable to retrieve photo blob")
+      )
+
+    val authorV = (graph.V ~> personBlobsWithExactMatch(leo))
+      .headOption.getOrElse(
+        throw new IllegalStateException("Unable to retrieve author blob")
+      )
+
+    val photoRawMeta = photoV.toPipeline.flatMap(_ >> findRawMetadataXor)
+    val authorRawMeta = authorV.toPipeline.flatMap(_ >> findRawMetadataXor)
     val photoMatch = photoRawMeta match {
       case Xor.Right(photo) => photo.blob == rawString
       case _ => false
