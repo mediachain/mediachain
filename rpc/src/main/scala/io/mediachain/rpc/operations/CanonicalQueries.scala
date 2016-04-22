@@ -6,25 +6,16 @@ import cats.data.Xor
 import gremlin.scala._
 import io.mediachain.Types._
 import io.mediachain.core.GraphError.CanonicalNotFound
-import io.mediachain.util.JsonUtils
-import org.json4s._
 import io.mediachain.rpc.TypeConversions._
-import io.mediachain.rpc.{Types => RPCTypes}
 import io.mediachain.rpc.Services._
+import io.mediachain.Traversals, Traversals._, Traversals.Implicits._
 
 
 object CanonicalQueries {
-  import io.mediachain.Traversals, Traversals._, Traversals.Implicits._
-  import org.json4s.JsonDSL._
-  implicit val formats = DefaultFormats
 
   val PAGE_SIZE = 20
 
-  def blobToJObject(metadataBlob: MetadataBlob): JObject =
-    JsonUtils.jsonObjectForHashable(metadataBlob) ~
-      ("multiHash" -> metadataBlob.multiHash.base58)
-
-
+  // TODO: Move this to io.mediachain.Types, use vals instead of string literals
   def vertexToMetadataBlob(vertex: Vertex): Option[MetadataBlob] =
     vertex.label match {
       case "ImageBlob" => Some(vertex.toCC[ImageBlob])
@@ -63,61 +54,30 @@ object CanonicalQueries {
           .withRootRevision(rpcBlob)
       }
   }
-  
-  def canonicalToBlobObject(graph: Graph, canonical: Canonical, withRaw: Boolean = false)
-  : Option[JObject] = {
-    // FIXME: this is a pretty sad n+1 query
-    val gs = graph.V ~> canonicalsWithID(canonical.canonicalID)
-    val rootBlobOpt: Option[(String, MetadataBlob, Option[RawMetadataBlob], Option[Person])] =
-      gs.out(DescribedBy).headOption.flatMap { v: Vertex =>
-        val raw = if(withRaw) {
-          v.toPipeline.flatMap(_ >> findRawMetadataXor).toOption
-        } else None
-        val author = v.label match {
-          case "ImageBlob" => v.toPipeline.toOption.flatMap(Traversals.getAuthor(_).out(DescribedBy).toCC[Person].headOption())
-          case _ => None
-        }
-        v.label match {
-          case "ImageBlob" => Some((v.label, v.toCC[ImageBlob], raw, author))
-          case "Person" => Some((v.label, v.toCC[Person], raw, author))
-          case _ => None
-        }
-      }
 
-    rootBlobOpt
-      .map { labelWithBlob =>
-        val (label: String, blob: MetadataBlob, raw: Option[RawMetadataBlob], author: Option[Person]) = labelWithBlob
-        val blobObject = blobToJObject(blob)
 
-        ("canonicalID" -> canonical.canonicalID) ~
-          ("artefact" -> (("type" -> label) ~ blobObject ~ ("author" -> author.map(blobToJObject)))) ~
-          ("raw" -> raw.map(blobToJObject))
-      }
-  }
-
-  def listCanonicals(page: Int)(graph: Graph): List[JObject] = {
+  def listCanonicals(page: Int)(graph: Graph)
+  : CanonicalList = {
     val first = page * PAGE_SIZE
     val last = first + PAGE_SIZE
 
     val canonicals = graph.V.hasLabel[Canonical]
       .range(first, last).toCC[Canonical].toList
 
-    canonicals.flatMap(canonicalToBlobObject(graph, _))
+    CanonicalList(canonicals.flatMap(canonicalWithRootRevision(graph, _)))
   }
 
-  def canonicalWithID(canonicalID: UUID, withRaw: Boolean = false)(graph: Graph): Option[JObject] = {
+  def canonicalWithID(canonicalID: UUID, withRaw: Boolean = false)(graph: Graph)
+  : Option[CanonicalWithRootRevision] = {
     (graph.V ~> canonicalsWithUUID(canonicalID))
       .toCC[Canonical]
       .headOption
-      .flatMap(canonicalToBlobObject(graph, _, withRaw))
+      .flatMap(canonicalWithRootRevision(graph, _, withRaw))
   }
 
-  def historyForCanonical(canonicalID: UUID)(graph: Graph): Option[JObject] = {
+  def historyForCanonical(canonicalID: UUID)(graph: Graph)
+  : Option[CanonicalWithHistory] = {
     val treeXor = graph.V ~> canonicalsWithUUID(canonicalID) >> findSubtreeXor
-
-    val author = StepLabel[Vertex]("author")
-    val raw = StepLabel[Vertex]("raw")
-    val blob = StepLabel[Vertex]("blob")
 
     for {
       tree <- treeXor.toOption
@@ -127,29 +87,32 @@ object CanonicalQueries {
       revisions = (tree.V ~> describingOrModifyingBlobs(canonical)).toList
       revisionBlobs = revisions.flatMap(vertexToMetadataBlob)
     } yield {
-      val revisionsJ = revisionBlobs.map(blobToJObject)
-      ("canonicalID" -> canonical.canonicalID) ~
-        ("revisions" -> revisionsJ)
+      val revisions = revisionBlobs.map(metadataBlobToRPC)
+      CanonicalWithHistory()
+        .withCanonicalID(canonical.canonicalID)
+        .withRevisions(revisions)
     }
   }
 
 
   def worksForPersonWithCanonicalID(canonicalID: UUID)(graph: Graph)
-  : Option[JObject] = {
+  : Option[WorksForAuthor] = {
     val responseXor = for {
       canonicalV <- graph.V ~> canonicalsWithUUID(canonicalID) >> headXor
 
       canonical = canonicalV.toCC[Canonical]
 
-      canonicalJobject <- Xor.fromOption(
-        canonicalToBlobObject(graph, canonical),
+      canonicalRPC <- Xor.fromOption(
+        canonicalWithRootRevision(graph, canonical),
         CanonicalNotFound())
 
       canonicalGS <- canonicalV.toPipeline
       worksCanonicals <- canonicalGS >> findWorksXor
-      worksJobjects = worksCanonicals.flatMap(canonicalToBlobObject(graph, _))
+      worksWithRootRev = worksCanonicals.flatMap(canonicalWithRootRevision(graph, _))
     } yield {
-      canonicalJobject ~ ("works" -> worksJobjects)
+      WorksForAuthor()
+        .withAuthor(canonicalRPC)
+        .withWorks(worksWithRootRev)
     }
 
     responseXor.toOption
