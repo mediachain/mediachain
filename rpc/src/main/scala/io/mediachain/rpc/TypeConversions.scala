@@ -7,7 +7,6 @@ object TypeConversions {
 
   implicit class CanonicalToRPC(canonical: Canonical) {
     def toRPC: RPCTypes.Canonical = canonicalToRPC(canonical)
-    def toRPCNode: RPCTypes.Node = canonicalToRPCGraphNode(canonical)
   }
 
 
@@ -18,7 +17,6 @@ object TypeConversions {
 
   implicit class ImageBlobToRPC(imageBlob: ImageBlob) {
     def toRPC: RPCTypes.ImageBlob = imageBlobToRPC(imageBlob)
-    def toRPCNode: RPCTypes.Node = imageBlobToRCPGraphNode(imageBlob)
   }
 
 
@@ -29,7 +27,6 @@ object TypeConversions {
 
   implicit class PersonToRPC(person: Person) {
     def toRPC: RPCTypes.Person = personToRPC(person)
-    def toRPCNode: RPCTypes.Node = personToRCPGraphNode(person)
   }
 
 
@@ -59,8 +56,7 @@ object TypeConversions {
     ImageBlob(id = None,
       title = rpcBlob.title,
       description = rpcBlob.description,
-      date = rpcBlob.date,
-      author = None)
+      date = rpcBlob.date)
 
 
   def personToRPC(person: Person): RPCTypes.Person =
@@ -70,24 +66,4 @@ object TypeConversions {
   def personFromRPC(rpcPerson: RPCTypes.Person): Person =
     Person(id = None, name = rpcPerson.name)
 
-
-  // RPC Node type conversions
-  def canonicalToRPCGraphNode(canonical: Canonical): RPCTypes.Node =
-    RPCTypes.Node(
-      content = RPCTypes.Node.Content.Canonical(canonicalToRPC(canonical)),
-      contentHash = canonical.multiHash.base58)
-
-
-  def imageBlobToRCPGraphNode(imageBlob: ImageBlob): RPCTypes.Node =
-    RPCTypes.Node(
-      content = RPCTypes.Node.Content.Image(imageBlobToRPC(imageBlob)),
-      contentHash = imageBlob.multiHash.base58
-    )
-
-
-  def personToRCPGraphNode(person: Person): RPCTypes.Node =
-    RPCTypes.Node(
-      content = RPCTypes.Node.Content.Person(personToRPC(person)),
-      contentHash = person.multiHash.base58
-    )
 }

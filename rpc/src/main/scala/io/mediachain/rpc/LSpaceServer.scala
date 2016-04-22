@@ -4,7 +4,7 @@ import java.util.logging.Logger
 
 import gremlin.scala._
 import io.grpc.{Server, ServerBuilder}
-import io.mediachain.rpc.Services.{CanonicalList, LSpaceServiceGrpc, ListCanonicalsRequest}
+import io.mediachain.rpc.Services.{CanonicalWithRootRevision, _}
 import io.mediachain.rpc.{Types => RPCTypes}
 import io.mediachain.Types._
 import io.mediachain.rpc.TypeConversions._
@@ -67,32 +67,28 @@ class LSpaceServer(executionContext: ExecutionContext) { self =>
 
   private class LSpaceServiceImpl extends LSpaceServiceGrpc.LSpaceService {
 
-    def getGraph: Graph =
-    MigrationHelper.getMigratedPersistentGraph() match {
+    lazy val graphFactory = MigrationHelper.getMigratedGraphFactory() match {
       case Failure(err) => throw new IllegalStateException(
         "Unable to connect to L-SPACE graph db", err
       )
-      case Success(graph) => graph
+      case Success(factory) => factory
     }
 
 
+    def getGraph: Graph = graphFactory.getTx
+
+
+    /// FIXME: implement with code from spray branch
     override def listCanonicals(request: ListCanonicalsRequest)
-    : Future[CanonicalList] = Future {
-      // ignoring request for now and just returning all
-      val g = getGraph
-      val canonicals = g.V
-        .hasLabel[Canonical]
-        .toCC[Canonical]
-        .toList
+    : Future[CanonicalList] = ???
 
-      CanonicalList(canonicals = canonicals.map(_.toRPC))
-    }(executionContext)
+    override def fetchCanonical(request: FetchCanonicalRequest)
+    : Future[CanonicalWithRootRevision] = ???
 
+    override def fetchCanonicalHistory(request: FetchCanonicalRequest)
+    : Future[CanonicalWithHistory] = ???
 
-    override def subtreeForCanonical(request: RPCTypes.Canonical)
-    : Future[RPCTypes.Graph] = Future {
-
-      throw new NotImplementedError("Nothing to see here...")
-    }(executionContext)
+    override def listWorksForAuthor(request: WorksForAuthorRequest)
+    : Future[WorksForAuthor] = ???
   }
 }
