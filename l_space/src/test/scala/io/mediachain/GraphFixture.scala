@@ -19,7 +19,9 @@ object GraphFixture {
     extraImageBlobCanonical: Canonical,
     rawMetadataBlob: RawMetadataBlob,
     duplicatePerson: Person,
-    duplicatePersonCanonical: Canonical
+    duplicatePersonCanonical: Canonical,
+    imageByDuplicatePerson: ImageBlob,
+    imageByDuplicatePersonCanonical: Canonical
   )
 
 
@@ -106,6 +108,15 @@ object GraphFixture {
       duplicatePersonCanonicalV --- (DescribedBy, Keys.Deprecated -> true) --> duplicatePersonV
       duplicatePersonCanonicalV --- SupersededBy --> personCanonicalV
 
+      // add an image that was authored by the duplicate person
+      // this should be returned from the "find works" query for
+      // both `person` and `duplicatePerson`
+      val imageByDuplicatePerson = getImageBlob
+      val imageByDuplicatePersonCanonical = Canonical.create()
+      val imageByDuplicatePersonV = graph + imageByDuplicatePerson
+      val imageByDuplicatePersonCanonicalV = graph + imageByDuplicatePersonCanonical
+      imageByDuplicatePersonCanonicalV --- DescribedBy --> imageByDuplicatePersonV
+      imageByDuplicatePersonV --- AuthoredBy --> duplicatePersonCanonicalV
 
       // add decoy objects that we shouldn't see in a subtree
       val extraImageBlob = getImageBlob
@@ -130,7 +141,9 @@ object GraphFixture {
         extraImageBlobCanonicalV.toCC[Canonical],
         rawMetadataBlobV.toCC[RawMetadataBlob],
         duplicatePersonV.toCC[Person],
-        duplicatePersonCanonicalV.toCC[Canonical])
+        duplicatePersonCanonicalV.toCC[Canonical],
+        imageByDuplicatePersonV.toCC[ImageBlob],
+        imageByDuplicatePersonCanonicalV.toCC[Canonical])
     }
   }
 
