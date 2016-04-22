@@ -106,7 +106,7 @@ class LSpaceServer(
 
   private class LSpaceServiceImpl(
     graphFactory: OrientGraphFactory,
-    executionContext: ExecutionContext
+    implicit val executionContext: ExecutionContext
   ) extends LSpaceServiceGrpc.LSpaceService {
 
     def withGraph[T](f: Graph => T): T = {
@@ -123,7 +123,7 @@ class LSpaceServer(
       withGraph {
         CanonicalQueries.listCanonicals(request.page.toInt)
       }
-    }(executionContext)
+    }
 
     override def fetchCanonical(request: FetchCanonicalRequest)
     : Future[CanonicalWithRootRevision] = Future {
@@ -136,7 +136,7 @@ class LSpaceServer(
         // FIXME: figure out how gRPC error handling is supposed to work
         throw new RuntimeException("Canonical not found")
       }
-    }(executionContext)
+    }
 
     override def fetchCanonicalHistory(request: FetchCanonicalRequest)
     : Future[CanonicalWithHistory] = Future {
@@ -146,7 +146,7 @@ class LSpaceServer(
         // FIXME: figure out how gRPC error handling is supposed to work
         throw new RuntimeException("Canonical not found")
       }
-    }(executionContext)
+    }
 
     override def listWorksForAuthor(request: WorksForAuthorRequest)
     : Future[WorksForAuthor] = Future {
@@ -156,6 +156,6 @@ class LSpaceServer(
         // FIXME: figure out how gRPC error handling is supposed to work
         throw new RuntimeException("Canonical not found")
       }
-    }(executionContext)
+    }
   }
 }
