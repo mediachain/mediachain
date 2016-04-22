@@ -1,11 +1,15 @@
 package io.mediachain.rpc
 
-import io.grpc.inprocess.{InProcessChannelBuilder}
-import io.mediachain.rpc.Services.{CanonicalWithRootRevision, LSpaceServiceGrpc}
+import io.grpc.inprocess.InProcessChannelBuilder
+import io.mediachain.Types._
+import io.mediachain.rpc.Services.{CanonicalWithHistory, CanonicalWithRootRevision, LSpaceServiceGrpc}
 import io.mediachain.rpc.client.LSpaceClient
+import io.mediachain.rpc.{Types => RPCTypes}
 import io.mediachain.rpc.TypeConversions._
 import io.mediachain.{BaseSpec, GraphFixture}
 import io.mediachain.util.orient.MigrationHelper
+import org.specs2.execute.Result
+import org.specs2.matcher.Matcher
 import org.specs2.specification.BeforeAfterAll
 
 
@@ -16,6 +20,7 @@ object LSpaceServerSpec extends BaseSpec
   def is =
     s2"""
          - returns a canonical with root revision $fetchesACanonicalById
+         - returns a canonical's rev history $returnsASubtree
       """
 
   val serviceName = "LSpace-Testing"
@@ -53,7 +58,6 @@ object LSpaceServerSpec extends BaseSpec
   def fetchesACanonicalById = {
     val blob = fixtures.imageBlob
     val canonicalID = fixtures.imageBlobCanonical.canonicalID
-    println(s"fetching canonical $canonicalID")
 
     client.fetchCanonical(canonicalID) must beSome {
       response: CanonicalWithRootRevision =>
@@ -62,4 +66,37 @@ object LSpaceServerSpec extends BaseSpec
     }
   }
 
+  private def matchImageBlob(blob: ImageBlob): Matcher[ImageBlob] =
+    beLike {
+      case imageBlob: ImageBlob =>
+        (imageBlob.title must_== blob.title) and
+          (imageBlob.description must_== blob.description) and
+          (imageBlob.date must_== blob.date)
+    }
+
+  private def matchRevisions(
+    expected: Seq[ImageBlob],
+    actual: Seq[RPCTypes.MetadataBlob]
+  ): Result = {
+    val actualAsImageBlobs = actual.flatMap(_.blob.image).map(_.fromRPC)
+    val expectedMatchers = expected.map(matchImageBlob)
+
+    // this doesn't do what I want, sadly...
+    actualAsImageBlobs must contain(expectedMatchers)
+  }
+
+
+  def returnsASubtree = {
+    val canonicalID = fixtures.imageBlobCanonical.canonicalID
+    val expectedRevisions = List(
+      fixtures.imageBlob, fixtures.modifiedImageBlob
+    )
+
+    client.fetchHistoryForCanonical(canonicalID) must beSome {
+      response: CanonicalWithHistory =>
+        (response.canonicalID must_== canonicalID) and
+          (response.revisions must haveLength(2))
+        // TODO: check contents of revisions
+    }
+  }
 }
