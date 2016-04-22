@@ -1,6 +1,6 @@
 package io.mediachain.util.orient
 
-import com.orientechnologies.orient.core.db.ODatabaseFactory
+import com.orientechnologies.orient.core.db.{ODatabaseFactory, ODatabaseRecordThreadLocal}
 import io.mediachain.util.Env
 import org.apache.commons.configuration.{BaseConfiguration, Configuration}
 import org.apache.tinkerpop.gremlin.orientdb.{OrientGraph, OrientGraphFactory}
@@ -11,7 +11,11 @@ import springnz.orientdb.pool.{ODBConnectConfig, ODBConnectionPool}
 import scala.util.{Failure, Random, Success, Try}
 
 object MigrationHelper {
-  val DEFAULT_POOL_MAX = 1
+  val DEFAULT_POOL_MAX = 64
+  if (ODatabaseRecordThreadLocal.INSTANCE == null) {
+    sys.error("Calling this manually apparently prevents an initialization issue.")
+  }
+
   object EnvVars {
     val ORIENTDB_URL = "ORIENTDB_URL"
     val ORIENTDB_USER = "ORIENTDB_USER"
@@ -20,10 +24,7 @@ object MigrationHelper {
   }
 
   def newInMemoryGraph(transactional: Boolean = true): OrientGraph = {
-    val dbname = s"memory:in-memory-${Random.nextInt()}"
-
-    val config = ODBConnectConfig(dbname, "admin", "admin")
-    getMigratedGraph(Some(config), transactional) match {
+    getMigratedGraph(Some(inMemoryODBConfig), transactional) match {
       case Failure(e) =>
         throw new IllegalStateException(
           s"Unable to apply migrations to in-memory db: ${e.getMessage}", e)
@@ -31,6 +32,20 @@ object MigrationHelper {
       case Success(graph) => graph
     }
   }
+
+
+  def newInMemoryGraphFactory(): OrientGraphFactory =
+    getMigratedGraphFactory(Some(inMemoryODBConfig)) match {
+      case Failure(e) =>
+        throw new IllegalStateException(
+          s"Unable to apply migrations to in-memory graph factory", e)
+
+      case Success(factory) => factory
+    }
+
+
+  def inMemoryODBConfig: ODBConnectConfig =
+    ODBConnectConfig(s"memory:in-memory-${Random.nextInt}", "admin", "admin")
 
 
   def poolWithConfig(config: ODBConnectConfig): ODBConnectionPool =
@@ -67,8 +82,9 @@ object MigrationHelper {
     applyToPersistentDB(Some(ODBConnectConfig(url, user, password)))
 
 
+
   def graphFactoryWithOptionalConfig(
-    configOpt: Option[ODBConnectConfig],
+    configOpt: Option[ODBConnectConfig] = None,
     poolMaxOpt: Option[Int] = None): Try[OrientGraphFactory] = {
     val config = configOpt.orElse(configFromEnv.toOption)
 
