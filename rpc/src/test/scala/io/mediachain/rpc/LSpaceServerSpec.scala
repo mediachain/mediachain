@@ -47,7 +47,7 @@ object LSpaceServerSpec extends BaseSpec
     fixtures = GraphFixture.Util.setupTree(graph)
     graph.close()
 
-    server.start()
+    server // force init of lazy val
   }
 
   def afterAll: Unit = {
