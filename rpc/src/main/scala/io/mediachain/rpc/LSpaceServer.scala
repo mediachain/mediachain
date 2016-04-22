@@ -74,21 +74,54 @@ class LSpaceServer(executionContext: ExecutionContext) { self =>
       case Success(factory) => factory
     }
 
+    def withGraph[T](f: Graph => T): T = {
+      val graph = graphFactory.getTx()
+      val result = f(graph)
+      graph.close()
+      result
+    }
 
-    def getGraph: Graph = graphFactory.getTx
 
-
+    import operations.CanonicalQueries
     /// FIXME: implement with code from spray branch
     override def listCanonicals(request: ListCanonicalsRequest)
-    : Future[CanonicalList] = ???
+    : Future[CanonicalList] = Future {
+      withGraph {
+        CanonicalQueries.listCanonicals(request.page.toInt)
+      }
+    }(executionContext)
 
     override def fetchCanonical(request: FetchCanonicalRequest)
-    : Future[CanonicalWithRootRevision] = ???
+    : Future[CanonicalWithRootRevision] = Future {
+      val queryCanonical = Canonical(None, request.canonicalID)
+      withGraph {
+        CanonicalQueries.canonicalWithRootRevision(
+          queryCanonical,
+          withRaw = request.withRawMetadata)
+      }.getOrElse {
+        // FIXME: figure out how gRPC error handling is supposed to work
+        throw new RuntimeException("Canonical not found")
+      }
+    }(executionContext)
 
     override def fetchCanonicalHistory(request: FetchCanonicalRequest)
-    : Future[CanonicalWithHistory] = ???
+    : Future[CanonicalWithHistory] = Future {
+      withGraph {
+        CanonicalQueries.historyForCanonical(request.canonicalID)
+      }.getOrElse {
+        // FIXME: figure out how gRPC error handling is supposed to work
+        throw new RuntimeException("Canonical not found")
+      }
+    }(executionContext)
 
     override def listWorksForAuthor(request: WorksForAuthorRequest)
-    : Future[WorksForAuthor] = ???
+    : Future[WorksForAuthor] = Future {
+      withGraph {
+        CanonicalQueries.worksForPersonWithCanonicalID(request.authorCanonicalID)
+      }.getOrElse {
+        // FIXME: figure out how gRPC error handling is supposed to work
+        throw new RuntimeException("Canonical not found")
+      }
+    }(executionContext)
   }
 }

@@ -24,7 +24,7 @@ object CanonicalQueries {
       case _ => None
     }
 
-  def canonicalWithRootRevision(graph: Graph, canonical: Canonical, withRaw: Boolean = false)
+  def canonicalWithRootRevision(canonical: Canonical, withRaw: Boolean = false)(graph: Graph)
   : Option[CanonicalWithRootRevision] = {
     // FIXME - use decent graph traversal
     val gs = graph.V ~> canonicalsWithID(canonical.canonicalID)
@@ -64,7 +64,8 @@ object CanonicalQueries {
     val canonicals = graph.V.hasLabel[Canonical]
       .range(first, last).toCC[Canonical].toList
 
-    CanonicalList(canonicals.flatMap(canonicalWithRootRevision(graph, _)))
+    val withRootRevs = canonicals.flatMap(canonicalWithRootRevision(_)(graph))
+    CanonicalList().withCanonicals(withRootRevs)
   }
 
   def canonicalWithID(canonicalID: UUID, withRaw: Boolean = false)(graph: Graph)
@@ -72,16 +73,16 @@ object CanonicalQueries {
     (graph.V ~> canonicalsWithUUID(canonicalID))
       .toCC[Canonical]
       .headOption
-      .flatMap(canonicalWithRootRevision(graph, _, withRaw))
+      .flatMap(canonicalWithRootRevision(_, withRaw)(graph))
   }
 
-  def historyForCanonical(canonicalID: UUID)(graph: Graph)
+  def historyForCanonical(canonicalID: String)(graph: Graph)
   : Option[CanonicalWithHistory] = {
-    val treeXor = graph.V ~> canonicalsWithUUID(canonicalID) >> findSubtreeXor
+    val treeXor = graph.V ~> canonicalsWithID(canonicalID) >> findSubtreeXor
 
     for {
       tree <- treeXor.toOption
-      canonicalGS = tree.V ~> canonicalsWithUUID(canonicalID)
+      canonicalGS = tree.V ~> canonicalsWithID(canonicalID)
       canonical <- canonicalGS.toCC[Canonical].headOption
 
       revisions = (tree.V ~> describingOrModifyingBlobs(canonical)).toList
@@ -95,20 +96,20 @@ object CanonicalQueries {
   }
 
 
-  def worksForPersonWithCanonicalID(canonicalID: UUID)(graph: Graph)
+  def worksForPersonWithCanonicalID(canonicalID: String)(graph: Graph)
   : Option[WorksForAuthor] = {
     val responseXor = for {
-      canonicalV <- graph.V ~> canonicalsWithUUID(canonicalID) >> headXor
+      canonicalV <- graph.V ~> canonicalsWithID(canonicalID) >> headXor
 
       canonical = canonicalV.toCC[Canonical]
 
       canonicalRPC <- Xor.fromOption(
-        canonicalWithRootRevision(graph, canonical),
+        canonicalWithRootRevision(canonical)(graph),
         CanonicalNotFound())
 
       canonicalGS <- canonicalV.toPipeline
       worksCanonicals <- canonicalGS >> findWorksXor
-      worksWithRootRev = worksCanonicals.flatMap(canonicalWithRootRevision(graph, _))
+      worksWithRootRev = worksCanonicals.flatMap(canonicalWithRootRevision(_)(graph))
     } yield {
       WorksForAuthor()
         .withAuthor(canonicalRPC)
