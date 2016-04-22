@@ -65,4 +65,19 @@ class LSpaceClient (
       }
     }
   }
+
+
+  def fetchHistoryForCanonical(canonicalID: String)
+  : Option[CanonicalWithHistory] = {
+    logger.info(s"Fetching history for canonical with id $canonicalID")
+    try {
+      val request = FetchCanonicalRequest(canonicalID = canonicalID)
+      Some(blockingStub.fetchCanonicalHistory(request))
+    } catch {
+      case e: StatusRuntimeException => {
+        logger.warning(s"RPC request failed: ${e.getStatus}")
+        None
+      }
+    }
+  }
 }
