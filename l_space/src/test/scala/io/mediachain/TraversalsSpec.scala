@@ -8,7 +8,7 @@ object TraversalsSpec extends BaseSpec
   with ForEachGraph[GraphFixture.Context] {
   import io.mediachain.{Traversals => SUT}, SUT.GremlinScalaImplicits
 
-  def is =
+  def is = sequential ^
   s2"""
    Finds a canonical vertex given a canonicalID $findsCanonicalByID
    Finds a person vertex exactly matching a Person CC $findsPersonExact

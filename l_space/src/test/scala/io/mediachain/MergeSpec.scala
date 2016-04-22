@@ -9,7 +9,7 @@ object MergeSpec extends BaseSpec
   with ForEachGraph[MergeSpecContext]
 {
 
-  def is =
+  def is = sequential ^
   s2"""
   Merging two canonicals:
    - Deprecates old DescribedBy edges $deprecatesDescribedBy

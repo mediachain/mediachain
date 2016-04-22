@@ -10,7 +10,7 @@ import io.mediachain.util.GremlinUtils._
 
 object OrientTransactionSpec extends BaseSpec with ForEachGraph[Graph] {
 
-  def is =
+  def is = sequential ^
     s2"""
         - commits transaction if successful $commitsSuccessful
         - rolls back transaction on failure $rollsBackFailed
