@@ -31,7 +31,7 @@ object LSpaceClient {
 }
 
 
-class LSpaceClient private(
+class LSpaceClient (
   private val channel: ManagedChannel,
   private val blockingStub: LSpaceServiceBlockingStub
 ) {

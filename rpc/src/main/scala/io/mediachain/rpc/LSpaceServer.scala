@@ -9,13 +9,31 @@ import io.mediachain.rpc.{Types => RPCTypes}
 import io.mediachain.Types._
 import io.mediachain.rpc.TypeConversions._
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal
+import io.grpc.inprocess.InProcessServerBuilder
 import io.mediachain.util.orient.MigrationHelper
+import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+import scala.language.existentials
+
+sealed trait ServerContext {
+  val executionContext: ExecutionContext
+}
+
+case class NetworkServerContext(
+  port: Int = LSpaceServer.DEFAULT_PORT,
+  executionContext: ExecutionContext = ExecutionContext.global
+) extends ServerContext
+
+case class InProcessServerContext(
+  name: String = "LSpaceService-InProcess",
+  executionContext: ExecutionContext = ExecutionContext.global
+) extends ServerContext
 
 object LSpaceServer {
-  private val port = 50052
+  val DEFAULT_PORT = 50052
+
   private val logger = Logger.getLogger(classOf[LSpaceServer].getName)
 
   def main(args: Array[String]): Unit = {
@@ -26,23 +44,51 @@ object LSpaceServer {
       "https://github.com/orientechnologies/orientdb/issues/5146")
     }
 
-    val server = new LSpaceServer(ExecutionContext.global)
+    val server = new LSpaceServer(defaultGraphFactory)
     server.start()
     server.blockUntilShutdown()
   }
+
+  def defaultGraphFactory: OrientGraphFactory =
+    MigrationHelper.getMigratedGraphFactory() match {
+      case Failure(err) => throw new IllegalStateException(
+        "Unable to connect to L-SPACE graph db", err
+      )
+      case Success(factory) => factory
+    }
 }
 
-class LSpaceServer(executionContext: ExecutionContext) { self =>
+class LSpaceServer(
+  graphFactory: OrientGraphFactory,
+  context: ServerContext = NetworkServerContext())
+{ self =>
   private[this] var server: Server = null
 
-  private def start(): Unit = {
-    val service = new LSpaceServiceImpl
-    server = ServerBuilder.forPort(LSpaceServer.port)
-      .addService(LSpaceServiceGrpc.bindService(service, executionContext))
-      .build.start
+  def start(): Unit = {
+    val service = new LSpaceServiceImpl(graphFactory, context.executionContext)
+    val boundService = LSpaceServiceGrpc.bindService(service, context.executionContext)
 
-    LSpaceServer.logger
-      .info(s"Server started, listening on localhost:${LSpaceServer.port}")
+    context match {
+      case inProcess: InProcessServerContext => {
+        server = InProcessServerBuilder.forName(inProcess.name)
+          .addService(boundService)
+          .build().start()
+
+        LSpaceServer.logger.info(
+          s"Started in-process server: ${inProcess.name}")
+      }
+
+
+      case network: NetworkServerContext =>
+        server = ServerBuilder.forPort(network.port)
+          .addService(boundService)
+          .asInstanceOf[ServerBuilder[_]]
+          .build().start()
+
+        LSpaceServer.logger.info(
+          s"Started network server: listening on localhost:${network.port}")
+    }
+
 
     Runtime.getRuntime.addShutdownHook(new Thread() {
       override def run(): Unit = {
@@ -53,26 +99,22 @@ class LSpaceServer(executionContext: ExecutionContext) { self =>
     })
   }
 
-  private def stop(): Unit = {
+  def stop(): Unit = {
     if (server != null) {
       server.shutdown()
     }
   }
 
-  private def blockUntilShutdown(): Unit = {
+  def blockUntilShutdown(): Unit = {
     if (server != null) {
       server.awaitTermination()
     }
   }
 
-  private class LSpaceServiceImpl extends LSpaceServiceGrpc.LSpaceService {
-
-    lazy val graphFactory = MigrationHelper.getMigratedGraphFactory() match {
-      case Failure(err) => throw new IllegalStateException(
-        "Unable to connect to L-SPACE graph db", err
-      )
-      case Success(factory) => factory
-    }
+  private class LSpaceServiceImpl(
+    graphFactory: OrientGraphFactory,
+    executionContext: ExecutionContext
+  ) extends LSpaceServiceGrpc.LSpaceService {
 
     def withGraph[T](f: Graph => T): T = {
       val graph = graphFactory.getTx()
@@ -83,7 +125,6 @@ class LSpaceServer(executionContext: ExecutionContext) { self =>
 
 
     import operations.CanonicalQueries
-    /// FIXME: implement with code from spray branch
     override def listCanonicals(request: ListCanonicalsRequest)
     : Future[CanonicalList] = Future {
       withGraph {
