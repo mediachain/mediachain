@@ -2,6 +2,7 @@ import sbt.{Tests, _}
 import Keys._
 import sbtassembly.AssemblyKeys._
 import sbtassembly._
+import com.trueaccord.scalapb.{ScalaPbPlugin => PB}
 
 object ApplicationBuild extends Build {
   override lazy val settings = super.settings ++ Seq(
@@ -38,27 +39,6 @@ object LSpaceBuild extends Build{
 
   updateOptions := updateOptions.value.withCachedResolution(true)
 
-<<<<<<< ours
-  lazy val l_space = project
-    .settings(scalaSettings: _*)
-    .dependsOn(orientdb_migrations)
-    .dependsOn(core)
-
-  lazy val translation_engine = project
-    .settings(scalaSettings: _*)
-    .dependsOn(l_space)
-    .dependsOn(l_space % "test->test")
-    .dependsOn(core)
-
-  lazy val rpc = project
-    .settings(scalaSettings: _*)
-    .dependsOn(core, l_space)
-
-  lazy val core = project
-    .settings(scalaSettings: _*)
-
-=======
->>>>>>> theirs
   val orientdb_migrations_commit = "5f345cefda34f5671e6bb9e6c30312299d11f371"
   lazy val orientdb_migrations = ProjectRef(
     uri("git://github.com/mediachain/orientdb-migrations.git#" +
@@ -112,6 +92,24 @@ object LSpaceBuild extends Build{
       )
     }
   )).dependsOn(l_space)
+    .dependsOn(l_space % "test->test")
+    .dependsOn(core)
+
+  lazy val rpc = Project("rpc", file("rpc")).settings(scalaSettings ++
+    PB.protobufSettings ++
+    List(
+      PB.runProtoc in PB.protobufConfig := (args =>
+        com.github.os72.protocjar.Protoc.runProtoc("-v300" +: args.toArray)),
+
+      version in PB.protobufConfig := "3.0.0-beta-2",
+
+      libraryDependencies ++= Seq(
+        "io.grpc" % "grpc-all" % "0.9.0",
+        "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" %
+          (PB.scalapbVersion in PB.protobufConfig).value
+      )
+    )
+  ).dependsOn(l_space)
     .dependsOn(l_space % "test->test")
     .dependsOn(core)
 
