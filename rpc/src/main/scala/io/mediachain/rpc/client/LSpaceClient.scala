@@ -45,7 +45,8 @@ class LSpaceClient private(
     try {
       val request = ListCanonicalsRequest()
       val response = blockingStub.listCanonicals(request)
-      response.canonicals.map(_.fromRPC)
+      // fixme: unpack response & return
+      Seq()
     } catch {
       case e: StatusRuntimeException => {
         logger.warning(s"RPC request failed: ${e.getStatus}")
