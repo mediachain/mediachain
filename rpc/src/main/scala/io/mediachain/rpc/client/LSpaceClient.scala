@@ -40,62 +40,50 @@ class LSpaceClient (
   def shutdown(): Unit =
     channel.shutdown.awaitTermination(5, TimeUnit.SECONDS)
 
-  def listCanonicals(page: Int = 0): CanonicalList = {
-    logger.info("Requesting canonicals")
-    try {
-      val request = ListCanonicalsRequest(page = page.toLong)
-      blockingStub.listCanonicals(request)
-    } catch {
+  def tryRPCRequest[Response](f: => Response): Option[Response] = {
+    try Some(f)
+    catch {
       case e: StatusRuntimeException => {
         logger.warning(s"RPC request failed: ${e.getStatus}")
-        CanonicalList()
+        None
       }
+      case e: Throwable => throw e
     }
   }
 
+  def listCanonicals(page: Int = 0)
+  : Option[CanonicalList] =
+    tryRPCRequest {
+      logger.info("Requesting canonicals")
+      val request = ListCanonicalsRequest(page = page.toLong)
+      blockingStub.listCanonicals(request)
+    }
+
   def fetchCanonical(canonicalID: String, withRawMetadata: Boolean = false)
-  : Option[CanonicalWithRootRevision] = {
-    logger.info(s"Fetching canonical with id $canonicalID")
-    try {
+  : Option[CanonicalWithRootRevision] =
+    tryRPCRequest {
+      logger.info(s"Fetching canonical with id $canonicalID")
       val request = FetchCanonicalRequest(
         canonicalID = canonicalID,
         withRawMetadata = withRawMetadata)
-      Some(blockingStub.fetchCanonical(request))
-    } catch {
-      case e: StatusRuntimeException => {
-        logger.warning(s"RPC request failed: ${e.getStatus}")
-        None
-      }
+      blockingStub.fetchCanonical(request)
     }
-  }
 
 
   def fetchHistoryForCanonical(canonicalID: String)
-  : Option[CanonicalWithHistory] = {
-    logger.info(s"Fetching history for canonical with id $canonicalID")
-    try {
+  : Option[CanonicalWithHistory] =
+    tryRPCRequest {
+      logger.info(s"Fetching history for canonical with id $canonicalID")
       val request = FetchCanonicalRequest(canonicalID = canonicalID)
-      Some(blockingStub.fetchCanonicalHistory(request))
-    } catch {
-      case e: StatusRuntimeException => {
-        logger.warning(s"RPC request failed: ${e.getStatus}")
-        None
-      }
+      blockingStub.fetchCanonicalHistory(request)
     }
-  }
 
 
   def listWorksForAuthorWithCanonicalID(canonicalID: String)
-  : Option[WorksForAuthor] = {
-    logger.info(s"Fetching works for author with canonical id $canonicalID")
-    try {
+  : Option[WorksForAuthor] =
+    tryRPCRequest {
+      logger.info(s"Fetching works for author with canonical id $canonicalID")
       val request = WorksForAuthorRequest(authorCanonicalID = canonicalID)
-      Some(blockingStub.listWorksForAuthor(request))
-    } catch {
-      case e: StatusRuntimeException => {
-        logger.warning(s"RPC request failed: ${e.getStatus}")
-        None
-      }
+      blockingStub.listWorksForAuthor(request)
     }
-  }
 }
