@@ -48,11 +48,14 @@ object TypeConversions {
   def canonicalToRPC(canonical: Canonical): RPCTypes.Canonical =
     RPCTypes.Canonical(
       canonicalID = canonical.canonicalID,
-      multiHash = canonical.multiHash.base58)
+      multiHash = canonical.multiHash.base58,
+      signatures = canonical.signatures)
 
 
   def canonicalFromRPC(rpcCanonical: RPCTypes.Canonical) =
-    Canonical(None, rpcCanonical.canonicalID)
+    Canonical(None,
+      rpcCanonical.canonicalID,
+      signatures = rpcCanonical.signatures)
 
 
 
@@ -61,35 +64,45 @@ object TypeConversions {
       title = imageBlob.title,
       description = imageBlob.description,
       date = imageBlob.date,
-      multiHash = imageBlob.multiHash.base58
-    )
+      multiHash = imageBlob.multiHash.base58,
+      signatures = imageBlob.signatures,
+      externalIds = imageBlob.external_ids)
 
 
   def imageBlobFromRPC(rpcBlob: RPCTypes.ImageBlob): ImageBlob =
     ImageBlob(id = None,
       title = rpcBlob.title,
       description = rpcBlob.description,
-      date = rpcBlob.date)
+      date = rpcBlob.date,
+      signatures = rpcBlob.signatures,
+      external_ids = rpcBlob.externalIds)
 
 
   def personToRPC(person: Person): RPCTypes.Person =
     RPCTypes.Person(
       name = person.name,
-      multiHash = person.multiHash.base58)
+      multiHash = person.multiHash.base58,
+      signatures = person.signatures,
+      externalIds = person.external_ids)
 
 
   def personFromRPC(rpcPerson: RPCTypes.Person): Person =
-    Person(id = None, name = rpcPerson.name)
+    Person(id = None,
+      name = rpcPerson.name,
+      signatures = rpcPerson.signatures,
+      external_ids = rpcPerson.externalIds)
 
 
   def rawMetadataBlobToRPC(raw: RawMetadataBlob): RPCTypes.RawMetadataBlob =
     RPCTypes.RawMetadataBlob(
       blob = raw.blob,
-      multiHash = raw.multiHash.base58
-    )
+      multiHash = raw.multiHash.base58,
+      signatures = raw.signatures)
 
   def rawMetadataBlobFromRPC(rpcRaw: RPCTypes.RawMetadataBlob): RawMetadataBlob =
-    RawMetadataBlob(None, blob = rpcRaw.blob)
+    RawMetadataBlob(None,
+      blob = rpcRaw.blob,
+      signatures = rpcRaw.signatures)
 
   def metadataBlobToRPC(blob: MetadataBlob): RPCTypes.MetadataBlob =
     blob match {
