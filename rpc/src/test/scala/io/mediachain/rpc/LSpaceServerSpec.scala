@@ -18,7 +18,7 @@ object LSpaceServerSpec extends BaseSpec
   with BeforeAfterAll
 {
 
-  def is =
+  def is = sequential ^
     s2"""
          - returns a list of all canonicals $returnsCanonicalList
          - returns a canonical with root revision $fetchesACanonicalById
