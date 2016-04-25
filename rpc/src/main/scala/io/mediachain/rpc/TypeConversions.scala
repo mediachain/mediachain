@@ -46,7 +46,9 @@ object TypeConversions {
 
 
   def canonicalToRPC(canonical: Canonical): RPCTypes.Canonical =
-    RPCTypes.Canonical(canonicalID = canonical.canonicalID)
+    RPCTypes.Canonical(
+      canonicalID = canonical.canonicalID,
+      multiHash = canonical.multiHash.base58)
 
 
   def canonicalFromRPC(rpcCanonical: RPCTypes.Canonical) =
@@ -58,7 +60,8 @@ object TypeConversions {
     RPCTypes.ImageBlob(
       title = imageBlob.title,
       description = imageBlob.description,
-      date = imageBlob.date
+      date = imageBlob.date,
+      multiHash = imageBlob.multiHash.base58
     )
 
 
@@ -70,7 +73,9 @@ object TypeConversions {
 
 
   def personToRPC(person: Person): RPCTypes.Person =
-    RPCTypes.Person(name = person.name)
+    RPCTypes.Person(
+      name = person.name,
+      multiHash = person.multiHash.base58)
 
 
   def personFromRPC(rpcPerson: RPCTypes.Person): Person =
@@ -79,7 +84,8 @@ object TypeConversions {
 
   def rawMetadataBlobToRPC(raw: RawMetadataBlob): RPCTypes.RawMetadataBlob =
     RPCTypes.RawMetadataBlob(
-      blob = raw.blob
+      blob = raw.blob,
+      multiHash = raw.multiHash.base58
     )
 
   def rawMetadataBlobFromRPC(rpcRaw: RPCTypes.RawMetadataBlob): RawMetadataBlob =
