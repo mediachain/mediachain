@@ -72,29 +72,6 @@ object LSpaceBuild extends Build{
     .dependsOn(l_space % "test->test")
     .dependsOn(core)
 
-  // spray-based API server (may be deprecated in favor of gRPC)
-  lazy val api_server = Project("api_server", file("api_server")).settings(scalaSettings ++ List(
-    libraryDependencies ++= {
-      val akkaV = "2.3.9"
-      val sprayV = "1.3.3"
-      val json4sV = "3.2.11"
-
-      Seq(
-        "io.spray"            %%  "spray-can"     % sprayV,
-        "io.spray"            %%  "spray-routing-shapeless2" % sprayV,
-        "io.spray"            %%  "spray-httpx"   % sprayV,
-        // spray's specs2 support doesn't yet play nice with v 3.x of specs2
-        "io.spray"      %%  "spray-testkit" % sprayV  % "test" exclude("org.specs2", "specs2_2.11"),
-        "org.parboiled"       %%  "parboiled"     % "2.0.1",
-        "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
-        "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
-        "org.json4s" %% "json4s-jackson" % json4sV
-      )
-    }
-  )).dependsOn(l_space)
-    .dependsOn(l_space % "test->test")
-    .dependsOn(core)
-
   lazy val rpc = Project("rpc", file("rpc")).settings(scalaSettings ++
     PB.protobufSettings ++
     List(
@@ -181,15 +158,15 @@ object LSpaceBuild extends Build{
 
     // for separating work on CircleCI containers (try to keep these balanced)
     lazy val circle_1 = project
-      .aggregate(translation_engine, api_server)
+      .aggregate(translation_engine, rpc)
     lazy val circle_2 = project
-      .aggregate(core, l_space, rpc)
+      .aggregate(core, l_space)
 
     // aggregate means commands will cascade to the subprojects
     // dependsOn means classes will be available
     lazy val root = (project in file("."))
       .aggregate(core, l_space,
-        translation_engine, api_server, rpc)
+        translation_engine, rpc)
       .dependsOn(core, l_space,
-        translation_engine, api_server, rpc)
+        translation_engine, rpc)
 }
