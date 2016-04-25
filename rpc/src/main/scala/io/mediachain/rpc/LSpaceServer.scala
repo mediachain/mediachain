@@ -4,20 +4,17 @@ import java.util.logging.Logger
 
 import cats.data.Xor
 import gremlin.scala._
-import io.grpc.{Server, ServerBuilder, Status, StatusRuntimeException}
-import io.mediachain.rpc.Services.{CanonicalWithRootRevision, _}
-import io.mediachain.rpc.{Types => RPCTypes}
-import io.mediachain.rpc.RPCError._
-import io.mediachain.Types._
-import io.mediachain.rpc.TypeConversions._
-import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal
 import io.grpc.inprocess.InProcessServerBuilder
+import io.grpc.{Server, ServerBuilder}
+import io.mediachain.Types._
+import io.mediachain.rpc.Services._
+import io.mediachain.util.Env
 import io.mediachain.util.orient.MigrationHelper
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 import scala.language.existentials
+import scala.util.{Failure, Success}
 
 sealed trait ServerContext {
   val executionContext: ExecutionContext
