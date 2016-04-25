@@ -176,15 +176,15 @@ object LSpaceServerSpec extends BaseSpec
     val personCanonicalID = fixtures.personCanonical.canonicalID
 
     client.listWorksForAuthorWithCanonicalID(personCanonicalID) must beSome {
-        response: WorksForAuthor =>
-          (response.author must beSome(
-            matchCanonicalWithRootRev(personCanonicalID, fixtures.person))) and
-            (response.works must matchListOfCanonicalWithRootRev(
-              (fixtures.imageBlobCanonical.canonicalID, fixtures.imageBlob),
-              (fixtures.imageByDuplicatePersonCanonical.canonicalID,
-                fixtures.imageByDuplicatePerson)
-            ))
-      }
+      response: WorksForAuthor =>
+        (response.author must beSome(
+          matchCanonicalWithRootRev(personCanonicalID, fixtures.person))) and
+          (response.works must matchListOfCanonicalWithRootRev(
+            (fixtures.imageBlobCanonical.canonicalID, fixtures.imageBlob),
+            (fixtures.imageByDuplicatePersonCanonical.canonicalID,
+              fixtures.imageByDuplicatePerson)
+          ))
+    }
 
   }
 }
