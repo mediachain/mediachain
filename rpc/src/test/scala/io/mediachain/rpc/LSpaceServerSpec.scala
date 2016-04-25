@@ -1,5 +1,6 @@
 package io.mediachain.rpc
 
+import gremlin.scala._
 import io.grpc.inprocess.InProcessChannelBuilder
 import io.mediachain.Types._
 import io.mediachain.rpc.Services._
@@ -23,7 +24,7 @@ object LSpaceServerSpec extends BaseSpec
          - returns a canonical with root revision $fetchesACanonicalById
          - returns a canonical's rev history $returnsASubtree
          - returns the works for an author $returnsWorks
-
+         - merges two canonicals $mergesCanonicals
          - client returns None if canonical is not found $returnsNoneIfNoCanonical
       """
 
@@ -193,5 +194,21 @@ object LSpaceServerSpec extends BaseSpec
 
   def returnsNoneIfNoCanonical = {
     client.fetchCanonical(canonicalID = "Foo!") must beNone
+  }
+
+
+  def mergesCanonicals = {
+    val imageCanonicalID = fixtures.imageBlobCanonical.canonicalID
+    val extraImageCanonicalID = fixtures.extraImageBlobCanonical.canonicalID
+
+    client.mergeCanonicals(extraImageCanonicalID, imageCanonicalID) must beSome {
+      response: MergeCanonicalsResponse =>
+        response.mergedCanonicalID must_== imageCanonicalID
+    }
+
+    val graph = graphFactory.getTx
+    fixtures.extraImageBlobCanonical.vertex(graph) must beRightXor { v: Vertex =>
+      v.outE(SupersededBy).exists() must beTrue
+    }
   }
 }
