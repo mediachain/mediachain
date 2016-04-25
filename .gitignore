@@ -4,3 +4,4 @@ src_managed/
 project/boot/
 .history
 .cache
+.idea
