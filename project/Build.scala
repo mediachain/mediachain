@@ -7,7 +7,10 @@ object MediachainBuild extends Build {
   override lazy val settings = super.settings ++ Seq(
     organization := "io.mediachain",
     version := "0.0.1",
-    scalaVersion := "2.11.7"
+    scalaVersion := "2.11.7",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats" % "0.4.1"
+    )
   )
 
   lazy val transactor = Project("transactor", file("transactor"))
