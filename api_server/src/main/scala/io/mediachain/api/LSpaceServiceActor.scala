@@ -78,26 +78,7 @@ trait LSpaceService extends HttpService {
       }
     }
 
-  import operations.Translation._
-  val translationRoutes =
-    pathPrefix("translate") {
-      post {
-        path(Segment) { partnerName: String =>
-          entity(as[String]) { rawMetadataString: String =>
-            complete {
-              val resultXor =
-                translateRawMetadata(partnerName, rawMetadataString)
 
-              resultXor match {
-                case Xor.Left(err) =>
-                  throw new RuntimeException(s"Translation error: $err")
-                case Xor.Right(result) => result
-              }
-            }
-          }
-        }
-      }
-    }
 
   val ingestionRoutes =
     pathPrefix("ingest") {
@@ -106,8 +87,18 @@ trait LSpaceService extends HttpService {
       }
     }
 
+
+  import operations.Merging._
+  val mergeRoutes =
+    (post & path("merge" / JavaUUID / "into" / JavaUUID)) {
+      (childCanonicalID, parentCanonicalID) =>
+        completeXor {
+          withGraph(mergeCanonicals(childCanonicalID, parentCanonicalID))
+        }
+    }
+
   val baseRoute =
     canonicalRoutes ~
-      translationRoutes ~
+      mergeRoutes ~
       ingestionRoutes
 }
