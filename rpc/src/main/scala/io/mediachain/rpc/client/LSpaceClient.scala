@@ -4,8 +4,8 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
-import io.mediachain.rpc.Services._
-import io.mediachain.rpc.Services.LSpaceServiceGrpc.LSpaceServiceBlockingStub
+import io.mediachain.protos.Services._
+import io.mediachain.protos.Services.LSpaceServiceGrpc.LSpaceServiceBlockingStub
 import io.mediachain.Types._
 import io.mediachain.rpc.RPCError
 import io.mediachain.rpc.TypeConversions._

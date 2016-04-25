@@ -5,7 +5,7 @@ import gremlin.scala._
 import io.mediachain.Merge
 import io.mediachain.Traversals, Traversals._, Traversals.Implicits._
 import io.mediachain.core.GraphError
-import io.mediachain.rpc.Services.MergeCanonicalsResponse
+import io.mediachain.protos.Services.MergeCanonicalsResponse
 
 object Merging {
   def mergeCanonicals(childCanonicalID: String, parentCanonicalID: String)
