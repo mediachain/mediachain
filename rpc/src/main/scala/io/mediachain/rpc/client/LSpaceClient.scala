@@ -40,10 +40,10 @@ class LSpaceClient (
   def shutdown(): Unit =
     channel.shutdown.awaitTermination(5, TimeUnit.SECONDS)
 
-  def listCanonicals: CanonicalList = {
+  def listCanonicals(page: Int = 0): CanonicalList = {
     logger.info("Requesting canonicals")
     try {
-      val request = ListCanonicalsRequest(page = 0)
+      val request = ListCanonicalsRequest(page = page.toLong)
       blockingStub.listCanonicals(request)
     } catch {
       case e: StatusRuntimeException => {
@@ -53,10 +53,13 @@ class LSpaceClient (
     }
   }
 
-  def fetchCanonical(canonicalID: String): Option[CanonicalWithRootRevision] = {
+  def fetchCanonical(canonicalID: String, withRawMetadata: Boolean = false)
+  : Option[CanonicalWithRootRevision] = {
     logger.info(s"Fetching canonical with id $canonicalID")
     try {
-      val request = FetchCanonicalRequest(canonicalID = canonicalID)
+      val request = FetchCanonicalRequest(
+        canonicalID = canonicalID,
+        withRawMetadata = withRawMetadata)
       Some(blockingStub.fetchCanonical(request))
     } catch {
       case e: StatusRuntimeException => {
@@ -73,6 +76,21 @@ class LSpaceClient (
     try {
       val request = FetchCanonicalRequest(canonicalID = canonicalID)
       Some(blockingStub.fetchCanonicalHistory(request))
+    } catch {
+      case e: StatusRuntimeException => {
+        logger.warning(s"RPC request failed: ${e.getStatus}")
+        None
+      }
+    }
+  }
+
+
+  def listWorksForAuthorWithCanonicalID(canonicalID: String)
+  : Option[WorksForAuthor] = {
+    logger.info(s"Fetching works for author with canonical id $canonicalID")
+    try {
+      val request = WorksForAuthorRequest(authorCanonicalID = canonicalID)
+      Some(blockingStub.listWorksForAuthor(request))
     } catch {
       case e: StatusRuntimeException => {
         logger.warning(s"RPC request failed: ${e.getStatus}")

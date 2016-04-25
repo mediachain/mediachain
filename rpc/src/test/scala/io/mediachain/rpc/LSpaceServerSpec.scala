@@ -2,14 +2,14 @@ package io.mediachain.rpc
 
 import io.grpc.inprocess.InProcessChannelBuilder
 import io.mediachain.Types._
-import io.mediachain.rpc.Services.{CanonicalWithHistory, CanonicalWithRootRevision, LSpaceServiceGrpc}
+import io.mediachain.rpc.Services._
 import io.mediachain.rpc.client.LSpaceClient
 import io.mediachain.rpc.{Types => RPCTypes}
 import io.mediachain.rpc.TypeConversions._
 import io.mediachain.{BaseSpec, GraphFixture}
 import io.mediachain.util.orient.MigrationHelper
-import org.specs2.execute.Result
-import org.specs2.matcher.Matcher
+import org.specs2.execute.{AsResult, Result}
+import org.specs2.matcher.{ContainWithResultSeq, Matcher}
 import org.specs2.specification.BeforeAfterAll
 
 
@@ -19,9 +19,15 @@ object LSpaceServerSpec extends BaseSpec
 
   def is =
     s2"""
+         - returns a list of all canonicals $returnsCanonicalList
          - returns a canonical with root revision $fetchesACanonicalById
          - returns a canonical's rev history $returnsASubtree
+         - returns the works for an author $returnsWorks
       """
+
+  //
+  // Setup
+  //
 
   val serviceName = "LSpace-Testing"
   lazy val clientChannel = InProcessChannelBuilder.forName(serviceName)
@@ -54,6 +60,84 @@ object LSpaceServerSpec extends BaseSpec
     server.stop()
   }
 
+  //
+  // Matchers
+  //
+
+  private def matchCanonicalWithRootRev[B <: MetadataBlob]
+  (expectedCanonicalID: String, expectedRootBlob: B)
+  : Matcher[CanonicalWithRootRevision] = beLike {
+    case c: CanonicalWithRootRevision =>
+      (c.canonicalID must_== expectedCanonicalID) and
+        (c.rootRevision must beSome(matchRevision(expectedRootBlob)))
+  }
+
+  private def matchImageBlob(expected: ImageBlob)
+  : Matcher[RPCTypes.ImageBlob] = beLike {
+    case rpcImage: RPCTypes.ImageBlob =>
+      (rpcImage.title must_== expected.title) and
+        (rpcImage.description must_== expected.description) and
+        (rpcImage.date must_== expected.date)
+  }
+
+  private def matchPerson(expected: Person)
+  : Matcher[RPCTypes.Person] = beLike {
+    case rpcPerson: RPCTypes.Person =>
+      rpcPerson.name must_== expected.name
+  }
+
+  private def matchRaw(expected: RawMetadataBlob)
+  : Matcher[RPCTypes.RawMetadataBlob] = beLike {
+    case rpcRaw: RPCTypes.RawMetadataBlob =>
+      rpcRaw.blob must_== expected.blob
+  }
+
+  private def matchRevision[B <: MetadataBlob](expected: B)
+  : Matcher[RPCTypes.MetadataBlob] = expected match {
+    case imageBlob: ImageBlob => beLike {
+      case b: RPCTypes.MetadataBlob if b.blob.isImage =>
+        b.blob.image must beSome(matchImageBlob(imageBlob))
+    }
+    case person: Person => beLike {
+      case b: RPCTypes.MetadataBlob if b.blob.isPerson =>
+        b.blob.person must beSome(matchPerson(person))
+    }
+    case raw: RawMetadataBlob => beLike {
+      case b: RPCTypes.MetadataBlob if b.blob.isRawMetadata =>
+        b.blob.rawMetadata must beSome(matchRaw(raw))
+    }
+  }
+
+
+  private def matchRevisions[B <: MetadataBlob](expected: Seq[B])
+  : ContainWithResultSeq[RPCTypes.MetadataBlob] = {
+    val expectedMatchers = expected.map(matchRevision)
+    ContainWithResultSeq(checks = expectedMatchers)
+  }
+
+  private def matchListOfCanonicalWithRootRev[B <: MetadataBlob]
+  (expected: (String, B)*)
+  : ContainWithResultSeq[CanonicalWithRootRevision] = {
+    val f = matchCanonicalWithRootRev _
+    val expectedMatchers = expected.map(f.tupled)
+    ContainWithResultSeq(checks = expectedMatchers)
+  }
+
+
+  //
+  // Examples
+  //
+
+  def returnsCanonicalList = {
+    val expectedCanonicalID = fixtures.imageBlobCanonical.canonicalID
+    val expectedImage = fixtures.imageBlob
+
+    val result = client.listCanonicals()
+
+    result.canonicals must haveLength(5)
+    result.canonicals must contain(
+      matchCanonicalWithRootRev(expectedCanonicalID, expectedImage))
+  }
 
   def fetchesACanonicalById = {
     val blob = fixtures.imageBlob
@@ -64,26 +148,14 @@ object LSpaceServerSpec extends BaseSpec
         (response.canonicalID must_== canonicalID) and
           (response.getRootRevision.getImage.title must_== blob.title)
     }
-  }
 
-  private def matchImageBlob(blob: ImageBlob): Matcher[ImageBlob] =
-    beLike {
-      case imageBlob: ImageBlob =>
-        (imageBlob.title must_== blob.title) and
-          (imageBlob.description must_== blob.description) and
-          (imageBlob.date must_== blob.date)
+    client.fetchCanonical(canonicalID, withRawMetadata = true) must beSome {
+      response: CanonicalWithRootRevision =>
+        (response.canonicalID must_== canonicalID) and
+          (response.getRawMetadata must matchRaw(fixtures.rawMetadataBlob))
     }
-
-  private def matchRevisions(
-    expected: Seq[ImageBlob],
-    actual: Seq[RPCTypes.MetadataBlob]
-  ): Result = {
-    val actualAsImageBlobs = actual.flatMap(_.blob.image).map(_.fromRPC)
-    val expectedMatchers = expected.map(matchImageBlob)
-
-    // this doesn't do what I want, sadly...
-    actualAsImageBlobs must contain(expectedMatchers)
   }
+
 
 
   def returnsASubtree = {
@@ -95,8 +167,24 @@ object LSpaceServerSpec extends BaseSpec
     client.fetchHistoryForCanonical(canonicalID) must beSome {
       response: CanonicalWithHistory =>
         (response.canonicalID must_== canonicalID) and
-          (response.revisions must haveLength(2))
-        // TODO: check contents of revisions
+          (response.revisions must matchRevisions(expectedRevisions))
     }
+  }
+
+
+  def returnsWorks = {
+    val personCanonicalID = fixtures.personCanonical.canonicalID
+
+    client.listWorksForAuthorWithCanonicalID(personCanonicalID) must beSome {
+        response: WorksForAuthor =>
+          (response.author must beSome(
+            matchCanonicalWithRootRev(personCanonicalID, fixtures.person))) and
+            (response.works must matchListOfCanonicalWithRootRev(
+              (fixtures.imageBlobCanonical.canonicalID, fixtures.imageBlob),
+              (fixtures.imageByDuplicatePersonCanonical.canonicalID,
+                fixtures.imageByDuplicatePerson)
+            ))
+      }
+
   }
 }
