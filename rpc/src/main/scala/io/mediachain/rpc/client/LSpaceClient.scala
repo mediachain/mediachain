@@ -86,4 +86,20 @@ class LSpaceClient (
       val request = WorksForAuthorRequest(authorCanonicalID = canonicalID)
       blockingStub.listWorksForAuthor(request)
     }
+
+
+  // Mutations
+
+  def mergeCanonicals(childCanonicalID: String, parentCanonicalID: String)
+  : Option[MergeCanonicalsResponse] =
+    tryRPCRequest {
+      logger.info(s"Merging canonical $childCanonicalID into $parentCanonicalID")
+
+      val request = MergeCanonicalsRequest(
+        childCanonicalID = childCanonicalID,
+        parentCanonicalID = parentCanonicalID
+      )
+      blockingStub.mergeCanonicals(request)
+    }
+
 }
