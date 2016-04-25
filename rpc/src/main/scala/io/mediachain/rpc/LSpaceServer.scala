@@ -21,7 +21,7 @@ sealed trait ServerContext {
 }
 
 case class NetworkServerContext(
-  port: Int = LSpaceServer.DEFAULT_PORT,
+  port: Int = LSpaceServer.LISTEN_PORT,
   executionContext: ExecutionContext = ExecutionContext.global
 ) extends ServerContext
 
@@ -31,7 +31,9 @@ case class InProcessServerContext(
 ) extends ServerContext
 
 object LSpaceServer {
+  val PORT_ENV_VAR = "LSPACE_LISTEN_PORT"
   val DEFAULT_PORT = 50052
+  val LISTEN_PORT = Env.getInt(PORT_ENV_VAR).getOrElse(DEFAULT_PORT)
 
   private val logger = Logger.getLogger(classOf[LSpaceServer].getName)
 
