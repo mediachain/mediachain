@@ -23,6 +23,8 @@ object LSpaceServerSpec extends BaseSpec
          - returns a canonical with root revision $fetchesACanonicalById
          - returns a canonical's rev history $returnsASubtree
          - returns the works for an author $returnsWorks
+
+         - client returns None if canonical is not found $returnsNoneIfNoCanonical
       """
 
   //
@@ -186,6 +188,10 @@ object LSpaceServerSpec extends BaseSpec
               fixtures.imageByDuplicatePerson)
           )
     }
+  }
 
+
+  def returnsNoneIfNoCanonical = {
+    client.fetchCanonical(canonicalID = "Foo!") must beNone
   }
 }
