@@ -7,7 +7,7 @@ import gremlin.scala._
 import io.mediachain.Types._
 import io.mediachain.core.GraphError.CanonicalNotFound
 import io.mediachain.rpc.TypeConversions._
-import io.mediachain.rpc.Services._
+import io.mediachain.protos.Services._
 import io.mediachain.Traversals, Traversals._, Traversals.Implicits._
 
 

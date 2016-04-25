@@ -7,7 +7,7 @@ import gremlin.scala._
 import io.grpc.inprocess.InProcessServerBuilder
 import io.grpc.{Server, ServerBuilder}
 import io.mediachain.Types._
-import io.mediachain.rpc.Services._
+import io.mediachain.protos.Services._
 import io.mediachain.util.Env
 import io.mediachain.util.orient.MigrationHelper
 import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
