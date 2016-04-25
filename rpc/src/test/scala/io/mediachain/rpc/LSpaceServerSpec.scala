@@ -68,16 +68,16 @@ object LSpaceServerSpec extends BaseSpec
   (expectedCanonicalID: String, expectedRootBlob: B)
   : Matcher[CanonicalWithRootRevision] = beLike {
     case c: CanonicalWithRootRevision =>
-      (c.canonicalID must_== expectedCanonicalID) and
-        (c.rootRevision must beSome(matchRevision(expectedRootBlob)))
+      c.canonicalID must_== expectedCanonicalID
+      c.rootRevision must beSome(matchRevision(expectedRootBlob))
   }
 
   private def matchImageBlob(expected: ImageBlob)
   : Matcher[RPCTypes.ImageBlob] = beLike {
     case rpcImage: RPCTypes.ImageBlob =>
-      (rpcImage.title must_== expected.title) and
-        (rpcImage.description must_== expected.description) and
-        (rpcImage.date must_== expected.date)
+      rpcImage.title must_== expected.title
+      rpcImage.description must_== expected.description
+      rpcImage.date must_== expected.date
   }
 
   private def matchPerson(expected: Person)
@@ -145,14 +145,14 @@ object LSpaceServerSpec extends BaseSpec
 
     client.fetchCanonical(canonicalID) must beSome {
       response: CanonicalWithRootRevision =>
-        (response.canonicalID must_== canonicalID) and
-          (response.getRootRevision.getImage.title must_== blob.title)
+        response.canonicalID must_== canonicalID
+        response.getRootRevision.getImage.title must_== blob.title
     }
 
     client.fetchCanonical(canonicalID, withRawMetadata = true) must beSome {
       response: CanonicalWithRootRevision =>
-        (response.canonicalID must_== canonicalID) and
-          (response.getRawMetadata must matchRaw(fixtures.rawMetadataBlob))
+        response.canonicalID must_== canonicalID
+        response.getRawMetadata must matchRaw(fixtures.rawMetadataBlob)
     }
   }
 
@@ -166,8 +166,8 @@ object LSpaceServerSpec extends BaseSpec
 
     client.fetchHistoryForCanonical(canonicalID) must beSome {
       response: CanonicalWithHistory =>
-        (response.canonicalID must_== canonicalID) and
-          (response.revisions must matchRevisions(expectedRevisions))
+        response.canonicalID must_== canonicalID
+        response.revisions must matchRevisions(expectedRevisions)
     }
   }
 
@@ -177,13 +177,14 @@ object LSpaceServerSpec extends BaseSpec
 
     client.listWorksForAuthorWithCanonicalID(personCanonicalID) must beSome {
       response: WorksForAuthor =>
-        (response.author must beSome(
-          matchCanonicalWithRootRev(personCanonicalID, fixtures.person))) and
-          (response.works must matchListOfCanonicalWithRootRev(
+        response.author must beSome(
+          matchCanonicalWithRootRev(personCanonicalID, fixtures.person))
+
+          response.works must matchListOfCanonicalWithRootRev(
             (fixtures.imageBlobCanonical.canonicalID, fixtures.imageBlob),
             (fixtures.imageByDuplicatePersonCanonical.canonicalID,
               fixtures.imageByDuplicatePerson)
-          ))
+          )
     }
 
   }
