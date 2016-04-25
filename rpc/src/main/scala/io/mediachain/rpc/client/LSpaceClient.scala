@@ -7,7 +7,11 @@ import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
 import io.mediachain.rpc.Services._
 import io.mediachain.rpc.Services.LSpaceServiceGrpc.LSpaceServiceBlockingStub
 import io.mediachain.Types._
+import io.mediachain.rpc.RPCError
 import io.mediachain.rpc.TypeConversions._
+import RPCError._
+import cats.data.Xor
+
 
 object LSpaceClient {
   def apply(host: String, port: Int): LSpaceClient = {
@@ -40,19 +44,20 @@ class LSpaceClient (
   def shutdown(): Unit =
     channel.shutdown.awaitTermination(5, TimeUnit.SECONDS)
 
-  def tryRPCRequest[Response](f: => Response): Option[Response] = {
-    try Some(f)
+  def tryRPCRequest[Response](f: => Response): Xor[RPCError, Response] = {
+    try Xor.Right(f)
     catch {
       case e: StatusRuntimeException => {
         logger.warning(s"RPC request failed: ${e.getStatus}")
-        None
+        val err = RPCError.fromException(e)
+        Xor.Left(err)
       }
       case e: Throwable => throw e
     }
   }
 
   def listCanonicals(page: Int = 0)
-  : Option[CanonicalList] =
+  : Xor[RPCError, CanonicalList] =
     tryRPCRequest {
       logger.info("Requesting canonicals")
       val request = ListCanonicalsRequest(page = page.toLong)
@@ -60,7 +65,7 @@ class LSpaceClient (
     }
 
   def fetchCanonical(canonicalID: String, withRawMetadata: Boolean = false)
-  : Option[CanonicalWithRootRevision] =
+  : Xor[RPCError, CanonicalWithRootRevision] =
     tryRPCRequest {
       logger.info(s"Fetching canonical with id $canonicalID")
       val request = FetchCanonicalRequest(
@@ -71,7 +76,7 @@ class LSpaceClient (
 
 
   def fetchHistoryForCanonical(canonicalID: String)
-  : Option[CanonicalWithHistory] =
+  : Xor[RPCError, CanonicalWithHistory] =
     tryRPCRequest {
       logger.info(s"Fetching history for canonical with id $canonicalID")
       val request = FetchCanonicalRequest(canonicalID = canonicalID)
@@ -80,7 +85,7 @@ class LSpaceClient (
 
 
   def listWorksForAuthorWithCanonicalID(canonicalID: String)
-  : Option[WorksForAuthor] =
+  : Xor[RPCError, WorksForAuthor] =
     tryRPCRequest {
       logger.info(s"Fetching works for author with canonical id $canonicalID")
       val request = WorksForAuthorRequest(authorCanonicalID = canonicalID)
@@ -91,7 +96,7 @@ class LSpaceClient (
   // Mutations
 
   def mergeCanonicals(childCanonicalID: String, parentCanonicalID: String)
-  : Option[MergeCanonicalsResponse] =
+  : Xor[RPCError, MergeCanonicalsResponse] =
     tryRPCRequest {
       logger.info(s"Merging canonical $childCanonicalID into $parentCanonicalID")
 

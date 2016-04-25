@@ -25,7 +25,7 @@ object LSpaceServerSpec extends BaseSpec
          - returns a canonical's rev history $returnsASubtree
          - returns the works for an author $returnsWorks
          - merges two canonicals $mergesCanonicals
-         - client returns None if canonical is not found $returnsNoneIfNoCanonical
+         - client returns RPCError.NotFound if canonical is not found $returnsNotFoundIfNoCanonical
       """
 
   //
@@ -135,7 +135,7 @@ object LSpaceServerSpec extends BaseSpec
     val expectedCanonicalID = fixtures.imageBlobCanonical.canonicalID
     val expectedImage = fixtures.imageBlob
 
-    client.listCanonicals() must beSome { result: CanonicalList =>
+    client.listCanonicals() must beRightXor { result: CanonicalList =>
       result.canonicals must haveLength(5)
       result.canonicals must contain(
         matchCanonicalWithRootRev(expectedCanonicalID, expectedImage))
@@ -146,13 +146,13 @@ object LSpaceServerSpec extends BaseSpec
     val blob = fixtures.imageBlob
     val canonicalID = fixtures.imageBlobCanonical.canonicalID
 
-    client.fetchCanonical(canonicalID) must beSome {
+    client.fetchCanonical(canonicalID) must beRightXor {
       response: CanonicalWithRootRevision =>
         response.canonicalID must_== canonicalID
         response.getRootRevision.getImage.title must_== blob.title
     }
 
-    client.fetchCanonical(canonicalID, withRawMetadata = true) must beSome {
+    client.fetchCanonical(canonicalID, withRawMetadata = true) must beRightXor {
       response: CanonicalWithRootRevision =>
         response.canonicalID must_== canonicalID
         response.getRawMetadata must matchRaw(fixtures.rawMetadataBlob)
@@ -167,7 +167,7 @@ object LSpaceServerSpec extends BaseSpec
       fixtures.imageBlob, fixtures.modifiedImageBlob
     )
 
-    client.fetchHistoryForCanonical(canonicalID) must beSome {
+    client.fetchHistoryForCanonical(canonicalID) must beRightXor {
       response: CanonicalWithHistory =>
         response.canonicalID must_== canonicalID
         response.revisions must matchRevisions(expectedRevisions)
@@ -178,7 +178,7 @@ object LSpaceServerSpec extends BaseSpec
   def returnsWorks = {
     val personCanonicalID = fixtures.personCanonical.canonicalID
 
-    client.listWorksForAuthorWithCanonicalID(personCanonicalID) must beSome {
+    client.listWorksForAuthorWithCanonicalID(personCanonicalID) must beRightXor {
       response: WorksForAuthor =>
         response.author must beSome(
           matchCanonicalWithRootRev(personCanonicalID, fixtures.person))
@@ -192,8 +192,11 @@ object LSpaceServerSpec extends BaseSpec
   }
 
 
-  def returnsNoneIfNoCanonical = {
-    client.fetchCanonical(canonicalID = "Foo!") must beNone
+  def returnsNotFoundIfNoCanonical = {
+    client.fetchCanonical(canonicalID = "Foo!") must beLeftXor {
+      err: RPCError =>
+        err must beAnInstanceOf[RPCError.NotFound]
+    }
   }
 
 
@@ -201,7 +204,7 @@ object LSpaceServerSpec extends BaseSpec
     val imageCanonicalID = fixtures.imageBlobCanonical.canonicalID
     val extraImageCanonicalID = fixtures.extraImageBlobCanonical.canonicalID
 
-    client.mergeCanonicals(extraImageCanonicalID, imageCanonicalID) must beSome {
+    client.mergeCanonicals(extraImageCanonicalID, imageCanonicalID) must beRightXor {
       response: MergeCanonicalsResponse =>
         response.mergedCanonicalID must_== imageCanonicalID
     }

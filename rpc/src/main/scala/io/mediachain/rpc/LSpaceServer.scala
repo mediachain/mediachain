@@ -7,6 +7,7 @@ import gremlin.scala._
 import io.grpc.{Server, ServerBuilder, Status, StatusRuntimeException}
 import io.mediachain.rpc.Services.{CanonicalWithRootRevision, _}
 import io.mediachain.rpc.{Types => RPCTypes}
+import io.mediachain.rpc.RPCError._
 import io.mediachain.Types._
 import io.mediachain.rpc.TypeConversions._
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal
@@ -129,10 +130,9 @@ class LSpaceServer(
           queryCanonical,
           withRaw = request.withRawMetadata)
       }.getOrElse {
-        throw new StatusRuntimeException(Status.NOT_FOUND
-          .withDescription(
-            s"Cannot fetch non-existent canonical ${request.canonicalID}")
-        )
+        throw RPCError.NotFound(
+          s"Cannot fetch non-existent canonical ${request.canonicalID}"
+        ).asException
       }
     }
 
@@ -141,9 +141,9 @@ class LSpaceServer(
       withGraph {
         CanonicalQueries.historyForCanonical(request.canonicalID)
       }.getOrElse {
-        throw new StatusRuntimeException(Status.NOT_FOUND
-          .withDescription(
-            s"Cannot fetch history for non-existent canonical ${request.canonicalID}"))
+        throw RPCError.NotFound(
+          s"Cannot fetch history for non-existent canonical ${request.canonicalID}"
+        ).asException
       }
     }
 
@@ -152,9 +152,9 @@ class LSpaceServer(
       withGraph {
         CanonicalQueries.worksForPersonWithCanonicalID(request.authorCanonicalID)
       }.getOrElse {
-        throw new StatusRuntimeException(Status.NOT_FOUND
-          .withDescription(
-            s"Cannot fetch works for non-existent canonical ${request.authorCanonicalID}"))
+        throw RPCError.NotFound(
+          s"Cannot fetch works for non-existent canonical ${request.authorCanonicalID}"
+        ).asException
       }
     }
 
@@ -171,8 +171,9 @@ class LSpaceServer(
 
       resultXor match {
         case Xor.Left(err) =>
-          throw new StatusRuntimeException(Status.FAILED_PRECONDITION
-            .withDescription(s"Error merging canonicals: $err"))
+          throw RPCError.FailedPrecondition(s"Error merging canonicals: $err")
+            .asException
+
         case Xor.Right(result) => result
       }
     }
