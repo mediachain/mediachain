@@ -26,6 +26,7 @@ object LSpaceBuild extends Build{
       "com.github.scopt" %% "scopt" % "3.4.0",
       "com.lihaoyi" % "ammonite-repl" % "0.5.7" % "test" cross CrossVersion.full
     ),
+    fork in Test := true,
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
 
@@ -53,21 +54,7 @@ object LSpaceBuild extends Build{
       "org.typelevel" %% "cats" % "0.4.1",
       "org.json4s" %% "json4s-jackson" % "3.3.0"
     ),
-    unmanagedClasspath in Test += baseDirectory.value / "test-resources",
-    // see http://stackoverflow.com/a/9901616
-    //
-    // instantiating the `SBTSetupHook` and `SBTCleanupHook`
-    // classes causes code to run that prepares the testing
-    // environment & works around some classloader issues with
-    // sbt and orient / gremlin
-    testOptions in Test += Tests.Setup(loader => {
-      println("test setup")
-      loader.loadClass("io.mediachain.SBTSetupHook").newInstance
-    }),
-    testOptions in Test += Tests.Cleanup(loader => {
-      println("test cleanup")
-      loader.loadClass("io.mediachain.SBTCleanupHook").newInstance
-    })
+    unmanagedClasspath in Test += baseDirectory.value / "test-resources"
   )).dependsOn(l_space)
     .dependsOn(l_space % "test->test")
     .dependsOn(core)
@@ -110,7 +97,6 @@ object LSpaceBuild extends Build{
   import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
   import io.mediachain.util.orient.MigrationHelper
 
-  Orient.instance.removeShutdownHook()
   lazy val graph = MigrationHelper.newInMemoryGraph()
   """.split("\n").mkString("; ")
   lazy val l_space = Project("l_space", file("l_space")).settings(scalaSettings ++ List(
@@ -139,17 +125,6 @@ object LSpaceBuild extends Build{
       SbtExclusionRule("org.codehaus.groovy", "groovy-json"),
       SbtExclusionRule("org.codehaus.groovy", "groovy-jsr223")
       ),
-
-    // see http://stackoverflow.com/a/9901616
-    //
-    // instantiating the `SBTSetupHook` and `SBTCleanupHook`
-    // classes causes code to run that prepares the testing
-    // environment & works around some classloader issues with
-    // sbt and orient / gremlin
-    testOptions in Test += Tests.Setup( loader => {
-      println("test setup")
-      loader.loadClass("io.mediachain.SBTSetupHook").newInstance
-      }),
 
     initialCommands in (Test, console) := "ammonite.repl.Main.run(\"" + predef + "\")"
     )).dependsOn(orientdb_migrations)
