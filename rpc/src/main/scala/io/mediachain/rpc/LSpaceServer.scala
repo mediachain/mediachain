@@ -4,7 +4,7 @@ import java.util.logging.Logger
 
 import cats.data.Xor
 import gremlin.scala._
-import io.grpc.{Server, ServerBuilder}
+import io.grpc.{Server, ServerBuilder, Status, StatusRuntimeException}
 import io.mediachain.rpc.Services.{CanonicalWithRootRevision, _}
 import io.mediachain.rpc.{Types => RPCTypes}
 import io.mediachain.Types._
@@ -129,8 +129,10 @@ class LSpaceServer(
           queryCanonical,
           withRaw = request.withRawMetadata)
       }.getOrElse {
-        // FIXME: figure out how gRPC error handling is supposed to work
-        throw new RuntimeException("Canonical not found")
+        throw new StatusRuntimeException(Status.NOT_FOUND
+          .withDescription(
+            s"Cannot fetch non-existent canonical ${request.canonicalID}")
+        )
       }
     }
 
@@ -139,8 +141,9 @@ class LSpaceServer(
       withGraph {
         CanonicalQueries.historyForCanonical(request.canonicalID)
       }.getOrElse {
-        // FIXME: figure out how gRPC error handling is supposed to work
-        throw new RuntimeException("Canonical not found")
+        throw new StatusRuntimeException(Status.NOT_FOUND
+          .withDescription(
+            s"Cannot fetch history for non-existent canonical ${request.canonicalID}"))
       }
     }
 
@@ -149,8 +152,9 @@ class LSpaceServer(
       withGraph {
         CanonicalQueries.worksForPersonWithCanonicalID(request.authorCanonicalID)
       }.getOrElse {
-        // FIXME: figure out how gRPC error handling is supposed to work
-        throw new RuntimeException("Canonical not found")
+        throw new StatusRuntimeException(Status.NOT_FOUND
+          .withDescription(
+            s"Cannot fetch works for non-existent canonical ${request.authorCanonicalID}"))
       }
     }
 
@@ -167,7 +171,8 @@ class LSpaceServer(
 
       resultXor match {
         case Xor.Left(err) =>
-          throw new RuntimeException(s"Error merging canonicals: $err")
+          throw new StatusRuntimeException(Status.FAILED_PRECONDITION
+            .withDescription(s"Error merging canonicals: $err"))
         case Xor.Right(result) => result
       }
     }
