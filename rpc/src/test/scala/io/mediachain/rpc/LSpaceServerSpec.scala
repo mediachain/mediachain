@@ -132,11 +132,11 @@ object LSpaceServerSpec extends BaseSpec
     val expectedCanonicalID = fixtures.imageBlobCanonical.canonicalID
     val expectedImage = fixtures.imageBlob
 
-    val result = client.listCanonicals()
-
-    result.canonicals must haveLength(5)
-    result.canonicals must contain(
-      matchCanonicalWithRootRev(expectedCanonicalID, expectedImage))
+    client.listCanonicals() must beSome { result: CanonicalList =>
+      result.canonicals must haveLength(5)
+      result.canonicals must contain(
+        matchCanonicalWithRootRev(expectedCanonicalID, expectedImage))
+    }
   }
 
   def fetchesACanonicalById = {

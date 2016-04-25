@@ -2,6 +2,7 @@ package io.mediachain.rpc
 
 import java.util.logging.Logger
 
+import cats.data.Xor
 import gremlin.scala._
 import io.grpc.{Server, ServerBuilder}
 import io.mediachain.rpc.Services.{CanonicalWithRootRevision, _}
@@ -150,6 +151,24 @@ class LSpaceServer(
       }.getOrElse {
         // FIXME: figure out how gRPC error handling is supposed to work
         throw new RuntimeException("Canonical not found")
+      }
+    }
+
+
+    // Mutations
+    import operations.Merging
+    override def mergeCanonicals(request: MergeCanonicalsRequest)
+    : Future[MergeCanonicalsResponse] = Future {
+      val resultXor = withGraph {
+        Merging.mergeCanonicals(
+          request.childCanonicalID,
+          request.parentCanonicalID)
+      }
+
+      resultXor match {
+        case Xor.Left(err) =>
+          throw new RuntimeException(s"Error merging canonicals: $err")
+        case Xor.Right(result) => result
       }
     }
   }
