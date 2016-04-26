@@ -60,6 +60,16 @@ object Types {
     Option(v.id).map(id => id.asInstanceOf[ElementID])
   }
 
+
+  def vertexToMetadataBlob(vertex: Vertex): Option[MetadataBlob] =
+    vertex.label match {
+      case ImageBlob.VertexLabel => Some(vertex.toCC[ImageBlob])
+      case Person.VertexLabel => Some(vertex.toCC[Person])
+      case RawMetadataBlob.VertexLabel => Some(vertex.toCC[RawMetadataBlob])
+      case _ => None
+    }
+
+
   trait Hashable {
     def multiHash: MultiHash =
       MultiHash.forHashable(this)
@@ -176,7 +186,7 @@ object Types {
     }
   }
 
-  @label("Canonical")
+  @label(Canonical.VertexLabel)
   case class Canonical(
     @id id: Option[ElementID],
     canonicalID: String,
@@ -193,6 +203,7 @@ object Types {
   }
 
   object Canonical {
+    val VertexLabel = "Canonical"
     object Keys {
       val canonicalID = Key[String]("canonicalID")
     }
@@ -204,7 +215,7 @@ object Types {
 
   sealed trait MetadataBlob extends VertexClass with Signable
 
-  @label("RawMetadataBlob")
+  @label(RawMetadataBlob.VertexLabel)
   case class RawMetadataBlob(
     @id id: Option[ElementID],
     blob: String,
@@ -220,12 +231,13 @@ object Types {
   }
 
   object RawMetadataBlob {
+    val VertexLabel = "RawMetadataBlob"
     object Keys {
       val blob = Key[String]("blob")
     }
   }
 
-  @label("Person")
+  @label(Person.VertexLabel)
   case class Person(
     @id id: Option[ElementID],
     name: String,
@@ -242,6 +254,7 @@ object Types {
   }
 
   object Person {
+    val VertexLabel = "Person"
     object Keys {
       val name = Key[String]("name")
     }
@@ -251,7 +264,7 @@ object Types {
     }
   }
 
-  @label("ImageBlob")
+  @label(ImageBlob.VertexLabel)
   case class ImageBlob(
     @id id: Option[ElementID],
     title: String,
@@ -272,6 +285,7 @@ object Types {
   }
 
   object ImageBlob {
+    val VertexLabel = "ImageBlob"
     object Keys {
       val title = Key[String]("title")
       val description = Key[String]("description")
