@@ -5,7 +5,7 @@ object Types {
   import org.json4s.JValue
 
   // Mediachain Datastore Records
-  abstract class Record {
+  sealed abstract class Record {
     def meta: Map[String, JValue]
   }
   
@@ -13,7 +13,7 @@ object Types {
   abstract class Reference
   
   // Canonical records: Entities and Artefacts
-  abstract class CanonicalRecord extends Record
+  sealed abstract class CanonicalRecord extends Record
   
   case class Entity(
     meta: Map[String, JValue]
@@ -24,7 +24,7 @@ object Types {
   ) extends CanonicalRecord
   
   // Chain Cells
-  abstract class ChainCell extends Record {
+  sealed abstract class ChainCell extends Record {
     def chain: Option[Reference]
   }
   
@@ -41,7 +41,7 @@ object Types {
   ) extends ChainCell
   
   // Journal Entries
-  abstract class JournalEntry {
+  sealed abstract class JournalEntry {
     def index: BigInt
     def ref: Reference
   }
@@ -69,7 +69,14 @@ object Types {
     def updateJournal(entry: JournalEntry): Unit
   }
   
-  case class JournalError(what: String) {
-    override def toString = "JournalError: " + what
+  sealed abstract class JournalError
+  
+  case class JournalCommitError(what: String) extends JournalError {
+    override def toString = "Journal Commit Error: " + what
+  }
+  
+  // Datastore interface
+  trait Datastore {
+    def put(rec: Record): Reference
   }
 }

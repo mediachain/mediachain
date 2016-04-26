@@ -1,7 +1,11 @@
 package io.mediachain.transactor
 
+import scala.collection.mutable.{Set => MSet, HashSet => MHashSet, 
+                                 Map => MMap, HashMap => MHashMap}
+
 import io.atomix.copycat.{Command, Query}
 import io.atomix.copycat.server.{Commit, StateMachine, Snapshottable}
+import io.atomix.copycat.server.session.{ServerSession, SessionListener}
 import io.atomix.copycat.server.storage.snapshot.{SnapshotReader, SnapshotWriter}
 
 import cats.data.Xor
@@ -21,28 +25,162 @@ object Copycat {
   case class JournalLookup(
     ref: Reference
   ) extends Query[Option[Reference]]
+  
+  case class JournalCommitEvent(entry: JournalEntry)
 
-  class JournalStateMachine extends StateMachine with Snapshottable {
+  class JournalStateMachine(
+    val datastore: Datastore
+  ) extends StateMachine with Snapshottable with SessionListener {
+    sealed abstract class CanonicalReference {
+      def chain: Option[Reference]
+    }
+    case class EntityReference(chain: Option[Reference]) extends CanonicalReference
+    case class ArtefactReference(chain: Option[Reference]) extends CanonicalReference
     
+    private var seqno: BigInt = 0
+    private var index: MMap[Reference, CanonicalReference] = new MHashMap    
+    private var clients: MSet[ServerSession] = new MHashSet // this wanted to be called sessions
+
+    
+    private def CommitError(what: String) = Xor.left(JournalCommitError(what))
+    
+    // Journal Interface
+    def insert(commit: Commit[JournalInsert]): Xor[JournalError, CanonicalEntry] = {
+      try {
+        insertRecord(commit.operation)
+      } finally {
+        commit.release()
+      }
+    }
+    
+    private def insertRecord(cmd: JournalInsert): Xor[JournalError, CanonicalEntry] = {
+      val rec = cmd.record
+      val ref = datastore.put(rec)
+      index.get(ref) match {
+        case Some(_) => CommitError("duplicate insert")
+        case None => {
+          rec match {
+            case Entity(_) => {
+              index += (ref -> EntityReference(None))
+            }
+            case Artefact(_) => {
+              index += (ref -> ArtefactReference(None))
+            }
+          }
+          
+          val entry = CanonicalEntry(nextSeqno(), ref)
+          publishCommit(entry)
+          Xor.right(entry)
+        }
+      }
+    }
+
+    def update(commit: Commit[JournalUpdate]): Xor[JournalError, ChainEntry] = {
+      try {
+        updateChain(commit.operation)
+      } finally {
+        commit.release()
+      }
+    }
+    
+    private def updateChain(cmd: JournalUpdate): Xor[JournalError, ChainEntry] = {
+      val ref = cmd.ref
+      val cell = cmd.cell
+      index.get(ref) match {
+        case None => CommitError("invalid reference")
+        case Some(cref) => {
+          cref match {
+            case EntityReference(chain) => {
+              cell match {
+                case EntityChainCell(entity, xchain, meta) => {
+                  if (checkUpdate(ref, chain, entity, xchain)) {
+                    val newcell = EntityChainCell(ref, chain, meta)
+                    val newchain = datastore.put(newcell)
+                    index.put(ref, EntityReference(Some(newchain)))
+                    
+                    val entry = ChainEntry(nextSeqno(), ref, newchain, chain)
+                    publishCommit(entry)
+                    Xor.right(entry)
+                  } else CommitError("invalid chain cell")
+                }
+                case _ => CommitError("invalid chain")
+              }
+            }
+            case ArtefactReference(chain) => {
+              cell match {
+                case ArtefactChainCell(artefact, xchain, meta) => {
+                  if (checkUpdate(ref, chain, artefact, xchain)) {
+                    val newcell = ArtefactChainCell(ref, chain, meta)
+                    val newchain = datastore.put(newcell)
+                    index.put(ref, ArtefactReference(Some(newchain)))
+                    
+                    val entry = ChainEntry(nextSeqno(), ref, newchain, chain)
+                    publishCommit(entry)
+                    Xor.right(entry)
+                  } else CommitError("invalid chain cell")
+                }
+                case _ => CommitError("invalid chain")
+              }
+            }
+          }
+        }
+      }
+    }
+
+    def lookup(commit: Commit[JournalLookup]): Option[Reference] = {
+      try {
+        index.get(commit.operation.ref) match {
+          case Some(cref) => cref.chain
+          case None => None
+        }
+      } finally {
+        commit.release()
+      }
+    }
+
+    // helpers
+    private def nextSeqno() = {
+      val next = seqno
+      seqno += 1
+      next
+    }
+    
+
+    private def publishCommit(entry: JournalEntry) {
+      val event = JournalCommitEvent(entry)
+      clients.foreach(_.publish("journal-commit", event))
+    }
+    
+    
+    private def checkUpdate(ref: Reference, chain: Option[Reference],
+                            xref: Reference, xchain: Option[Reference]) = {
+      (xref == ref) && ((xchain == None) || (xchain == chain))
+    }
+        
+    // Snapshottable
     override def install(reader: SnapshotReader) {
-      
+      seqno = reader.readObject()
+      index = reader.readObject()
     }
     
     override def snapshot(writer: SnapshotWriter) {
+      writer.writeObject(seqno)
+      writer.writeObject(index)
+    }
+    
+    // Session Listener
+    override def register(ses: ServerSession) {
+      clients += ses
+    }
+    
+    override def unregister(ses: ServerSession) {
+      clients -= ses
+    }
 
+    override def expire(ses: ServerSession) {
+      clients -= ses
     }
     
-    def insert(commit: Commit[JournalInsert]): Xor[JournalError, CanonicalEntry] = {
-      Xor.left(JournalError("Implement me!"))
-    }
-    
-    def update(commit: Commit[JournalUpdate]): Xor[JournalError, ChainEntry] = {
-      Xor.left(JournalError("Implement me!"))
-    }
-    
-    def lookup(commit: Commit[JournalLookup]): Option[Reference] = {
-      None
-    }
-                                                    
+    override def close(ses: ServerSession) {}
   }
 }
