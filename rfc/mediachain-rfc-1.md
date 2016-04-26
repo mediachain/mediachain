@@ -6,7 +6,7 @@ Author: [vyzo](https://github.com/vyzo)
 
 ## Overview
 
-The Mediachain[1] is a decentralized system designed for tracking
+Mediachain[1] is a decentralized system designed for tracking
 metadata related to Creative Works and Internet Media.
 It is being developed as an Open Source, Open Data system with
 decentralized stakeholders.
@@ -22,7 +22,7 @@ Open Data Peer-to-Peer network.
 
 ### Data Objects
 
-The Mediachain is stored in a distributed append-only datastore with
+Mediachain is stored in a distributed append-only datastore with
 content addressable access. This maps well to the IPFS[2] peer-to-peer
 network, which names and accesses data using the cryptographic hashes of
 the content. Objects stored in the network are immutable and persistent;
@@ -54,14 +54,14 @@ special key, allowing us to construct Merkle DAGs.
 
 ### Entities and Artefacts
 
-There are two principal types of objects in the mediachain:
+There are two principal types of objects in Mediachain:
 entities and artefacts. An _Entity_ represents a person or organization
 who may associate with artefacts, for example by creating or posting
 a reference to the artefact. _Artefacts_ represent media works as tracked
-by the Mediachain. They can be images, video, text, or any other
+by Mediachain. They can be images, video, text, or any other
 common media found in the Internet. 
 
-In the Mediachain schema, entities are instances of data objects with
+In Mediachain schema, entities are instances of data objects with
 their type field set to `entity` and a mandatory `name` field.
 Artefacts are instances of data objects with their type field set
 to `artefact`, a mandatory name and optional `description` and creation
@@ -115,7 +115,7 @@ IPRSSignature = {
 
 ### Chains and Links
 
-The fundamental operation of the Mediachain is to link entities and
+The fundamental operation of Mediachain is to link entities and
 artefacts with labeled relationships and metadata.  The data model
 described so far is disconnected: it contains independent entities and
 artefacts. In order to track the evolving relationships between
@@ -156,12 +156,12 @@ The cells in the chain collectively store the evolving set of
 metadata associated with entities and artefacts. The metadata
 themselves may contain conflicting statements. The interpretation
 and reconciliation strategy for conflicts is open to the users
-of the Mediachain, which preserves them all.
+of Mediachain, which preserves them all.
 
 Note that the types of cells that can appear in either type of
 chain it is not limited to the types of relationships described
 above. These are merely the minimum schema to support the
-functionality of the Mediachain.
+functionality of Mediachain.
 
 Keeping this in mind, we can model the chains with the following
 schema:
@@ -243,7 +243,7 @@ ArtefactReferenceCell = {
   }
 ```
 
-## Indexing and Querying the Mediachain
+## Indexing and Querying Mediachain
 
 ### The Journal
 
@@ -251,14 +251,14 @@ Mediachain data are persistent and available through the IPFS network.
 However they are not _discoverable_ without the help of an index which
 maintains references to entities, artefacts and chain heads.
 
-In order to make the mediachain indexable and discoverable we need to
+In order to make Mediachain indexable and discoverable we need to
 maintain a _Journal_ of updates to the data store. The journal is
 very similar to a blockchain in that it acts as a public ledger of all
 Mediachain data transactions in the system. By replaying the journal
 and fetching the data from IPFS, any node in the Internet can bootstrap
-an index that allows it to read and query the Mediachain.
+an index that allows it to read and query Mediachain.
 
-### Appending Data in the Mediachain
+### Appending Data in Mediachain
 
 The datastore initially is almost empty, containing only the `Nil` object
 as the bottom of all chains 
@@ -298,7 +298,7 @@ The journal is the critical piece of metadata that connects the
 Mediachain datastore.  So far we have made no mention of how to
 maintain the Journal in a distributed fashion.
 This is purposeful: the scope of this specification is limited to
-describing the primitives of the Mediachain store in sufficient detail
+describing the primitives of Mediachain store in sufficient detail
 to allow bootstrap and Open Data access.
 
 The assumption is that during the system bootstrap and scaling, a
@@ -320,7 +320,7 @@ passing of well known actor and musician David Bowie. The GIF
 quickly went viral, mutating along the way, and resulting at a
 complete loss of attribution for the cultural afterfact.
 
-The Mediachain is designed to solve this kind of problems by
+Mediachain is designed to solve this kind of problems by
 tracking the propagation and evolution of the artefact in the
 datastore.
 Thus, following the viral propagation as described in [4] up
