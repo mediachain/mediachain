@@ -6,10 +6,8 @@ import java.util.logging.Logger
 import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
 import io.mediachain.protos.Services._
 import io.mediachain.protos.Services.LSpaceServiceGrpc.LSpaceServiceBlockingStub
-import io.mediachain.Types._
 import io.mediachain.rpc.RPCError
 import io.mediachain.rpc.TypeConversions._
-import RPCError._
 import cats.data.Xor
 
 
@@ -90,21 +88,6 @@ class LSpaceClient (
       logger.info(s"Fetching works for author with canonical id $canonicalID")
       val request = WorksForAuthorRequest(authorCanonicalID = canonicalID)
       blockingStub.listWorksForAuthor(request)
-    }
-
-
-  // Mutations
-
-  def mergeCanonicals(childCanonicalID: String, parentCanonicalID: String)
-  : Xor[RPCError, MergeCanonicalsResponse] =
-    tryRPCRequest {
-      logger.info(s"Merging canonical $childCanonicalID into $parentCanonicalID")
-
-      val request = MergeCanonicalsRequest(
-        childCanonicalID = childCanonicalID,
-        parentCanonicalID = parentCanonicalID
-      )
-      blockingStub.mergeCanonicals(request)
     }
 
 }
