@@ -24,7 +24,6 @@ object LSpaceServerSpec extends BaseSpec
          - returns a canonical with root revision $fetchesACanonicalById
          - returns a canonical's rev history $returnsASubtree
          - returns the works for an author $returnsWorks
-         - merges two canonicals $mergesCanonicals
          - client returns RPCError.NotFound if canonical is not found $returnsNotFoundIfNoCanonical
       """
 
@@ -196,22 +195,6 @@ object LSpaceServerSpec extends BaseSpec
     client.fetchCanonical(canonicalID = "Foo!") must beLeftXor {
       err: RPCError =>
         err must beAnInstanceOf[RPCError.NotFound]
-    }
-  }
-
-
-  def mergesCanonicals = {
-    val imageCanonicalID = fixtures.imageBlobCanonical.canonicalID
-    val extraImageCanonicalID = fixtures.extraImageBlobCanonical.canonicalID
-
-    client.mergeCanonicals(extraImageCanonicalID, imageCanonicalID) must beRightXor {
-      response: MergeCanonicalsResponse =>
-        response.mergedCanonicalID must_== imageCanonicalID
-    }
-
-    val graph = graphFactory.getTx
-    fixtures.extraImageBlobCanonical.vertex(graph) must beRightXor { v: Vertex =>
-      v.outE(SupersededBy).exists() must beTrue
     }
   }
 }

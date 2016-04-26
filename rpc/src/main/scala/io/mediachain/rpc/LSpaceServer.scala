@@ -156,25 +156,5 @@ class LSpaceServer(
         ).asException
       }
     }
-
-
-    // Mutations
-    import operations.Merging
-    override def mergeCanonicals(request: MergeCanonicalsRequest)
-    : Future[MergeCanonicalsResponse] = Future {
-      val resultXor = withGraph {
-        Merging.mergeCanonicals(
-          request.childCanonicalID,
-          request.parentCanonicalID)
-      }
-
-      resultXor match {
-        case Xor.Left(err) =>
-          throw RPCError.FailedPrecondition(s"Error merging canonicals: $err")
-            .asException
-
-        case Xor.Right(result) => result
-      }
-    }
   }
 }
