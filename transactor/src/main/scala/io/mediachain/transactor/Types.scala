@@ -17,8 +17,17 @@ object Types {
   }
   case class EntityReference(chain: Option[Reference])
     extends CanonicalReference
+
+  object EntityReference {
+    def empty: EntityReference = EntityReference(None)
+  }
+
   case class ArtefactReference(chain: Option[Reference])
     extends CanonicalReference
+
+  object ArtefactReference {
+    def empty: ArtefactReference = ArtefactReference(None)
+  }
 
   // Canonical records: Entities and Artefacts
   sealed abstract class CanonicalRecord extends Record {
@@ -28,13 +37,13 @@ object Types {
   case class Entity(
     meta: Map[String, JValue]
   ) extends CanonicalRecord {
-    def reference(): CanonicalReference = EntityReference(None)
+    def reference(): CanonicalReference = EntityReference.empty
   }
   
   case class Artefact( 
     meta: Map[String, JValue]
   ) extends CanonicalRecord {
-    def reference(): CanonicalReference = ArtefactReference(None)
+    def reference(): CanonicalReference = ArtefactReference.empty
   }
   
   // Chain Cells
