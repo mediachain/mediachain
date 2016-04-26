@@ -3,7 +3,7 @@ package io.mediachain.transactor
 object Types {
   import cats.data.Xor
   
-  // Canonical|CBOR Values: IPLD datatypes
+  // Canonical Values: IPLD datatypes
   sealed abstract class CValue
   case class CString(value: String) extends CValue
   case class CMap(value: Map[String, CValue]) extends CValue
@@ -33,13 +33,17 @@ object Types {
     def chain: Option[Reference]
   }
   
-  abstract class EntityChainCell extends ChainCell {
-    def entity: Reference
-  }
+  case class EntityChainCell( 
+    entity: Reference,
+    chain: Option[Reference],
+    meta: Map[String, CValue]
+  ) extends ChainCell
   
-  abstract class ArtefactChainCell extends ChainCell {
-    def artefact: Reference
-  }
+  case class ArtefactChainCell( 
+    artefact: Reference,
+    chain: Option[Reference],
+    meta: Map[String, CValue]
+  ) extends ChainCell
   
   // Journal Entries
   abstract class JournalEntry {
