@@ -2,6 +2,7 @@ import sbt.{Tests, _}
 import Keys._
 import sbtassembly.AssemblyKeys._
 import sbtassembly._
+import com.trueaccord.scalapb.{ScalaPbPlugin => PB}
 
 object ApplicationBuild extends Build {
   override lazy val settings = super.settings ++ Seq(
@@ -25,6 +26,7 @@ object LSpaceBuild extends Build{
       "com.github.scopt" %% "scopt" % "3.4.0",
       "com.lihaoyi" % "ammonite-repl" % "0.5.7" % "test" cross CrossVersion.full
     ),
+    fork in Test := true,
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
 
@@ -52,45 +54,28 @@ object LSpaceBuild extends Build{
       "org.typelevel" %% "cats" % "0.4.1",
       "org.json4s" %% "json4s-jackson" % "3.3.0"
     ),
-    unmanagedClasspath in Test += baseDirectory.value / "test-resources",
-    // see http://stackoverflow.com/a/9901616
-    //
-    // instantiating the `SBTSetupHook` and `SBTCleanupHook`
-    // classes causes code to run that prepares the testing
-    // environment & works around some classloader issues with
-    // sbt and orient / gremlin
-    testOptions in Test += Tests.Setup(loader => {
-      println("test setup")
-      loader.loadClass("io.mediachain.SBTSetupHook").newInstance
-    }),
-    testOptions in Test += Tests.Cleanup(loader => {
-      println("test cleanup")
-      loader.loadClass("io.mediachain.SBTCleanupHook").newInstance
-    })
+    unmanagedClasspath in Test += baseDirectory.value / "test-resources"
   )).dependsOn(l_space)
     .dependsOn(l_space % "test->test")
     .dependsOn(core)
 
-  // spray-based API server (may be deprecated in favor of gRPC)
-  lazy val api_server = Project("api_server", file("api_server")).settings(scalaSettings ++ List(
-    libraryDependencies ++= {
-      val akkaV = "2.3.9"
-      val sprayV = "1.3.3"
-      val json4sV = "3.2.11"
+  lazy val rpc = Project("rpc", file("rpc")).settings(scalaSettings ++
+    PB.protobufSettings ++
+    List(
 
-      Seq(
-        "io.spray"            %%  "spray-can"     % sprayV,
-        "io.spray"            %%  "spray-routing-shapeless2" % sprayV,
-        "io.spray"            %%  "spray-httpx"   % sprayV,
-        // spray's specs2 support doesn't yet play nice with v 3.x of specs2
-        "io.spray"      %%  "spray-testkit" % sprayV  % "test" exclude("org.specs2", "specs2_2.11"),
-        "org.parboiled"       %%  "parboiled"     % "2.0.1",
-        "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
-        "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
-        "org.json4s" %% "json4s-jackson" % json4sV
+      // tell protobuf compiler to use version 3 syntax
+      PB.runProtoc in PB.protobufConfig := (args =>
+        com.github.os72.protocjar.Protoc.runProtoc("-v300" +: args.toArray)),
+
+      version in PB.protobufConfig := "3.0.0-beta-2",
+
+      libraryDependencies ++= Seq(
+        "io.grpc" % "grpc-all" % "0.9.0",
+        "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" %
+          (PB.scalapbVersion in PB.protobufConfig).value
       )
-    }
-  )).dependsOn(l_space)
+    )
+  ).dependsOn(l_space)
     .dependsOn(l_space % "test->test")
     .dependsOn(core)
 
@@ -112,7 +97,6 @@ object LSpaceBuild extends Build{
   import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
   import io.mediachain.util.orient.MigrationHelper
 
-  Orient.instance.removeShutdownHook()
   lazy val graph = MigrationHelper.newInMemoryGraph()
   """.split("\n").mkString("; ")
   lazy val l_space = Project("l_space", file("l_space")).settings(scalaSettings ++ List(
@@ -142,17 +126,6 @@ object LSpaceBuild extends Build{
       SbtExclusionRule("org.codehaus.groovy", "groovy-jsr223")
       ),
 
-    // see http://stackoverflow.com/a/9901616
-    //
-    // instantiating the `SBTSetupHook` and `SBTCleanupHook`
-    // classes causes code to run that prepares the testing
-    // environment & works around some classloader issues with
-    // sbt and orient / gremlin
-    testOptions in Test += Tests.Setup( loader => {
-      println("test setup")
-      loader.loadClass("io.mediachain.SBTSetupHook").newInstance
-      }),
-
     initialCommands in (Test, console) := "ammonite.repl.Main.run(\"" + predef + "\")"
     )).dependsOn(orientdb_migrations)
       .dependsOn(core)
@@ -160,7 +133,7 @@ object LSpaceBuild extends Build{
 
     // for separating work on CircleCI containers (try to keep these balanced)
     lazy val circle_1 = project
-      .aggregate(translation_engine, api_server)
+      .aggregate(translation_engine, rpc)
     lazy val circle_2 = project
       .aggregate(core, l_space)
 
@@ -168,8 +141,7 @@ object LSpaceBuild extends Build{
     // dependsOn means classes will be available
     lazy val root = (project in file("."))
       .aggregate(core, l_space,
-        translation_engine, api_server)
+        translation_engine, rpc)
       .dependsOn(core, l_space,
-        translation_engine, api_server)
-
+        translation_engine, rpc)
 }

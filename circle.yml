@@ -15,6 +15,10 @@ dependencies:
     - chmod u+x $HOME/bin/sbt
     - which sbt
     - sbt sbt-version
+checkout:
+  post:
+    - git submodule sync --recursive
+    - git submodule update --recursive --init
 test:
   pre:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
