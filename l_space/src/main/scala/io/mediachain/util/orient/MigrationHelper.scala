@@ -12,6 +12,7 @@ import scala.util.{Failure, Random, Success, Try}
 
 object MigrationHelper {
   val DEFAULT_POOL_MAX = 64
+
   if (ODatabaseRecordThreadLocal.INSTANCE == null) {
     sys.error("Calling this manually apparently prevents an initialization issue.")
   }

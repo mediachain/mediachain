@@ -1,14 +1,13 @@
 package io.mediachain
 
-import javax.swing.text.html.BlockView
-
 import cats.data.Xor
 import Types._
 import core.GraphError
 import core.GraphError._
 import gremlin.scala._
 import io.mediachain.util.GremlinUtils._
-import Traversals.{GremlinScalaImplicits, VertexImplicits}
+import Traversals._
+import Traversals.Implicits._
 
 
 object Ingress {
@@ -61,9 +60,8 @@ object Ingress {
     val graph = blobV.graph
 
     // add the raw metadata to the graph if it doesn't already exist
-    val rawV = Traversals.rawMetadataBlobsWithExactMatch(graph.V, raw)
-      .headOption
-      .getOrElse(graph + raw)
+    val rawVXor = graph.V ~> rawMetadataBlobsWithExactMatch(raw) >> headXor
+    val rawV = rawVXor.getOrElse(graph + raw)
 
     val edgeAlreadyExists = blobV.toPipeline
       .map(_.out(TranslatedFrom).toSet.contains(rawV))
@@ -79,7 +77,7 @@ object Ingress {
 
     val existingAuthorXor = for {
       q <- blobV.toPipeline
-      author <- q.findAuthorXor
+      author <- q >> findAuthorXor
     } yield author
 
     val authorshipAlreadyDefined = existingAuthorXor.exists(
@@ -97,18 +95,17 @@ object Ingress {
   (graph: Graph, blob: T, rawMetadataOpt: Option[RawMetadataBlob] = None):
   Xor[GraphError, BlobAddResult] = withTransactionXor(graph) {
 
-    val existingVertex: Option[Vertex] = blob match {
+    val existingVertex: Xor[VertexNotFound, Vertex] = blob match {
       case image: ImageBlob =>
-        Traversals.imageBlobsWithExactMatch(graph.V, image).headOption
+        graph.V ~> imageBlobsWithExactMatch(image) >> headXor
       case person: Person =>
-        Traversals.personBlobsWithExactMatch(graph.V, person).headOption
-      case _ => None
+        graph.V ~> personBlobsWithExactMatch(person) >> headXor
+      case _ => Xor.left(VertexNotFound())
     }
 
-    val resultForExistingVertex: Option[Xor[GraphError, BlobAddResult]] =
+    val resultForExistingVertex: Xor[GraphError, BlobAddResult] =
       for {
         v <- existingVertex
-      } yield for {
         pipeline <- v.toPipeline
         canonicalV <- Xor.fromOption(
           Traversals.getCanonical(pipeline).headOption,
@@ -117,7 +114,7 @@ object Ingress {
 
     val resultXor: Xor[GraphError, BlobAddResult] =
       resultForExistingVertex
-      .getOrElse {
+      .orElse {
         val v = graph + blob
         val canonicalV = graph + Canonical.create()
         canonicalV --- DescribedBy --> v
@@ -147,8 +144,9 @@ object Ingress {
   def modifyImageBlob(graph: Graph, parentVertex: Vertex, image: ImageBlob, raw: Option[RawMetadataBlob] = None):
   Xor[GraphError, BlobAddResult] = withTransactionXor(graph) {
 
-    val childVertex =
-      Traversals.imageBlobsWithExactMatch(graph.V, image).headOption
+    val childVertexXor = graph.V ~> imageBlobsWithExactMatch(image) >> headXor
+
+    val childVertex = childVertexXor
       .getOrElse {
         val childV = graph + image
         parentVertex --- ModifiedBy --> childV
