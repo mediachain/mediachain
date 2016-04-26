@@ -2,42 +2,43 @@ package io.mediachain.transactor
 
 object Types {
   import cats.data.Xor
-  
+  import org.json4s.JValue
+
   // Mediachain Datastore Records
-  abstract class Record
+  abstract class Record {
+    def meta: Map[String, JValue]
+  }
   
   // References to records in the underlying datastore
   abstract class Reference
   
   // Canonical records: Entities and Artefacts
-  abstract class CanonicalRecord extends Record {
-    def name: String
-    def meta: Map[String, Any]
-  }
+  abstract class CanonicalRecord extends Record
   
   case class Entity(
-    name: String, 
-    meta: Map[String, Any]
+    meta: Map[String, JValue]
   ) extends CanonicalRecord
   
   case class Artefact( 
-    name: String,
-    meta: Map[String, Any]
+    meta: Map[String, JValue]
   ) extends CanonicalRecord
   
   // Chain Cells
   abstract class ChainCell extends Record {
     def chain: Option[Reference]
-    def meta: Map[String, Any]
   }
   
-  abstract class EntityChainCell extends ChainCell {
-    def entity: Reference
-  }
+  case class EntityChainCell( 
+    entity: Reference,
+    chain: Option[Reference],
+    meta: Map[String, JValue]
+  ) extends ChainCell
   
-  abstract class ArtefactChainCell extends ChainCell {
-    def artefact: Reference
-  }
+  case class ArtefactChainCell( 
+    artefact: Reference,
+    chain: Option[Reference],
+    meta: Map[String, JValue]
+  ) extends ChainCell
   
   // Journal Entries
   abstract class JournalEntry {
