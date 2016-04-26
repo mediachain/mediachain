@@ -74,5 +74,7 @@ object Types {
     def updateJournal(entry: JournalEntry): Unit
   }
   
-  abstract class JournalError
+  case class JournalError(what: String) {
+    override def toString = "JournalError: " + what
+  }
 }
