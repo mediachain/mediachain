@@ -15,15 +15,6 @@ object CanonicalQueries {
 
   val PAGE_SIZE = 20
 
-  // TODO: Move this to io.mediachain.Types, use vals instead of string literals
-  def vertexToMetadataBlob(vertex: Vertex): Option[MetadataBlob] =
-    vertex.label match {
-      case "ImageBlob" => Some(vertex.toCC[ImageBlob])
-      case "Person" => Some(vertex.toCC[Person])
-      case "RawMetadataBlob" => Some(vertex.toCC[RawMetadataBlob])
-      case _ => None
-    }
-
   def canonicalWithRootRevision(canonical: Canonical, withRaw: Boolean = false)(graph: Graph)
   : Option[CanonicalWithRootRevision] = {
     // FIXME - use decent graph traversal
