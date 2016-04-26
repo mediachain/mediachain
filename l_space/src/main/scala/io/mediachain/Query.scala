@@ -1,13 +1,16 @@
 package io.mediachain
 
+
 import io.mediachain.Types._
 
 object Query {
   import gremlin.scala._
-  import Traversals.GremlinScalaImplicits
+  import Traversals._
+  import Traversals.Implicits._
   import core.GraphError
   import core.GraphError._
   import cats.data.Xor
+
 
   /** Finds a vertex with label "Person" and traits matching `p` in the graph
     * `g`.
@@ -17,19 +20,19 @@ object Query {
     * @return Optional person matching criteria
     */
   def findPerson(graph: Graph, p: Person): Xor[CanonicalNotFound, Canonical] = {
-    Traversals.personBlobsWithExactMatch(graph.V, p)
-      .findCanonicalXor
+    (graph.V ~> personBlobsWithExactMatch(p)) >>
+      findCanonicalXor
   }
 
-  def findImageBlob(graph: Graph, p: ImageBlob):
+  def findImageBlob(graph: Graph, i: ImageBlob):
   Xor[CanonicalNotFound, Canonical] = {
-    Traversals.imageBlobsWithExactMatch(graph.V, p)
-      .findCanonicalXor
+    (graph.V ~> imageBlobsWithExactMatch(i)) >>
+      findCanonicalXor
   }
 
   def findCanonicalForBlob(graph: Graph, blobID: ElementID):
   Xor[CanonicalNotFound, Canonical] = {
-    graph.V(blobID).findCanonicalXor
+    graph.V(blobID) >> findCanonicalXor
   }
 
   def findCanonicalForBlob[T <: MetadataBlob](graph: Graph, blob: T):
@@ -46,24 +49,19 @@ object Query {
 
   def findAuthorForBlob[T <: MetadataBlob](graph: Graph, blob: T):
   Xor[CanonicalNotFound, Canonical] = {
-    blob.getID.map(id => graph.V(id).findAuthorXor)
+    blob.getID.map(id => graph.V(id) >> findAuthorXor)
         .getOrElse(Xor.left(CanonicalNotFound()))
   }
 
   def findTreeForCanonical[T <: Canonical](graph: Graph, canonical: Canonical): Xor[GraphError, Graph] = {
-    canonical.getID.map(id => graph.V(id).findSubtreeXor)
+    canonical.getID.map(id => graph.V(id) >> findSubtreeXor)
       .getOrElse(Xor.left(CanonicalNotFound()))
   }
 
   def findWorks(graph: Graph, p: Person):
-  Xor[GraphError, List[Canonical]] = {
-    for {
-      personCanonical <- findCanonicalForBlob(graph, p)
-      vertex          <- personCanonical.vertex(graph)
-      items = vertex.in(AuthoredBy)
-        .map(v => findCanonicalForBlob(graph, v))
-        .toList
-    } yield { items.flatMap(_.toList) }
-  }
+  Xor[GraphError, List[Canonical]] =
+    (graph.V ~> personBlobsWithExactMatch(p)) >>
+      findWorksXor
+
 }
 
