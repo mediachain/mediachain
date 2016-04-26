@@ -15,3 +15,7 @@ addSbtPlugin("me.lessis" % "bintray-sbt" % "0.1.1")
 resolvers += Classpaths.sbtPluginReleases
 
 addSbtPlugin("au.com.onegeek" %% "sbt-dotenv" % "1.1.33")
+addSbtPlugin("com.trueaccord.scalapb" % "sbt-scalapb" % "0.5.21")
+libraryDependencies ++= Seq(
+  "com.github.os72" % "protoc-jar" % "3.0.0-b2"
+)

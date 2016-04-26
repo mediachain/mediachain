@@ -5,7 +5,7 @@ import gremlin.scala._
 
 object QuerySpec extends BaseSpec
   with ForEachGraph[GraphFixture.Context] {
-  import Traversals.{GremlinScalaImplicits, VertexImplicits}
+  import Traversals.Implicits._
 
 
   def forEachGraph(graph: Graph) = GraphFixture.Context(graph)
@@ -17,6 +17,7 @@ object QuerySpec extends BaseSpec
   Given a Person, finds the person's Canonical $findsPerson
   Given a MetadataBlob, finds the author Person $findsAuthor
   Given a Person, finds all Canonical that they are the Author of $findsWorks
+  Finds all works for merged Persons $findsWorksMergedAuthors
 
   Does not find a non-matching ImageBlob $doesNotFindPhoto
   """
@@ -74,6 +75,15 @@ object QuerySpec extends BaseSpec
 
     queriedWorks must beRightXor { (s: List[Canonical]) =>
       s must contain(context.objects.imageBlobCanonical)
+    }
+  }
+
+  def findsWorksMergedAuthors = { context: GraphFixture.Context =>
+    val queriedWorks = Query.findWorks(context.graph, context.objects.person)
+
+    queriedWorks must beRightXor { (s: List[Canonical]) =>
+      s must contain(context.objects.imageBlobCanonical,
+        context.objects.imageByDuplicatePersonCanonical)
     }
   }
 
