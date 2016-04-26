@@ -31,18 +31,11 @@ object Copycat {
   class JournalStateMachine(
     val datastore: Datastore
   ) extends StateMachine with Snapshottable with SessionListener {
-    sealed abstract class CanonicalReference {
-      def chain: Option[Reference]
-    }
-    case class EntityReference(chain: Option[Reference]) extends CanonicalReference
-    case class ArtefactReference(chain: Option[Reference]) extends CanonicalReference
-    
     private var seqno: BigInt = 0
     private var index: MMap[Reference, CanonicalReference] = new MHashMap    
     private var clients: MSet[ServerSession] = new MHashSet // this wanted to be called sessions
 
-    
-    private def CommitError(what: String) = Xor.left(JournalCommitError(what))
+    private def commitError(what: String) = Xor.left(JournalCommitError(what))
     
     // Journal Interface
     def insert(commit: Commit[JournalInsert]): Xor[JournalError, CanonicalEntry] = {
@@ -57,17 +50,10 @@ object Copycat {
       val rec = cmd.record
       val ref = datastore.put(rec)
       index.get(ref) match {
-        case Some(_) => CommitError("duplicate insert")
+        case Some(_) => commitError("duplicate insert")
         case None => {
-          rec match {
-            case Entity(_) => {
-              index += (ref -> EntityReference(None))
-            }
-            case Artefact(_) => {
-              index += (ref -> ArtefactReference(None))
-            }
-          }
-          
+          index += (ref -> rec.reference())
+
           val entry = CanonicalEntry(nextSeqno(), ref)
           publishCommit(entry)
           Xor.right(entry)
@@ -87,7 +73,7 @@ object Copycat {
       val ref = cmd.ref
       val cell = cmd.cell
       index.get(ref) match {
-        case None => CommitError("invalid reference")
+        case None => commitError("invalid reference")
         case Some(cref) => {
           cref match {
             case EntityReference(chain) => {
@@ -101,9 +87,9 @@ object Copycat {
                     val entry = ChainEntry(nextSeqno(), ref, newchain, chain)
                     publishCommit(entry)
                     Xor.right(entry)
-                  } else CommitError("invalid chain cell")
+                  } else commitError("invalid chain cell")
                 }
-                case _ => CommitError("invalid chain")
+                case _ => commitError("invalid chain")
               }
             }
             case ArtefactReference(chain) => {
@@ -117,9 +103,9 @@ object Copycat {
                     val entry = ChainEntry(nextSeqno(), ref, newchain, chain)
                     publishCommit(entry)
                     Xor.right(entry)
-                  } else CommitError("invalid chain cell")
+                  } else commitError("invalid chain cell")
                 }
-                case _ => CommitError("invalid chain")
+                case _ => commitError("invalid chain")
               }
             }
           }

@@ -11,17 +11,31 @@ object Types {
   
   // References to records in the underlying datastore
   abstract class Reference
-  
+
+  sealed abstract class CanonicalReference {
+    def chain: Option[Reference]
+  }
+  case class EntityReference(chain: Option[Reference])
+    extends CanonicalReference
+  case class ArtefactReference(chain: Option[Reference])
+    extends CanonicalReference
+
   // Canonical records: Entities and Artefacts
-  sealed abstract class CanonicalRecord extends Record
+  sealed abstract class CanonicalRecord extends Record {
+    def reference(): CanonicalReference
+  }
   
   case class Entity(
     meta: Map[String, JValue]
-  ) extends CanonicalRecord
+  ) extends CanonicalRecord {
+    def reference(): CanonicalReference = EntityReference(None)
+  }
   
   case class Artefact( 
     meta: Map[String, JValue]
-  ) extends CanonicalRecord
+  ) extends CanonicalRecord {
+    def reference(): CanonicalReference = ArtefactReference(None)
+  }
   
   // Chain Cells
   sealed abstract class ChainCell extends Record {
