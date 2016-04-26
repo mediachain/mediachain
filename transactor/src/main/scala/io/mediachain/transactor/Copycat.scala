@@ -140,7 +140,7 @@ object Copycat {
     
     private def checkUpdate(ref: Reference, chain: Option[Reference],
                             xref: Reference, xchain: Option[Reference]) = {
-      (xref == ref) && ((xchain == None) || (xchain == chain))
+      (xref == ref) && (xchain.isEmpty || (xchain == chain))
     }
         
     // Snapshottable
