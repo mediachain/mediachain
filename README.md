@@ -1,2 +1,2 @@
 # Mediachain 💿 🔗
-The primary Mediachain repo. Look at the [roadmap](https://github.com/mediachain/mediachain/issues/1) to see where we're at
+The primary Mediachain repo. Contains Transactors and peer/client code. Please see [the RFC](blob/bigs-wip/rfc/mediachain-rfc-2.md) for the system design.
