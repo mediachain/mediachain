@@ -1,4 +1,4 @@
-# RFC 2: Design Considerations for the Mediachain at Scale
+# RFC 2: Design Considerations for Mediachain at Scale
 
 Status: DRAFT
 
@@ -94,12 +94,12 @@ from other peers, synchronizes its state and starts serving clients.
 
 The function of the core network is to provide continuous views of the
 Journal to clients and allow them to modify it by performing write
-transactions.  In order to insert data to the Mediachain, a connected
+transactions.  In order to insert data to Mediachain, a connected
 Client first writes the requisite data directly to the datastore.
 Given that IPFS is an open network, clients naturally maintain the
 ability to write directly to the store.
 
-However, in order to _persist_ its data in the Mediachain, the Client
+However, in order to _persist_ its data in Mediachain, the Client
 must also update the Journal to reflect the new data. So after writing
 to the datastore the Client creates a _Transaction_ consisting of
 `JournalEntry` cells and submits it to a Peer node for merging
@@ -134,7 +134,7 @@ protection and disaster recovery backups, peer nodes may elect to persist
 the blockchain in an outside backing store like S3. 
 
 A reference to the last block in the store is sufficient to boot a new
-node that reconstructs an up-to-date index of the mediachain.
+node that reconstructs an up-to-date index of Mediachain.
 
 ### The Genesis Block
 
@@ -397,7 +397,7 @@ client: confirm transaction
 
 With each step in the protocol fortified for crash recovery, we
 can be reasonably certain that once the client has written the data
-and pushed a transaction, it will be persisted in the Mediachain.
+and pushed a transaction, it will be persisted in Mediachain.
 The N-cut connectivity property of the core network allows the
 system to withstand random failures without partitioning.
 Transactions propagate using peer-to-peer broadcast, ensuring that
@@ -414,7 +414,7 @@ that the blockchain will either be Consistent or Available.
 Common consenus protocols in the literature choose consistency in such
 cases. This is an appropriate response for a cluster of tightly
 controlled machines, but inappropriate for a decentralized system.
-Hence, the Mediachain should be designed to be partition tolerant with
+Hence, Mediachain should be designed to be partition tolerant with
 a Partition Healing Protocol.
 
 In effect, a partition causes isolated islands in the core
@@ -468,7 +468,7 @@ algorithmic level.
 We can further characterize such injections as poisoning
 and flooding attacks. In a poisoning attack, the adversarial
 process attempts to inject messages that can corrupt the state
-of the Mediachain. In a flooding attack, the adversarial
+of Mediachain. In a flooding attack, the adversarial
 process attempts to flood the network with messages that
 hijack blockchain algorithms and disrupt service.
 
@@ -556,7 +556,7 @@ public cloud providers. With a back of the envelope calculation, the
 index should require some 100 bytes of storage for each canonical to
 chain head mapping. The blockchain could easily be 10 times
 larger, assuming an average of 10 updates per index head. Thus, a
-a billion entities and artefacts in the Mediachain would require about
+a billion entities and artefacts in Mediachain would require about
 1TB of storage; this is readily available in today's public clouds.
 
 A larger scale blockchain and index can be accomodated by sharding.
