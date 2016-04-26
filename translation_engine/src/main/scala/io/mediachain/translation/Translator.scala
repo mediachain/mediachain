@@ -5,15 +5,13 @@ import java.io.File
 import scala.io.Source
 import cats.data.Xor
 import io.mediachain.Types._
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import org.json4s._
 import io.mediachain.core.{Error, TranslationError}
-import io.mediachain.{BlobBundle, Ingress}
+import io.mediachain.BlobBundle
 import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
 import com.fasterxml.jackson.core.JsonFactory
 import io.mediachain.signatures.{PEMFileUtil, Signatory}
-import io.mediachain.util.orient.MigrationHelper
 
 trait Implicit {
   implicit val factory = new JsonFactory
@@ -105,9 +103,6 @@ trait FlatFileLoader[T <: Translator] extends FSLoader[T] {
 }
 
 object TranslatorDispatcher {
-  // TODO: move + inject me
-  def getGraph: OrientGraph =
-    MigrationHelper.getMigratedGraph().get
 
   def dispatch(partner: String, path: String, signingIdentity: String, privateKeyPath: String) = {
     val translator = partner match {
@@ -131,12 +126,14 @@ object TranslatorDispatcher {
     val blobI: Iterator[Xor[TranslationError, (BlobBundle, RawMetadataBlob)]] =
       translator.loadBlobs(signatory)
 
-    val graph = getGraph
-
     val results: Iterator[Xor[Error, Canonical]] = blobI.map { pairXor =>
-      pairXor.flatMap { case (bundle: BlobBundle, raw: RawMetadataBlob) =>
-        Ingress.ingestBlobBundle(graph, bundle, Some(raw))
-      }
+      // Just fail for now, until we finish refactoring the translator to
+      // output mediachain data structures instead of inserting to the
+      // local graph.   Error type is misleading, but hopefully this will
+      // be gone soon :)
+      Xor.left(TranslationError.ResourceNotReadable(
+        new NotImplementedError("Pending refactor of translator")
+      ))
     }
     val errors: Iterator[Error] = results.collect { case Xor.Left(err) => err }
     val canonicals: Iterator[Canonical] = results.collect { case Xor.Right(c) => c }
