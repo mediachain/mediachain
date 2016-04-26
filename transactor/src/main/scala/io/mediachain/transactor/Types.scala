@@ -2,16 +2,11 @@ package io.mediachain.transactor
 
 object Types {
   import cats.data.Xor
-  
-  // Canonical Values: IPLD datatypes
-  sealed abstract class CValue
-  case class CString(value: String) extends CValue
-  case class CMap(value: Map[String, CValue]) extends CValue
-  case class CSeq(value: Seq[CValue]) extends CValue
+  import org.json4s.JValue
 
   // Mediachain Datastore Records
   abstract class Record {
-    def meta: Map[String, CValue]
+    def meta: Map[String, JValue]
   }
   
   // References to records in the underlying datastore
@@ -21,11 +16,11 @@ object Types {
   abstract class CanonicalRecord extends Record
   
   case class Entity(
-    meta: Map[String, CValue]
+    meta: Map[String, JValue]
   ) extends CanonicalRecord
   
   case class Artefact( 
-    meta: Map[String, CValue]
+    meta: Map[String, JValue]
   ) extends CanonicalRecord
   
   // Chain Cells
@@ -36,13 +31,13 @@ object Types {
   case class EntityChainCell( 
     entity: Reference,
     chain: Option[Reference],
-    meta: Map[String, CValue]
+    meta: Map[String, JValue]
   ) extends ChainCell
   
   case class ArtefactChainCell( 
     artefact: Reference,
     chain: Option[Reference],
-    meta: Map[String, CValue]
+    meta: Map[String, JValue]
   ) extends ChainCell
   
   // Journal Entries
