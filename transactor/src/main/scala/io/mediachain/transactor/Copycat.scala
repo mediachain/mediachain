@@ -70,6 +70,12 @@ object Copycat {
     }
     
     private def updateChain(cmd: JournalUpdate): Xor[JournalError, ChainEntry] = {
+      def commit(ref: Reference, newchain: Reference, oldchain: Option[Reference]) = {
+        val entry = ChainEntry(nextSeqno(), ref, newchain, oldchain)
+        publishCommit(entry)
+        Xor.right(entry)
+      }
+      
       val ref = cmd.ref
       val cell = cmd.cell
       index.get(ref) match {
@@ -81,10 +87,7 @@ object Copycat {
                 val newcell = EntityChainCell(ref, chain, meta)
                 val newchain = datastore.put(newcell)
                 index.put(ref, EntityReference(Some(newchain)))
-                
-                val entry = ChainEntry(nextSeqno(), ref, newchain, chain)
-                publishCommit(entry)
-                Xor.right(entry)
+                commit(ref, newchain, chain)
               } else commitError("invalid chain cell")
             }
             case (ArtefactReference(chain), ArtefactChainCell(artefact, xchain, meta)) => {
@@ -92,10 +95,7 @@ object Copycat {
                 val newcell = ArtefactChainCell(ref, chain, meta)
                 val newchain = datastore.put(newcell)
                 index.put(ref, ArtefactReference(Some(newchain)))
-                
-                val entry = ChainEntry(nextSeqno(), ref, newchain, chain)
-                publishCommit(entry)
-                Xor.right(entry)
+                commit(ref, newchain, chain)
               } else commitError("invalid chain cell")
             }
             case _ => commitError("invalid chain")
@@ -103,7 +103,7 @@ object Copycat {
         }
       }
     }
-
+    
     def lookup(commit: Commit[JournalLookup]): Option[Reference] = {
       try {
         index.get(commit.operation.ref) match {
