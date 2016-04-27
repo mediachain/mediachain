@@ -5,26 +5,51 @@ object Types {
   import org.json4s.JValue
 
   // Mediachain Datastore Records
-  abstract class Record {
+  sealed abstract class Record extends Serializable {
     def meta: Map[String, JValue]
   }
   
   // References to records in the underlying datastore
-  abstract class Reference
+  abstract class Reference extends Serializable
+
+  // Typed References for tracking chain heads in the StateMachine
+  sealed abstract class ChainReference extends Serializable {
+    def chain: Option[Reference]
+  }
   
+  case class EntityChainReference(chain: Option[Reference])
+    extends ChainReference
+
+  object EntityChainReference {
+    def empty = EntityChainReference(None)
+  }
+
+  case class ArtefactChainReference(chain: Option[Reference])
+    extends ChainReference
+
+  object ArtefactChainReference {
+    def empty = ArtefactChainReference(None)
+  }
+
   // Canonical records: Entities and Artefacts
-  abstract class CanonicalRecord extends Record
+  sealed abstract class CanonicalRecord extends Record {
+    def reference: ChainReference
+  }
   
   case class Entity(
     meta: Map[String, JValue]
-  ) extends CanonicalRecord
+  ) extends CanonicalRecord {
+    def reference: ChainReference = EntityChainReference.empty
+  }
   
   case class Artefact( 
     meta: Map[String, JValue]
-  ) extends CanonicalRecord
+  ) extends CanonicalRecord {
+    def reference: ChainReference = ArtefactChainReference.empty
+  }
   
   // Chain Cells
-  abstract class ChainCell extends Record {
+  sealed abstract class ChainCell extends Record {
     def chain: Option[Reference]
   }
   
@@ -41,7 +66,7 @@ object Types {
   ) extends ChainCell
   
   // Journal Entries
-  abstract class JournalEntry {
+  sealed abstract class JournalEntry {
     def index: BigInt
     def ref: Reference
   }
@@ -69,5 +94,14 @@ object Types {
     def updateJournal(entry: JournalEntry): Unit
   }
   
-  abstract class JournalError
+  sealed abstract class JournalError
+  
+  case class JournalCommitError(what: String) extends JournalError {
+    override def toString = "Journal Commit Error: " + what
+  }
+  
+  // Datastore interface
+  trait Datastore {
+    def put(rec: Record): Reference
+  }
 }
