@@ -26,7 +26,7 @@ object StateMachine {
     ref: Reference
   ) extends Query[Option[Reference]]
   
-  case class JournalCommitEvent(entry: JournalEntry)
+  case class JournalCommitEvent(entry: JournalEntry) extends Serializable
 
   class JournalStateMachine(
     val datastore: Datastore
