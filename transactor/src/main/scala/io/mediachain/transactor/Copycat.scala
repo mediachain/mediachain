@@ -75,39 +75,30 @@ object Copycat {
       index.get(ref) match {
         case None => commitError("invalid reference")
         case Some(cref) => {
-          cref match {
-            case EntityReference(chain) => {
-              cell match {
-                case EntityChainCell(entity, xchain, meta) => {
-                  if (checkUpdate(ref, chain, entity, xchain)) {
-                    val newcell = EntityChainCell(ref, chain, meta)
-                    val newchain = datastore.put(newcell)
-                    index.put(ref, EntityReference(Some(newchain)))
-                    
-                    val entry = ChainEntry(nextSeqno(), ref, newchain, chain)
-                    publishCommit(entry)
-                    Xor.right(entry)
-                  } else commitError("invalid chain cell")
-                }
-                case _ => commitError("invalid chain")
-              }
+          (cref, cell) match {
+            case (EntityReference(chain), EntityChainCell(entity, xchain, meta)) => {
+              if (checkUpdate(ref, chain, entity, xchain)) {
+                val newcell = EntityChainCell(ref, chain, meta)
+                val newchain = datastore.put(newcell)
+                index.put(ref, EntityReference(Some(newchain)))
+                
+                val entry = ChainEntry(nextSeqno(), ref, newchain, chain)
+                publishCommit(entry)
+                Xor.right(entry)
+              } else commitError("invalid chain cell")
             }
-            case ArtefactReference(chain) => {
-              cell match {
-                case ArtefactChainCell(artefact, xchain, meta) => {
-                  if (checkUpdate(ref, chain, artefact, xchain)) {
-                    val newcell = ArtefactChainCell(ref, chain, meta)
-                    val newchain = datastore.put(newcell)
-                    index.put(ref, ArtefactReference(Some(newchain)))
-                    
-                    val entry = ChainEntry(nextSeqno(), ref, newchain, chain)
-                    publishCommit(entry)
-                    Xor.right(entry)
-                  } else commitError("invalid chain cell")
-                }
-                case _ => commitError("invalid chain")
-              }
+            case (ArtefactReference(chain), ArtefactChainCell(artefact, xchain, meta)) => {
+              if (checkUpdate(ref, chain, artefact, xchain)) {
+                val newcell = ArtefactChainCell(ref, chain, meta)
+                val newchain = datastore.put(newcell)
+                index.put(ref, ArtefactReference(Some(newchain)))
+                
+                val entry = ChainEntry(nextSeqno(), ref, newchain, chain)
+                publishCommit(entry)
+                Xor.right(entry)
+              } else commitError("invalid chain cell")
             }
+            case _ => commitError("invalid chain")
           }
         }
       }
