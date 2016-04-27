@@ -1,8 +1,32 @@
 package io.mediachain.transactor
 
+
 object Types {
   import cats.data.Xor
-  import org.json4s.JValue
+  import org.json4s.{JValue, JObject, JString, JField}
+
+  trait ToJObject {
+    val CBORType: String
+    val meta: Map[String, JValue]
+
+    def toJObject: JObject =
+      toJObjectWithDefaults(Map.empty, Map.empty)
+
+    def toJObjectWithDefaults(defaults: Map[String, JValue],
+                              optionals: Map[String, Option[JValue]]):
+    JObject = {
+      val defaultsWithOptionals = defaults ++ optionals.flatMap {
+        case (_, None) => List.empty
+        case (k, Some(v)) => List(k -> v)
+      }
+      val merged = defaultsWithOptionals.foldLeft(meta) {
+        (m, x) => m + x
+      }
+      val withType = ("type", JString(CBORType)) :: merged.toList
+
+      JObject(withType)
+    }
+  }
 
   // Mediachain Datastore Records
   sealed abstract class Record extends Serializable {
@@ -37,15 +61,36 @@ object Types {
   }
   
   case class Entity(
+    name: JString,
     meta: Map[String, JValue]
-  ) extends CanonicalRecord {
+  ) extends CanonicalRecord with ToJObject {
+    val CBORType = "entity"
+
     def reference: ChainReference = EntityChainReference.empty
+
+    override def toJObject: JObject = {
+      val defaults = Map("name" -> name)
+      super.toJObjectWithDefaults(defaults, Map())
+    }
+
   }
   
-  case class Artefact( 
+  case class Artefact(
+    name: JString,
+    created: Option[JString],
+    description: Option[JString],
     meta: Map[String, JValue]
-  ) extends CanonicalRecord {
+  ) extends CanonicalRecord with ToJObject {
+    val CBORType = "entity"
+
     def reference: ChainReference = ArtefactChainReference.empty
+
+    override def toJObject: JObject = {
+      val defaults = Map("name" -> name)
+      val optionals = Map("created" -> created, "description" -> description)
+
+      super.toJObjectWithDefaults(defaults, optionals)
+    }
   }
   
   // Chain Cells
