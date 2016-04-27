@@ -106,10 +106,7 @@ object StateMachine {
     
     def lookup(commit: Commit[JournalLookup]): Option[Reference] = {
       try {
-        index.get(commit.operation.ref) match {
-          case Some(cref) => cref.chain
-          case None => None
-        }
+        index.get(commit.operation.ref).flatMap(_.chain)
       } finally {
         commit.release()
       }
