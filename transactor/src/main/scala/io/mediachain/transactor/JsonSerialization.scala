@@ -1,7 +1,11 @@
 package io.mediachain.transactor
 
+import io.atomix.catalyst.buffer.{BufferInput, BufferOutput}
+import io.atomix.catalyst.serializer.{Serializer, TypeSerializer}
+import io.mediachain.transactor.Dummies.DummyReference
 import io.mediachain.transactor.Types._
 import org.json4s._
+import org.json4s.jackson.JsonMethods.{compact, render, parse}
 
 /**
   * Represents a 'multihash' link to an IPFS resource
@@ -29,25 +33,34 @@ object JsonSerialization {
     def classFor(hint: String) = hints find (hintFor(_) == hint)
   }
 
-  /**
-    * List of classes to provide type hints for when serializing.
-    */
-  private val shortTypeHints = ShortTypeHintsIgnoreOuterClass(List(
+
+  val copycatSerializers: List[CopycatSerializer[_]] = List(
     // reference
-    classOf[IPFSReference],
+    new CopycatSerializer[IPFSReference],
+    new CopycatSerializer[DummyReference],
+
+    // chain references
+    new CopycatSerializer[EntityChainReference],
+    new CopycatSerializer[ArtefactChainReference],
 
     // canonical records
-    classOf[Entity],
-    classOf[Artefact],
+    new CopycatSerializer[Entity],
+    new CopycatSerializer[Artefact],
 
     // chain cells
-    classOf[EntityChainCell],
-    classOf[ArtefactChainCell],
+    new CopycatSerializer[EntityChainCell],
+    new CopycatSerializer[ArtefactChainCell],
 
     // journal entries
-    classOf[CanonicalEntry],
-    classOf[ChainEntry]
-  ))
+    new CopycatSerializer[CanonicalEntry],
+    new CopycatSerializer[ChainEntry],
+
+    // error types
+    new CopycatSerializer[JournalCommitError]
+  )
+
+  private val shortTypeHints =
+    ShortTypeHintsIgnoreOuterClass(copycatSerializers.map(_.serializableClass))
 
   /**
     * Rename the `multihash` field to `@link`, to match the IPLD spec
@@ -77,7 +90,7 @@ object JsonSerialization {
   def toJObject(chainCell: ChainCell): JObject =
     Extraction.decompose(chainCell).asInstanceOf[JObject]
 
-  def toJObject(ref: IPFSReference): JObject =
+  def toJObject(ref: Reference): JObject =
     Extraction.decompose(ref).asInstanceOf[JObject]
 
   def toJObject(journalEntry: JournalEntry): JObject =
@@ -87,6 +100,7 @@ object JsonSerialization {
   /**
     * Try to extract a value of the given type using the jsonFormats
     * defined in this object.
+ *
     * @param jValue the json value to extract from
     * @param mf compiler evidence for the concrete type of the return value
     * @tparam T type of value to return
@@ -119,4 +133,45 @@ object JsonSerialization {
 
   def ipfsReferenceFromJValue(jValue: JValue): Option[IPFSReference] =
     fromJValueOpt(jValue)
+
+
+  import scala.reflect.classTag
+  class CopycatSerializer[T](implicit mf: Manifest[T]) extends TypeSerializer[T] {
+    val serializableClass: Class[_] = classTag[T].runtimeClass
+
+    override def write(
+      obj: T,
+      buffer: BufferOutput[_ <: BufferOutput[_]],
+      serializer: Serializer): Unit = {
+      val jValue: JValue = obj match {
+        case ref: Reference => toJObject(ref)
+        case rec: Record => toJObject(rec)
+        case entry: JournalEntry => toJObject(entry)
+        case _ =>
+          throw new IllegalArgumentException(
+            s"Cannot serialize object of type ${obj.getClass.getTypeName}"
+          )
+      }
+
+      val str = compact(render(jValue))
+      buffer.writeUTF8(str)
+    }
+
+    override def read(
+      klass: Class[T],
+      buffer: BufferInput[_ <: BufferInput[_]],
+      serializer: Serializer): T = {
+
+      val str = buffer.readUTF8()
+      val jValue = parse(str)
+      val valueOpt = fromJValueOpt(jValue)(mf)
+      valueOpt.getOrElse {
+        throw new IllegalStateException(
+          s"Unable to extract value of type ${klass.getTypeName} from serialized string $str"
+        )
+      }
+    }
+  }
+
+
 }
