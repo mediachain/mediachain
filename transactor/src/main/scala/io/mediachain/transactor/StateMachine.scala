@@ -4,7 +4,7 @@ import scala.collection.mutable.{Set => MSet, HashSet => MHashSet,
                                  Map => MMap, HashMap => MHashMap}
 
 import io.atomix.copycat.{Command, Query}
-import io.atomix.copycat.server.{Commit, StateMachine, Snapshottable}
+import io.atomix.copycat.server.{Commit, StateMachine => CopycatStateMachine, Snapshottable}
 import io.atomix.copycat.server.session.{ServerSession, SessionListener}
 import io.atomix.copycat.server.storage.snapshot.{SnapshotReader, SnapshotWriter}
 
@@ -30,7 +30,7 @@ object StateMachine {
 
   class JournalStateMachine(
     val datastore: Datastore
-  ) extends StateMachine with Snapshottable with SessionListener {
+  ) extends CopycatStateMachine with Snapshottable with SessionListener {
     private var seqno: BigInt = 0
     private var index: MMap[Reference, CanonicalReference] = new MHashMap    
     private val clients: MSet[ServerSession] = new MHashSet // this wanted to be called sessions
