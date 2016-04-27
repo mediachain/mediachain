@@ -10,7 +10,7 @@ import io.atomix.copycat.server.storage.snapshot.{SnapshotReader, SnapshotWriter
 
 import cats.data.Xor
 
-object Copycat {
+object StateMachine {
   import io.mediachain.transactor.Types._
   
   case class JournalInsert(
