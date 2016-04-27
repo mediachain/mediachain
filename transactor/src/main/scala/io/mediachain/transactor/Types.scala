@@ -12,38 +12,40 @@ object Types {
   // References to records in the underlying datastore
   abstract class Reference extends Serializable
 
-  sealed abstract class CanonicalReference extends Serializable {
+  // Typed References for tracking chain heads in the StateMachine
+  sealed abstract class ChainReference extends Serializable {
     def chain: Option[Reference]
   }
-  case class EntityReference(chain: Option[Reference])
-    extends CanonicalReference
+  
+  case class EntityChainReference(chain: Option[Reference])
+    extends ChainReference
 
-  object EntityReference {
-    def empty: EntityReference = EntityReference(None)
+  object EntityChainReference {
+    def empty = EntityChainReference(None)
   }
 
-  case class ArtefactReference(chain: Option[Reference])
-    extends CanonicalReference
+  case class ArtefactChainReference(chain: Option[Reference])
+    extends ChainReference
 
-  object ArtefactReference {
-    def empty: ArtefactReference = ArtefactReference(None)
+  object ArtefactChainReference {
+    def empty = ArtefactChainReference(None)
   }
 
   // Canonical records: Entities and Artefacts
   sealed abstract class CanonicalRecord extends Record {
-    def reference: CanonicalReference
+    def reference: ChainReference
   }
   
   case class Entity(
     meta: Map[String, JValue]
   ) extends CanonicalRecord {
-    def reference: CanonicalReference = EntityReference.empty
+    def reference: ChainReference = EntityChainReference.empty
   }
   
   case class Artefact( 
     meta: Map[String, JValue]
   ) extends CanonicalRecord {
-    def reference: CanonicalReference = ArtefactReference.empty
+    def reference: ChainReference = ArtefactChainReference.empty
   }
   
   // Chain Cells

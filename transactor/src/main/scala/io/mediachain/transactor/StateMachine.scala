@@ -32,7 +32,7 @@ object StateMachine {
     val datastore: Datastore
   ) extends CopycatStateMachine with Snapshottable with SessionListener {
     private var seqno: BigInt = 0
-    private var index: MMap[Reference, CanonicalReference] = new MHashMap    
+    private var index: MMap[Reference, ChainReference] = new MHashMap // canonical -> chain map
     private val clients: MSet[ServerSession] = new MHashSet // this wanted to be called sessions
 
     private def commitError(what: String) = Xor.left(JournalCommitError(what))
@@ -82,19 +82,19 @@ object StateMachine {
         case None => commitError("invalid reference")
         case Some(cref) => {
           (cref, cell) match {
-            case (EntityReference(chain), EntityChainCell(entity, xchain, meta)) => {
+            case (EntityChainReference(chain), EntityChainCell(entity, xchain, meta)) => {
               if (checkUpdate(ref, chain, entity, xchain)) {
                 val newcell = EntityChainCell(ref, chain, meta)
                 val newchain = datastore.put(newcell)
-                index.put(ref, EntityReference(Some(newchain)))
+                index.put(ref, EntityChainReference(Some(newchain)))
                 commit(ref, newchain, chain)
               } else commitError("invalid chain cell")
             }
-            case (ArtefactReference(chain), ArtefactChainCell(artefact, xchain, meta)) => {
+            case (ArtefactChainReference(chain), ArtefactChainCell(artefact, xchain, meta)) => {
               if (checkUpdate(ref, chain, artefact, xchain)) {
                 val newcell = ArtefactChainCell(ref, chain, meta)
                 val newchain = datastore.put(newcell)
-                index.put(ref, ArtefactReference(Some(newchain)))
+                index.put(ref, ArtefactChainReference(Some(newchain)))
                 commit(ref, newchain, chain)
               } else commitError("invalid chain cell")
             }
