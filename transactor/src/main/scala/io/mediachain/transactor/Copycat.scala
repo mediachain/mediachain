@@ -52,7 +52,7 @@ object Copycat {
       index.get(ref) match {
         case Some(_) => commitError("duplicate insert")
         case None => {
-          index += (ref -> rec.reference())
+          index += (ref -> rec.reference)
 
           val entry = CanonicalEntry(nextSeqno(), ref)
           publishCommit(entry)

@@ -31,19 +31,19 @@ object Types {
 
   // Canonical records: Entities and Artefacts
   sealed abstract class CanonicalRecord extends Record {
-    def reference(): CanonicalReference
+    def reference: CanonicalReference
   }
   
   case class Entity(
     meta: Map[String, JValue]
   ) extends CanonicalRecord {
-    def reference(): CanonicalReference = EntityReference.empty
+    def reference: CanonicalReference = EntityReference.empty
   }
   
   case class Artefact( 
     meta: Map[String, JValue]
   ) extends CanonicalRecord {
-    def reference(): CanonicalReference = ArtefactReference.empty
+    def reference: CanonicalReference = ArtefactReference.empty
   }
   
   // Chain Cells
