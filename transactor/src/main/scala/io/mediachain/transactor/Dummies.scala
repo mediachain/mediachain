@@ -4,8 +4,8 @@ import scala.collection.mutable.{Map => MMap, HashMap => MHashMap}
 
 object Dummies {
   import io.mediachain.transactor.Types._
-  
-  class DummyReference(val num: Int) extends Reference {
+
+  case class DummyReference(num: Int) extends Reference {
     override def equals(that: Any) = {
       that.isInstanceOf[DummyReference] && 
         this.num == that.asInstanceOf[DummyReference].num
