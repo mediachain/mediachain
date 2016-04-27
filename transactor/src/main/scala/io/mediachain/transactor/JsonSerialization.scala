@@ -69,9 +69,7 @@ object JsonSerialization {
   } + referenceSerializer
 
 
-  // Below are conversion functions from transactor types to
-  // json4s `JObject`s.  We may want to write a better conversion
-  // interface/
+  // Conversion functions from transactor types to json4s `JObject`s.
 
   def toJObject(record: Record): JObject =
     Extraction.decompose(record).asInstanceOf[JObject]
@@ -84,4 +82,41 @@ object JsonSerialization {
 
   def toJObject(journalEntry: JournalEntry): JObject =
     Extraction.decompose(journalEntry).asInstanceOf[JObject]
+
+
+  /**
+    * Try to extract a value of the given type using the jsonFormats
+    * defined in this object.
+    * @param jValue the json value to extract from
+    * @param mf compiler evidence for the concrete type of the return value
+    * @tparam T type of value to return
+    * @return Some[T] on success, None on failure
+    */
+  def fromJValueOpt[T](jValue: JValue)(implicit mf: Manifest[T]): Option[T] =
+    Extraction.extractOpt(jValue)(jsonFormats, mf)
+
+  // Extraction functions for each specific type.
+  // Using a non-parametrized return type provides the implicit
+  // Manifest[T] needed by `fromJValueOpt`
+
+  def entityFromJValue(jValue: JValue): Option[Entity] =
+    fromJValueOpt(jValue)
+
+  def artefactFromJValue(jValue: JValue): Option[Artefact] =
+    fromJValueOpt(jValue)
+
+  def entityChainCellFromJValue(jValue: JValue): Option[EntityChainCell] =
+    fromJValueOpt(jValue)
+
+  def artefactChainCellFromJValue(jValue: JValue): Option[ArtefactChainCell] =
+    fromJValueOpt(jValue)
+
+  def canonicalEntryFromJValue(jValue: JValue): Option[CanonicalEntry] =
+    fromJValueOpt(jValue)
+
+  def chainEntryFromJValue(jValue: JValue): Option[CanonicalEntry] =
+    fromJValueOpt(jValue)
+
+  def ipfsReferenceFromJValue(jValue: JValue): Option[IPFSReference] =
+    fromJValueOpt(jValue)
 }
