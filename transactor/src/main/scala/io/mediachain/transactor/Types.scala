@@ -5,15 +5,15 @@ object Types {
   import org.json4s.JValue
 
   // Mediachain Datastore Records
-  sealed abstract class Record extends Serializable {
+  sealed abstract class Record {
     def meta: Map[String, JValue]
   }
   
   // References to records in the underlying datastore
-  abstract class Reference extends Serializable
+  abstract class Reference
 
   // Typed References for tracking chain heads in the StateMachine
-  sealed abstract class ChainReference extends Serializable {
+  sealed abstract class ChainReference {
     def chain: Option[Reference]
   }
   
