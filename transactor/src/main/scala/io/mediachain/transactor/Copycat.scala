@@ -2,11 +2,13 @@ package io.mediachain.transactor
 
 import java.io.File
 import java.util.function.Supplier
+
 import io.atomix.copycat.client.CopycatClient
 import io.atomix.copycat.server.{CopycatServer, StateMachine => CopycatStateMachine}
 import io.atomix.copycat.server.storage.{Storage, StorageLevel}
 import io.atomix.catalyst.transport.{Address, NettyTransport}
 import io.atomix.catalyst.serializer.Serializer
+import io.mediachain.transactor.JsonSerialization.CopycatSerializer
 
 object Copycat {
   import io.mediachain.transactor.StateMachine.JournalStateMachine
@@ -52,11 +54,11 @@ object Copycat {
 
   object Serializers {
     def register(serializer: Serializer) {
-      // XXX temporary to enable blancket use of Serializables
-      // TODO register all used classes with the serializer
-      serializer.disableWhitelist()
+      JsonSerialization.copycatSerializers.foreach { typeSerializer =>
+        serializer.register(typeSerializer.serializableClass, typeSerializer.getClass)
+      }
     }
   }
-  
-  
+
+
 }
