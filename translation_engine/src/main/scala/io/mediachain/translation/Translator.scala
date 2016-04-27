@@ -5,15 +5,13 @@ import java.io.File
 import scala.io.Source
 import cats.data.Xor
 import io.mediachain.Types._
-import org.apache.tinkerpop.gremlin.orientdb.OrientGraph
 import org.json4s._
 import io.mediachain.core.{Error, TranslationError}
-import io.mediachain.{BlobBundle, Ingress}
+import io.mediachain.BlobBundle
 import io.mediachain.translation.JsonLoader.parseJArray
 import org.json4s.jackson.Serialization.write
 import com.fasterxml.jackson.core.JsonFactory
 import io.mediachain.signatures.{PEMFileUtil, Signatory}
-import io.mediachain.util.orient.MigrationHelper
 
 trait Implicit {
   implicit val factory = new JsonFactory
@@ -104,44 +102,3 @@ trait FlatFileLoader[T <: Translator] extends FSLoader[T] {
   }
 }
 
-object TranslatorDispatcher {
-  // TODO: move + inject me
-  def getGraph: OrientGraph =
-    MigrationHelper.getMigratedGraph().get
-
-  def dispatch(partner: String, path: String, signingIdentity: String, privateKeyPath: String) = {
-    val translator = partner match {
-      case "moma" => new moma.MomaLoader(path)
-      case "tate" => new tate.TateLoader(path)
-    }
-
-    val privateKeyXor = PEMFileUtil.privateKeyFromFile(privateKeyPath)
-
-    privateKeyXor match {
-      case Xor.Left(err) =>
-        println(s"Unable to load private key for $signingIdentity from $privateKeyPath: " +
-          err + "\nStatements will not be signed.")
-      case _ => ()
-    }
-
-    val signatory: Option[Signatory] = privateKeyXor
-      .toOption
-      .map(Signatory(signingIdentity, _))
-
-    val blobI: Iterator[Xor[TranslationError, (BlobBundle, RawMetadataBlob)]] =
-      translator.loadBlobs(signatory)
-
-    val graph = getGraph
-
-    val results: Iterator[Xor[Error, Canonical]] = blobI.map { pairXor =>
-      pairXor.flatMap { case (bundle: BlobBundle, raw: RawMetadataBlob) =>
-        Ingress.ingestBlobBundle(graph, bundle, Some(raw))
-      }
-    }
-    val errors: Iterator[Error] = results.collect { case Xor.Left(err) => err }
-    val canonicals: Iterator[Canonical] = results.collect { case Xor.Right(c) => c }
-
-    println(s"Import finished: ${canonicals.length} canonicals imported ${errors.length} errors reported (see below)")
-    println(errors)
-  }
-}
