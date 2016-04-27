@@ -33,7 +33,7 @@ object StateMachine {
   ) extends StateMachine with Snapshottable with SessionListener {
     private var seqno: BigInt = 0
     private var index: MMap[Reference, CanonicalReference] = new MHashMap    
-    private var clients: MSet[ServerSession] = new MHashSet // this wanted to be called sessions
+    private val clients: MSet[ServerSession] = new MHashSet // this wanted to be called sessions
 
     private def commitError(what: String) = Xor.left(JournalCommitError(what))
     
