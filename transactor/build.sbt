@@ -7,5 +7,5 @@ libraryDependencies ++= Seq(
   "io.atomix.catalyst" % "catalyst-netty" % "1.0.7",
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "org.slf4j" % "slf4j-simple" % "1.7.21",
-  "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.4.0"
+  "co.nstant.in" % "cbor" % "0.7"
 )
