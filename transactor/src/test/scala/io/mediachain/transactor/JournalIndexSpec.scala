@@ -155,12 +155,12 @@ class JournalIndexSpecContext(val dummy: DummyContext) {
 object JournalIndexSpecContext {
   var instance: JournalIndexSpecContext = null
   
-  def setup() {
-    val dummy = DummyContext.setup("127.0.0.1:10000", "/tmp/transactor-test/index")
+  def setup(): Unit = {
+    val dummy = DummyContext.setup("127.0.0.1:10000")
     instance = new JournalIndexSpecContext(dummy)
   }
   
-  def shutdown() {
+  def shutdown(): Unit = {
     DummyContext.shutdown(instance.dummy)
   }
   

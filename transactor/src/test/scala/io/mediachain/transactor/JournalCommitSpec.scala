@@ -94,8 +94,8 @@ class JournalCommitSpecContext(val dummy: DummyContext,
 
 object JournalCommitSpecContext {
   var instance: JournalCommitSpecContext = null
-  def setup() {
-    val dummy = DummyContext.setup("127.0.0.1:10001", "/tmp/transactor-test/commit")
+  def setup(): Unit = {
+    val dummy = DummyContext.setup("127.0.0.1:10001")
     val qclient = Copycat.Client.build()
     val queue = new LinkedBlockingQueue[JournalEntry]
     qclient.connect(new Address("127.0.0.1:10001")).join()
@@ -108,7 +108,7 @@ object JournalCommitSpecContext {
     instance = new JournalCommitSpecContext(dummy, qclient, queue)
   }
   
-  def shutdown() {
+  def shutdown(): Unit = {
     instance.qclient.close().join()
     DummyContext.shutdown(instance.dummy)
   }
