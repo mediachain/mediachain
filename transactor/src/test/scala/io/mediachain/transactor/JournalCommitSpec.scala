@@ -28,7 +28,6 @@ object JournalCommitSpec extends io.mediachain.BaseSpec
   """
 
   def beforeAll() {
-    JournalCommitSpecContext.setup()
   }
   
   def afterAll() {
@@ -93,25 +92,21 @@ class JournalCommitSpecContext(val dummy: DummyContext,
 }
 
 object JournalCommitSpecContext {
-  var instance: JournalCommitSpecContext = null
-  def setup(): Unit = {
-    val dummy = DummyContext.setup("127.0.0.1:10001")
-    val qclient = Copycat.Client.build()
-    val queue = new LinkedBlockingQueue[JournalEntry]
-    qclient.connect(new Address("127.0.0.1:10001")).join()
-    qclient.onEvent("journal-commit", 
-      new Consumer[JournalCommitEvent] { 
-        def accept(evt: JournalCommitEvent) { 
-          queue.offer(evt.entry)
-        }
-    })
-    instance = new JournalCommitSpecContext(dummy, qclient, queue)
-  }
+  val dummy = DummyContext.setup("127.0.0.1:10001")
+  val qclient = Copycat.Client.build()
+  val queue = new LinkedBlockingQueue[JournalEntry]
+  qclient.connect(new Address("127.0.0.1:10001")).join()
+  qclient.onEvent("journal-commit",
+    new Consumer[JournalCommitEvent] {
+      def accept(evt: JournalCommitEvent) {
+        queue.offer(evt.entry)
+      }
+  })
+  val context = new JournalCommitSpecContext(dummy, qclient, queue)
+
   
   def shutdown(): Unit = {
-    instance.qclient.close().join()
-    DummyContext.shutdown(instance.dummy)
+    context.qclient.close().join()
+    DummyContext.shutdown(context.dummy)
   }
-  
-  def context = instance
 }
