@@ -1,10 +1,10 @@
 package io.mediachain.util.cbor
 
-import co.nstant.in.cbor.CborBuilder
-import co.nstant.in.cbor.{model => Cbor}
-import org.json4s._
 
 object JValueConversions {
+  import co.nstant.in.cbor.CborBuilder
+  import co.nstant.in.cbor.{model => Cbor}
+  import org.json4s._
   import collection.JavaConverters._
 
   private def firstItem(builder: CborBuilder): Cbor.DataItem =
