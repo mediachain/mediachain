@@ -2,42 +2,36 @@ package io.mediachain.util.cbor
 
 
 object JValueConversions {
-  import co.nstant.in.cbor.CborBuilder
+  import co.nstant.in.cbor.builder.AbstractBuilder
   import co.nstant.in.cbor.{model => Cbor}
   import org.json4s._
-  import collection.JavaConverters._
 
-  private implicit class BuilderHead(builder: CborBuilder) {
-    def head: Cbor.DataItem =
-      builder.build().asScala.headOption.getOrElse {
-        throw new MappingException("Unable to convert JValue to CBOR")
-      }
+  // Provides access to protected `convert` methods on `AbstractBuilder`
+  private class StatelessBuilder extends AbstractBuilder[Object](null) {
+    def convertNumber(num: BigInt) = super.convert(num.bigInteger)
+    def convertNumber(num: BigDecimal) = super.convert(num.doubleValue)
+    def convertNumber(num: Long) = super.convert(num)
+    def convertNumber(num: Double) = super.convert(num)
+    def convertBool(boolean: Boolean) = super.convert(boolean)
+    def convertString(string: String) = super.convert(string)
   }
 
-  def jValueToCbor(jValue: JValue): Cbor.DataItem =
+
+  def jValueToCbor(jValue: JValue): Cbor.DataItem = {
+    val builder = new StatelessBuilder
     jValue match {
-      case JInt(num) =>
-        new CborBuilder().add(num.bigInteger).head
-
-      case JLong(num) =>
-        new CborBuilder().add(num).head
-
-      case JDecimal(num) =>
-        new CborBuilder().add(num.doubleValue).head
-
-      case JDouble(num) =>
-        new CborBuilder().add(num).head
-
-      case JBool(b) =>
-        new CborBuilder().add(b).head
-
-      case JString(s) =>
-        new CborBuilder().add(s).head
+      case JNull => Cbor.SimpleValue.NULL
+      case JNothing => Cbor.SimpleValue.UNDEFINED
+      case JInt(num) => builder.convertNumber(num)
+      case JLong(num) => builder.convertNumber(num)
+      case JDecimal(num) => builder.convertNumber(num)
+      case JDouble(num) => builder.convertNumber(num)
+      case JBool(b) => builder.convertBool(b)
+      case JString(s) => builder.convertString(s)
 
       case JArray(arr) => {
-        val cborValues = arr.map(jValueToCbor)
-        val cborArr = new Cbor.Array(cborValues.length)
-        cborValues.foreach(cborArr.add)
+        val cborArr = new Cbor.Array(arr.length)
+        arr.foreach(jValue => cborArr.add(jValueToCbor(jValue)))
         cborArr
       }
 
@@ -45,15 +39,12 @@ object JValueConversions {
         val cborMap = new Cbor.Map(fields.length)
         fields.foreach { f: JField =>
           cborMap.put(
-            new Cbor.UnicodeString(f._1),
+            builder.convertString(f._1),
             jValueToCbor(f._2)
           )
         }
         cborMap
       }
-
-      case JNull => Cbor.SimpleValue.NULL
-
-      case JNothing => Cbor.SimpleValue.UNDEFINED
     }
+  }
 }
