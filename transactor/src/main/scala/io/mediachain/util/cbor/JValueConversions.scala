@@ -5,7 +5,6 @@ import co.nstant.in.cbor.{model => Cbor}
 import org.json4s._
 
 object JValueConversions {
-  import scala.language.implicitConversions
   import collection.JavaConverters._
 
   private def firstItem(builder: CborBuilder): Cbor.DataItem =
@@ -13,7 +12,7 @@ object JValueConversions {
     throw new MappingException("Unable to convert JValue to CBOR")
   }
 
-  implicit def jValueToCbor(jValue: JValue): Cbor.DataItem =
+  def jValueToCbor(jValue: JValue): Cbor.DataItem =
     jValue match {
       case JInt(num) => firstItem {
         new CborBuilder().add(num.bigInteger)
