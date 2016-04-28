@@ -1,12 +1,26 @@
 package io.mediachain.transactor
 
+import java.io.ByteArrayOutputStream
+
 
 object Types {
   import cats.data.Xor
   import org.json4s.{JValue, JObject, JString, JField}
+  import co.nstant.in.cbor.{model => Cbor}
+  import co.nstant.in.cbor.CborEncoder
+  import io.mediachain.util.cbor.JValueConversions.jValueToCbor
 
   trait ToJObject {
     val CBORType: String
+
+    def toCbor: Cbor.DataItem = jValueToCbor(toJObject)
+
+    def toCborBytes: Array[Byte] = {
+      val out = new ByteArrayOutputStream()
+      new CborEncoder(out).encode(toCbor)
+      out.close()
+      out.toByteArray
+    }
 
     def toJObject: JObject =
       toJObjectWithDefaults(Map.empty, Map.empty)
