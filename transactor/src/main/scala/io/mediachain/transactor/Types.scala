@@ -3,7 +3,7 @@ package io.mediachain.transactor
 
 object Types {
   import cats.data.Xor
-  import org.json4s.{JValue, JObject, JString, JField}
+  import org.json4s._
 
   trait ToJObject {
     val CBORType: String
@@ -114,14 +114,38 @@ object Types {
   case class CanonicalEntry( 
     index: BigInt,
     ref: Reference
-  ) extends JournalEntry
+  ) extends JournalEntry with ToJObject {
+    val CBORType = "insert"
+
+    override def toJObject: JObject = {
+      val defaults = Map(
+        "index" -> JInt(index),
+        "ref"   -> JString(ref.toString)
+      )
+      super.toJObjectWithDefaults(defaults, Map())
+    }
+  }
   
   case class ChainEntry( 
     index: BigInt,
     ref: Reference,
     chain: Reference,
     chainPrevious: Option[Reference]
-  ) extends JournalEntry
+  ) extends JournalEntry with ToJObject {
+    val CBORType = "update"
+
+    override def toJObject: JObject = {
+      val defaults = Map(
+        "index" -> JInt(index),
+        "ref"   -> JString(ref.toString),
+        "chain" -> JString(chain.toString)
+      )
+      val prev = chainPrevious.map(x => JString(x.toString))
+      val optionals = Map("chainPrevious" -> prev)
+
+      super.toJObjectWithDefaults(defaults, optionals)
+    }
+ }
   
   // Journal transactor interface
   trait Journal {
