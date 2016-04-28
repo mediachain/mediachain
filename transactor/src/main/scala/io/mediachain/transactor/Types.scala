@@ -7,7 +7,6 @@ object Types {
 
   trait ToJObject {
     val CBORType: String
-    val meta: Map[String, JValue]
 
     def toJObject: JObject =
       toJObjectWithDefaults(Map.empty, Map.empty)
@@ -15,12 +14,9 @@ object Types {
     def toJObjectWithDefaults(defaults: Map[String, JValue],
                               optionals: Map[String, Option[JValue]]):
     JObject = {
-      val defaultsWithOptionals = defaults ++ optionals.flatMap {
+      val merged = defaults ++ optionals.flatMap {
         case (_, None) => List.empty
         case (k, Some(v)) => List(k -> v)
-      }
-      val merged = defaultsWithOptionals.foldLeft(meta) {
-        (m, x) => m + x
       }
       val withType = ("type", JString(CBORType)) :: merged.toList
 
@@ -65,11 +61,10 @@ object Types {
     meta: Map[String, JValue]
   ) extends CanonicalRecord with ToJObject {
     val CBORType = "entity"
-
     def reference: ChainReference = EntityChainReference.empty
 
     override def toJObject: JObject = {
-      val defaults = Map("name" -> name)
+      val defaults = meta + ("name" -> name)
       super.toJObjectWithDefaults(defaults, Map())
     }
 
@@ -86,7 +81,7 @@ object Types {
     def reference: ChainReference = ArtefactChainReference.empty
 
     override def toJObject: JObject = {
-      val defaults = Map("name" -> name)
+      val defaults = meta + ("name" -> name)
       val optionals = Map("created" -> created, "description" -> description)
 
       super.toJObjectWithDefaults(defaults, optionals)
