@@ -12,9 +12,9 @@ case class DummyContext(
 )
 
 object DummyContext {
-  def setup(srvaddr: String, logdir: String) = {
+  def setup(srvaddr: String) = {
     println("*** SETUP DUMMY COPYCAT CONTEXT")
-    setupLogdir(logdir)
+    val logdir = setupLogdir()
     val address = new Address(srvaddr)
     val store = new Dummies.DummyStore
     val server = Copycat.Server.build(address, logdir, store)
@@ -24,10 +24,11 @@ object DummyContext {
     DummyContext(server, client, store, logdir)
   }
   
-  def setupLogdir(logdir: String) {
+  def setupLogdir() = {
     import sys.process._
-    (s"rm -rf $logdir").!
+    val logdir = "mktemp -d".!!
     (s"mkdir -p $logdir").!
+    logdir
   }
   
   def cleanupLogdir(logdir: String) {
