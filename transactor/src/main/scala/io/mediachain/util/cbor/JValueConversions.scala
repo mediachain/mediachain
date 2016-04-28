@@ -7,36 +7,32 @@ object JValueConversions {
   import org.json4s._
   import collection.JavaConverters._
 
-  private def firstItem(builder: CborBuilder): Cbor.DataItem =
-    builder.build().asScala.headOption.getOrElse {
-    throw new MappingException("Unable to convert JValue to CBOR")
+  private implicit class BuilderHead(builder: CborBuilder) {
+    def head: Cbor.DataItem =
+      builder.build().asScala.headOption.getOrElse {
+        throw new MappingException("Unable to convert JValue to CBOR")
+      }
   }
 
   def jValueToCbor(jValue: JValue): Cbor.DataItem =
     jValue match {
-      case JInt(num) => firstItem {
-        new CborBuilder().add(num.bigInteger)
-      }
+      case JInt(num) =>
+        new CborBuilder().add(num.bigInteger).head
 
-      case JLong(num) => firstItem {
-        new CborBuilder().add(num)
-      }
+      case JLong(num) =>
+        new CborBuilder().add(num).head
 
-      case JDecimal(num) => firstItem {
-        new CborBuilder().add(num.doubleValue())
-      }
+      case JDecimal(num) =>
+        new CborBuilder().add(num.doubleValue).head
 
-      case JDouble(num) => firstItem {
-        new CborBuilder().add(num)
-      }
+      case JDouble(num) =>
+        new CborBuilder().add(num).head
 
-      case JBool(b) => firstItem {
-        new CborBuilder().add(b)
-      }
+      case JBool(b) =>
+        new CborBuilder().add(b).head
 
-      case JString(s) => firstItem {
-        new CborBuilder().add(s)
-      }
+      case JString(s) =>
+        new CborBuilder().add(s).head
 
       case JArray(arr) => {
         val cborValues = arr.map(jValueToCbor)
@@ -57,6 +53,7 @@ object JValueConversions {
       }
 
       case JNull => Cbor.SimpleValue.NULL
+
       case JNothing => Cbor.SimpleValue.UNDEFINED
     }
 }
