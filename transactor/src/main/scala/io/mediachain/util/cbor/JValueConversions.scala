@@ -46,14 +46,13 @@ object JValueConversions {
       }
 
       case JObject(fields) => {
-        val cborFields = fields.map { pair: (String, JValue) =>
-          val cborVal = jValueToCbor(pair._2)
-          val name = new Cbor.UnicodeString(pair._1)
-          (name, cborVal)
+        val cborMap = new Cbor.Map(fields.length)
+        fields.foreach { f: JField =>
+          cborMap.put(
+            new Cbor.UnicodeString(f._1),
+            jValueToCbor(f._2)
+          )
         }
-
-        val cborMap = new Cbor.Map(cborFields.length)
-        cborFields.foreach(f => cborMap.put(f._1, f._2))
         cborMap
       }
 
