@@ -13,6 +13,8 @@ import cats.data.Xor
 
 object StateMachine {
   import io.mediachain.transactor.Types._
+
+  val JournalBlockSize: Int = 4096 // blocksize for Journal Blockchain
   
   case class JournalInsert(
     record: CanonicalRecord
@@ -34,8 +36,7 @@ object StateMachine {
   case class JournalBlockEvent(ref: Reference) extends JournalEvent
 
   class JournalStateMachine(
-    val datastore: Datastore,
-    val blocksize: Int = 4096
+    val datastore: Datastore
   ) extends CopycatStateMachine with Snapshottable with SessionListener {
     private var seqno: BigInt = 0
     private var index: MMap[Reference, ChainReference] = new MHashMap // canonical -> chain map
@@ -134,7 +135,7 @@ object StateMachine {
     // block generation
     private def blockExtend(entry: JournalEntry) {
       block += entry
-      if (block.length >= blocksize) {
+      if (block.length >= JournalBlockSize) {
         val entries = block.toList
         val newblock = JournalBlock(seqno, blockchain, entries)
         val blockref = datastore.put(newblock)
