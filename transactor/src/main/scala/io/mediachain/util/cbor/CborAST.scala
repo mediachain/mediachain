@@ -28,11 +28,16 @@ object CborAST {
 
 
   object CMap {
+    def apply(fields: CField*): CMap = CMap(fields.toList)
+
     // would like to have used `apply` here, but thanks to type erasure
     // the JVM can't distinguish between a List[(CValue, CValue)] and a
     // List[(String, CValue)]
     def withStringKeys(stringFields: List[(String, CValue)]): CMap =
       CMap(stringFields.map(f => (CString(f._1), f._2)))
+
+    def withStringKeys(stringFields: (String, CValue)*): CMap =
+      withStringKeys(stringFields.toList)
   }
 
   def toDataItem(cValue: CValue): Cbor.DataItem = cValue match {
