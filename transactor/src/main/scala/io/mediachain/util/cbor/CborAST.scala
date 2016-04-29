@@ -1,12 +1,15 @@
 package io.mediachain.util.cbor
 
 
+
 object CborAST {
   import co.nstant.in.cbor.builder.AbstractBuilder
   import co.nstant.in.cbor.model.SimpleValueType
   import co.nstant.in.cbor.{model => Cbor}
 
   import collection.JavaConverters._
+  import scala.util.Try
+
 
   sealed trait CValue
   case class CNull() extends CValue
@@ -18,7 +21,25 @@ object CborAST {
   case class CString(string: String) extends CValue
   case class CBytes(bytes: Array[Byte]) extends CValue
   case class CArray(items: List[CValue]) extends CValue
-  case class CMap(fields: List[CField]) extends CValue
+  case class CMap(fields: List[CField]) extends CValue {
+    def asStringKeyedMap: Map[String, CValue] = {
+      val stringKeyedFields = fields.flatMap { f: CField =>
+        f._1 match {
+          case CString(s) => Some((s, f._2))
+          case _ => None
+        }
+      }
+      Map(stringKeyedFields:_*)
+    }
+
+    def getAs[T <: CValue](key: CValue): Option[T] =
+      fields.toMap.get(key).flatMap(v => Try(v.asInstanceOf[T]).toOption)
+
+
+    def getAs[T <: CValue](key: String): Option[T] =
+      getAs(CString(key))
+    
+  }
   type CField = (CValue, CValue)
 
   // catch-all type for things we aren't interested in unpacking to a
