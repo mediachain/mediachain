@@ -36,7 +36,8 @@ object StateMachine {
   case class JournalBlockEvent(ref: Reference) extends JournalEvent
 
   class JournalStateMachine(
-    val datastore: Datastore
+    val datastore: Datastore,
+    val blocksize: Int = JournalBlockSize // configurable to facilitate testing
   ) extends CopycatStateMachine with Snapshottable with SessionListener {
     private var seqno: BigInt = 0
     private var index: MMap[Reference, ChainReference] = new MHashMap // canonical -> chain map
@@ -135,7 +136,7 @@ object StateMachine {
     // block generation
     private def blockExtend(entry: JournalEntry) {
       block += entry
-      if (block.length >= JournalBlockSize) {
+      if (block.length >= blocksize) {
         val entries = block.toArray
         val newblock = JournalBlock(seqno, blockchain, entries)
         val blockref = datastore.put(newblock)

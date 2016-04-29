@@ -13,11 +13,12 @@ object Copycat {
   import io.mediachain.transactor.Types.Datastore
 
   object Server {
-    def build(address: Address, logdir: String, datastore: Datastore): CopycatServer = {
+    def build(address: Address, logdir: String, datastore: Datastore,
+              blocksize: Int = StateMachine.JournalBlockSize): CopycatServer = {
       def stateMachineSupplier() = {
         new Supplier[CopycatStateMachine] {
           override def get: CopycatStateMachine = {
-            new JournalStateMachine(datastore)
+            new JournalStateMachine(datastore, blocksize)
           }
         }
       }
