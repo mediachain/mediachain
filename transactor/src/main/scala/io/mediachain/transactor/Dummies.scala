@@ -16,14 +16,16 @@ object Dummies {
   
   class DummyStore extends Datastore {
     var seqno = 0
-    val records: MMap[Reference, Record] = new MHashMap
+    val store: MMap[Reference, DataObject] = new MHashMap
     
-    override def put(rec: Record): Reference = {
+    override def put(obj: DataObject): Reference = {
       val ref = new DummyReference(seqno)
       seqno += 1
-      records += (ref -> rec)
+      store += (ref -> obj)
       ref
     }
+    
+    def get(ref: Reference) = store.get(ref)
   }
 
 }

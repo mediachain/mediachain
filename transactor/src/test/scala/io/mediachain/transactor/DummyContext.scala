@@ -7,17 +7,17 @@ import io.atomix.catalyst.transport.Address
 case class DummyContext(
   server: CopycatServer, 
   client: CopycatClient, 
-  store: Types.Datastore,
+  store: Dummies.DummyStore,
   logdir: String
 )
 
 object DummyContext {
-  def setup(srvaddr: String) = {
+  def setup(srvaddr: String, blocksize: Int = StateMachine.JournalBlockSize) = {
     println("*** SETUP DUMMY COPYCAT CONTEXT")
     val logdir = setupLogdir()
     val address = new Address(srvaddr)
     val store = new Dummies.DummyStore
-    val server = Copycat.Server.build(address, logdir, store)
+    val server = Copycat.Server.build(address, logdir, store, blocksize)
     server.bootstrap().join()
     val client = Copycat.Client.build()
     client.connect(address).join()
