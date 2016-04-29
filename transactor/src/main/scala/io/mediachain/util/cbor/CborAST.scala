@@ -1,15 +1,12 @@
-package io.mediachain.util
+package io.mediachain.util.cbor
 
 
-package object cbor {
-  import java.io.ByteArrayOutputStream
-
+object CborAST {
   import co.nstant.in.cbor.builder.AbstractBuilder
   import co.nstant.in.cbor.model.SimpleValueType
-  import co.nstant.in.cbor.{CborDecoder, CborEncoder, model => Cbor}
+  import co.nstant.in.cbor.{model => Cbor}
 
   import collection.JavaConverters._
-
 
   sealed trait CValue
   case class CNull() extends CValue
@@ -96,16 +93,6 @@ package object cbor {
 
     case _ => CUnhandled(item)
   }
-
-  def encode(cValue: CValue): Array[Byte] = {
-    val out = new ByteArrayOutputStream
-    new CborEncoder(out).encode(toDataItem(cValue))
-    out.close()
-    out.toByteArray
-  }
-
-  def decode(bytes: Array[Byte]): List[CValue] =
-    CborDecoder.decode(bytes).asScala.map(fromDataItem).toList
 
 
   private val converter = new DataItemConverter

@@ -4,7 +4,7 @@ import scala.collection.mutable.{Map => MMap, HashMap => MHashMap}
 
 object Dummies {
   import io.mediachain.transactor.Types._
-  import io.mediachain.util.cbor._
+  import io.mediachain.util.cbor.CborAST._
   
   class DummyReference(val num: Int) extends Reference {
     override def equals(that: Any) = {
