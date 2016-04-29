@@ -4,8 +4,11 @@ object Types {
   import cats.data.Xor
   import org.json4s.JValue
 
+  // Base class of all objects storable in the Datastore
+  sealed abstract class DataObject extends Serializable
+
   // Mediachain Datastore Records
-  sealed abstract class Record extends Serializable {
+  sealed abstract class Record extends DataObject {
     def meta: Map[String, JValue]
   }
   
@@ -66,7 +69,7 @@ object Types {
   ) extends ChainCell
   
   // Journal Entries
-  sealed abstract class JournalEntry {
+  sealed abstract class JournalEntry extends Serializable {
     def index: BigInt
     def ref: Reference
   }
@@ -83,18 +86,27 @@ object Types {
     chainPrevious: Option[Reference]
   ) extends JournalEntry
   
+  // Journal Blocks
+  case class JournalBlock(
+    index: BigInt,
+    chain: Option[Reference],
+    entries: Seq[JournalEntry]
+  ) extends DataObject
+  
   // Journal transactor interface
   trait Journal {
     def insert(rec: CanonicalRecord): Xor[JournalError, CanonicalEntry]
     def update(ref: Reference, cell: ChainCell): Xor[JournalError, ChainEntry]
     def lookup(ref: Reference): Option[Reference]
+    def currentBlock: JournalBlock
   }
   
   trait JournalClient {
     def updateJournal(entry: JournalEntry): Unit
+    def updateJournalBlockchain(ref: Reference): Unit
   }
   
-  sealed abstract class JournalError
+  sealed abstract class JournalError extends Serializable
   
   case class JournalCommitError(what: String) extends JournalError {
     override def toString = "Journal Commit Error: " + what
@@ -102,6 +114,6 @@ object Types {
   
   // Datastore interface
   trait Datastore {
-    def put(rec: Record): Reference
+    def put(obj: DataObject): Reference
   }
 }
