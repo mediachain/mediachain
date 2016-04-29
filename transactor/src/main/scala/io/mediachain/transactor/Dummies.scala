@@ -14,9 +14,8 @@ object Dummies {
     override def hashCode = num
     override def toString = "dummy@" + num
 
-    val CBORType = "dummyReference"
-    override def toCbor =
-      toCMapWithDefaults(Map("@link" -> CLong(num)), Map())
+    val CBORType = "" // unused
+    override def toCbor = CMap.withStringKeys("@link" -> CString(this.toString))
   }
   
   class DummyStore extends Datastore {
