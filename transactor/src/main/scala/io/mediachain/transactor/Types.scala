@@ -90,7 +90,7 @@ object Types {
   case class JournalBlock(
     index: BigInt,
     chain: Option[Reference],
-    entries: Seq[JournalEntry]
+    entries: Array[JournalEntry]
   ) extends DataObject
   
   // Journal transactor interface

@@ -126,7 +126,7 @@ object StateMachine {
     
     def currentBlock(commit: Commit[JournalCurrentBlock]) : JournalBlock = {
       try {
-        JournalBlock(seqno, blockchain, block.toList)
+        JournalBlock(seqno, blockchain, block.toArray)
       } finally {
         commit.release()
       }
@@ -136,7 +136,7 @@ object StateMachine {
     private def blockExtend(entry: JournalEntry) {
       block += entry
       if (block.length >= JournalBlockSize) {
-        val entries = block.toList
+        val entries = block.toArray
         val newblock = JournalBlock(seqno, blockchain, entries)
         val blockref = datastore.put(newblock)
         blockchain = Some(blockref)
