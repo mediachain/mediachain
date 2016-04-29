@@ -3,10 +3,31 @@ package io.mediachain.transactor
 object Types {
   import scala.concurrent.Future
   import cats.data.Xor
-  import org.json4s.JValue
+
 
   // Base class of all objects storable in the Datastore
   sealed abstract class DataObject extends Serializable
+
+  import org.json4s.{JValue, JObject, JString, JField}
+
+  trait ToJObject {
+    val CBORType: String
+
+    def toJObject: JObject =
+      toJObjectWithDefaults(Map.empty, Map.empty)
+
+    def toJObjectWithDefaults(defaults: Map[String, JValue],
+                              optionals: Map[String, Option[JValue]]):
+    JObject = {
+      val merged = defaults ++ optionals.flatMap {
+        case (_, None) => List.empty
+        case (k, Some(v)) => List(k -> v)
+      }
+      val withType = ("type", JString(CBORType)) :: merged.toList
+
+      JObject(withType)
+    }
+  }
 
   // Mediachain Datastore Records
   sealed abstract class Record extends DataObject {
