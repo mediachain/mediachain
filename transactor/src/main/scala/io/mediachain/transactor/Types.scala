@@ -26,7 +26,7 @@ object Types {
       }
       val withType = ("type", CString(CBORType)) :: merged.toList
 
-      CMap(withType)
+      CMap.withStringKeys(withType)
     }
   }
 

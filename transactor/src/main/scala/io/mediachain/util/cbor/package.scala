@@ -1,13 +1,14 @@
 package io.mediachain.util
 
-import java.io.ByteArrayOutputStream
-
-import co.nstant.in.cbor.CborEncoder
-
 
 package object cbor {
+  import java.io.ByteArrayOutputStream
+
   import co.nstant.in.cbor.builder.AbstractBuilder
-  import co.nstant.in.cbor.model.{DataItem, SimpleValue, Array => DataItemArray, Map => DataItemMap}
+  import co.nstant.in.cbor.model.SimpleValueType
+  import co.nstant.in.cbor.{CborDecoder, CborEncoder, model => Cbor}
+
+  import collection.JavaConverters._
 
 
   sealed trait CValue
@@ -21,13 +22,25 @@ package object cbor {
   case class CBytes(bytes: Array[Byte]) extends CValue
   case class CArray(items: List[CValue]) extends CValue
   case class CMap(fields: List[CField]) extends CValue
-  type CField = (String, CValue)
+  type CField = (CValue, CValue)
+
+  // catch-all type for things we aren't interested in unpacking to a
+  // specific CValue.
+  // e.g. cbor's Rational type, Language-tagged strings, etc.
+  case class CUnhandled(dataItem: Cbor.DataItem) extends CValue
 
 
+  object CMap {
+    // would like to have used `apply` here, but thanks to type erasure
+    // the JVM can't distinguish between a List[(CValue, CValue)] and a
+    // List[(String, CValue)]
+    def withStringKeys(stringFields: List[(String, CValue)]): CMap =
+      CMap(stringFields.map(f => (CString(f._1), f._2)))
+  }
 
-  def toDataItem(cValue: CValue): DataItem = cValue match {
-    case _: CNull => SimpleValue.NULL
-    case _: CUndefined => SimpleValue.UNDEFINED
+  def toDataItem(cValue: CValue): Cbor.DataItem = cValue match {
+    case _: CNull => Cbor.SimpleValue.NULL
+    case _: CUndefined => Cbor.SimpleValue.UNDEFINED
     case CInt(num) => converter.convert(num)
     case CLong(num) => converter.convert(num)
     case CDouble(num) => converter.convert(num)
@@ -35,18 +48,53 @@ package object cbor {
     case CString(string) => converter.convert(string)
     case CBytes(bytes) => converter.convert(bytes)
     case CArray(items) => {
-      val arrayDataItem = new DataItemArray(items.length)
+      val arrayDataItem = new Cbor.Array(items.length)
       items.foreach(item => arrayDataItem.add(toDataItem(item)))
       arrayDataItem
     }
 
     case CMap(fields) => {
-      val mapDataItem = new DataItemMap(fields.length)
+      val mapDataItem = new Cbor.Map(fields.length)
       fields.foreach(field => mapDataItem.put(
-        toDataItem(CString(field._1)), toDataItem(field._2)
+        toDataItem(field._1), toDataItem(field._2)
       ))
       mapDataItem
     }
+
+    case CUnhandled(item) => item
+  }
+
+  def fromDataItem(item: Cbor.DataItem): CValue = item match {
+    case s: Cbor.SimpleValue if s.getSimpleValueType == SimpleValueType.TRUE =>
+      CBool(true)
+    case s: Cbor.SimpleValue if s.getSimpleValueType == SimpleValueType.FALSE =>
+      CBool(false)
+    case s: Cbor.SimpleValue if s.getSimpleValueType == SimpleValueType.NULL =>
+      CNull()
+    case s: Cbor.SimpleValue if s.getSimpleValueType == SimpleValueType.UNDEFINED =>
+      CUndefined()
+
+    case i: Cbor.UnsignedInteger => CInt(i.getValue)
+    case i: Cbor.NegativeInteger => CInt(i.getValue)
+    case f: Cbor.HalfPrecisionFloat => CDouble(f.getValue)
+    case f: Cbor.SinglePrecisionFloat => CDouble(f.getValue)
+    case f: Cbor.DoublePrecisionFloat => CDouble(f.getValue)
+    case n: Cbor.Number => CInt(n.getValue)
+
+    case b: Cbor.ByteString => CBytes(b.getBytes)
+    case s: Cbor.UnicodeString => CString(s.getString)
+    case a: Cbor.Array =>
+      CArray(a.getDataItems.asScala.map(fromDataItem).toList)
+
+    case m: Cbor.Map => {
+      val keys = m.getKeys.asScala
+      val fields = keys.map { k =>
+        (fromDataItem(k), fromDataItem(m.get(k)))
+      }
+      CMap(fields.toList)
+    }
+
+    case _ => CUnhandled(item)
   }
 
   def encode(cValue: CValue): Array[Byte] = {
@@ -55,6 +103,10 @@ package object cbor {
     out.close()
     out.toByteArray
   }
+
+  def decode(bytes: Array[Byte]): List[CValue] =
+    CborDecoder.decode(bytes).asScala.map(fromDataItem).toList
+
 
   private val converter = new DataItemConverter
   private class DataItemConverter extends AbstractBuilder[Object](null) {

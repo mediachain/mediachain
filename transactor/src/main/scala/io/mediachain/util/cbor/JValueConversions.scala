@@ -17,7 +17,8 @@ object JValueConversions {
       case JBool(b) => CBool(b)
       case JString(s) => CString(s)
       case JArray(arr) => CArray(arr.map(jValueToCbor))
-      case JObject(fields) => CMap(fields.map(f => (f._1, jValueToCbor(f._2))))
+      case JObject(fields) =>
+        CMap.withStringKeys(fields.map(f => (f._1, jValueToCbor(f._2))))
     }
   }
 }
