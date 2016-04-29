@@ -5,39 +5,36 @@ object Types {
   import cats.data.Xor
 
   import io.mediachain.util.cbor._
-  import org.json4s.{JValue, JObject, JString}
-  import io.mediachain.util.cbor.JValueConversions.jValueToCbor
 
   // Base class of all objects storable in the Datastore
   sealed abstract class DataObject extends Serializable
 
-  trait ToJObject {
+  trait ToCbor {
     val CBORType: String
 
-    def toCbor: CValue = jValueToCbor(toJObject)
     def toCborBytes: Array[Byte] = encode(toCbor)
 
-    def toJObject: JObject =
-      toJObjectWithDefaults(Map.empty, Map.empty)
+    def toCbor: CValue =
+      toCMapWithDefaults(Map.empty, Map.empty)
 
-    def toJObjectWithDefaults(defaults: Map[String, JValue],
-                              optionals: Map[String, Option[JValue]]):
-    JObject = {
+    def toCMapWithDefaults(defaults: Map[String, CValue],
+                           optionals: Map[String, Option[CValue]])
+    : CMap = {
       val merged = defaults ++ optionals.flatMap {
         case (_, None) => List.empty
         case (k, Some(v)) => List(k -> v)
       }
-      val withType = ("type", JString(CBORType)) :: merged.toList
+      val withType = ("type", CString(CBORType)) :: merged.toList
 
-      JObject(withType)
+      CMap(withType)
     }
   }
 
   // Mediachain Datastore Records
   sealed abstract class Record extends DataObject {
-    def meta: Map[String, JValue]
+    def meta: Map[String, CValue]
   }
-  
+
   // References to records in the underlying datastore
   abstract class Reference extends Serializable
 
@@ -45,7 +42,7 @@ object Types {
   sealed abstract class ChainReference extends Serializable {
     def chain: Option[Reference]
   }
-  
+
   case class EntityChainReference(chain: Option[Reference])
     extends ChainReference
 
@@ -64,15 +61,15 @@ object Types {
   sealed abstract class CanonicalRecord extends Record {
     def reference: ChainReference
   }
-  
+
   case class Entity(
-    meta: Map[String, JValue]
+    meta: Map[String, CValue]
   ) extends CanonicalRecord {
     def reference: ChainReference = EntityChainReference.empty
   }
   
   case class Artefact( 
-    meta: Map[String, JValue]
+    meta: Map[String, CValue]
   ) extends CanonicalRecord {
     def reference: ChainReference = ArtefactChainReference.empty
   }
@@ -85,13 +82,13 @@ object Types {
   case class EntityChainCell( 
     entity: Reference,
     chain: Option[Reference],
-    meta: Map[String, JValue]
+    meta: Map[String, CValue]
   ) extends ChainCell
   
   case class ArtefactChainCell( 
     artefact: Reference,
     chain: Option[Reference],
-    meta: Map[String, JValue]
+    meta: Map[String, CValue]
   ) extends ChainCell
   
   // Journal Entries
@@ -103,22 +100,48 @@ object Types {
   case class CanonicalEntry( 
     index: BigInt,
     ref: Reference
-  ) extends JournalEntry
-  
+  ) extends JournalEntry with ToCbor {
+    val CBORType = "insert"
+
+    override def toCbor: CValue = {
+      val defaults = Map(
+        "index" -> CInt(index),
+        "ref"   -> CString(ref.toString)
+      )
+      super.toCMapWithDefaults(defaults, Map())
+    }
+  }
+
+
   case class ChainEntry( 
     index: BigInt,
     ref: Reference,
     chain: Reference,
     chainPrevious: Option[Reference]
-  ) extends JournalEntry
-  
+  ) extends JournalEntry with ToCbor {
+    val CBORType = "update"
+
+    override def toCbor: CValue = {
+      val defaults = Map(
+        "index" -> CInt(index),
+        "ref"   -> CString(ref.toString),
+        "chain" -> CString(chain.toString)
+      )
+      val prev = chainPrevious.map(x => CString(x.toString))
+      val optionals = Map("chainPrevious" -> prev)
+
+      super.toCMapWithDefaults(defaults, optionals)
+    }
+  }
+
   // Journal Blocks
   case class JournalBlock(
     index: BigInt,
     chain: Option[Reference],
     entries: Array[JournalEntry]
   ) extends DataObject
-  
+
+
   // Journal transactor interface
   trait Journal {
     def insert(rec: CanonicalRecord): Xor[JournalError, CanonicalEntry]
