@@ -5,7 +5,8 @@ object Types {
   import scala.concurrent.Future
   import cats.data.Xor
 
-  import io.mediachain.util.cbor._
+  import io.mediachain.util.cbor.CborCodec
+  import io.mediachain.util.cbor.CborAST._
 
   // Base class of all objects storable in the Datastore
   sealed abstract class DataObject extends Serializable with ToCbor
@@ -13,7 +14,7 @@ object Types {
   trait ToCbor {
     val CBORType: String
 
-    def toCborBytes: Array[Byte] = encode(toCbor)
+    def toCborBytes: Array[Byte] = CborCodec.encode(toCbor)
 
     def toCbor: CValue =
       toCMapWithDefaults(Map.empty, Map.empty)

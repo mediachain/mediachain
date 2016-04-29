@@ -4,7 +4,7 @@ package io.mediachain.util.cbor
 
 object JValueConversions {
   import org.json4s._
-
+  import io.mediachain.util.cbor.CborAST._
 
   def jValueToCbor(jValue: JValue): CValue = {
     jValue match {
