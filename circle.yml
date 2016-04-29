@@ -12,3 +12,8 @@ dependencies:
     - echo "java $SBT_OPTS -jar \`dirname \$0\`/sbt-launch.jar \"\$@\"" > $HOME/bin/sbt
     - chmod u+x $HOME/bin/sbt
     - which sbt
+test:
+  pre:
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+  override:
+    - sbt -Dspecs2.junit.outdir=$CIRCLE_TEST_REPORTS/junit "test-only -- junitxml console"
