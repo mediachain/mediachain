@@ -36,7 +36,7 @@ object Types {
   }
 
   // References to records in the underlying datastore
-  abstract class Reference extends Serializable
+  abstract class Reference extends Serializable with ToCbor
 
   // Typed References for tracking chain heads in the StateMachine
   sealed abstract class ChainReference extends Serializable {
@@ -106,7 +106,7 @@ object Types {
     override def toCbor: CValue = {
       val defaults = Map(
         "index" -> CInt(index),
-        "ref"   -> CString(ref.toString)
+        "ref"   -> ref.toCbor
       )
       super.toCMapWithDefaults(defaults, Map())
     }
@@ -124,10 +124,10 @@ object Types {
     override def toCbor: CValue = {
       val defaults = Map(
         "index" -> CInt(index),
-        "ref"   -> CString(ref.toString),
-        "chain" -> CString(chain.toString)
+        "ref"   -> ref.toCbor,
+        "chain" -> chain.toCbor
       )
-      val prev = chainPrevious.map(x => CString(x.toString))
+      val prev = chainPrevious.map(_.toCbor)
       val optionals = Map("chainPrevious" -> prev)
 
       super.toCMapWithDefaults(defaults, optionals)
