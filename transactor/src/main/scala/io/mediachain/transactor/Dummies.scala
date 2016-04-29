@@ -4,6 +4,7 @@ import scala.collection.mutable.{Map => MMap, HashMap => MHashMap}
 
 object Dummies {
   import io.mediachain.transactor.Types._
+  import io.mediachain.util.cbor._
   
   class DummyReference(val num: Int) extends Reference {
     override def equals(that: Any) = {
@@ -12,6 +13,10 @@ object Dummies {
     }
     override def hashCode = num
     override def toString = "dummy@" + num
+
+    val CBORType = "dummyReference"
+    override def toCbor =
+      toCMapWithDefaults(Map("@link" -> CLong(num)), Map())
   }
   
   class DummyStore extends Datastore {
