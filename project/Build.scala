@@ -11,7 +11,7 @@ object MediachainBuild extends Build {
     scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings", "-feature"),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats" % "0.4.1",
-      "org.json4s" %% "json4s-jackson" % "3.2.11",
+      "org.json4s" %% "json4s-jackson" % "3.3.0",
       "org.specs2" %% "specs2-core" % "3.7" % "test",
       "org.specs2" %% "specs2-junit" % "3.7" % "test",
       "org.specs2" %% "specs2-matcher-extra" % "3.7" % "test",
