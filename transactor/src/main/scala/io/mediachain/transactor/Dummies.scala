@@ -24,6 +24,8 @@ object Dummies {
       store += (ref -> obj)
       ref
     }
+    
+    def get(ref: Reference) = store.get(ref)
   }
 
 }
