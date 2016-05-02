@@ -10,6 +10,7 @@ object CValueGenerators {
 
   val genCNull = Gen.const(CNull())
   val genCUndefined = Gen.const(CUndefined())
+  val genCTag = for (t <- arbitrary[Long]) yield CTag(t)
   val genCInt = for (i <- arbitrary[BigInt]) yield CInt(i)
   val genCDouble = for (d <- arbitrary[Double]) yield CDouble(d)
   val genCBool = for (b <- arbitrary[Boolean]) yield CBool(b)
@@ -18,7 +19,7 @@ object CValueGenerators {
 
 
   val genCPrimitive = Gen.oneOf(
-    genCNull, genCUndefined, genCInt, genCDouble, genCBool, genCBytes, genCString
+    genCNull, genCUndefined, genCTag, genCInt, genCDouble, genCBool, genCBytes, genCString
   )
 
   val genCArray = for {

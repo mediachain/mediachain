@@ -14,6 +14,7 @@ object CborAST {
   sealed trait CValue
   case class CNull() extends CValue
   case class CUndefined() extends CValue
+  case class CTag(tag: Long) extends CValue
   case class CInt(num: BigInt) extends CValue
   case class CDouble(num: Double) extends CValue
   case class CBool(bool: Boolean) extends CValue
@@ -63,6 +64,7 @@ object CborAST {
   def toDataItem(cValue: CValue): Cbor.DataItem = cValue match {
     case _: CNull => Cbor.SimpleValue.NULL
     case _: CUndefined => Cbor.SimpleValue.UNDEFINED
+    case CTag(tag) => new Cbor.Tag(tag)
     case CInt(num) => converter.convert(num)
     case CDouble(num) => converter.convert(num)
     case CBool(bool) => converter.convert(bool)
@@ -90,6 +92,8 @@ object CborAST {
       // otherwise match CArray
     case _: Cbor.LanguageTaggedString => CUnhandled(item)
     case _: Cbor.RationalNumber => CUnhandled(item)
+
+    case t: Cbor.Tag => CTag(t.getValue)
 
     case s: Cbor.SimpleValue if s.getSimpleValueType == SimpleValueType.TRUE =>
       CBool(true)
