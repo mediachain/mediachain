@@ -10,9 +10,9 @@ object Types {
   import io.mediachain.util.cbor.CborAST._
 
   // Base class of all objects storable in the Datastore
-  sealed abstract class DataObject extends Serializable with ToCbor
+  sealed abstract class DataObject extends Serializable with CborSerializable
 
-  trait ToCbor {
+  trait CborSerializable {
     val CBORType: String
 
     def toCborBytes: Array[Byte] = CborCodec.encode(toCbor)
@@ -39,10 +39,10 @@ object Types {
   }
 
   // References to records in the underlying datastore
-  abstract class Reference extends Serializable with ToCbor
+  abstract class Reference extends Serializable with CborSerializable
 
   // Typed References for tracking chain heads in the StateMachine
-  sealed abstract class ChainReference extends Serializable with ToCbor {
+  sealed abstract class ChainReference extends Serializable with CborSerializable {
     def chain: Option[Reference]
 
     override def toCbor =
@@ -126,8 +126,7 @@ object Types {
   }
   
   // Journal Entries
-  sealed abstract class JournalEntry extends DataObject
-    with Serializable with ToCbor {
+  sealed abstract class JournalEntry extends Serializable with CborSerializable {
     def index: BigInt
     def ref: Reference
   }
