@@ -53,7 +53,7 @@ object JournalBlockchainSpec extends io.mediachain.BaseSpec
       context.entityRef = entry.ref
     })
     val ref = context.entityRef
-    for (x <- 1 to 5) {
+    for (_ <- 1 to 5) {
       val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
       val res = Await.result(op, timeout)
       res.foreach((entry: ChainEntry) => {context.entries += entry})
@@ -69,7 +69,7 @@ object JournalBlockchainSpec extends io.mediachain.BaseSpec
   def generateBlock = {
     val context = JournalBlockchainSpecContext.context
     val ref = context.entityRef
-    for (x <- 6 to (JournalBlockchainSpecContext.BlockSize - 1)) {
+    for (_ <- 6 to (JournalBlockchainSpecContext.BlockSize - 1)) {
       val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
       val res = Await.result(op, timeout)
       res.foreach((entry: ChainEntry) => {context.entries += entry})
@@ -95,7 +95,7 @@ object JournalBlockchainSpec extends io.mediachain.BaseSpec
     val context = JournalBlockchainSpecContext.context
     val ref = context.entityRef
     context.entries = new ListBuffer
-    for (x <- 1 to JournalBlockchainSpecContext.BlockSize) {
+    for (_ <- 1 to JournalBlockchainSpecContext.BlockSize) {
       val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
       val res = Await.result(op, timeout)
       res.foreach((entry: ChainEntry) => {context.entries += entry})

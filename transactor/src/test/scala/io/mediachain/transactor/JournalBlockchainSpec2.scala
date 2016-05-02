@@ -36,7 +36,7 @@ object JournalBlockchainSpec2 extends io.mediachain.BaseSpec
     val res = Await.result(op, timeout)
     res.foreach((entry: CanonicalEntry) => {
       val ref = entry.ref
-      for (x <- 1 to (JournalBlockSize - 1)) {
+      for (_ <- 1 to (JournalBlockSize - 1)) {
         context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
       }})
     val blockref = context.queue.poll(300, TimeUnit.SECONDS)
