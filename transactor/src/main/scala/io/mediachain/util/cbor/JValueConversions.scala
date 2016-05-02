@@ -11,7 +11,7 @@ object JValueConversions {
       case JNull => CNull()
       case JNothing => CUndefined()
       case JInt(num) => CInt(num)
-      case JLong(num) => CLong(num)
+      case JLong(num) => CInt(num)
       case JDecimal(num) => CDouble(num.doubleValue)
       case JDouble(num) => CDouble(num)
       case JBool(b) => CBool(b)
