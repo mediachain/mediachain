@@ -25,8 +25,12 @@ object MediachainBuild extends Build {
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
 
+  lazy val utils = Project("utils", file("utils"))
+    .settings(settings)
+
   lazy val transactor = Project("transactor", file("transactor"))
     .settings(settings)
+    .dependsOn(utils)
 
   lazy val peer = Project("peer", file("peer"))
     .settings(settings)
