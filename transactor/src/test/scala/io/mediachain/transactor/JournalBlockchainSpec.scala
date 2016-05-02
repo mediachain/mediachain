@@ -2,18 +2,20 @@ package io.mediachain.transactor
 
 import org.specs2.specification.{AfterAll, BeforeAll}
 
-import java.util.function.Consumer
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
-
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.collection.mutable.ListBuffer
 
 import Types._
-import StateMachine._
+import StateMachine.JournalBlockSize
 
 object JournalBlockchainSpec extends io.mediachain.BaseSpec
   with BeforeAll
   with AfterAll
 {
+  val timeout = Duration(5, TimeUnit.SECONDS)
+  
   def is =
     sequential ^
   s2"""
@@ -35,7 +37,8 @@ object JournalBlockchainSpec extends io.mediachain.BaseSpec
   
   def hasEmptyBlock = {
     val context = JournalBlockchainSpecContext.context
-    val block = context.dummy.client.submit(JournalCurrentBlock()).join()
+    val bop = context.dummy.client.currentBlock
+    val block = Await.result(bop, timeout)
     (block.index must_== 0) and
     (block.chain must beNone) and
     (block.entries must beEmpty)
@@ -43,18 +46,21 @@ object JournalBlockchainSpec extends io.mediachain.BaseSpec
   
   def accumulateBlock = {
     val context = JournalBlockchainSpecContext.context
-    val res = context.dummy.client.submit(JournalInsert(Entity(Map()))).join()
+    val op = context.dummy.client.insert(Entity(Map()))
+    val res = Await.result(op, timeout)
     res.foreach((entry: CanonicalEntry) => {
       context.entries += entry
       context.entityRef = entry.ref
     })
     val ref = context.entityRef
     for (x <- 1 to 5) {
-      val res = context.dummy.client.submit(JournalUpdate(ref, EntityChainCell(ref, None, Map()))).join()
+      val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
+      val res = Await.result(op, timeout)
       res.foreach((entry: ChainEntry) => {context.entries += entry})
     }
     
-    val block = context.dummy.client.submit(JournalCurrentBlock()).join()
+    val bop = context.dummy.client.currentBlock
+    val block = Await.result(bop, timeout)
     (block.index must_== 6) and
     (block.chain must beNone) and
     (block.entries must_== context.entries.toArray)
@@ -64,7 +70,8 @@ object JournalBlockchainSpec extends io.mediachain.BaseSpec
     val context = JournalBlockchainSpecContext.context
     val ref = context.entityRef
     for (x <- 6 to (JournalBlockchainSpecContext.BlockSize - 1)) {
-      val res = context.dummy.client.submit(JournalUpdate(ref, EntityChainCell(ref, None, Map()))).join()
+      val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
+      val res = Await.result(op, timeout)
       res.foreach((entry: ChainEntry) => {context.entries += entry})
     }
     context.blockRef = context.queue.poll(1, TimeUnit.SECONDS)
@@ -77,7 +84,8 @@ object JournalBlockchainSpec extends io.mediachain.BaseSpec
   
   def hasEmptyBlockAgain = {
     val context = JournalBlockchainSpecContext.context
-    val block = context.dummy.client.submit(JournalCurrentBlock()).join()
+    val bop = context.dummy.client.currentBlock
+    val block = Await.result(bop, timeout)
     (block.index must_== JournalBlockchainSpecContext.BlockSize) and
     (block.chain must_== Some(context.blockRef)) and
     (block.entries must beEmpty)
@@ -88,7 +96,8 @@ object JournalBlockchainSpec extends io.mediachain.BaseSpec
     val ref = context.entityRef
     context.entries = new ListBuffer
     for (x <- 1 to JournalBlockchainSpecContext.BlockSize) {
-      val res = context.dummy.client.submit(JournalUpdate(ref, EntityChainCell(ref, None, Map()))).join()
+      val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
+      val res = Await.result(op, timeout)
       res.foreach((entry: ChainEntry) => {context.entries += entry})
     }
     val blockref = context.queue.poll(1, TimeUnit.SECONDS)
@@ -114,11 +123,11 @@ object JournalBlockchainSpecContext {
   def setup(): Unit = {
     val dummy = DummyContext.setup("127.0.0.1:10002", BlockSize)
     val queue = new LinkedBlockingQueue[Reference]
-    dummy.client.onEvent("journal-block", 
-      new Consumer[JournalBlockEvent] { 
-        def accept(evt: JournalBlockEvent) { 
-          queue.offer(evt.ref)
-        }
+    dummy.client.listen(new JournalListener {
+      def onJournalBlock(ref: Reference) {
+          queue.offer(ref)
+      }
+      def onJournalCommit(entry: JournalEntry) {}
     })
     instance = new JournalBlockchainSpecContext(dummy, queue)
   }

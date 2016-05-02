@@ -15,7 +15,7 @@ object Copycat {
   import io.mediachain.transactor.Types._
 
   object Server {
-    def build(address: Address, logdir: String, datastore: Datastore,
+    def build(address: String, logdir: String, datastore: Datastore,
               blocksize: Int = StateMachine.JournalBlockSize): CopycatServer = {
       def stateMachineSupplier() = {
         new Supplier[CopycatStateMachine] {
@@ -25,7 +25,7 @@ object Copycat {
         }
       }
       
-      val server = CopycatServer.builder(address)
+      val server = CopycatServer.builder(new Address(address))
                     .withStateMachine(stateMachineSupplier())
                     .withStorage(Storage.builder()
                                   .withDirectory(new File(logdir))

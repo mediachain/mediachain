@@ -1,14 +1,18 @@
 package io.mediachain.transactor
 
 import org.specs2.specification.{AfterAll, BeforeAll}
+import java.util.concurrent.TimeUnit
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 import Types._
-import StateMachine._
 
 object JournalIndexSpec extends io.mediachain.BaseSpec
   with BeforeAll
   with AfterAll
 {
+  
+  val timeout = Duration(5, TimeUnit.SECONDS)
   
   def is =
     sequential ^
@@ -38,7 +42,8 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
 
   def insertEntity = {
     val context = JournalIndexSpecContext.context
-    val res = context.dummy.client.submit(JournalInsert(Entity(Map()))).join()
+    val op = context.dummy.client.insert(Entity(Map()))
+    val res = Await.result(op, timeout)
     res.foreach((entry: CanonicalEntry) => {context.entityRef = entry.ref})
     res must beRightXor
   }
@@ -46,14 +51,16 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
   def resolveEntityEmpty = {
     val context = JournalIndexSpecContext.context
     val ref = context.entityRef
-    val res = context.dummy.client.submit(JournalLookup(ref)).join()
+    val op = context.dummy.client.lookup(ref)
+    val res = Await.result(op, timeout)
     res must beNone
   }
   
   def extendEntityChain = {
     val context = JournalIndexSpecContext.context
     val ref = context.entityRef
-    val res = context.dummy.client.submit(JournalUpdate(ref, EntityChainCell(ref, None, Map()))).join()
+    val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
+    val res = Await.result(op, timeout)
     res.foreach((entry: ChainEntry) => {context.entityChainRef = entry.chain})
     res must beRightXor { (entry: ChainEntry) =>
       (entry.ref must_== ref) and 
@@ -65,7 +72,8 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
     val context = JournalIndexSpecContext.context
     val ref = context.entityRef
     val chainRef = context.entityChainRef
-    val res = context.dummy.client.submit(JournalLookup(ref)).join()
+    val op = context.dummy.client.lookup(ref)
+    val res = Await.result(op, timeout)
     (res must beSome) and 
     (res.get must_== chainRef)
   }
@@ -74,7 +82,8 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
     val context = JournalIndexSpecContext.context
     val ref = context.entityRef
     val chainRef = context.entityChainRef
-    val res = context.dummy.client.submit(JournalUpdate(ref, EntityChainCell(ref, None, Map()))).join()
+    val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
+    val res = Await.result(op, timeout)
     res.foreach((entry: ChainEntry) => {context.entityChainRef = entry.chain})
     res must beRightXor { (entry: ChainEntry) =>
       (entry.ref must_== ref) and 
@@ -85,7 +94,8 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
   
   def insertArtefact = {
     val context = JournalIndexSpecContext.context
-    val res = context.dummy.client.submit(JournalInsert(Artefact(Map()))).join()
+    val op = context.dummy.client.insert(Artefact(Map()))
+    val res = Await.result(op, timeout)
     res.foreach((entry: CanonicalEntry) => {context.artefactRef = entry.ref})
     res must beRightXor
   }
@@ -93,14 +103,16 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
   def resolveArtefactEmpty = {
     val context = JournalIndexSpecContext.context
     val ref = context.artefactRef
-    val res = context.dummy.client.submit(JournalLookup(ref)).join()
+    val op = context.dummy.client.lookup(ref)
+    val res = Await.result(op, timeout)
     res must beNone
   }
   
   def extendArtefactChain = {
     val context = JournalIndexSpecContext.context
     val ref = context.artefactRef
-    val res = context.dummy.client.submit(JournalUpdate(ref, ArtefactChainCell(ref, None, Map()))).join()
+    val op = context.dummy.client.update(ref, ArtefactChainCell(ref, None, Map()))
+    val res = Await.result(op, timeout)
     res.foreach((entry: ChainEntry) => {context.artefactChainRef = entry.chain})
     res must beRightXor { (entry: ChainEntry) =>
       (entry.ref must_== ref) and 
@@ -112,7 +124,8 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
     val context = JournalIndexSpecContext.context
     val ref = context.artefactRef
     val chainRef = context.artefactChainRef
-    val res = context.dummy.client.submit(JournalLookup(ref)).join()
+    val op = context.dummy.client.lookup(ref)
+    val res = Await.result(op, timeout)
     (res must beSome) and 
     (res.get must_== chainRef)
   }
@@ -121,7 +134,8 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
     val context = JournalIndexSpecContext.context
     val ref = context.artefactRef
     val chainRef = context.artefactChainRef
-    val res = context.dummy.client.submit(JournalUpdate(ref, ArtefactChainCell(ref, None, Map()))).join()
+    val op = context.dummy.client.update(ref, ArtefactChainCell(ref, None, Map()))
+    val res = Await.result(op, timeout)
     res.foreach((entry: ChainEntry) => {context.artefactChainRef = entry.chain})
     res must beRightXor { (entry: ChainEntry) =>
       (entry.ref must_== ref) and 
@@ -133,14 +147,16 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
   def checkEntityXCons = {
     val context = JournalIndexSpecContext.context
     val ref = context.entityRef
-    val res = context.dummy.client.submit(JournalUpdate(ref, ArtefactChainCell(ref, None, Map()))).join()
+    val op = context.dummy.client.update(ref, ArtefactChainCell(ref, None, Map()))
+    val res = Await.result(op, timeout)
     res must beLeftXor
   }
   
   def checkArtefactXCons = {
     val context = JournalIndexSpecContext.context
     val ref = context.artefactRef
-    val res = context.dummy.client.submit(JournalUpdate(ref, EntityChainCell(ref, None, Map()))).join()
+    val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
+    val res = Await.result(op, timeout)
     res must beLeftXor
   }
 }

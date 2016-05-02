@@ -2,19 +2,16 @@ package io.mediachain.transactor
 
 import org.specs2.specification.{AfterAll, BeforeAll}
 
-import java.util.function.Consumer
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
-
-import io.atomix.copycat.client.CopycatClient
-import io.atomix.catalyst.transport.Address
-
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import Types._
-import StateMachine._
 
 object JournalCommitSpec extends io.mediachain.BaseSpec
   with BeforeAll
   with AfterAll
 {
+  val timeout = Duration(5, TimeUnit.SECONDS)
 
   def is =
     sequential ^
@@ -37,7 +34,8 @@ object JournalCommitSpec extends io.mediachain.BaseSpec
   
   def insertEntity = {
     val context = JournalCommitSpecContext.context
-    val res = context.dummy.client.submit(JournalInsert(Entity(Map()))).join()
+    val op = context.dummy.client.insert(Entity(Map()))
+    val res = Await.result(op, timeout)
     res.foreach((entry: CanonicalEntry) => {context.ref = entry.ref})
     val entry = context.queue.poll(1, TimeUnit.SECONDS)
     res must beRightXor { (xentry: CanonicalEntry) =>
@@ -48,7 +46,8 @@ object JournalCommitSpec extends io.mediachain.BaseSpec
   def extendEntityChain = {
     val context = JournalCommitSpecContext.context
     val ref = context.ref
-    val res = context.dummy.client.submit(JournalUpdate(ref, EntityChainCell(ref, None, Map()))).join()
+    val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
+    val res = Await.result(op, timeout)
     val entry = context.queue.poll(1, TimeUnit.SECONDS)
     res must beRightXor { (xentry: ChainEntry) =>
       entry must_== xentry
@@ -58,7 +57,8 @@ object JournalCommitSpec extends io.mediachain.BaseSpec
   def extendEntityChainFurther = {
     val context = JournalCommitSpecContext.context
     val ref = context.ref
-    val res = context.dummy.client.submit(JournalUpdate(ref, EntityChainCell(ref, None, Map()))).join()
+    val op = context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
+    val res = Await.result(op, timeout)
     val entry = context.queue.poll(1, TimeUnit.SECONDS)
     res must beRightXor { (xentry: ChainEntry) =>
       entry must_== xentry
@@ -67,7 +67,8 @@ object JournalCommitSpec extends io.mediachain.BaseSpec
   
   def insertArtefact = {
     val context = JournalCommitSpecContext.context
-    val res = context.dummy.client.submit(JournalInsert(Artefact(Map()))).join()
+    val op = context.dummy.client.insert(Artefact(Map()))
+    val res = Await.result(op, timeout)
     res.foreach((entry: CanonicalEntry) => {context.ref = entry.ref})
     val entry = context.queue.poll(1, TimeUnit.SECONDS)
     res must beRightXor { (xentry: CanonicalEntry) =>
@@ -78,7 +79,8 @@ object JournalCommitSpec extends io.mediachain.BaseSpec
   def extendArtefactChain = {
     val context = JournalCommitSpecContext.context
     val ref = context.ref
-    val res = context.dummy.client.submit(JournalUpdate(ref, ArtefactChainCell(ref, None, Map()))).join()
+    val op = context.dummy.client.update(ref, ArtefactChainCell(ref, None, Map()))
+    val res = Await.result(op, timeout)
     val entry = context.queue.poll(1, TimeUnit.SECONDS)
     res must beRightXor { (xentry: ChainEntry) =>
       entry must_== xentry
@@ -87,7 +89,7 @@ object JournalCommitSpec extends io.mediachain.BaseSpec
 }
 
 class JournalCommitSpecContext(val dummy: DummyContext, 
-                               val qclient: CopycatClient, 
+                               val qclient: Copycat.Client, 
                                val queue: BlockingQueue[JournalEntry]) {
   var ref: Reference = null
 }
@@ -98,18 +100,18 @@ object JournalCommitSpecContext {
     val dummy = DummyContext.setup("127.0.0.1:10001")
     val qclient = Copycat.Client.build()
     val queue = new LinkedBlockingQueue[JournalEntry]
-    qclient.connect(new Address("127.0.0.1:10001")).join()
-    qclient.onEvent("journal-commit", 
-      new Consumer[JournalCommitEvent] { 
-        def accept(evt: JournalCommitEvent) { 
-          queue.offer(evt.entry)
-        }
+    qclient.connect("127.0.0.1:10001")
+    qclient.listen(new JournalListener {
+      def onJournalCommit(entry: JournalEntry) {
+        queue.offer(entry)
+      }
+      def onJournalBlock(ref: Reference) {}
     })
     instance = new JournalCommitSpecContext(dummy, qclient, queue)
   }
   
   def shutdown(): Unit = {
-    instance.qclient.close().join()
+    instance.qclient.close()
     DummyContext.shutdown(instance.dummy)
   }
   
