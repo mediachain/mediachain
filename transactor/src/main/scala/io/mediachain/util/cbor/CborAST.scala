@@ -15,7 +15,6 @@ object CborAST {
   case class CNull() extends CValue
   case class CUndefined() extends CValue
   case class CInt(num: BigInt) extends CValue
-  case class CLong(num: Long) extends CValue
   case class CDouble(num: Double) extends CValue
   case class CBool(bool: Boolean) extends CValue
   case class CString(string: String) extends CValue
@@ -65,7 +64,6 @@ object CborAST {
     case _: CNull => Cbor.SimpleValue.NULL
     case _: CUndefined => Cbor.SimpleValue.UNDEFINED
     case CInt(num) => converter.convert(num)
-    case CLong(num) => converter.convert(num)
     case CDouble(num) => converter.convert(num)
     case CBool(bool) => converter.convert(bool)
     case CString(string) => converter.convert(string)
@@ -88,6 +86,11 @@ object CborAST {
   }
 
   def fromDataItem(item: Cbor.DataItem): CValue = item match {
+      // match these first, since they're encoded as Arrays and would
+      // otherwise match CArray
+    case _: Cbor.LanguageTaggedString => CUnhandled(item)
+    case _: Cbor.RationalNumber => CUnhandled(item)
+
     case s: Cbor.SimpleValue if s.getSimpleValueType == SimpleValueType.TRUE =>
       CBool(true)
     case s: Cbor.SimpleValue if s.getSimpleValueType == SimpleValueType.FALSE =>
