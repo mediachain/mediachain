@@ -2,6 +2,9 @@ package io.mediachain.transactor
 
 import io.mediachain.transactor.Dummies.DummyReference
 
+import scala.util.Try
+
+
 
 object TypeSerialization {
 
@@ -74,6 +77,15 @@ object TypeSerialization {
       case CBORTypeNames.ArtefactChainCell =>
         artefactChainCellFromCMap(cMap)
 
+      case CBORTypeNames.CanonicalEntry =>
+        canonicalEntryFromCMap(cMap)
+
+      case CBORTypeNames.ChainEntry =>
+        chainEntryFromCMap(cMap)
+
+      case CBORTypeNames.JournalBlock =>
+        journalBlockFromCMap(cMap)
+
       case _ => Xor.left(UnknownDataObjectType(typeName))
     }
 
@@ -103,6 +115,18 @@ object TypeSerialization {
   }
 
 
+  def journalEntryFromCMap(cMap: CMap)
+  : Xor[DeserializationError, JournalEntry] =
+    for {
+      typeName <- getRequired[CString](cMap, "type").map(_.string)
+      entry <- typeName match {
+        case CBORTypeNames.CanonicalEntry => canonicalEntryFromCMap(cMap)
+        case CBORTypeNames.ChainEntry => chainEntryFromCMap(cMap)
+        case _ => Xor.left(UnknownDataObjectType(typeName))
+      }
+    } yield entry
+
+
   def canonicalEntryFromCMap(cMap: CMap)
   : Xor[DeserializationError, CanonicalEntry] =
     for {
@@ -123,6 +147,42 @@ object TypeSerialization {
       chain = chain,
       chainPrevious = getOptionalReference(cMap, "chainPrevious")
     )
+
+  def journalEntriesFromCArray(cArray: CArray)
+  : Xor[DeserializationError, Array[JournalEntry]] = {
+    val entryCMaps = cArray.items
+      .flatMap(v => Try(v.asInstanceOf[CMap]).toOption)
+
+    val entryXors: List[Xor[DeserializationError, JournalEntry]] =
+      entryCMaps.map(journalEntryFromCMap)
+
+    val initial: Xor[DeserializationError, List[JournalEntry]] =
+      Xor.right[DeserializationError, List[JournalEntry]](List())
+
+    val entriesListXor: Xor[DeserializationError, List[JournalEntry]] =
+      entryXors.foldLeft(initial) { (accum, x) =>
+        (accum, x) match {
+          case (Xor.Left(err), _) => Xor.left(err)
+          case (_, Xor.Left(err)) => Xor.left(err)
+          case (Xor.Right(list), Xor.Right(entry)) => Xor.right(entry :: list)
+        }
+      }
+
+    entriesListXor.map(_.reverse.toArray)
+  }
+
+  def journalBlockFromCMap(cMap: CMap)
+  : Xor[DeserializationError, JournalBlock] =
+    for {
+      index <- getRequired[CInt](cMap, "index").map(_.num)
+      entriesCArray <- getRequired[CArray](cMap, "entries")
+      entries <- journalEntriesFromCArray(entriesCArray)
+    } yield
+      JournalBlock(
+        index = index,
+        chain = getOptionalReference(cMap, "chain"),
+        entries = entries
+      )
 
   def getRequired[T <: CValue](cMap: CMap, fieldName: String)
   : Xor[RequiredFieldNotFound, T] = Xor.fromOption(
