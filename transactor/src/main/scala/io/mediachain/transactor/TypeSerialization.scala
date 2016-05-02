@@ -55,7 +55,7 @@ object TypeSerialization {
       case Xor.Right(journalEntry: JournalEntry) => Xor.right(journalEntry)
       case Xor.Right(unknownObject) =>
         Xor.left(UnexpectedCborType(
-          s"Expected DataObject, but got ${unknownObject.getClass.getTypeName}"
+          s"Expected JournalEntry, but got ${unknownObject.getClass.getTypeName}"
         ))
     }
 
