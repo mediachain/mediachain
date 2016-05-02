@@ -41,7 +41,7 @@ object TypeSerialization {
 
   def dataObjectFromCbor(cValue: CValue): Xor[DeserializationError, DataObject] =
     fromCbor(cValue) match {
-      case Xor.Left(err) => Xor.left(err)
+      case l@Xor.Left(_) => l
       case Xor.Right(dataObject: DataObject) => Xor.right(dataObject)
       case Xor.Right(unknownObject) =>
         Xor.left(UnexpectedCborType(
