@@ -127,7 +127,8 @@ object Types {
   }
   
   // Journal Entries
-  sealed abstract class JournalEntry extends Serializable with ToCbor {
+  sealed abstract class JournalEntry extends DataObject
+    with Serializable with ToCbor {
     def index: BigInt
     def ref: Reference
   }
