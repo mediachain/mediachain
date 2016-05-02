@@ -1,6 +1,7 @@
 package io.mediachain.transactor
 
 object Types {
+  import scala.concurrent.Future
   import cats.data.Xor
   import org.json4s.JValue
 
@@ -95,15 +96,21 @@ object Types {
   
   // Journal transactor interface
   trait Journal {
-    def insert(rec: CanonicalRecord): Xor[JournalError, CanonicalEntry]
-    def update(ref: Reference, cell: ChainCell): Xor[JournalError, ChainEntry]
-    def lookup(ref: Reference): Option[Reference]
-    def currentBlock: JournalBlock
+    def insert(rec: CanonicalRecord): Future[Xor[JournalError, CanonicalEntry]]
+    def update(ref: Reference, cell: ChainCell): Future[Xor[JournalError, ChainEntry]]
+    def lookup(ref: Reference): Future[Option[Reference]]
+    def currentBlock: Future[JournalBlock]
   }
   
-  trait JournalClient {
-    def updateJournal(entry: JournalEntry): Unit
-    def updateJournalBlockchain(ref: Reference): Unit
+  trait JournalClient extends Journal {
+    def connect(address: String): Unit
+    def close(): Unit
+    def listen(listener: JournalListener): Unit
+  }
+  
+  trait JournalListener {
+    def onJournalCommit(entry: JournalEntry): Unit
+    def onJournalBlock(ref: Reference): Unit
   }
   
   sealed abstract class JournalError extends Serializable

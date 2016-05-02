@@ -15,7 +15,8 @@ object MediachainBuild extends Build {
       "org.specs2" %% "specs2-core" % "3.7" % "test",
       "org.specs2" %% "specs2-junit" % "3.7" % "test",
       "org.specs2" %% "specs2-matcher-extra" % "3.7" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.13.0" % "test"
+      "org.scalacheck" %% "scalacheck" % "1.13.0" % "test",
+      "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0-RC1"
     ),
     scalacOptions in Test ++= Seq("-Yrangepos")
   )

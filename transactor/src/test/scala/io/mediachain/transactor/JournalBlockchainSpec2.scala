@@ -2,18 +2,20 @@ package io.mediachain.transactor
 
 import org.specs2.specification.{AfterAll, BeforeAll}
 
-import java.util.function.Consumer
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
-
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.collection.mutable.ListBuffer
 
 import Types._
-import StateMachine._
+import StateMachine.JournalBlockSize
 
 object JournalBlockchainSpec2 extends io.mediachain.BaseSpec
   with BeforeAll
   with AfterAll
 {
+  val timeout = Duration(5, TimeUnit.SECONDS)
+  
   def is =
   s2"""
   JournalStateMachine generates Journal blocks
@@ -30,11 +32,12 @@ object JournalBlockchainSpec2 extends io.mediachain.BaseSpec
   
   def generateBlock = {
     val context = JournalBlockchainSpec2Context.context
-    val res = context.dummy.client.submit(JournalInsert(Entity(Map()))).join()
+    val op = context.dummy.client.insert(Entity(Map()))
+    val res = Await.result(op, timeout)
     res.foreach((entry: CanonicalEntry) => {
       val ref = entry.ref
-      for (x <- 1 to (JournalBlockSize - 1)) {
-        context.dummy.client.submit(JournalUpdate(ref, EntityChainCell(ref, None, Map())))
+      for (_ <- 1 to (JournalBlockSize - 1)) {
+        context.dummy.client.update(ref, EntityChainCell(ref, None, Map()))
       }})
     val blockref = context.queue.poll(300, TimeUnit.SECONDS)
     val block = context.dummy.store.get(blockref)
@@ -52,11 +55,11 @@ object JournalBlockchainSpec2Context {
   def setup(): Unit = {
     val dummy = DummyContext.setup("127.0.0.1:10003")
     val queue = new LinkedBlockingQueue[Reference]
-    dummy.client.onEvent("journal-block", 
-      new Consumer[JournalBlockEvent] { 
-        def accept(evt: JournalBlockEvent) { 
-          queue.offer(evt.ref)
-        }
+    dummy.client.listen(new JournalListener {
+      def onJournalBlock(ref: Reference) {
+          queue.offer(ref)
+      }
+      def onJournalCommit(entry: JournalEntry) {}
     })
     instance = new JournalBlockchainSpec2Context(dummy, queue)
   }
