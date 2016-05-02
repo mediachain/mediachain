@@ -44,16 +44,16 @@ object Copycat {
     private var listeners: Set[JournalListener] = Set()
     
     // Journal 
-    def insert(rec: CanonicalRecord) =
+    def insert(rec: CanonicalRecord): Future[Xor[JournalError, CanonicalEntry]] =
       FutureConverters.toScala(client.submit(JournalInsert(rec)))
 
-    def update(ref: Reference, cell: ChainCell) =
+    def update(ref: Reference, cell: ChainCell): Future[Xor[JournalError, ChainEntry]] =
       FutureConverters.toScala(client.submit(JournalUpdate(ref, cell)))
     
-    def lookup(ref: Reference) = 
+    def lookup(ref: Reference): Future[Option[Reference]] = 
       FutureConverters.toScala(client.submit(JournalLookup(ref)))
     
-    def currentBlock =
+    def currentBlock: Future[JournalBlock] =
       FutureConverters.toScala(client.submit(JournalCurrentBlock()))
     
     // JournalClient
