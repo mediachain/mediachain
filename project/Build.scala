@@ -4,6 +4,9 @@ import Keys._
 object MediachainBuild extends Build {
   updateOptions := updateOptions.value.withCachedResolution(true)
 
+  val specs2Version = "3.7.3"
+  val scalaCheckVersion = "1.13.1"
+
   override lazy val settings = super.settings ++ Seq(
     organization := "io.mediachain",
     version := "0.0.1",
@@ -11,11 +14,12 @@ object MediachainBuild extends Build {
     scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings", "-feature"),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats" % "0.4.1",
-      "org.json4s" %% "json4s-jackson" % "3.2.11",
-      "org.specs2" %% "specs2-core" % "3.7" % "test",
-      "org.specs2" %% "specs2-junit" % "3.7" % "test",
-      "org.specs2" %% "specs2-matcher-extra" % "3.7" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.13.0" % "test",
+      "org.json4s" %% "json4s-jackson" % "3.3.0",
+      "org.specs2" %% "specs2-core" % specs2Version % "test",
+      "org.specs2" %% "specs2-junit" % specs2Version % "test",
+      "org.specs2" %% "specs2-matcher-extra" % specs2Version % "test",
+      "org.specs2" %% "specs2-scalacheck" % specs2Version % "test",
+      "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test",
       "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0-RC1"
     ),
     scalacOptions in Test ++= Seq("-Yrangepos")
