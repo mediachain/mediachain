@@ -8,7 +8,10 @@ import io.atomix.copycat.server.storage.{Storage, StorageLevel}
 import io.atomix.catalyst.transport.{Address, NettyTransport}
 import io.atomix.catalyst.serializer.Serializer
 
+import scala.concurrent.Future
 import scala.compat.java8.FutureConverters
+
+import cats.data.Xor
 
 object Copycat {
   import io.mediachain.transactor.StateMachine._
