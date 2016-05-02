@@ -5,7 +5,7 @@ import io.mediachain.transactor.Types.{DataObject, Datastore, Reference}
 import io.mediachain.util.cbor.CborAST.{CString, CValue}
 import io.mediachain.hashing.MultiHash
 
-class RocksDatastore(path: String) extends Datastore {
+class RocksDatastore(path: String) extends Datastore with AutoCloseable {
   import RocksDatastore.RocksReference
 
   val db = RocksDB.open(path)
@@ -18,6 +18,10 @@ class RocksDatastore(path: String) extends Datastore {
     db.put(ref.id, bytes)
 
     ref
+  }
+
+  override def close: Unit = {
+    db.close()
   }
 }
 
