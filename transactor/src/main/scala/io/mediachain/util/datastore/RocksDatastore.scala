@@ -4,7 +4,6 @@ import org.rocksdb._
 import io.mediachain.transactor.Types.{DataObject, Datastore, Reference}
 import io.mediachain.util.cbor.CborAST.{CString, CValue}
 import io.mediachain.hashing.MultiHash
-import io.mediachain.transactor.TypeSerialization
 
 class RocksDatastore(path: String) extends Datastore {
   import RocksDatastore.RocksReference
