@@ -35,17 +35,37 @@ object TypeSerialization {
 
   case class TypeNameNotFound() extends DeserializationError
 
-  case class UnknownDataObjectType(typeName: String) extends DeserializationError
+  case class UnknownObjectType(typeName: String) extends DeserializationError
 
   case class RequiredFieldNotFound(fieldName: String) extends DeserializationError
 
-  def fromCborBytes(bytes: Array[Byte]): Xor[DeserializationError, DataObject] =
+  def dataObjectFromCbor(cValue: CValue): Xor[DeserializationError, DataObject] =
+    fromCbor(cValue) match {
+      case Xor.Left(err) => Xor.left(err)
+      case Xor.Right(dataObject: DataObject) => Xor.right(dataObject)
+      case Xor.Right(unknownObject) =>
+        Xor.left(UnexpectedCborType(
+          s"Expected DataObject, but got ${unknownObject.getClass.getTypeName}"
+        ))
+    }
+
+  def journalEntryFromCbor(cValue: CValue): Xor[DeserializationError, JournalEntry] =
+    fromCbor(cValue) match {
+      case Xor.Left(err) => Xor.left(err)
+      case Xor.Right(journalEntry: JournalEntry) => Xor.right(journalEntry)
+      case Xor.Right(unknownObject) =>
+        Xor.left(UnexpectedCborType(
+          s"Expected DataObject, but got ${unknownObject.getClass.getTypeName}"
+        ))
+    }
+
+  def fromCborBytes(bytes: Array[Byte]): Xor[DeserializationError, CborSerializable] =
     CborCodec.decode(bytes) match {
       case (cValue: CValue) :: _ => fromCbor(cValue)
       case Nil => Xor.left(CborDecodingFailed())
     }
 
-  def fromCbor(cValue: CValue): Xor[DeserializationError, DataObject] =
+  def fromCbor(cValue: CValue): Xor[DeserializationError, CborSerializable] =
     cValue match {
       case (cMap: CMap) => fromCMap(cMap)
       case _ => Xor.left(UnexpectedCborType(
@@ -53,7 +73,7 @@ object TypeSerialization {
       ))
     }
 
-  def fromCMap(cMap: CMap): Xor[DeserializationError, DataObject] = {
+  def fromCMap(cMap: CMap): Xor[DeserializationError, CborSerializable] = {
     val typeNameOpt: Option[String] =
       cMap.getAs[CString]("type").map(_.string)
 
@@ -62,9 +82,8 @@ object TypeSerialization {
   }
 
 
-
   def fromCMap(cMap: CMap, typeName: String)
-  : Xor[DeserializationError, DataObject] = typeName match {
+  : Xor[DeserializationError, CborSerializable] = typeName match {
       case CBORTypeNames.Entity =>
         Xor.right(Entity(meta = cMap.asStringKeyedMap - "type"))
 
@@ -86,7 +105,7 @@ object TypeSerialization {
       case CBORTypeNames.JournalBlock =>
         journalBlockFromCMap(cMap)
 
-      case _ => Xor.left(UnknownDataObjectType(typeName))
+      case _ => Xor.left(UnknownObjectType(typeName))
     }
 
 
@@ -122,7 +141,7 @@ object TypeSerialization {
       entry <- typeName match {
         case CBORTypeNames.CanonicalEntry => canonicalEntryFromCMap(cMap)
         case CBORTypeNames.ChainEntry => chainEntryFromCMap(cMap)
-        case _ => Xor.left(UnknownDataObjectType(typeName))
+        case _ => Xor.left(UnknownObjectType(typeName))
       }
     } yield entry
 
