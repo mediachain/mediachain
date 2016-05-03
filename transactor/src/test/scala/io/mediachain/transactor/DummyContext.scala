@@ -50,27 +50,25 @@ object DummyClusterContext {
   def setup(address1: String, address2: String, address3: String,
             blocksize: Int = StateMachine.JournalBlockSize) = {
     println("*** SETUP DUMMY COPYCAT CLUSTER")
-    val store1 = new Dummies.DummyStore
-    val logdir1 = DummyContext.setupLogdir()
-    val server1 = Copycat.Server.build(address1, logdir1, store1, blocksize)
-    server1.bootstrap().join()
-    val store2 = new Dummies.DummyStore
-    val logdir2 = DummyContext.setupLogdir()
-    val server2 = Copycat.Server.build(address2, logdir2, store2, blocksize)
-    server2.join(new Address(address1)).join()
-    val store3 = new Dummies.DummyStore
-    val logdir3 = DummyContext.setupLogdir()
-    val server3 = Copycat.Server.build(address3, logdir3, store3, blocksize)
-    server3.join(new Address(address1), new Address(address2)).join()
-    val client1 = Copycat.Client.build()
-    client1.connect(address1)
-    val client2 = Copycat.Client.build()
-    client2.connect(address2)
-    val client3 = Copycat.Client.build()
-    client3.connect(address3)
-    DummyClusterContext(Array(DummyContext(server1, client1, store1, logdir1),
-                              DummyContext(server2, client2, store2, logdir2),
-                              DummyContext(server3, client3, store3, logdir3)))
+    val dummies = Array(address1, address2, address3)
+      .map { address =>
+        val store = new Dummies.DummyStore
+        val logdir = DummyContext.setupLogdir()
+        val server = Copycat.Server.build(address, logdir, store, blocksize)
+        val client = Copycat.Client.build()
+        DummyContext(server, client, store, logdir)
+    }
+    
+    // start cluster
+    dummies(0).server.bootstrap().join()
+    dummies(1).server.join(new Address(address1)).join()
+    dummies(2).server.join(new Address(address1), new Address(address2)).join()
+    // connect clients
+    dummies(0).client.connect(address1)
+    dummies(1).client.connect(address2)
+    dummies(2).client.connect(address3)
+    
+    DummyClusterContext(dummies)
   }
   
   def shutdown(context: DummyClusterContext) {
