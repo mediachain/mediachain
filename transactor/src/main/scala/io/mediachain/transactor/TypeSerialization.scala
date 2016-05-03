@@ -1,6 +1,6 @@
 package io.mediachain.transactor
 
-import io.mediachain.transactor.Dummies.DummyReference
+import io.mediachain.transactor.Dummies.{DummyReference, DummyReferenceDeserializer}
 
 import scala.util.Try
 
@@ -324,23 +324,16 @@ object TypeSerialization {
       .flatMap(referenceFromCMap(_).toOption)
 
 
-
-  def referenceFromCMap(cMap: CMap): Xor[DeserializationError, Reference] = {
-    val linkOpt: Option[CValue] =
-      cMap.asStringKeyedMap.get("@link")
-
-    Xor.fromOption(linkOpt, ReferenceDecodingFailed("@link field not found"))
-      .flatMap(decodeLinkValue)
-  }
-
-
-  def decodeLinkValue(linkVal: CValue): Xor[DeserializationError, Reference] =
-    linkVal match {
-      case CString(s) if s.startsWith("dummy@") => {
-        val seqno = s.substring("dummy@".length).toInt
-        Xor.right(new DummyReference(seqno))
+  def referenceFromCMap(cMap: CMap): Xor[DeserializationError, Reference] =
+    getRequired[CMap](cMap, "@link")
+      .flatMap { linkVal: CValue =>
+        linkVal match {
+          case CString(s) if s.startsWith("dummy@") => {
+            DummyReferenceDeserializer.fromCMap(cMap)
+          }
+          case _ =>
+            Xor.left(ReferenceDecodingFailed(s"Unknown link value $linkVal"))
+        }
       }
-      case _ =>
-        Xor.left(ReferenceDecodingFailed(s"Unknown link value $linkVal"))
-    }
+
 }
