@@ -29,6 +29,13 @@ object RocksDatastore {
   class RocksReference(val id: Array[Byte]) extends Reference {
     override val CBORType: String = ""
     override def toCbor: CValue = CString(new String(id))
+
+    override def toString(): String =
+      MultiHash.fromBytes(id)
+        .map(_.toString)
+        .getOrElse("RocksReference[Invalid reference]")
+
+    override def hashCode(): Int = id.hashCode
   }
 
   object RocksReference {
