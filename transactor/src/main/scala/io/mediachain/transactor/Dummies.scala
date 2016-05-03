@@ -1,6 +1,8 @@
 package io.mediachain.transactor
 
-import scala.collection.mutable.{Map => MMap, HashMap => MHashMap}
+import io.mediachain.hashing.MultiHash
+
+import scala.collection.mutable.{HashMap => MHashMap, Map => MMap}
 
 object Dummies {
   import io.mediachain.transactor.Types._
@@ -8,7 +10,7 @@ object Dummies {
   
   class DummyReference(val num: Int) extends Reference {
     override def equals(that: Any) = {
-      that.isInstanceOf[DummyReference] && 
+      that.isInstanceOf[DummyReference] &&
         this.num == that.asInstanceOf[DummyReference].num
     }
     override def hashCode = num
@@ -17,19 +19,20 @@ object Dummies {
     val CBORType = "" // unused
     override def toCbor = CMap.withStringKeys("@link" -> CString(this.toString))
   }
-  
+
   class DummyStore extends Datastore {
     var seqno = 0
-    val store: MMap[Reference, DataObject] = new MHashMap
-    
-    override def put(obj: DataObject): Reference = {
-      val ref = new DummyReference(seqno)
+    val store: MMap[MultiHash, DataObject] = new MHashMap
+
+    override def put(obj: Array[Byte], multihash: MultiHash): Unit = {}
+    override def put(obj: DataObject): MultiHash = {
+      val ref = MultiHash.hashWithSHA256(seqno.toString.getBytes)
       seqno += 1
       store += (ref -> obj)
       ref
     }
-    
-    def get(ref: Reference) = store.get(ref)
+
+    def get(ref: MultiHash): Option[DataObject] = store.get(ref)
   }
 
 }

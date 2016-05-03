@@ -8,5 +8,6 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "org.slf4j" % "slf4j-simple" % "1.7.21",
   "co.nstant.in" % "cbor" % "0.7",
-  "org.rocksdb" % "rocksdbjni" % "4.5.1"
+  "org.rocksdb" % "rocksdbjni" % "4.5.1",
+  "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.74"
 )

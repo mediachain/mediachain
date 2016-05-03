@@ -1,5 +1,6 @@
 package io.mediachain.transactor
 
+import io.mediachain.hashing.MultiHash
 import io.mediachain.transactor.TypeSerialization.CBORTypeNames
 
 
@@ -132,7 +133,8 @@ object Types {
     def ref: Reference
   }
   
-  case class CanonicalEntry( 
+
+  case class CanonicalEntry(
     index: BigInt,
     ref: Reference
   ) extends JournalEntry {
@@ -213,6 +215,15 @@ object Types {
   
   // Datastore interface
   trait Datastore {
-    def put(obj: DataObject): Reference
+    def put(obj: Array[Byte], hash: MultiHash): Unit
+
+    def put(obj: DataObject): MultiHash = {
+      val bytes = obj.toCborBytes
+      val hash  = MultiHash.hashWithSHA256(bytes)
+      put(bytes, hash)
+      hash
+    }
+
+    def get(ref: MultiHash): Option[DataObject]
   }
 }
