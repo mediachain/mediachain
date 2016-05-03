@@ -389,15 +389,16 @@ object CborSerialization {
     *        `typeNames` set
     */
   def assertOneOfRequiredTypeNames(cMap: CMap, typeNames: Set[CborTypeName])
-  : Xor[DeserializationError, Unit] = {
-    if (getTypeName(cMap).exists(n => typeNames.contains(n))) {
-      Xor.right({})
-    } else {
-      getTypeName(cMap)
-        .flatMap(typeName =>
-          Xor.left(UnexpectedObjectType(typeName.toString)))
-    }
-  }
+  : Xor[DeserializationError, Unit] =
+    for {
+      typeName <- getTypeName(cMap)
+      _ <- if (typeNames.contains(typeName)) {
+        Xor.right({})
+      } else {
+        Xor.left(UnexpectedObjectType(typeName.toString))
+      }
+    } yield {}
+
 
   /**
     * Get the value of the `type` field from the given cbor map
