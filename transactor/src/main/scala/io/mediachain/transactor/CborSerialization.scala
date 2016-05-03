@@ -76,33 +76,6 @@ object CborSerialization {
     */
   def fromCMap(cMap: CMap)
   : Xor[DeserializationError, CborSerializable] = {
-
-    // TODO: create multiple deserializer maps for different contexts
-    // e.g. DataStore should deserialize chain cells to specific subtypes, etc
-    val transactorDeserializers
-    : Map[String, CborDeserializer[CborSerializable]] = Map(
-      CBORTypeNames.Entity -> EntityDeserializer
-        .asInstanceOf[CborDeserializer[CborSerializable]],
-
-      CBORTypeNames.Artefact -> ArtefactDeserializer
-        .asInstanceOf[CborDeserializer[CborSerializable]],
-
-      CBORTypeNames.EntityChainCell -> EntityChainCellDeserializer
-        .asInstanceOf[CborDeserializer[CborSerializable]],
-
-      CBORTypeNames.ArtefactChainCell -> ArtefactChainCellDeserializer
-        .asInstanceOf[CborDeserializer[CborSerializable]],
-
-      CBORTypeNames.CanonicalEntry -> CanonicalEntryDeserializer
-        .asInstanceOf[CborDeserializer[CborSerializable]],
-
-      CBORTypeNames.ChainEntry -> ChainEntryDeserializer
-        .asInstanceOf[CborDeserializer[CborSerializable]],
-
-      CBORTypeNames.JournalBlock -> JournalBlockDeserializer
-        .asInstanceOf[CborDeserializer[CborSerializable]]
-    )
-
     for {
       typeName <- getTypeName(cMap)
       deserializer <- Xor.fromOption(
@@ -143,6 +116,20 @@ object CborSerialization {
       EntityChainCell
     )
   }
+
+
+  // TODO: create multiple deserializer maps for different contexts
+  // e.g. DataStore should deserialize chain cells to specific subtypes, etc
+  val transactorDeserializers: Map[String, CborDeserializer[CborSerializable]] =
+    Seq(
+      CBORTypeNames.Entity -> EntityDeserializer,
+      CBORTypeNames.Artefact -> ArtefactDeserializer,
+      CBORTypeNames.EntityChainCell -> EntityChainCellDeserializer,
+      CBORTypeNames.ArtefactChainCell -> ArtefactChainCellDeserializer,
+      CBORTypeNames.CanonicalEntry -> CanonicalEntryDeserializer,
+      CBORTypeNames.ChainEntry -> ChainEntryDeserializer,
+      CBORTypeNames.JournalBlock -> JournalBlockDeserializer
+    ).map(t => (t._1, t._2.asInstanceOf[CborDeserializer[CborSerializable]])).toMap
 
 
   /**
