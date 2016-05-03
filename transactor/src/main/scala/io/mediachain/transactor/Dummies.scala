@@ -5,7 +5,7 @@ import scala.collection.mutable.{Map => MMap, HashMap => MHashMap}
 object Dummies {
   import io.mediachain.transactor.Types._
   import io.mediachain.util.cbor.CborAST._
-  
+
   class DummyReference(val num: Int) extends Reference {
     override def equals(that: Any) = {
       that.isInstanceOf[DummyReference] && 
@@ -17,7 +17,7 @@ object Dummies {
     val CBORType = "" // unused
     override def toCbor = CMap.withStringKeys("@link" -> CString(this.toString))
   }
-  
+
   class DummyStore extends Datastore {
     var seqno = 0
     val store: MMap[Reference, DataObject] = new MHashMap

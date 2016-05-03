@@ -43,26 +43,19 @@ object Types {
   abstract class Reference extends Serializable with CborSerializable
 
   // Typed References for tracking chain heads in the StateMachine
-  sealed abstract class ChainReference extends Serializable with CborSerializable {
+  sealed abstract class ChainReference extends Serializable {
     def chain: Option[Reference]
-
-    override def toCbor =
-      toCMapWithDefaults(Map(), Map("chain" -> chain.map(_.toCbor)))
   }
 
   case class EntityChainReference(chain: Option[Reference])
-    extends ChainReference {
-    val CBORType = CBORTypeNames.EntityChainReference
-  }
+    extends ChainReference
 
   object EntityChainReference {
     def empty = EntityChainReference(None)
   }
 
   case class ArtefactChainReference(chain: Option[Reference])
-    extends ChainReference {
-    val CBORType = CBORTypeNames.ArtefactChainReference
-  }
+    extends ChainReference
 
   object ArtefactChainReference {
     def empty = ArtefactChainReference(None)
@@ -78,7 +71,7 @@ object Types {
   ) extends CanonicalRecord {
     val CBORType = CBORTypeNames.Entity
     override def toCbor =
-      super.toCMapWithDefaults(meta + ("reference" -> reference.toCbor), Map())
+      super.toCMapWithDefaults(meta, Map())
 
     def reference: ChainReference = EntityChainReference.empty
   }
@@ -88,7 +81,7 @@ object Types {
   ) extends CanonicalRecord {
     val CBORType = CBORTypeNames.Artefact
     override def toCbor =
-      super.toCMapWithDefaults(meta + ("reference" -> reference.toCbor), Map())
+      super.toCMapWithDefaults(meta, Map())
     
     def reference: ChainReference = ArtefactChainReference.empty
   }
