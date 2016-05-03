@@ -36,6 +36,11 @@ object RocksDatastore {
         .getOrElse("RocksReference[Invalid reference]")
 
     override def hashCode(): Int = id.hashCode
+
+    override def equals(other: Any): Boolean = other match {
+      case (that: RocksReference) => that.id sameElements id
+      case _ => false
+    }
   }
 
   object RocksReference {
