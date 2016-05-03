@@ -1,6 +1,6 @@
 package io.mediachain.transactor
 
-import scala.collection.mutable.{Map => MMap, HashMap => MHashMap}
+import scala.collection.mutable.{HashMap => MHashMap, Map => MMap}
 
 object Dummies {
   import io.mediachain.transactor.Types._
@@ -14,7 +14,7 @@ object Dummies {
     override def hashCode = num
     override def toString = "dummy@" + num
 
-    val CBORType = "" // unused
+    val CBORType = None
     override def toCbor = CMap.withStringKeys("@link" -> CString(this.toString))
   }
 

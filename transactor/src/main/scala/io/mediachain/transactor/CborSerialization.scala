@@ -14,10 +14,11 @@ object CborSerialization {
 
   import scala.util.Try
 
-  type DeserializerMap = Map[String, CborDeserializer[CborSerializable]]
+  type DeserializerMap = Map[CborTypeName, CborDeserializer[CborSerializable]]
 
   /**
     * Try to deserialize a `DataObject` from a cbor `CValue`
+ *
     * @param cValue the `CValue` to decode
     * @return a `DataObject`, or `DeserializationError` on failure
     */
@@ -91,55 +92,77 @@ object CborSerialization {
       typeName <- getTypeName(cMap)
       deserializer <- Xor.fromOption(
         deserializers.get(typeName),
-        UnknownObjectType(typeName)
+        UnknownObjectType(typeName.toString)
       )
       value <- deserializer.fromCMap(cMap)
     } yield value
   }
 
 
-  /**
-    * String constants for the `type` field used to indicate the type of
-    * object represented by a cbor map.
-    */
-  object CBORTypeNames {
-    val Entity = "entity"
-    val Artefact = "artefact"
-    val EntityChainCell = "entityChainCell"
-    val ArtefactChainCell = "artefactChainCell"
-    val CanonicalEntry = "insert"
-    val ChainEntry = "update"
-    val JournalBlock = "journalBlock"
+  sealed trait CborTypeName {
+    val stringValue: String
+    def cborString: CString = CString(stringValue)
+    override def toString = stringValue
+  }
 
+  object CborTypeNames {
+    def fromString(string: String): Xor[UnknownObjectType, CborTypeName] =
+      string match {
+        case Entity.stringValue => Xor.right(Entity)
+        case Artefact.stringValue => Xor.right(Artefact)
+        case EntityChainCell.stringValue => Xor.right(EntityChainCell)
+        case ArtefactChainCell.stringValue => Xor.right(ArtefactChainCell)
+        case CanonicalEntry.stringValue => Xor.right(CanonicalEntry)
+        case ChainEntry.stringValue => Xor.right(ChainEntry)
+        case JournalBlock.stringValue => Xor.right(JournalBlock)
 
-    // TODO: Include subtypes in the sets below
-    /**
-      * The set of all valid ArtefactChainCell type names (including subtypes)
-      */
-    val ArtefactChainCellTypes: Set[String] = Set(
+        case _ => Xor.left(UnknownObjectType(string))
+      }
+
+    case object Entity extends CborTypeName {
+      val stringValue = "entity"
+    }
+    case object Artefact extends CborTypeName {
+      val stringValue = "artefact"
+    }
+    case object EntityChainCell extends CborTypeName {
+      val stringValue = "entityChainCell"
+    }
+    case object ArtefactChainCell extends CborTypeName {
+      val stringValue = "artefactChainCell"
+    }
+    case object CanonicalEntry extends CborTypeName {
+      val stringValue = "insert"
+    }
+    case object ChainEntry extends CborTypeName {
+      val stringValue = "update"
+    }
+    case object JournalBlock extends CborTypeName {
+      val stringValue = "journalBlock"
+    }
+
+    val ArtefactChainCellTypes: Set[CborTypeName] = Set(
       ArtefactChainCell
     )
 
-    /**
-      * The set of all valid EntityChainCell type names (including subtypes)
-      */
-    val EntityChainCellTypes: Set[String] = Set(
+    val EntityChainCellTypes: Set[CborTypeName] = Set(
       EntityChainCell
     )
   }
+
 
 
   // TODO: create multiple deserializer maps for different contexts
   // e.g. DataStore should deserialize chain cells to specific subtypes, etc
   val transactorDeserializers: DeserializerMap =
     Map(
-      CBORTypeNames.Entity -> EntityDeserializer,
-      CBORTypeNames.Artefact -> ArtefactDeserializer,
-      CBORTypeNames.EntityChainCell -> EntityChainCellDeserializer,
-      CBORTypeNames.ArtefactChainCell -> ArtefactChainCellDeserializer,
-      CBORTypeNames.CanonicalEntry -> CanonicalEntryDeserializer,
-      CBORTypeNames.ChainEntry -> ChainEntryDeserializer,
-      CBORTypeNames.JournalBlock -> JournalBlockDeserializer
+      CborTypeNames.Entity -> EntityDeserializer,
+      CborTypeNames.Artefact -> ArtefactDeserializer,
+      CborTypeNames.EntityChainCell -> EntityChainCellDeserializer,
+      CborTypeNames.ArtefactChainCell -> ArtefactChainCellDeserializer,
+      CborTypeNames.CanonicalEntry -> CanonicalEntryDeserializer,
+      CborTypeNames.ChainEntry -> ChainEntryDeserializer,
+      CborTypeNames.JournalBlock -> JournalBlockDeserializer
     )
 
   val defaultDeserializers = transactorDeserializers
@@ -148,7 +171,7 @@ object CborSerialization {
     * Trait for objects that can be serialized to cbor.
     */
   trait CborSerializable {
-    val CBORType: String
+    val CBORType: Option[CborTypeName]
 
     def toCborBytes: Array[Byte] = CborCodec.encode(toCbor)
 
@@ -158,13 +181,13 @@ object CborSerialization {
     def toCMapWithDefaults(defaults: Map[String, CValue],
       optionals: Map[String, Option[CValue]])
     : CMap = {
-      val merged = defaults ++ optionals.flatMap {
+      val withType = ("type" -> CBORType.map(_.cborString)) :: optionals.toList
+      val merged = defaults ++ withType.flatMap {
         case (_, None) => List.empty
         case (k, Some(v)) => List(k -> v)
       }
-      val withType = ("type", CString(CBORType)) :: merged.toList
 
-      CMap.withStringKeys(withType)
+      CMap.withStringKeys(merged.toList)
     }
   }
 
@@ -207,7 +230,7 @@ object CborSerialization {
   object EntityDeserializer extends CborDeserializer[Entity]
   {
     def fromCMap(cMap: CMap): Xor[DeserializationError, Entity] =
-      assertRequiredTypeName(cMap, CBORTypeNames.Entity).map { _ =>
+      assertRequiredTypeName(cMap, CborTypeNames.Entity).map { _ =>
         Entity(cMap.asStringKeyedMap)
       }
   }
@@ -215,7 +238,7 @@ object CborSerialization {
   object ArtefactDeserializer extends CborDeserializer[Artefact]
   {
     def fromCMap(cMap: CMap): Xor[DeserializationError, Artefact] =
-      assertRequiredTypeName(cMap, CBORTypeNames.Artefact).map { _ =>
+      assertRequiredTypeName(cMap, CborTypeNames.Artefact).map { _ =>
         Artefact(cMap.asStringKeyedMap)
       }
   }
@@ -224,7 +247,7 @@ object CborSerialization {
   {
     def fromCMap(cMap: CMap): Xor[DeserializationError, ArtefactChainCell] =
       for {
-        _ <- assertOneOfRequiredTypeNames(cMap, CBORTypeNames.ArtefactChainCellTypes)
+        _ <- assertOneOfRequiredTypeNames(cMap, CborTypeNames.ArtefactChainCellTypes)
         artefact <- getRequiredReference(cMap, "artefact")
       } yield ArtefactChainCell(
         artefact = artefact,
@@ -238,7 +261,7 @@ object CborSerialization {
   {
     def fromCMap(cMap: CMap): Xor[DeserializationError, EntityChainCell] =
       for {
-        _ <- assertOneOfRequiredTypeNames(cMap, CBORTypeNames.EntityChainCellTypes)
+        _ <- assertOneOfRequiredTypeNames(cMap, CborTypeNames.EntityChainCellTypes)
         entity <- getRequiredReference(cMap, "entity")
       } yield EntityChainCell(
         entity = entity,
@@ -252,9 +275,9 @@ object CborSerialization {
       for {
         typeName <- getTypeName(cMap)
         entry <- typeName match {
-          case CBORTypeNames.CanonicalEntry => CanonicalEntryDeserializer.fromCMap(cMap)
-          case CBORTypeNames.ChainEntry => ChainEntryDeserializer.fromCMap(cMap)
-          case _ => Xor.left(UnknownObjectType(typeName))
+          case CborTypeNames.CanonicalEntry => CanonicalEntryDeserializer.fromCMap(cMap)
+          case CborTypeNames.ChainEntry => ChainEntryDeserializer.fromCMap(cMap)
+          case _ => Xor.left(UnknownObjectType(typeName.toString))
         }
       } yield entry
 
@@ -287,7 +310,7 @@ object CborSerialization {
   {
     def fromCMap(cMap: CMap): Xor[DeserializationError, JournalBlock] =
       for {
-        _ <- assertRequiredTypeName(cMap, CBORTypeNames.JournalBlock)
+        _ <- assertRequiredTypeName(cMap, CborTypeNames.JournalBlock)
         index <- getRequired[CInt](cMap, "index").map(_.num)
         entriesCArray <- getRequired[CArray](cMap, "entries")
         entries <- JournalEntryDeserializer.journalEntriesFromCArray(entriesCArray)
@@ -311,8 +334,6 @@ object CborSerialization {
 
   object ChainEntryDeserializer extends CborDeserializer[ChainEntry]
   {
-    val CBORTypeName = CBORTypeNames.ChainEntry
-
     def fromCMap(cMap: CMap): Xor[DeserializationError, ChainEntry] =
       for {
         index <- getRequired[CInt](cMap, "index").map(_.num)
@@ -341,19 +362,20 @@ object CborSerialization {
 
   /**
     * Assert that the cbor map contains a `type` field with the given value.
+ *
     * @param cMap a cbor `CMap` to check the type of
     * @param typeName the required value of the `type` field
     * @return `Unit` on success, or `DeserializationError` if there is no
     *        `type` field, or if the value is incorrect
     */
-  def assertRequiredTypeName(cMap: CMap, typeName: String)
+  def assertRequiredTypeName(cMap: CMap, typeName: CborTypeName)
   : Xor[DeserializationError, Unit] = {
     getTypeName(cMap)
       .flatMap { name =>
         if (name == typeName) {
           Xor.right({})
         } else {
-          Xor.left(UnknownObjectType(name))
+          Xor.left(UnknownObjectType(name.toString))
         }
       }
   }
@@ -367,32 +389,35 @@ object CborSerialization {
     *        `type` field, or if the value is not contained in the
     *        `typeNames` set
     */
-  def assertOneOfRequiredTypeNames(cMap: CMap, typeNames: Set[String])
+  def assertOneOfRequiredTypeNames(cMap: CMap, typeNames: Set[CborTypeName])
   : Xor[DeserializationError, Unit] = {
     getTypeName(cMap)
       .flatMap { name =>
         if (typeNames.contains(name)) {
           Xor.right({})
         } else {
-          Xor.left(UnknownObjectType(name))
+          Xor.left(UnknownObjectType(name.toString))
         }
       }
   }
 
   /**
     * Get the value of the `type` field from the given cbor map
+ *
     * @param cMap a cbor `CMap` to get the type name from
-    * @return the value of the `type` field, or a `TypeNameNotFound` error if
-    *         no `type` field exists
+    * @return the value of the `type` field, or a `DeserializationError` error if
+    *         no `type` field exists, or its value is not a valid type name
     */
-  def getTypeName(cMap: CMap): Xor[TypeNameNotFound, String] =
+  def getTypeName(cMap: CMap): Xor[DeserializationError, CborTypeName] =
     getRequired[CString](cMap, "type")
       .map(_.string)
       .leftMap(_ => TypeNameNotFound())
+      .flatMap(CborTypeNames.fromString)
 
 
   /**
     * Get the value of a required field in a cbor map.
+ *
     * @param cMap a cbor `CMap` to pull the field from
     * @param fieldName the name of the field
     * @tparam T the type of `CValue` to return
@@ -408,6 +433,7 @@ object CborSerialization {
 
   /**
     * Get a required field whose value is an encoded `Reference` type.
+ *
     * @param cMap a cbor `CMap` to pull the reference field from
     * @param fieldName the name of the field
     * @return the deserialized `Reference`, or a `DeserializationError` if
@@ -420,6 +446,7 @@ object CborSerialization {
 
   /**
     * Get an optional `Reference` value from the cbor map.
+ *
     * @param cMap a cbor `CMap` to pull the reference field from.
     * @param fieldName the name of the field
     * @return Some[Reference] if the field exists and can be decoded,
@@ -432,6 +459,7 @@ object CborSerialization {
 
   /**
     * Try to decode a `Reference` from a cbor map
+ *
     * @param cMap the cbor `CMap` to decode as a `Reference`
     * @return the decoded `Reference`, or a `DeserializationError` if decoding
     *         fails

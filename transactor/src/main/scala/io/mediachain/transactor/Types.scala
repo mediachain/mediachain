@@ -1,6 +1,5 @@
 package io.mediachain.transactor
 
-import io.mediachain.transactor.CborSerialization.CBORTypeNames
 
 
 object Types {
@@ -9,6 +8,7 @@ object Types {
 
   import io.mediachain.transactor.CborSerialization.CborSerializable
   import io.mediachain.util.cbor.CborAST._
+  import io.mediachain.transactor.CborSerialization.CborTypeNames
 
   // Base class of all objects storable in the Datastore
   sealed abstract class DataObject extends Serializable with CborSerializable
@@ -50,7 +50,7 @@ object Types {
   case class Entity(
     meta: Map[String, CValue]
   ) extends CanonicalRecord {
-    val CBORType = CBORTypeNames.Entity
+    val CBORType = Some(CborTypeNames.Entity)
     override def toCbor =
       super.toCMapWithDefaults(meta, Map())
 
@@ -60,7 +60,7 @@ object Types {
   case class Artefact( 
     meta: Map[String, CValue]
   ) extends CanonicalRecord {
-    val CBORType = CBORTypeNames.Artefact
+    val CBORType = Some(CborTypeNames.Artefact)
     override def toCbor =
       super.toCMapWithDefaults(meta, Map())
     
@@ -77,7 +77,7 @@ object Types {
     chain: Option[Reference],
     meta: Map[String, CValue]
   ) extends ChainCell {
-    val CBORType = CBORTypeNames.EntityChainCell
+    val CBORType = Some(CborTypeNames.EntityChainCell)
 
     override def toCbor = {
       val defaults = meta + ("entity" -> entity.toCbor)
@@ -91,7 +91,7 @@ object Types {
     chain: Option[Reference],
     meta: Map[String, CValue]
   ) extends ChainCell {
-    val CBORType = CBORTypeNames.ArtefactChainCell
+    val CBORType = Some(CborTypeNames.ArtefactChainCell)
 
     override def toCbor = {
       val defaults = meta + ("artefact" -> artefact.toCbor)
@@ -110,7 +110,7 @@ object Types {
     index: BigInt,
     ref: Reference
   ) extends JournalEntry {
-    val CBORType = CBORTypeNames.CanonicalEntry
+    val CBORType = Some(CborTypeNames.CanonicalEntry)
 
     override def toCbor: CValue = {
       val defaults = Map(
@@ -128,7 +128,7 @@ object Types {
     chain: Reference,
     chainPrevious: Option[Reference]
   ) extends JournalEntry {
-    val CBORType = CBORTypeNames.ChainEntry
+    val CBORType = Some(CborTypeNames.ChainEntry)
 
     override def toCbor: CValue = {
       val defaults = Map(
@@ -149,7 +149,7 @@ object Types {
     chain: Option[Reference],
     entries: Array[JournalEntry]
   ) extends DataObject {
-    val CBORType = CBORTypeNames.JournalBlock
+    val CBORType = Some(CborTypeNames.JournalBlock)
 
     override def toCbor = {
       val cborEntries = CArray(entries.map(_.toCbor).toList)

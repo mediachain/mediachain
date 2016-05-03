@@ -59,20 +59,20 @@ object CborSerializationSpec extends BaseSpec {
     )
   }
 
-  def matchTypeName(typeName: String): Matcher[CValue] =
+  def matchTypeName(typeName: CborTypeName): Matcher[CValue] =
     beLike {
       case m: CMap =>
-        m.asStringKeyedMap must havePair ("type" -> CString(typeName))
+        m.asStringKeyedMap must havePair ("type" -> CString(typeName.stringValue))
     }
 
   def encodesTypeName = {
-    Fixtures.entity.toCbor must matchTypeName(CBORTypeNames.Entity)
-    Fixtures.artefact.toCbor must matchTypeName(CBORTypeNames.Artefact)
-    Fixtures.entityChainCell.toCbor must matchTypeName(CBORTypeNames.EntityChainCell)
-    Fixtures.artefactChainCell.toCbor must matchTypeName(CBORTypeNames.ArtefactChainCell)
-    Fixtures.canonicalEntry.toCbor must matchTypeName(CBORTypeNames.CanonicalEntry)
-    Fixtures.chainEntry.toCbor must matchTypeName(CBORTypeNames.ChainEntry)
-    Fixtures.journalBlock.toCbor must matchTypeName(CBORTypeNames.JournalBlock)
+    Fixtures.entity.toCbor must matchTypeName(CborTypeNames.Entity)
+    Fixtures.artefact.toCbor must matchTypeName(CborTypeNames.Artefact)
+    Fixtures.entityChainCell.toCbor must matchTypeName(CborTypeNames.EntityChainCell)
+    Fixtures.artefactChainCell.toCbor must matchTypeName(CborTypeNames.ArtefactChainCell)
+    Fixtures.canonicalEntry.toCbor must matchTypeName(CborTypeNames.CanonicalEntry)
+    Fixtures.chainEntry.toCbor must matchTypeName(CborTypeNames.ChainEntry)
+    Fixtures.journalBlock.toCbor must matchTypeName(CborTypeNames.JournalBlock)
   }
 
   def roundTripEntity =
