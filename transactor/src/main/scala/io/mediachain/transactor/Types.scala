@@ -1,38 +1,19 @@
 package io.mediachain.transactor
 
-import io.mediachain.transactor.TypeSerialization.CBORTypeNames
+import io.mediachain.transactor.CborSerialization.CBORTypeNames
 
 
 object Types {
   import scala.concurrent.Future
   import cats.data.Xor
 
-  import io.mediachain.util.cbor.CborCodec
+  import io.mediachain.transactor.CborSerialization.CborSerializable
   import io.mediachain.util.cbor.CborAST._
 
   // Base class of all objects storable in the Datastore
   sealed abstract class DataObject extends Serializable with CborSerializable
 
-  trait CborSerializable {
-    val CBORType: String
 
-    def toCborBytes: Array[Byte] = CborCodec.encode(toCbor)
-
-    def toCbor: CValue =
-      toCMapWithDefaults(Map.empty, Map.empty)
-
-    def toCMapWithDefaults(defaults: Map[String, CValue],
-                           optionals: Map[String, Option[CValue]])
-    : CMap = {
-      val merged = defaults ++ optionals.flatMap {
-        case (_, None) => List.empty
-        case (k, Some(v)) => List(k -> v)
-      }
-      val withType = ("type", CString(CBORType)) :: merged.toList
-
-      CMap.withStringKeys(withType)
-    }
-  }
 
   // Mediachain Datastore Records
   sealed abstract class Record extends DataObject {

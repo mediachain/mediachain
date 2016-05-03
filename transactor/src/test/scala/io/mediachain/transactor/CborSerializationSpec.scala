@@ -3,9 +3,9 @@ package io.mediachain.transactor
 import io.mediachain.BaseSpec
 import org.specs2.matcher.Matcher
 
-object TypeSerializationSpec extends BaseSpec {
+object CborSerializationSpec extends BaseSpec {
   import io.mediachain.transactor.Types._
-  import io.mediachain.transactor.TypeSerialization._
+  import io.mediachain.transactor.CborSerialization._
   import io.mediachain.util.cbor.CborAST._
   import io.mediachain.transactor.Dummies.DummyReference
 
