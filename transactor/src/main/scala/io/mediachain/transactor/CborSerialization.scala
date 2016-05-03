@@ -14,13 +14,17 @@ object CborSerialization {
 
   import scala.util.Try
 
+  type DeserializerMap = Map[String, CborDeserializer[CborSerializable]]
+
   /**
     * Try to deserialize a `DataObject` from a cbor `CValue`
     * @param cValue the `CValue` to decode
     * @return a `DataObject`, or `DeserializationError` on failure
     */
-  def dataObjectFromCbor(cValue: CValue): Xor[DeserializationError, DataObject] =
-    fromCbor(cValue) match {
+  def dataObjectFromCbor(cValue: CValue)
+    (implicit deserializers: DeserializerMap = defaultDeserializers)
+  : Xor[DeserializationError, DataObject] =
+    fromCbor(cValue)(deserializers) match {
       case Xor.Left(err) => Xor.left(err)
       case Xor.Right(dataObject: DataObject) => Xor.right(dataObject)
       case Xor.Right(unknownObject) =>
@@ -34,8 +38,10 @@ object CborSerialization {
     * @param cValue the `CValue` to decode
     * @return a `JournalEntry`, or DeserializationError on failure
     */
-  def journalEntryFromCbor(cValue: CValue): Xor[DeserializationError, JournalEntry] =
-    fromCbor(cValue) match {
+  def journalEntryFromCbor(cValue: CValue)
+    (implicit deserializers: DeserializerMap = defaultDeserializers)
+  : Xor[DeserializationError, JournalEntry] =
+    fromCbor(cValue)(deserializers) match {
       case Xor.Left(err) => Xor.left(err)
       case Xor.Right(journalEntry: JournalEntry) => Xor.right(journalEntry)
       case Xor.Right(unknownObject) =>
@@ -49,10 +55,12 @@ object CborSerialization {
     * @param bytes an array of (presumably) cbor-encoded data
     * @return a `CborSerializable` object, or a `DeserializationError` on failure
     */
-  def fromCborBytes(bytes: Array[Byte]): Xor[DeserializationError, CborSerializable] =
+  def fromCborBytes(bytes: Array[Byte])
+    (implicit deserializers: DeserializerMap = defaultDeserializers)
+  : Xor[DeserializationError, CborSerializable] =
     CborCodec.decode(bytes) match {
-      case (_: CTag) :: (taggedValue: CValue) :: _ => fromCbor(taggedValue)
-      case (cValue: CValue) :: _ => fromCbor(cValue)
+      case (_: CTag) :: (taggedValue: CValue) :: _ => fromCbor(taggedValue)(deserializers)
+      case (cValue: CValue) :: _ => fromCbor(cValue)(deserializers)
       case Nil => Xor.left(CborDecodingFailed())
     }
 
@@ -61,9 +69,11 @@ object CborSerialization {
     * @param cValue the `CValue` to decode
     * @return a `CborSerializable` object, or a `DeserializationError` on failure
     */
-  def fromCbor(cValue: CValue): Xor[DeserializationError, CborSerializable] =
+  def fromCbor(cValue: CValue)
+    (implicit deserializers: DeserializerMap = defaultDeserializers)
+  : Xor[DeserializationError, CborSerializable] =
     cValue match {
-      case (cMap: CMap) => fromCMap(cMap)
+      case (cMap: CMap) => fromCMap(cMap)(deserializers)
       case _ => Xor.left(UnexpectedCborType(
         s"Expected CBOR map, but received ${cValue.getClass.getName}"
       ))
@@ -75,11 +85,12 @@ object CborSerialization {
     * @return a `CborSerializable` object, or a `DeserializationError` on failure
     */
   def fromCMap(cMap: CMap)
+    (implicit deserializers: DeserializerMap = defaultDeserializers)
   : Xor[DeserializationError, CborSerializable] = {
     for {
       typeName <- getTypeName(cMap)
       deserializer <- Xor.fromOption(
-        transactorDeserializers.get(typeName),
+        deserializers.get(typeName),
         UnknownObjectType(typeName)
       )
       value <- deserializer.fromCMap(cMap)
@@ -120,7 +131,7 @@ object CborSerialization {
 
   // TODO: create multiple deserializer maps for different contexts
   // e.g. DataStore should deserialize chain cells to specific subtypes, etc
-  val transactorDeserializers: Map[String, CborDeserializer[CborSerializable]] =
+  val transactorDeserializers: DeserializerMap =
     Seq(
       CBORTypeNames.Entity -> EntityDeserializer,
       CBORTypeNames.Artefact -> ArtefactDeserializer,
@@ -131,6 +142,7 @@ object CborSerialization {
       CBORTypeNames.JournalBlock -> JournalBlockDeserializer
     ).map(t => (t._1, t._2.asInstanceOf[CborDeserializer[CborSerializable]])).toMap
 
+  val defaultDeserializers = transactorDeserializers
 
   /**
     * Trait for objects that can be serialized to cbor.
