@@ -30,7 +30,7 @@ object JournalBlockchainSpec2 extends io.mediachain.BaseSpec
     JournalBlockchainSpec2Context.shutdown()
   }
   
-  def generateBlock = {
+  def generateBlock = skipped {
     val context = JournalBlockchainSpec2Context.context
     val op = context.dummy.client.insert(Entity(Map()))
     val res = Await.result(op, timeout)
