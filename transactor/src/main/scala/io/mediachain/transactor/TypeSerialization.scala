@@ -82,6 +82,7 @@ object TypeSerialization {
 
   def fromCborBytes(bytes: Array[Byte]): Xor[DeserializationError, CborSerializable] =
     CborCodec.decode(bytes) match {
+      case (_: CTag) :: (taggedValue: CValue) :: _ => fromCbor(taggedValue)
       case (cValue: CValue) :: _ => fromCbor(cValue)
       case Nil => Xor.left(CborDecodingFailed())
     }
