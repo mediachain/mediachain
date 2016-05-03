@@ -132,7 +132,7 @@ object CborSerialization {
   // TODO: create multiple deserializer maps for different contexts
   // e.g. DataStore should deserialize chain cells to specific subtypes, etc
   val transactorDeserializers: DeserializerMap =
-    Seq(
+    Map(
       CBORTypeNames.Entity -> EntityDeserializer,
       CBORTypeNames.Artefact -> ArtefactDeserializer,
       CBORTypeNames.EntityChainCell -> EntityChainCellDeserializer,
@@ -140,7 +140,7 @@ object CborSerialization {
       CBORTypeNames.CanonicalEntry -> CanonicalEntryDeserializer,
       CBORTypeNames.ChainEntry -> ChainEntryDeserializer,
       CBORTypeNames.JournalBlock -> JournalBlockDeserializer
-    ).map(t => (t._1, t._2.asInstanceOf[CborDeserializer[CborSerializable]])).toMap
+    )
 
   val defaultDeserializers = transactorDeserializers
 
@@ -173,7 +173,7 @@ object CborSerialization {
     * a cbor `CValue`.
     * @tparam T the type of object to decode. Must be `CborSerializable`.
     */
-  trait CborDeserializer[T <: CborSerializable] {
+  trait CborDeserializer[+T <: CborSerializable] {
     def fromCMap(cMap: CMap): Xor[DeserializationError, T]
 
     def fromCValue(cValue: CValue): Xor[DeserializationError, T] =
