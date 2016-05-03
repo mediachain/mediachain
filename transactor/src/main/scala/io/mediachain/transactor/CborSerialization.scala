@@ -92,7 +92,7 @@ object CborSerialization {
       typeName <- getTypeName(cMap)
       deserializer <- Xor.fromOption(
         deserializers.get(typeName),
-        UnknownObjectType(typeName.toString)
+        UnexpectedObjectType(typeName.toString)
       )
       value <- deserializer.fromCMap(cMap)
     } yield value
@@ -106,7 +106,7 @@ object CborSerialization {
   }
 
   object CborTypeNames {
-    def fromString(string: String): Xor[UnknownObjectType, CborTypeName] =
+    def fromString(string: String): Xor[UnexpectedObjectType, CborTypeName] =
       string match {
         case Entity.stringValue => Xor.right(Entity)
         case Artefact.stringValue => Xor.right(Artefact)
@@ -116,7 +116,7 @@ object CborSerialization {
         case ChainEntry.stringValue => Xor.right(ChainEntry)
         case JournalBlock.stringValue => Xor.right(JournalBlock)
 
-        case _ => Xor.left(UnknownObjectType(string))
+        case _ => Xor.left(UnexpectedObjectType(string))
       }
 
     case object Entity extends CborTypeName {
@@ -222,7 +222,7 @@ object CborSerialization {
 
   case class TypeNameNotFound() extends DeserializationError
 
-  case class UnknownObjectType(typeName: String) extends DeserializationError
+  case class UnexpectedObjectType(typeName: String) extends DeserializationError
 
   case class RequiredFieldNotFound(fieldName: String) extends DeserializationError
 
@@ -277,7 +277,7 @@ object CborSerialization {
         entry <- typeName match {
           case CborTypeNames.CanonicalEntry => CanonicalEntryDeserializer.fromCMap(cMap)
           case CborTypeNames.ChainEntry => ChainEntryDeserializer.fromCMap(cMap)
-          case _ => Xor.left(UnknownObjectType(typeName.toString))
+          case _ => Xor.left(UnexpectedObjectType(typeName.toString))
         }
       } yield entry
 
@@ -370,19 +370,18 @@ object CborSerialization {
     */
   def assertRequiredTypeName(cMap: CMap, typeName: CborTypeName)
   : Xor[DeserializationError, Unit] = {
-    getTypeName(cMap)
-      .flatMap { name =>
-        if (name == typeName) {
-          Xor.right({})
-        } else {
-          Xor.left(UnknownObjectType(name.toString))
-        }
-      }
+    if (getTypeName(cMap).exists(_ == typeName)) {
+      Xor.right({})
+    } else {
+      Xor.left(UnexpectedObjectType(typeName.toString))
+    }
+
   }
 
   /**
     * Assert that the cbor map contains a `type` field whose value is one of
     * the members of the `typeNames` set.
+    *
     * @param cMap a cbor `CMap` to check the type of
     * @param typeNames a set of valid values for the `type` field
     * @return `Unit` on success, or `DeserializationError` if there is no
@@ -391,14 +390,13 @@ object CborSerialization {
     */
   def assertOneOfRequiredTypeNames(cMap: CMap, typeNames: Set[CborTypeName])
   : Xor[DeserializationError, Unit] = {
-    getTypeName(cMap)
-      .flatMap { name =>
-        if (typeNames.contains(name)) {
-          Xor.right({})
-        } else {
-          Xor.left(UnknownObjectType(name.toString))
-        }
-      }
+    if (getTypeName(cMap).exists(n => typeNames.contains(n))) {
+      Xor.right({})
+    } else {
+      getTypeName(cMap)
+        .flatMap(typeName =>
+          Xor.left(UnexpectedObjectType(typeName.toString)))
+    }
   }
 
   /**
@@ -410,8 +408,7 @@ object CborSerialization {
     */
   def getTypeName(cMap: CMap): Xor[DeserializationError, CborTypeName] =
     getRequired[CString](cMap, "type")
-      .map(_.string)
-      .leftMap(_ => TypeNameNotFound())
+      .bimap(_ => TypeNameNotFound(), cString => cString.string)
       .flatMap(CborTypeNames.fromString)
 
 
