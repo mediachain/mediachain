@@ -392,12 +392,12 @@ object CborSerialization {
   : Xor[DeserializationError, Unit] =
     for {
       typeName <- getTypeName(cMap)
-      _ <- if (typeNames.contains(typeName)) {
+      result <- if (typeNames.contains(typeName)) {
         Xor.right({})
       } else {
         Xor.left(UnexpectedObjectType(typeName.toString))
       }
-    } yield {}
+    } yield result
 
 
   /**
