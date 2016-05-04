@@ -2,7 +2,7 @@ package io.mediachain.transactor
 
 import scala.collection.mutable.{Set => MSet, HashSet => MHashSet, 
                                  Map => MMap, HashMap => MHashMap,
-                                 ListBuffer}
+                                 Buffer, ArrayBuffer}
 
 import io.atomix.copycat.{Command, Query}
 import io.atomix.copycat.server.{Commit, StateMachine => CopycatStateMachine, Snapshottable}
@@ -34,18 +34,21 @@ object StateMachine {
   sealed abstract class JournalEvent extends Serializable
   case class JournalCommitEvent(entry: JournalEntry) extends JournalEvent
   case class JournalBlockEvent(ref: Reference) extends JournalEvent
+  
+  class JournalState extends Serializable {
+    var seqno: BigInt = 0                                     // next entry index
+    var index: MMap[Reference, ChainReference] = new MHashMap // canonical -> chain mapp
+    var block: Buffer[JournalEntry] = new ArrayBuffer         // current block entries
+    var blockchain: Option[Reference] = None                  // blockchain head
+  }
 
   class JournalStateMachine(
     val datastore: Datastore,
     val blocksize: Int = JournalBlockSize // configurable to facilitate testing
   ) extends CopycatStateMachine with Snapshottable with SessionListener {
-    private var seqno: BigInt = 0
-    private var index: MMap[Reference, ChainReference] = new MHashMap // canonical -> chain map
-    private var block: ListBuffer[JournalEntry] = new ListBuffer      // current block entries
-    private var blockchain: Option[Reference] = None                  // blockchain head
-    private val clients: MSet[ServerSession] = new MHashSet           // this wanted to be called sessions
-
-
+    private var state: JournalState = new JournalState
+    private val clients: MSet[ServerSession] = new MHashSet // this wanted to be called sessions
+    
     private def commitError(what: String) = Xor.left(JournalCommitError(what))
     
     // Journal Interface
@@ -60,10 +63,10 @@ object StateMachine {
     private def insertRecord(cmd: JournalInsert): Xor[JournalError, CanonicalEntry] = {
       val rec = cmd.record
       val ref = datastore.put(rec)
-      index.get(ref) match {
+      state.index.get(ref) match {
         case Some(_) => commitError("duplicate insert")
         case None => {
-          index += (ref -> rec.reference)
+          state.index += (ref -> rec.reference)
 
           val entry = CanonicalEntry(nextSeqno(), ref)
           publishCommit(entry)
@@ -91,7 +94,7 @@ object StateMachine {
       
       val ref = cmd.ref
       val cell = cmd.cell
-      index.get(ref) match {
+      state.index.get(ref) match {
         case None => commitError("invalid reference")
         case Some(cref) => {
           (cref, cell) match {
@@ -99,7 +102,7 @@ object StateMachine {
               if (checkUpdate(ref, chain, entity, xchain)) {
                 val newcell = EntityChainCell(ref, chain, meta)
                 val newchain = datastore.put(newcell)
-                index.put(ref, EntityChainReference(Some(newchain)))
+                state.index.put(ref, EntityChainReference(Some(newchain)))
                 commit(ref, newchain, chain)
               } else commitError("invalid chain cell")
             }
@@ -107,7 +110,7 @@ object StateMachine {
               if (checkUpdate(ref, chain, artefact, xchain)) {
                 val newcell = ArtefactChainCell(ref, chain, meta)
                 val newchain = datastore.put(newcell)
-                index.put(ref, ArtefactChainReference(Some(newchain)))
+                state.index.put(ref, ArtefactChainReference(Some(newchain)))
                 commit(ref, newchain, chain)
               } else commitError("invalid chain cell")
             }
@@ -119,7 +122,7 @@ object StateMachine {
     
     def lookup(commit: Commit[JournalLookup]): Option[Reference] = {
       try {
-        index.get(commit.operation.ref).flatMap(_.chain)
+        state.index.get(commit.operation.ref).flatMap(_.chain)
       } finally {
         commit.release()
       }
@@ -127,7 +130,7 @@ object StateMachine {
     
     def currentBlock(commit: Commit[JournalCurrentBlock]) : JournalBlock = {
       try {
-        JournalBlock(seqno, blockchain, block.toArray)
+        JournalBlock(state.seqno, state.blockchain, state.block.toArray)
       } finally {
         commit.release()
       }
@@ -135,21 +138,21 @@ object StateMachine {
 
     // block generation
     private def blockExtend(entry: JournalEntry) {
-      block += entry
-      if (block.length >= blocksize) {
-        val entries = block.toArray
-        val newblock = JournalBlock(seqno, blockchain, entries)
+      state.block += entry
+      if (state.block.length >= blocksize) {
+        val entries = state.block.toArray
+        val newblock = JournalBlock(state.seqno, state.blockchain, entries)
         val blockref = datastore.put(newblock)
-        blockchain = Some(blockref)
-        block = new ListBuffer
+        state.blockchain = Some(blockref)
+        state.block = new ArrayBuffer
         publishBlock(blockref)
       }
     }
 
     // helpers
     private def nextSeqno() = {
-      val next = seqno
-      seqno += 1
+      val next = state.seqno
+      state.seqno += 1
       next
     }
     
@@ -170,17 +173,11 @@ object StateMachine {
         
     // Snapshottable
     override def install(reader: SnapshotReader) {
-      seqno = reader.readObject()
-      index = reader.readObject()
-      block = reader.readObject()
-      blockchain = reader.readObject()
+      state = reader.readObject()
     }
     
     override def snapshot(writer: SnapshotWriter) {
-      writer.writeObject(seqno)
-      writer.writeObject(index)
-      writer.writeObject(block)
-      writer.writeObject(blockchain)
+      writer.writeObject(state)
     }
     
     // Session Listener
