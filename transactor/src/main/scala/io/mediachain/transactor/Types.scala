@@ -1,5 +1,6 @@
 package io.mediachain.transactor
 
+import io.mediachain.multihash.MultiHash
 
 
 object Types {
@@ -22,6 +23,14 @@ object Types {
 
   // References to records in the underlying datastore
   abstract class Reference extends Serializable with CborSerializable
+
+  // Content-addressable reference using IPFS MultiHash
+  case class MultihashReference(multihash: MultiHash) extends Reference {
+    val CBORType = None
+
+    override def toCbor: CValue =
+      CMap.withStringKeys("@link" -> CBytes(multihash.bytes))
+  }
 
   // Typed References for tracking chain heads in the StateMachine
   sealed abstract class ChainReference extends Serializable {

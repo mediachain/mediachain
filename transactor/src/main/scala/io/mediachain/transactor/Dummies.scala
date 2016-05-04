@@ -14,8 +14,12 @@ object Dummies {
     override def hashCode = num
     override def toString = "dummy@" + num
 
+    // CBOR serialization is not used for dummy references,
+    // but having the base Reference type implement CborSerializable
+    // greatly simplifies the serialization logic for objects that contain
+    // references.
     val CBORType = None
-    override def toCbor = CMap.withStringKeys("@link" -> CString(this.toString))
+    override def toCbor = CMap.withStringKeys("@dummy-link" -> CInt(num))
   }
 
   class DummyStore extends Datastore {

@@ -1,7 +1,6 @@
 package io.mediachain.transactor
 
-
-
+import io.mediachain.multihash.MultiHash
 
 
 object CborSerialization {
@@ -353,15 +352,14 @@ object CborSerialization {
   }
 
 
-  object DummyReferenceDeserializer extends CborDeserializer[DummyReference]
+  object MultihashReferenceDeserializer extends CborDeserializer[MultihashReference]
   {
-    def fromCMap(cMap: CMap): Xor[DeserializationError, DummyReference] =
+    def fromCMap(cMap: CMap): Xor[DeserializationError, MultihashReference] =
       for {
-        linkString <- getRequired[CString](cMap, "@link").map(_.string)
-        seqno <- Xor.catchNonFatal {
-          linkString.substring("dummy@".length).toInt
-        }.leftMap(_ => ReferenceDecodingFailed(s"Unable to parse int from $linkString"))
-      } yield new DummyReference(seqno)
+        hashBytes <- getRequired[CBytes](cMap, "@link").map(_.bytes)
+        multihash <- MultiHash.fromBytes(hashBytes)
+          .leftMap(err => ReferenceDecodingFailed(s"Multihash decoding failed: $err"))
+      } yield MultihashReference(multihash)
   }
 
 
@@ -461,22 +459,16 @@ object CborSerialization {
 
 
   /**
-    * Try to decode a `Reference` from a cbor map
- *
+    * Try to decode a `Reference` from a cbor map.
+    *
+    * Only MultihashReferences are supported for deserialization;
+    * DummyReferences are for testing only, and use POJO serialization.
+    *
     * @param cMap the cbor `CMap` to decode as a `Reference`
     * @return the decoded `Reference`, or a `DeserializationError` if decoding
     *         fails
     */
   def referenceFromCMap(cMap: CMap): Xor[DeserializationError, Reference] =
-    getRequired[CMap](cMap, "@link")
-      .flatMap { linkVal: CValue =>
-        linkVal match {
-          case CString(s) if s.startsWith("dummy@") => {
-            DummyReferenceDeserializer.fromCMap(cMap)
-          }
-          case _ =>
-            Xor.left(ReferenceDecodingFailed(s"Unknown link value $linkVal"))
-        }
-      }
+    MultihashReferenceDeserializer.fromCMap(cMap)
 
 }
