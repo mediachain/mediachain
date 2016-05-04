@@ -153,6 +153,54 @@ object Datastore {
       Some(MediachainTypes.ArtefactUpdateCell)
   }
 
+  case class ArtefactCreationCell(
+    override val artefact: Reference,
+    override val chain: Option[Reference],
+    override val meta: Map[String, CValue],
+    entity: Reference
+  ) extends ArtefactChainCell(artefact, chain,
+    meta + ("entity" -> entity.toCbor)
+  ) {
+    override val mediachainType: Option[MediachainType] =
+      Some(MediachainTypes.ArtefactCreationCell)
+  }
+
+  case class ArtefactDerivationCell(
+    override val artefact: Reference,
+    override val chain: Option[Reference],
+    override val meta: Map[String, CValue],
+    artefactOrigin: Reference
+  ) extends ArtefactChainCell(artefact, chain,
+    meta + ("artefactOrigin" -> artefactOrigin.toCbor)
+  ) {
+    override val mediachainType: Option[MediachainType] =
+      Some(MediachainTypes.ArtefactDerivationCell)
+  }
+
+  case class ArtefactOwnershipCell(
+    override val artefact: Reference,
+    override val chain: Option[Reference],
+    override val meta: Map[String, CValue],
+    entity: Reference
+  ) extends ArtefactChainCell(artefact, chain,
+    meta + ("entity" -> entity.toCbor)
+  ) {
+    override val mediachainType: Option[MediachainType] =
+      Some(MediachainTypes.ArtefactOwnershipCell)
+  }
+
+  case class ArtefactReferenceCell(
+    override val artefact: Reference,
+    override val chain: Option[Reference],
+    override val meta: Map[String, CValue],
+    entity: Reference
+  ) extends ArtefactChainCell(artefact, chain,
+    meta + ("entity" -> entity.toCbor)
+  ) {
+    override val mediachainType: Option[MediachainType] =
+      Some(MediachainTypes.ArtefactReferenceCell)
+  }
+
   // Journal Entries
   sealed abstract class JournalEntry extends Serializable with CborSerializable {
     def index: BigInt

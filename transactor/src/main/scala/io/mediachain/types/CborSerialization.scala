@@ -117,6 +117,10 @@ object CborSerialization {
         case EntityLinkCell.stringValue => Xor.right(EntityLinkCell)
         case ArtefactChainCell.stringValue => Xor.right(ArtefactChainCell)
         case ArtefactUpdateCell.stringValue => Xor.right(ArtefactUpdateCell)
+        case ArtefactCreationCell.stringValue => Xor.right(ArtefactCreationCell)
+        case ArtefactDerivationCell.stringValue => Xor.right(ArtefactDerivationCell)
+        case ArtefactOwnershipCell.stringValue => Xor.right(ArtefactOwnershipCell)
+        case ArtefactReferenceCell.stringValue => Xor.right(ArtefactReferenceCell)
         case CanonicalEntry.stringValue => Xor.right(CanonicalEntry)
         case ChainEntry.stringValue => Xor.right(ChainEntry)
         case JournalBlock.stringValue => Xor.right(JournalBlock)
@@ -152,6 +156,18 @@ object CborSerialization {
     case object ArtefactUpdateCell extends MediachainType {
       val stringValue = "artefactUpdate"
     }
+    case object ArtefactCreationCell extends MediachainType {
+      val stringValue = "artefactCreatedBy"
+    }
+    case object ArtefactDerivationCell extends MediachainType {
+      val stringValue = "artefactDerivedBy"
+    }
+    case object ArtefactOwnershipCell extends MediachainType {
+      val stringValue = "artefactRightsOwnedBy"
+    }
+    case object ArtefactReferenceCell extends MediachainType {
+      val stringValue = "artefactReferencedBy"
+    }
     case object CanonicalEntry extends MediachainType {
       val stringValue = "insert"
     }
@@ -163,7 +179,8 @@ object CborSerialization {
     }
 
     val ArtefactChainCellTypes: Set[MediachainType] = Set(
-      ArtefactChainCell, ArtefactUpdateCell
+      ArtefactChainCell, ArtefactUpdateCell, ArtefactCreationCell,
+      ArtefactDerivationCell, ArtefactOwnershipCell, ArtefactReferenceCell
     )
 
     val EntityChainCellTypes: Set[MediachainType] = Set(
