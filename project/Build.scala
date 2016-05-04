@@ -11,7 +11,8 @@ object MediachainBuild extends Build {
     organization := "io.mediachain",
     version := "0.0.1",
     scalaVersion := "2.11.7",
-    scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings", "-feature"),
+    scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings",
+      "-feature", "-language:higherKinds"),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats" % "0.4.1",
       "org.json4s" %% "json4s-jackson" % "3.3.0",
@@ -25,6 +26,9 @@ object MediachainBuild extends Build {
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
 
+  lazy val utils = Project("utils", file("utils"))
+    .settings(settings)
+
   // TODO: replace this with maven-published version
   val scalaMultihashCommit = "c21efd1b3534d9a4c5f7b2bc2d971eed0e5a2744"
   lazy val scalaMultihash = RootProject(uri(
@@ -33,7 +37,7 @@ object MediachainBuild extends Build {
 
   lazy val transactor = Project("transactor", file("transactor"))
     .settings(settings)
-    .dependsOn(scalaMultihash)
+    .dependsOn(scalaMultihash, utils)
 
   lazy val peer = Project("peer", file("peer"))
     .settings(settings)

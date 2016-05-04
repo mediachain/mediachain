@@ -1,7 +1,7 @@
 package io.mediachain.transactor
 
 import io.mediachain.multihash.MultiHash
-
+import io.mediachain.transactor.CborSerialization.MediachainType
 
 object Types {
   import scala.concurrent.Future
@@ -115,7 +115,8 @@ object Types {
     def ref: Reference
   }
   
-  case class CanonicalEntry( 
+
+  case class CanonicalEntry(
     index: BigInt,
     ref: Reference
   ) extends JournalEntry {
@@ -196,6 +197,14 @@ object Types {
   
   // Datastore interface
   trait Datastore {
-    def put(obj: DataObject): Reference
+    type Ref <: Reference
+
+    def put(obj: DataObject): Ref
+    def get(ref: Ref): Option[DataObject]
+  }
+
+  trait MultiHashDatastore extends Datastore {
+    type Ref = MultihashReference
   }
 }
+
