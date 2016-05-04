@@ -25,8 +25,15 @@ object MediachainBuild extends Build {
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
 
+  // TODO: replace this with maven-published version
+  val scalaMultihashCommit = "c21efd1b3534d9a4c5f7b2bc2d971eed0e5a2744"
+  lazy val scalaMultihash = RootProject(uri(
+    s"git://github.com/mediachain/scala-multihash.git#$scalaMultihashCommit"
+  ))
+
   lazy val transactor = Project("transactor", file("transactor"))
     .settings(settings)
+    .dependsOn(scalaMultihash)
 
   lazy val peer = Project("peer", file("peer"))
     .settings(settings)
