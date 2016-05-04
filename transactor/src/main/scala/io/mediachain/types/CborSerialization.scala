@@ -163,11 +163,11 @@ object CborSerialization {
     }
 
     val ArtefactChainCellTypes: Set[MediachainType] = Set(
-      ArtefactChainCell
+      ArtefactChainCell, ArtefactUpdateCell
     )
 
     val EntityChainCellTypes: Set[MediachainType] = Set(
-      EntityChainCell
+      EntityChainCell, EntityUpdateCell, EntityLinkCell
     )
   }
 
