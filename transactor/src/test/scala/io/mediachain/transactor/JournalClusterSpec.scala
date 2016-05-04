@@ -1,13 +1,13 @@
 package io.mediachain.transactor
 
 import org.specs2.specification.{AfterAll, BeforeAll}
-
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
-import scala.concurrent.{Future, Await}
+
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
-import cats.data.Xor
-
+import cats.data.{Xor, XorT}
+import cats.std.all._
 import Types._
 
 object JournalClusterSpec extends io.mediachain.BaseSpec
@@ -35,34 +35,29 @@ object JournalClusterSpec extends io.mediachain.BaseSpec
   def afterAll() {
     JournalClusterSpecContext.shutdown()
   }
-  
+
   def insertAndUpdateJournal = {
     val context = JournalClusterSpecContext.context
     val ops = context.cluster.dummies.map(insertAndUpdate(_))
-    val res = ops.map(Await.result(_, timeout))
+    val res = ops.map(xort => Await.result(xort.value, timeout))
     context.refs = res.map {
       case Xor.Left(_) => null
       case Xor.Right(tuple) => tuple
     }
-    
+
     (res(0) must beRightXor) and
     (res(1) must beRightXor) and
     (res(2) must beRightXor)
   }
-  
+
   private def insertAndUpdate(dummy: DummyContext)
-  : Future[Xor[JournalError, (Reference, Reference)]] = {
-    dummy.client.insert(Entity(Map()))
-      .flatMap { 
-        case err: Xor.Left[JournalError] => Future { err }
-        case Xor.Right(entry1) => {
-          dummy.client.update(entry1.ref, EntityChainCell(entry1.ref, None, Map()))
-            .map {
-              case err: Xor.Left[JournalError] => err
-              case Xor.Right(entry2) => Xor.Right((entry1.ref, entry2.chain))
-          }
-        }
-      }
+  : XorT[Future, JournalError, (Reference, Reference)] = {
+    for {
+      entry1 <- XorT(dummy.client.insert(Entity(Map())))
+      entry2 <- XorT(dummy.client.update(entry1.ref, EntityChainCell(entry1.ref, None, Map())))
+    } yield {
+      (entry1.ref, entry2.chain)
+    }
   }
   
   def checkChainViews = {
