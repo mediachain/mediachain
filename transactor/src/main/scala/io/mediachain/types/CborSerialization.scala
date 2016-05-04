@@ -113,7 +113,10 @@ object CborSerialization {
         case Entity.stringValue => Xor.right(Entity)
         case Artefact.stringValue => Xor.right(Artefact)
         case EntityChainCell.stringValue => Xor.right(EntityChainCell)
+        case EntityUpdateCell.stringValue => Xor.right(EntityUpdateCell)
+        case EntityLinkCell.stringValue => Xor.right(EntityLinkCell)
         case ArtefactChainCell.stringValue => Xor.right(ArtefactChainCell)
+        case ArtefactUpdateCell.stringValue => Xor.right(ArtefactUpdateCell)
         case CanonicalEntry.stringValue => Xor.right(CanonicalEntry)
         case ChainEntry.stringValue => Xor.right(ChainEntry)
         case JournalBlock.stringValue => Xor.right(JournalBlock)
@@ -130,8 +133,17 @@ object CborSerialization {
     case object EntityChainCell extends MediachainType {
       val stringValue = "entityChainCell"
     }
+    case object EntityUpdateCell extends MediachainType {
+      val stringValue = "entityUpdate"
+    }
+    case object EntityLinkCell extends MediachainType {
+      val stringValue = "entityLink"
+    }
     case object ArtefactChainCell extends MediachainType {
       val stringValue = "artefactChainCell"
+    }
+    case object ArtefactUpdateCell extends MediachainType {
+      val stringValue = "artefactUpdate"
     }
     case object CanonicalEntry extends MediachainType {
       val stringValue = "insert"
