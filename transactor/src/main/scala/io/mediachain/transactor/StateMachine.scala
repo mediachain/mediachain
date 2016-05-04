@@ -12,7 +12,9 @@ import io.atomix.copycat.server.storage.snapshot.{SnapshotReader, SnapshotWriter
 import cats.data.Xor
 
 object StateMachine {
-  import io.mediachain.transactor.Types._
+  import io.mediachain.types.Datastore
+  import io.mediachain.types.DatastoreTypes._
+  import io.mediachain.types.TransactorTypes._
 
   val JournalBlockSize: Int = 4096 // blocksize for Journal Blockchain
   

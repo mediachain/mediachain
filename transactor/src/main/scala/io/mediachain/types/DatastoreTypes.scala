@@ -1,25 +1,21 @@
-package io.mediachain.transactor
+package io.mediachain.types
 
 import io.mediachain.multihash.MultiHash
+import io.mediachain.types.CborSerialization.{CborSerializable, MediachainTypes}
+import io.mediachain.types.TransactorTypes.{ArtefactChainReference, ChainReference, EntityChainReference}
+import io.mediachain.util.cbor.CborAST._
 
 
-object Types {
-  import scala.concurrent.Future
-  import cats.data.Xor
-
-  import io.mediachain.transactor.CborSerialization.CborSerializable
-  import io.mediachain.util.cbor.CborAST._
-  import io.mediachain.transactor.CborSerialization.MediachainTypes
+object DatastoreTypes {
 
   // Base class of all objects storable in the Datastore
-  sealed abstract class DataObject extends Serializable with CborSerializable
-
-
+  sealed trait DataObject extends Serializable with CborSerializable
 
   // Mediachain Datastore Records
   sealed abstract class Record extends DataObject {
     def meta: Map[String, CValue]
   }
+
 
   // References to records in the underlying datastore
   abstract class Reference extends Serializable with CborSerializable
@@ -32,24 +28,6 @@ object Types {
       CMap.withStringKeys("@link" -> CBytes(multihash.bytes))
   }
 
-  // Typed References for tracking chain heads in the StateMachine
-  sealed abstract class ChainReference extends Serializable {
-    def chain: Option[Reference]
-  }
-
-  case class EntityChainReference(chain: Option[Reference])
-    extends ChainReference
-
-  object EntityChainReference {
-    def empty = EntityChainReference(None)
-  }
-
-  case class ArtefactChainReference(chain: Option[Reference])
-    extends ChainReference
-
-  object ArtefactChainReference {
-    def empty = ArtefactChainReference(None)
-  }
 
   // Canonical records: Entities and Artefacts
   sealed abstract class CanonicalRecord extends Record {
@@ -60,28 +38,31 @@ object Types {
     meta: Map[String, CValue]
   ) extends CanonicalRecord {
     val mediachainType = Some(MediachainTypes.Entity)
+
     override def toCbor =
       super.toCMapWithDefaults(meta, Map())
 
     def reference: ChainReference = EntityChainReference.empty
   }
-  
-  case class Artefact( 
+
+  case class Artefact(
     meta: Map[String, CValue]
   ) extends CanonicalRecord {
     val mediachainType = Some(MediachainTypes.Artefact)
+
     override def toCbor =
       super.toCMapWithDefaults(meta, Map())
-    
+
     def reference: ChainReference = ArtefactChainReference.empty
   }
-  
-  // Chain Cells
-  sealed abstract class ChainCell extends Record {
+
+
+  // Chain cells
+  abstract class ChainCell extends Record {
     def chain: Option[Reference]
   }
-  
-  case class EntityChainCell( 
+
+  case class EntityChainCell(
     entity: Reference,
     chain: Option[Reference],
     meta: Map[String, CValue]
@@ -94,8 +75,8 @@ object Types {
       super.toCMapWithDefaults(defaults, optionals)
     }
   }
-  
-  case class ArtefactChainCell( 
+
+  case class ArtefactChainCell(
     artefact: Reference,
     chain: Option[Reference],
     meta: Map[String, CValue]
@@ -108,14 +89,15 @@ object Types {
       super.toCMapWithDefaults(defaults, optionals)
     }
   }
-  
+
+
   // Journal Entries
   sealed abstract class JournalEntry extends Serializable with CborSerializable {
     def index: BigInt
     def ref: Reference
   }
-  
-  case class CanonicalEntry( 
+
+  case class CanonicalEntry(
     index: BigInt,
     ref: Reference
   ) extends JournalEntry {
@@ -131,7 +113,7 @@ object Types {
   }
 
 
-  case class ChainEntry( 
+  case class ChainEntry(
     index: BigInt,
     ref: Reference,
     chain: Reference,
@@ -166,36 +148,5 @@ object Types {
       val optionals = Map("chain" -> chain.map(_.toCbor))
       super.toCMapWithDefaults(defaults, optionals)
     }
-  }
-
-
-  // Journal transactor interface
-  trait Journal {
-    def insert(rec: CanonicalRecord): Future[Xor[JournalError, CanonicalEntry]]
-    def update(ref: Reference, cell: ChainCell): Future[Xor[JournalError, ChainEntry]]
-    def lookup(ref: Reference): Future[Option[Reference]]
-    def currentBlock: Future[JournalBlock]
-  }
-  
-  trait JournalClient extends Journal {
-    def connect(address: String): Unit
-    def close(): Unit
-    def listen(listener: JournalListener): Unit
-  }
-  
-  trait JournalListener {
-    def onJournalCommit(entry: JournalEntry): Unit
-    def onJournalBlock(ref: Reference): Unit
-  }
-  
-  sealed abstract class JournalError extends Serializable
-  
-  case class JournalCommitError(what: String) extends JournalError {
-    override def toString = "Journal Commit Error: " + what
-  }
-  
-  // Datastore interface
-  trait Datastore {
-    def put(obj: DataObject): Reference
   }
 }

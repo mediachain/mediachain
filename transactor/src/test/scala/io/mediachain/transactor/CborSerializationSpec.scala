@@ -4,13 +4,13 @@ import java.nio.charset.StandardCharsets
 
 import io.mediachain.BaseSpec
 import io.mediachain.multihash.MultiHash
+import io.mediachain.types.CborSerialization
 import org.specs2.matcher.Matcher
 
 object CborSerializationSpec extends BaseSpec {
-  import io.mediachain.transactor.Types._
-  import io.mediachain.transactor.CborSerialization._
+  import io.mediachain.types.DatastoreTypes._
+  import CborSerialization._
   import io.mediachain.util.cbor.CborAST._
-  import io.mediachain.transactor.Dummies.DummyReference
 
   def is =
     s2"""

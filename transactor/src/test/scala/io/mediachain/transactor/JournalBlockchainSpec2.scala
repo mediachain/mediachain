@@ -7,7 +7,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.collection.mutable.ListBuffer
 
-import Types._
+import io.mediachain.types.DatastoreTypes._
+import io.mediachain.types.TransactorTypes._
 import StateMachine.JournalBlockSize
 
 object JournalBlockchainSpec2 extends io.mediachain.BaseSpec

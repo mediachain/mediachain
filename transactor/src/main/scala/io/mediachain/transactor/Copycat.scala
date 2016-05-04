@@ -15,7 +15,10 @@ import cats.data.Xor
 
 object Copycat {
   import io.mediachain.transactor.StateMachine._
-  import io.mediachain.transactor.Types._
+  import io.mediachain.types.Datastore
+  import io.mediachain.types.DatastoreTypes._
+  import io.mediachain.types.TransactorTypes._
+
 
   object Server {
     def build(address: String, logdir: String, datastore: Datastore,
