@@ -1,6 +1,7 @@
 package io.mediachain.transactor
 
-import io.mediachain.hashing.MultiHash
+import io.mediachain.multihash.MultiHash
+import io.mediachain.transactor.CborSerialization.MediachainType
 
 object Types {
   import scala.concurrent.Future
@@ -196,15 +197,14 @@ object Types {
   
   // Datastore interface
   trait Datastore {
-    def put(obj: Array[Byte], hash: MultiHash): Unit
+    type Ref <: Reference
 
-    def put(obj: DataObject): MultiHash = {
-      val bytes = obj.toCborBytes
-      val hash  = MultiHash.hashWithSHA256(bytes)
-      put(bytes, hash)
-      hash
-    }
+    def put(obj: DataObject): Ref
+    def get(ref: Ref): Option[DataObject]
+  }
 
-    def get(ref: MultiHash): Option[DataObject]
+  trait MultiHashDatastore extends Datastore {
+    type Ref = MultihashReference
   }
 }
+

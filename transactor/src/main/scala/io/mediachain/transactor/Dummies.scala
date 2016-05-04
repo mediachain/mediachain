@@ -1,7 +1,5 @@
 package io.mediachain.transactor
 
-import io.mediachain.hashing.MultiHash
-
 import scala.collection.mutable.{HashMap => MHashMap, Map => MMap}
 
 object Dummies {
@@ -25,18 +23,19 @@ object Dummies {
   }
 
   class DummyStore extends Datastore {
-    var seqno = 0
-    val store: MMap[MultiHash, DataObject] = new MHashMap
+    type Ref = DummyReference
 
-    override def put(obj: Array[Byte], multihash: MultiHash): Unit = {}
-    override def put(obj: DataObject): MultiHash = {
-      val ref = MultiHash.hashWithSHA256(seqno.toString.getBytes)
+    var seqno = 0
+    val store: MMap[Ref, DataObject] = new MHashMap
+
+    override def put(obj: DataObject): Ref = {
+      val ref = new DummyReference(seqno)
       seqno += 1
       store += (ref -> obj)
       ref
     }
 
-    def get(ref: MultiHash): Option[DataObject] = store.get(ref)
+    def get(ref: Ref): Option[DataObject] = store.get(ref)
   }
 
 }
