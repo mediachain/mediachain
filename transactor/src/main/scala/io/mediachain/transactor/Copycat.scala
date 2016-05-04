@@ -103,10 +103,15 @@ object Copycat {
   }
 
   object Serializers {
+    val klasses = List(classOf[JournalInsert],
+                       classOf[JournalUpdate],
+                       classOf[JournalLookup],
+                       classOf[JournalCurrentBlock],
+                       classOf[JournalCommitEvent],
+                       classOf[JournalBlockEvent],
+                       classOf[JournalState])
     def register(serializer: Serializer) {
-      // XXX temporary to enable blancket use of Serializables
-      // TODO register all used classes with the serializer
-      serializer.disableWhitelist()
+      klasses.foreach(serializer.register(_))
     }
   }
   
