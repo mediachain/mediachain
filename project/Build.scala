@@ -28,9 +28,15 @@ object MediachainBuild extends Build {
   lazy val utils = Project("utils", file("utils"))
     .settings(settings)
 
+  // TODO: replace this with maven-published version
+  val scalaMultihashCommit = "c21efd1b3534d9a4c5f7b2bc2d971eed0e5a2744"
+  lazy val scalaMultihash = RootProject(uri(
+    s"git://github.com/mediachain/scala-multihash.git#$scalaMultihashCommit"
+  ))
+
   lazy val transactor = Project("transactor", file("transactor"))
     .settings(settings)
-    .dependsOn(utils)
+    .dependsOn(scalaMultihash, utils)
 
   lazy val peer = Project("peer", file("peer"))
     .settings(settings)

@@ -1,39 +1,19 @@
 package io.mediachain.transactor
 
 import io.mediachain.hashing.MultiHash
-import io.mediachain.transactor.TypeSerialization.CBORTypeNames
-
 
 object Types {
   import scala.concurrent.Future
   import cats.data.Xor
 
-  import io.mediachain.util.cbor.CborCodec
+  import io.mediachain.transactor.CborSerialization.CborSerializable
   import io.mediachain.util.cbor.CborAST._
+  import io.mediachain.transactor.CborSerialization.MediachainTypes
 
   // Base class of all objects storable in the Datastore
   sealed abstract class DataObject extends Serializable with CborSerializable
 
-  trait CborSerializable {
-    val CBORType: String
 
-    def toCborBytes: Array[Byte] = CborCodec.encode(toCbor)
-
-    def toCbor: CValue =
-      toCMapWithDefaults(Map.empty, Map.empty)
-
-    def toCMapWithDefaults(defaults: Map[String, CValue],
-                           optionals: Map[String, Option[CValue]])
-    : CMap = {
-      val merged = defaults ++ optionals.flatMap {
-        case (_, None) => List.empty
-        case (k, Some(v)) => List(k -> v)
-      }
-      val withType = ("type", CString(CBORType)) :: merged.toList
-
-      CMap.withStringKeys(withType)
-    }
-  }
 
   // Mediachain Datastore Records
   sealed abstract class Record extends DataObject {
@@ -43,27 +23,28 @@ object Types {
   // References to records in the underlying datastore
   abstract class Reference extends Serializable with CborSerializable
 
-  // Typed References for tracking chain heads in the StateMachine
-  sealed abstract class ChainReference extends Serializable with CborSerializable {
-    def chain: Option[Reference]
+  // Content-addressable reference using IPFS MultiHash
+  case class MultihashReference(multihash: MultiHash) extends Reference {
+    val mediachainType = None
 
-    override def toCbor =
-      toCMapWithDefaults(Map(), Map("chain" -> chain.map(_.toCbor)))
+    override def toCbor: CValue =
+      CMap.withStringKeys("@link" -> CBytes(multihash.bytes))
+  }
+
+  // Typed References for tracking chain heads in the StateMachine
+  sealed abstract class ChainReference extends Serializable {
+    def chain: Option[Reference]
   }
 
   case class EntityChainReference(chain: Option[Reference])
-    extends ChainReference {
-    val CBORType = CBORTypeNames.EntityChainReference
-  }
+    extends ChainReference
 
   object EntityChainReference {
     def empty = EntityChainReference(None)
   }
 
   case class ArtefactChainReference(chain: Option[Reference])
-    extends ChainReference {
-    val CBORType = CBORTypeNames.ArtefactChainReference
-  }
+    extends ChainReference
 
   object ArtefactChainReference {
     def empty = ArtefactChainReference(None)
@@ -77,9 +58,9 @@ object Types {
   case class Entity(
     meta: Map[String, CValue]
   ) extends CanonicalRecord {
-    val CBORType = CBORTypeNames.Entity
+    val mediachainType = Some(MediachainTypes.Entity)
     override def toCbor =
-      super.toCMapWithDefaults(meta + ("reference" -> reference.toCbor), Map())
+      super.toCMapWithDefaults(meta, Map())
 
     def reference: ChainReference = EntityChainReference.empty
   }
@@ -87,9 +68,9 @@ object Types {
   case class Artefact( 
     meta: Map[String, CValue]
   ) extends CanonicalRecord {
-    val CBORType = CBORTypeNames.Artefact
+    val mediachainType = Some(MediachainTypes.Artefact)
     override def toCbor =
-      super.toCMapWithDefaults(meta + ("reference" -> reference.toCbor), Map())
+      super.toCMapWithDefaults(meta, Map())
     
     def reference: ChainReference = ArtefactChainReference.empty
   }
@@ -104,7 +85,7 @@ object Types {
     chain: Option[Reference],
     meta: Map[String, CValue]
   ) extends ChainCell {
-    val CBORType = CBORTypeNames.EntityChainCell
+    val mediachainType = Some(MediachainTypes.EntityChainCell)
 
     override def toCbor = {
       val defaults = meta + ("entity" -> entity.toCbor)
@@ -118,7 +99,7 @@ object Types {
     chain: Option[Reference],
     meta: Map[String, CValue]
   ) extends ChainCell {
-    val CBORType = CBORTypeNames.ArtefactChainCell
+    val mediachainType = Some(MediachainTypes.ArtefactChainCell)
 
     override def toCbor = {
       val defaults = meta + ("artefact" -> artefact.toCbor)
@@ -138,7 +119,7 @@ object Types {
     index: BigInt,
     ref: Reference
   ) extends JournalEntry {
-    val CBORType = CBORTypeNames.CanonicalEntry
+    val mediachainType = Some(MediachainTypes.CanonicalEntry)
 
     override def toCbor: CValue = {
       val defaults = Map(
@@ -156,7 +137,7 @@ object Types {
     chain: Reference,
     chainPrevious: Option[Reference]
   ) extends JournalEntry {
-    val CBORType = CBORTypeNames.ChainEntry
+    val mediachainType = Some(MediachainTypes.ChainEntry)
 
     override def toCbor: CValue = {
       val defaults = Map(
@@ -177,7 +158,7 @@ object Types {
     chain: Option[Reference],
     entries: Array[JournalEntry]
   ) extends DataObject {
-    val CBORType = CBORTypeNames.JournalBlock
+    val mediachainType = Some(MediachainTypes.JournalBlock)
 
     override def toCbor = {
       val cborEntries = CArray(entries.map(_.toCbor).toList)

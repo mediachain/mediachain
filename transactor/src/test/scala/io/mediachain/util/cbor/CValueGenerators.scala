@@ -8,8 +8,8 @@ import co.nstant.in.cbor.model.{DataItem, RationalNumber, UnsignedInteger, Langu
 object CValueGenerators {
 
 
-  val genCNull = Gen.const(CNull())
-  val genCUndefined = Gen.const(CUndefined())
+  val genCNull = Gen.const(CNull)
+  val genCUndefined = Gen.const(CUndefined)
   val genCTag = for (t <- arbitrary[Long]) yield CTag(t)
   val genCInt = for (i <- arbitrary[BigInt]) yield CInt(i)
   val genCDouble = for (d <- arbitrary[Double]) yield CDouble(d)

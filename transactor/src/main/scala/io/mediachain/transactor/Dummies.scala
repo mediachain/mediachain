@@ -7,7 +7,7 @@ import scala.collection.mutable.{HashMap => MHashMap, Map => MMap}
 object Dummies {
   import io.mediachain.transactor.Types._
   import io.mediachain.util.cbor.CborAST._
-  
+
   class DummyReference(val num: Int) extends Reference {
     override def equals(that: Any) = {
       that.isInstanceOf[DummyReference] &&
@@ -16,8 +16,12 @@ object Dummies {
     override def hashCode = num
     override def toString = "dummy@" + num
 
-    val CBORType = "" // unused
-    override def toCbor = CMap.withStringKeys("@link" -> CString(this.toString))
+    // CBOR serialization is not used for dummy references,
+    // but having the base Reference type implement CborSerializable
+    // greatly simplifies the serialization logic for objects that contain
+    // references.
+    val mediachainType = None
+    override def toCbor = CMap.withStringKeys("@dummy-link" -> CInt(num))
   }
 
   class DummyStore extends Datastore {

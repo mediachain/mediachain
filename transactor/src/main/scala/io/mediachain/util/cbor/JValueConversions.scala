@@ -8,8 +8,8 @@ object JValueConversions {
 
   def jValueToCbor(jValue: JValue): CValue = {
     jValue match {
-      case JNull => CNull()
-      case JNothing => CUndefined()
+      case JNull => CNull
+      case JNothing => CUndefined
       case JInt(num) => CInt(num)
       case JLong(num) => CInt(num)
       case JDecimal(num) => CDouble(num.doubleValue)
