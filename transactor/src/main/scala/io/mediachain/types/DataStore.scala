@@ -150,7 +150,7 @@ object Datastore {
     override val meta: Map[String, CValue]
   ) extends ArtefactChainCell(artefact, chain, meta) {
     override val mediachainType: Option[MediachainType] =
-      Some(MediachainTypes.Artefact)
+      Some(MediachainTypes.ArtefactUpdateCell)
   }
 
   // Journal Entries
