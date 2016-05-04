@@ -96,6 +96,12 @@ object TypeSerialization {
       case CBORTypeNames.ArtefactChainCell =>
         artefactChainCellFromCMap(cMap)
 
+      case CBORTypeNames.EntityChainReference =>
+        entityChainReferenceFromCMap(cMap)
+
+      case CBORTypeNames.ArtefactChainReference =>
+        artefactChainReferenceFromCMap(cMap)
+
       case CBORTypeNames.CanonicalEntry =>
         canonicalEntryFromCMap(cMap)
 
@@ -133,6 +139,18 @@ object TypeSerialization {
     }
   }
 
+
+  def entityChainReferenceFromCMap(cMap: CMap)
+  : Xor[DeserializationError, EntityChainReference] =
+    Xor.right(
+      EntityChainReference(getOptionalReference(cMap, "chain"))
+    )
+
+  def artefactChainReferenceFromCMap(cMap: CMap)
+  : Xor[DeserializationError, ArtefactChainReference] =
+    Xor.right(
+      ArtefactChainReference(getOptionalReference(cMap, "chain"))
+    )
 
   def journalEntryFromCMap(cMap: CMap)
   : Xor[DeserializationError, JournalEntry] =
