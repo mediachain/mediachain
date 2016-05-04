@@ -1,11 +1,14 @@
 package io.mediachain.transactor
 
+import java.nio.charset.StandardCharsets
+
 import io.mediachain.BaseSpec
+import io.mediachain.multihash.MultiHash
 import org.specs2.matcher.Matcher
 
-object TypeSerializationSpec extends BaseSpec {
+object CborSerializationSpec extends BaseSpec {
   import io.mediachain.transactor.Types._
-  import io.mediachain.transactor.TypeSerialization._
+  import io.mediachain.transactor.CborSerialization._
   import io.mediachain.util.cbor.CborAST._
   import io.mediachain.transactor.Dummies.DummyReference
 
@@ -18,12 +21,16 @@ object TypeSerializationSpec extends BaseSpec {
           - artefact $roundTripArtefact
           - entity chain cell $roundTripEntityChainCell
           - artefact chain cell $roundTripArtefactChainCell
-          - entity chain reference $roundTripEntityChainRef
-          - artefact chain reference $roundTripArtefactChainRef
           - canonical journal entry $roundTripCanonicalEntry
           - chain journal entry $roundTripChainEntry
           - journal block $roundTripJournalBlock
       """
+
+  def multihashRef(content: String): MultihashReference = {
+    MultihashReference(
+      MultiHash.hashWithSHA256(content.getBytes(StandardCharsets.UTF_8))
+    )
+  }
 
   private object Fixtures {
 
@@ -31,90 +38,76 @@ object TypeSerializationSpec extends BaseSpec {
     val artefact = Artefact(meta = Map("bar" -> CString("baz")))
 
     val entityChainCell = EntityChainCell(
-      entity = new DummyReference(0),
+      entity = multihashRef("foo"),
       chain = None,
       meta = Map("created" -> CString("the past"))
     )
 
     val artefactChainCell = ArtefactChainCell(
-      artefact = new DummyReference(1),
+      artefact = multihashRef("bar"),
       chain = None,
        meta = Map("created" -> CString("the past"))
     )
 
-    val entityChainRef = EntityChainReference(
-      chain = Some(new DummyReference(2))
-    )
-
-    val artefactChainRef = ArtefactChainReference(
-      chain = Some(new DummyReference(3))
-    )
-
     val canonicalEntry = CanonicalEntry(
       index = 42,
-      ref = new DummyReference(0)
+      ref = multihashRef("foo")
     )
 
     val chainEntry = ChainEntry(
       index = 43,
-      ref = new DummyReference(0),
-      chain = new DummyReference(2),
+      ref = multihashRef("foo"),
+      chain = multihashRef("baz"),
       chainPrevious = None
     )
 
     val journalBlock = JournalBlock(
       index = 44,
-      chain = Some(new DummyReference(3)),
+      chain = Some(multihashRef("blammo")),
       entries = Array(canonicalEntry, chainEntry)
     )
   }
 
-  def matchTypeName(typeName: String): Matcher[CValue] =
+  def matchTypeName(typeName: MediachainType): Matcher[CValue] =
     beLike {
       case m: CMap =>
-        m.asStringKeyedMap must havePair ("type" -> CString(typeName))
+        m.asStringKeyedMap must havePair ("type" -> CString(typeName.stringValue))
     }
 
   def encodesTypeName = {
-    Fixtures.entity.toCbor must matchTypeName(CBORTypeNames.Entity)
-    Fixtures.artefact.toCbor must matchTypeName(CBORTypeNames.Artefact)
-    Fixtures.entityChainCell.toCbor must matchTypeName(CBORTypeNames.EntityChainCell)
-    Fixtures.artefactChainCell.toCbor must matchTypeName(CBORTypeNames.ArtefactChainCell)
-    Fixtures.entityChainRef.toCbor must matchTypeName(CBORTypeNames.EntityChainReference)
-    Fixtures.artefactChainRef.toCbor must matchTypeName(CBORTypeNames.ArtefactChainReference)
-    Fixtures.canonicalEntry.toCbor must matchTypeName(CBORTypeNames.CanonicalEntry)
-    Fixtures.chainEntry.toCbor must matchTypeName(CBORTypeNames.ChainEntry)
-    Fixtures.journalBlock.toCbor must matchTypeName(CBORTypeNames.JournalBlock)
+    Fixtures.entity.toCbor must matchTypeName(MediachainTypes.Entity)
+    Fixtures.artefact.toCbor must matchTypeName(MediachainTypes.Artefact)
+    Fixtures.entityChainCell.toCbor must matchTypeName(MediachainTypes.EntityChainCell)
+    Fixtures.artefactChainCell.toCbor must matchTypeName(MediachainTypes.ArtefactChainCell)
+    Fixtures.canonicalEntry.toCbor must matchTypeName(MediachainTypes.CanonicalEntry)
+    Fixtures.chainEntry.toCbor must matchTypeName(MediachainTypes.ChainEntry)
+    Fixtures.journalBlock.toCbor must matchTypeName(MediachainTypes.JournalBlock)
   }
 
   def roundTripEntity =
     fromCbor(Fixtures.entity.toCbor) must beRightXor { entity =>
-      entity.asInstanceOf[Entity].meta must havePair("foo" -> CString("bar"))
+      entity.asInstanceOf[Entity].meta must havePairs(Fixtures.entity.meta.toList:_*)
     }
 
   def roundTripArtefact =
     fromCbor(Fixtures.artefact.toCbor) must beRightXor { entity =>
-      entity.asInstanceOf[Artefact].meta must havePair("bar" -> CString("baz"))
+      entity.asInstanceOf[Artefact].meta must havePairs(Fixtures.artefact.meta.toList:_*)
     }
 
   def roundTripEntityChainCell =
     fromCbor(Fixtures.entityChainCell.toCbor) must beRightXor { cell =>
-      cell.asInstanceOf[EntityChainCell] must_== Fixtures.entityChainCell
+      val entityCell = cell.asInstanceOf[EntityChainCell]
+      entityCell.entity must_== Fixtures.entityChainCell.entity
+      entityCell.chain must_== Fixtures.entityChainCell.chain
+      entityCell.meta must havePairs(Fixtures.entityChainCell.meta.toList:_*)
     }
 
   def roundTripArtefactChainCell =
     fromCbor(Fixtures.artefactChainCell.toCbor) must beRightXor { cell =>
-      cell.asInstanceOf[ArtefactChainCell] must_== Fixtures.artefactChainCell
-    }
-
-  def roundTripEntityChainRef =
-    fromCbor(Fixtures.entityChainRef.toCbor) must beRightXor { ref =>
-      ref.asInstanceOf[EntityChainReference] must_== Fixtures.entityChainRef
-    }
-
-  def roundTripArtefactChainRef =
-    fromCbor(Fixtures.artefactChainRef.toCbor) must beRightXor { ref =>
-      ref.asInstanceOf[ArtefactChainReference] must_== Fixtures.artefactChainRef
+      val artefactCell = cell.asInstanceOf[ArtefactChainCell]
+      artefactCell.artefact must_== Fixtures.artefactChainCell.artefact
+      artefactCell.chain must_== Fixtures.artefactChainCell.chain
+      artefactCell.meta must havePairs(Fixtures.artefactChainCell.meta.toList:_*)
     }
 
   def roundTripCanonicalEntry =
