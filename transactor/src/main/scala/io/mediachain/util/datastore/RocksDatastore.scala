@@ -8,10 +8,6 @@ class RocksDatastore(path: String)
   extends MultiHashDatastore with AutoCloseable {
   val db = RocksDB.open(path)
 
-  override def put(obj: Array[Byte], hash: MultiHash): Unit = {
-    db.put(hash.bytes, obj)
-  }
-
   override def put(obj: DataObject): Ref = {
     val bytes = obj.toCborBytes
     val hash = MultiHash.hashWithSHA256(bytes)
@@ -19,13 +15,17 @@ class RocksDatastore(path: String)
     MultihashReference(hash)
   }
 
-  override def get(ref: MultiHash): Option[DataObject] = {
-    val bytes = db.get(ref.bytes)
-    ???
-  }
-
   override def close: Unit = {
     db.close()
+  }
+
+  override def get(ref: MultihashReference): Option[DataObject] = {
+    val result = db.get(ref.multihash.bytes)
+
+    Option(result).flatMap { bytes =>
+      // here we need to deserialize using yusef's chg
+      ???
+    }
   }
 }
 
