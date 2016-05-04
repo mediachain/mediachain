@@ -66,7 +66,10 @@ object DatastoreTypes {
     val chain: Option[Reference],
     val meta: Map[String, CValue]
   ) extends ChainCell {
-    val mediachainType: Option[MediachainType] = Some(MediachainTypes.EntityChainCell)
+    val mediachainType: Option[MediachainType] =
+      meta.get("type")
+        .flatMap(t => MediachainTypes.fromCValue(t).toOption)
+        .orElse(Some(MediachainTypes.EntityChainCell))
 
     override def toCbor = {
       val defaults = meta + ("entity" -> entity.toCbor)
@@ -88,7 +91,10 @@ object DatastoreTypes {
     val chain: Option[Reference],
     val meta: Map[String, CValue]
   ) extends ChainCell {
-    val mediachainType: Option[MediachainType] = Some(MediachainTypes.ArtefactChainCell)
+    val mediachainType: Option[MediachainType] =
+      meta.get("type")
+        .flatMap(t => MediachainTypes.fromCValue(t).toOption)
+        .orElse(Some(MediachainTypes.ArtefactChainCell))
 
     override def toCbor = {
       val defaults = meta + ("artefact" -> artefact.toCbor)

@@ -124,6 +124,13 @@ object CborSerialization {
         case _ => Xor.left(UnexpectedObjectType(string))
       }
 
+    def fromCValue(cValue: CValue): Xor[DeserializationError, MediachainType] =
+      cValue match {
+        case CString(string) => fromString(string)
+        case x => Xor.left(
+          UnexpectedCborType(s"Expected CBOR string, but found ${x.getClass.getTypeName}"))
+      }
+
     case object Entity extends MediachainType {
       val stringValue = "entity"
     }
