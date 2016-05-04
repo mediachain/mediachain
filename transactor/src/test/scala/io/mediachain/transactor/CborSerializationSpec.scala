@@ -34,6 +34,8 @@ object CborSerializationSpec extends BaseSpec {
           - canonical journal entry $roundTripCanonicalEntry
           - chain journal entry $roundTripChainEntry
           - journal block $roundTripJournalBlock
+
+       - decodes to base chain cell types when using transactorDeserializers $transactorDeserializersDecodesToBaseTypes
       """
 
   def multihashRef(content: String): MultihashReference = {
@@ -259,4 +261,35 @@ object CborSerializationSpec extends BaseSpec {
         }
       }
     }
+
+  def transactorDeserializersDecodesToBaseTypes = {
+    implicit val deserializers = transactorDeserializers
+    fromCbor(Fixtures.entityUpdateCell.toCbor) must beRightXor { cell =>
+      cell must haveClass[EntityChainCell]
+    }
+
+    fromCbor(Fixtures.entityLinkCell.toCbor) must beRightXor { cell =>
+      cell must haveClass[EntityChainCell]
+    }
+
+    fromCbor(Fixtures.artefactUpdateCell.toCbor) must beRightXor { cell =>
+      cell must haveClass[ArtefactChainCell]
+    }
+
+    fromCbor(Fixtures.artefactDerivationCell.toCbor) must beRightXor { cell =>
+      cell must haveClass[ArtefactChainCell]
+    }
+
+    fromCbor(Fixtures.artefactOwnershipCell.toCbor) must beRightXor { cell =>
+      cell must haveClass[ArtefactChainCell]
+    }
+
+    fromCbor(Fixtures.artefactCreationCell.toCbor) must beRightXor { cell =>
+      cell must haveClass[ArtefactChainCell]
+    }
+
+    fromCbor(Fixtures.artefactReferenceCell.toCbor) must beRightXor { cell =>
+      cell must haveClass[ArtefactChainCell]
+    }
+  }
 }
