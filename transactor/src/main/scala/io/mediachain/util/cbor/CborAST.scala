@@ -12,8 +12,8 @@ object CborAST {
 
 
   sealed trait CValue
-  case class CNull() extends CValue
-  case class CUndefined() extends CValue
+  case object CNull extends CValue
+  case object CUndefined extends CValue
   case class CTag(tag: Long) extends CValue
   case class CInt(num: BigInt) extends CValue
   case class CDouble(num: Double) extends CValue
@@ -62,8 +62,8 @@ object CborAST {
   }
 
   def toDataItem(cValue: CValue): Cbor.DataItem = cValue match {
-    case _: CNull => Cbor.SimpleValue.NULL
-    case _: CUndefined => Cbor.SimpleValue.UNDEFINED
+    case CNull => Cbor.SimpleValue.NULL
+    case CUndefined => Cbor.SimpleValue.UNDEFINED
     case CTag(tag) => new Cbor.Tag(tag)
     case CInt(num) => converter.convert(num)
     case CDouble(num) => converter.convert(num)
@@ -100,9 +100,9 @@ object CborAST {
     case s: Cbor.SimpleValue if s.getSimpleValueType == SimpleValueType.FALSE =>
       CBool(false)
     case s: Cbor.SimpleValue if s.getSimpleValueType == SimpleValueType.NULL =>
-      CNull()
+      CNull
     case s: Cbor.SimpleValue if s.getSimpleValueType == SimpleValueType.UNDEFINED =>
-      CUndefined()
+      CUndefined
 
     case i: Cbor.UnsignedInteger => CInt(i.getValue)
     case i: Cbor.NegativeInteger => CInt(i.getValue)
