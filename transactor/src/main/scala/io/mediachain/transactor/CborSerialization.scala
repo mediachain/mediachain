@@ -18,7 +18,7 @@ object CborSerialization {
 
   /**
     * Try to deserialize a `DataObject` from a cbor `CValue`
- *
+    *
     * @param cValue the `CValue` to decode
     * @return a `DataObject`, or `DeserializationError` on failure
     */
@@ -36,6 +36,7 @@ object CborSerialization {
 
   /**
     * Try to deserialize a `JournalEntry` from a cbor `CValue`
+    *
     * @param cValue the `CValue` to decode
     * @return a `JournalEntry`, or DeserializationError on failure
     */
@@ -53,6 +54,7 @@ object CborSerialization {
 
   /**
     * Try to deserialize some `CborSerializable` object from a byte array.
+    *
     * @param bytes an array of (presumably) cbor-encoded data
     * @return a `CborSerializable` object, or a `DeserializationError` on failure
     */
@@ -67,6 +69,7 @@ object CborSerialization {
 
   /**
     * Try to deserialize a `CborSerializable` object from a cbor `CValue`
+    *
     * @param cValue the `CValue` to decode
     * @return a `CborSerializable` object, or a `DeserializationError` on failure
     */
@@ -82,6 +85,7 @@ object CborSerialization {
 
   /**
     * Try to deserialize some `CborSerializable` object from a cbor `CMap`.
+    *
     * @param cMap a cbor map representing the object to decode
     * @return a `CborSerializable` object, or a `DeserializationError` on failure
     */
@@ -194,6 +198,7 @@ object CborSerialization {
   /**
     * Trait for an object that can deserialize a value of type `T` from
     * a cbor `CValue`.
+    *
     * @tparam T the type of object to decode. Must be `CborSerializable`.
     */
   trait CborDeserializer[+T <: CborSerializable] {
@@ -362,7 +367,7 @@ object CborSerialization {
 
   /**
     * Assert that the cbor map contains a `type` field with the given value.
- *
+    *
     * @param cMap a cbor `CMap` to check the type of
     * @param typeName the required value of the `type` field
     * @return `Unit` on success, or `DeserializationError` if there is no
@@ -402,7 +407,7 @@ object CborSerialization {
 
   /**
     * Get the value of the `type` field from the given cbor map
- *
+    *
     * @param cMap a cbor `CMap` to get the type name from
     * @return the value of the `type` field, or a `DeserializationError` error if
     *         no `type` field exists, or its value is not a valid type name
@@ -415,7 +420,7 @@ object CborSerialization {
 
   /**
     * Get the value of a required field in a cbor map.
- *
+    * 
     * @param cMap a cbor `CMap` to pull the field from
     * @param fieldName the name of the field
     * @tparam T the type of `CValue` to return
@@ -431,7 +436,7 @@ object CborSerialization {
 
   /**
     * Get a required field whose value is an encoded `Reference` type.
- *
+    *
     * @param cMap a cbor `CMap` to pull the reference field from
     * @param fieldName the name of the field
     * @return the deserialized `Reference`, or a `DeserializationError` if
@@ -443,8 +448,8 @@ object CborSerialization {
     .flatMap(referenceFromCMap)
 
   /**
-    * Get an optional `Reference` value from the cbor map.
- *
+    * Get an optional `Reference` value from the cbor map
+    *
     * @param cMap a cbor `CMap` to pull the reference field from.
     * @param fieldName the name of the field
     * @return Some[Reference] if the field exists and can be decoded,
