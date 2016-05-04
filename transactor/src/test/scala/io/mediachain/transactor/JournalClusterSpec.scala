@@ -8,8 +8,8 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.data.{Xor, XorT}
 import cats.std.all._
-import io.mediachain.types.DatastoreTypes._
-import io.mediachain.types.TransactorTypes._
+import io.mediachain.types.Datastore._
+import io.mediachain.types.Transactor._
 
 object JournalClusterSpec extends io.mediachain.BaseSpec
   with BeforeAll

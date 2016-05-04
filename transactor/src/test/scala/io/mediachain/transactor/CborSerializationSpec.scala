@@ -8,7 +8,7 @@ import io.mediachain.types.CborSerialization
 import org.specs2.matcher.Matcher
 
 object CborSerializationSpec extends BaseSpec {
-  import io.mediachain.types.DatastoreTypes._
+  import io.mediachain.types.Datastore._
   import CborSerialization._
   import io.mediachain.util.cbor.CborAST._
 

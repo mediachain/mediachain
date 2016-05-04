@@ -5,8 +5,8 @@ import cats.data.Xor
 import scala.concurrent.Future
 
 
-object TransactorTypes {
-  import DatastoreTypes._
+object Transactor {
+  import Datastore._
 
   // Typed References for tracking chain heads in the StateMachine
   sealed abstract class ChainReference extends Serializable {

@@ -5,8 +5,8 @@ import org.specs2.specification.{AfterAll, BeforeAll}
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import io.mediachain.types.DatastoreTypes._
-import io.mediachain.types.TransactorTypes._
+import io.mediachain.types.Datastore._
+import io.mediachain.types.Transactor._
 
 object JournalCommitSpec extends io.mediachain.BaseSpec
   with BeforeAll

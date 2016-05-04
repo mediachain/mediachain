@@ -2,7 +2,7 @@ package io.mediachain.transactor
 
 import io.atomix.copycat.server.CopycatServer
 import io.atomix.catalyst.transport.Address
-import io.mediachain.types.TransactorTypes.JournalClient
+import io.mediachain.types.Transactor.JournalClient
 
 case class DummyContext(
   server: CopycatServer, 

@@ -1,11 +1,17 @@
 package io.mediachain.types
 
 
-object DatastoreTypes {
+
+object Datastore {
   import io.mediachain.multihash.MultiHash
   import io.mediachain.types.CborSerialization._
-  import io.mediachain.types.TransactorTypes.{ArtefactChainReference, ChainReference, EntityChainReference}
+  import io.mediachain.types.Transactor.{ArtefactChainReference, ChainReference, EntityChainReference}
   import io.mediachain.util.cbor.CborAST._
+
+  // Datastore interface
+  trait Datastore {
+    def put(obj: DataObject): Reference
+  }
 
   // Base class of all objects storable in the Datastore
   sealed trait DataObject extends Serializable with CborSerializable

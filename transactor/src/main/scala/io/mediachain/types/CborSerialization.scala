@@ -6,7 +6,7 @@ import io.mediachain.multihash.MultiHash
 object CborSerialization {
 
   import cats.data.Xor
-  import io.mediachain.types.DatastoreTypes._
+  import io.mediachain.types.Datastore._
   import io.mediachain.util.cbor.CborAST._
   import io.mediachain.util.cbor.CborCodec
 
