@@ -2,7 +2,6 @@ package io.mediachain.transactor
 
 import io.mediachain.multihash.MultiHash
 
-
 object CborSerialization {
 
   import cats.data.Xor

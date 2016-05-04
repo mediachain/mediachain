@@ -2,7 +2,7 @@ package io.mediachain.util.datastore
 
 import org.rocksdb._
 import io.mediachain.transactor.Types.{DataObject, Datastore}
-import io.mediachain.hashing.MultiHash
+import io.mediachain.multihash.MultiHash
 
 class RocksDatastore(path: String) extends Datastore with AutoCloseable {
   val db = RocksDB.open(path)
