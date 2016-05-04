@@ -20,6 +20,8 @@ object CborSerializationSpec extends BaseSpec {
           - entity $roundTripEntity
           - artefact $roundTripArtefact
           - entity chain cell $roundTripEntityChainCell
+          - entity update cell $roundTripEntityUpdateCell
+          - entity link cell $roundTripEntityLinkCell
           - artefact chain cell $roundTripArtefactChainCell
           - canonical journal entry $roundTripCanonicalEntry
           - chain journal entry $roundTripChainEntry
@@ -41,6 +43,19 @@ object CborSerializationSpec extends BaseSpec {
       entity = multihashRef("foo"),
       chain = None,
       meta = Map("created" -> CString("the past"))
+    )
+
+    val entityUpdateCell = EntityUpdateCell(
+      entity = multihashRef("foo"),
+      chain = Some(multihashRef("bar")),
+      meta = Map("favoriteColor" -> CString("Blue! No, Yellow!!!"))
+    )
+
+    val entityLinkCell = EntityLinkCell(
+      entity = multihashRef("foo"),
+      chain = Some(multihashRef("baz")),
+      meta = Map("relationshipType" -> CString("Soul brothers")),
+      entityLink = multihashRef("biff")
     )
 
     val artefactChainCell = ArtefactChainCell(
@@ -78,6 +93,8 @@ object CborSerializationSpec extends BaseSpec {
     Fixtures.entity.toCbor must matchTypeName(MediachainTypes.Entity)
     Fixtures.artefact.toCbor must matchTypeName(MediachainTypes.Artefact)
     Fixtures.entityChainCell.toCbor must matchTypeName(MediachainTypes.EntityChainCell)
+    Fixtures.entityUpdateCell.toCbor must matchTypeName(MediachainTypes.EntityUpdateCell)
+    Fixtures.entityLinkCell.toCbor must matchTypeName(MediachainTypes.EntityLinkCell)
     Fixtures.artefactChainCell.toCbor must matchTypeName(MediachainTypes.ArtefactChainCell)
     Fixtures.canonicalEntry.toCbor must matchTypeName(MediachainTypes.CanonicalEntry)
     Fixtures.chainEntry.toCbor must matchTypeName(MediachainTypes.ChainEntry)
@@ -100,6 +117,23 @@ object CborSerializationSpec extends BaseSpec {
       entityCell.entity must_== Fixtures.entityChainCell.entity
       entityCell.chain must_== Fixtures.entityChainCell.chain
       entityCell.meta must havePairs(Fixtures.entityChainCell.meta.toList:_*)
+    }
+
+  def roundTripEntityUpdateCell =
+    fromCbor(Fixtures.entityUpdateCell.toCbor) must beRightXor { c =>
+      val cell = c.asInstanceOf[EntityUpdateCell]
+      cell.entity must_== Fixtures.entityUpdateCell.entity
+      cell.chain must_== Fixtures.entityUpdateCell.chain
+      cell.meta must havePairs(Fixtures.entityUpdateCell.meta.toList:_*)
+    }
+
+  def roundTripEntityLinkCell =
+    fromCbor(Fixtures.entityLinkCell.toCbor) must beRightXor { c =>
+      val cell = c.asInstanceOf[EntityLinkCell]
+      cell.entity must_== Fixtures.entityLinkCell.entity
+      cell.chain must_== Fixtures.entityLinkCell.chain
+      cell.entityLink must_== Fixtures.entityLinkCell.entityLink
+      cell.meta must havePairs(Fixtures.entityLinkCell.meta.toList:_*)
     }
 
   def roundTripArtefactChainCell =
