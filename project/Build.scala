@@ -11,7 +11,8 @@ object MediachainBuild extends Build {
     organization := "io.mediachain",
     version := "0.0.1",
     scalaVersion := "2.11.7",
-    scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings", "-feature"),
+    scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings",
+      "-feature", "-language:higherKinds"),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats" % "0.4.1",
       "org.json4s" %% "json4s-jackson" % "3.3.0",
