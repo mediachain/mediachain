@@ -18,7 +18,7 @@ object Dummies {
     // but having the base Reference type implement CborSerializable
     // greatly simplifies the serialization logic for objects that contain
     // references.
-    val CBORType = None
+    val mediachainType = None
     override def toCbor = CMap.withStringKeys("@dummy-link" -> CInt(num))
   }
 
