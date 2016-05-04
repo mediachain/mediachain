@@ -1,6 +1,9 @@
 package io.mediachain.transactor
 
+import java.nio.charset.StandardCharsets
+
 import io.mediachain.BaseSpec
+import io.mediachain.multihash.MultiHash
 import org.specs2.matcher.Matcher
 
 object CborSerializationSpec extends BaseSpec {
@@ -23,38 +26,44 @@ object CborSerializationSpec extends BaseSpec {
           - journal block $roundTripJournalBlock
       """
 
+  def multihashRef(content: String): MultihashReference = {
+    MultihashReference(
+      MultiHash.hashWithSHA256(content.getBytes(StandardCharsets.UTF_8))
+    )
+  }
+
   private object Fixtures {
 
     val entity = Entity(meta = Map("foo" -> CString("bar")))
     val artefact = Artefact(meta = Map("bar" -> CString("baz")))
 
     val entityChainCell = EntityChainCell(
-      entity = new DummyReference(0),
+      entity = multihashRef("foo"),
       chain = None,
       meta = Map("created" -> CString("the past"))
     )
 
     val artefactChainCell = ArtefactChainCell(
-      artefact = new DummyReference(1),
+      artefact = multihashRef("bar"),
       chain = None,
        meta = Map("created" -> CString("the past"))
     )
 
     val canonicalEntry = CanonicalEntry(
       index = 42,
-      ref = new DummyReference(0)
+      ref = multihashRef("foo")
     )
 
     val chainEntry = ChainEntry(
       index = 43,
-      ref = new DummyReference(0),
-      chain = new DummyReference(2),
+      ref = multihashRef("foo"),
+      chain = multihashRef("baz"),
       chainPrevious = None
     )
 
     val journalBlock = JournalBlock(
       index = 44,
-      chain = Some(new DummyReference(3)),
+      chain = Some(multihashRef("blammo")),
       entries = Array(canonicalEntry, chainEntry)
     )
   }
