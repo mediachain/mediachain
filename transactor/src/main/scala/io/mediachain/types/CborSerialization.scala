@@ -36,35 +36,88 @@ object CborSerialization {
 
   /**
     * Try to deserialize a `DataObject` from a cbor `CValue`
-    *
-    * @param cValue the `CValue` to decode
-    * @return a `DataObject`, or `DeserializationError` on failure
+    * @param cValue the `CValue` to deserialize from
+    * @return the decoded `DataObject`, or a `DeserializationError` on failure
     */
-  def dataObjectFromCbor(cValue: CValue)
+  def dataObjectFromCValue(cValue: CValue)
     (implicit deserializers: DeserializerMap = defaultDeserializers)
   : Xor[DeserializationError, DataObject] =
-    fromCbor(cValue)(deserializers) match {
-      case Xor.Left(err) => Xor.left(err)
-      case Xor.Right(dataObject: DataObject) => Xor.right(dataObject)
-      case Xor.Right(unknownObject) =>
+    for {
+      serializable <- fromCbor(cValue)
+      obj <- asDataObject(serializable)
+    } yield obj
+
+
+  /**
+    * Try to deserialize a `DataObject` from a cbor-encoded byte array
+    * @param bytes the byte array to deserialize from
+    * @return the decoded `DataObject`, or a `DeserializationError` on failure
+    */
+  def dataObjectFromCborBytes(bytes: Array[Byte])
+    (implicit deserializers: DeserializerMap = defaultDeserializers)
+  : Xor[DeserializationError, DataObject] =
+    for {
+      serializable <- fromCborBytes(bytes)
+      obj <- asDataObject(serializable)
+    } yield obj
+
+
+  /**
+    * Try to deserialize a `JournalEntry` from a cbor `CValue`
+    * @param cValue the `CValue` to deserialize from
+    * @return the decoded `JournalEntry`, or a `DeserializationError` on failure
+    */
+  def journalEntryFromCValue(cValue: CValue)
+    (implicit deserializers: DeserializerMap = defaultDeserializers)
+  : Xor[DeserializationError, JournalEntry] =
+    for {
+      serializable <- fromCbor(cValue)
+      entry <- asJournalEntry(serializable)
+    } yield entry
+
+
+  /**
+    * Try to deserialize a `JournalEntry` from a cbor-encoded byte array
+    * @param bytes the byte array to deserialize from
+    * @return the decoded `JournalEntry`, or a `DeserializationError` on failure
+    */
+  def journalEntryFromCborBytes(bytes: Array[Byte])
+    (implicit deserializers: DeserializerMap = defaultDeserializers)
+  : Xor[DeserializationError, JournalEntry] =
+    for {
+      serializable <- fromCborBytes(bytes)
+      entry <- asJournalEntry(serializable)
+    } yield entry
+
+
+  /**
+    * Try to cast a `CborSerializable` to a `DataObject`
+    *
+    * @param cborSerializable the `CborSerializable` to cast
+    * @return a `DataObject`, or `DeserializationError` on failure
+    */
+  def asDataObject(cborSerializable: CborSerializable)
+  : Xor[DeserializationError, DataObject] =
+    cborSerializable match {
+      case dataObject: DataObject => Xor.right(dataObject)
+      case unknownObject =>
         Xor.left(UnexpectedCborType(
           s"Expected DataObject, but got ${unknownObject.getClass.getTypeName}"
         ))
     }
 
+
   /**
-    * Try to deserialize a `JournalEntry` from a cbor `CValue`
+    * Try to cast the `CborSerializable` to a `JournalEntry`
     *
-    * @param cValue the `CValue` to decode
+    * @param cborSerializable the `CValue` to decode
     * @return a `JournalEntry`, or DeserializationError on failure
     */
-  def journalEntryFromCbor(cValue: CValue)
-    (implicit deserializers: DeserializerMap = defaultDeserializers)
+  def asJournalEntry(cborSerializable: CborSerializable)
   : Xor[DeserializationError, JournalEntry] =
-    fromCbor(cValue)(deserializers) match {
-      case Xor.Left(err) => Xor.left(err)
-      case Xor.Right(journalEntry: JournalEntry) => Xor.right(journalEntry)
-      case Xor.Right(unknownObject) =>
+    cborSerializable match {
+      case journalEntry: JournalEntry => Xor.right(journalEntry)
+      case unknownObject =>
         Xor.left(UnexpectedCborType(
           s"Expected JournalEntry, but got ${unknownObject.getClass.getTypeName}"
         ))
@@ -245,7 +298,7 @@ object CborSerialization {
       MediachainTypes.ArtefactReferenceCell -> ArtefactReferenceCellDeserializer
     )
 
-  val defaultDeserializers = transactorDeserializers
+  val defaultDeserializers = datastoreDeserializers
 
   /**
     * Trait for objects that can be serialized to cbor.
