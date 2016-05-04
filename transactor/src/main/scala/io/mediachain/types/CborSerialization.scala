@@ -12,6 +12,26 @@ object CborSerialization {
 
   import scala.util.Try
 
+  /**
+    * A mapping of `MediachainType` to the `CborDeserializer` to use when
+    * decoding objects of that type.
+    *
+    * Used to allow the transactors to deserialize chain cells into the most
+    * generic representation, while allowing other peers to deserialize into
+    * specific subtypes.
+    *
+    * Defaults to deserializing into specific subtypes; to override this
+    * behavior and deserialize into generic `EntityChainCell`s and
+    * `ArtefactChainCell`s, make an implicit `DeserializerMap` in the scope
+    * where you call the various `fromCbor` methods.
+    *
+    * e.g:
+    * ```
+    * implicit val deserializerMap = CborSerialization.transactorDeserializers
+    *
+    * val fooCell = fromCborBytes(fooCellBytes)
+    * ```
+    */
   type DeserializerMap = Map[MediachainType, CborDeserializer[CborSerializable]]
 
   /**
