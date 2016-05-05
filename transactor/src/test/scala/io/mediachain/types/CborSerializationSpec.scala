@@ -72,8 +72,8 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = e.toCbor
     cbor must matchTypeName(MediachainTypes.Entity)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      obj.asInstanceOf[Entity].meta must havePairs(e.meta.toList: _*)
+    fromCbor(cbor) must beRightXor { obj: Entity =>
+      obj.meta must havePairs(e.meta.toList: _*)
     }
   }
 
@@ -82,8 +82,8 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = a.toCbor
     cbor must matchTypeName(MediachainTypes.Artefact)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      obj.asInstanceOf[Artefact].meta must havePairs(a.meta.toList: _*)
+    fromCbor(cbor) must beRightXor { obj: Artefact =>
+      obj.meta must havePairs(a.meta.toList: _*)
     }
   }
 
@@ -91,8 +91,8 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = c.toCbor
     cbor must matchTypeName(MediachainTypes.EntityChainCell)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      obj.asInstanceOf[EntityChainCell] must matchEntityChainCell(c)
+    fromCbor(cbor) must beRightXor { obj: EntityChainCell =>
+      obj must matchEntityChainCell(c)
     }
   }.setArbitrary(Arbitrary(genEntityChainCell))
 
@@ -100,8 +100,8 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = c.toCbor
     cbor must matchTypeName(MediachainTypes.EntityUpdateCell)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      obj.asInstanceOf[EntityUpdateCell] must matchEntityChainCell(c)
+    fromCbor(cbor) must beRightXor { obj: EntityUpdateCell =>
+      obj must matchEntityChainCell(c)
     }
   }
 
@@ -109,10 +109,9 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = c.toCbor
     cbor must matchTypeName(MediachainTypes.EntityLinkCell)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      val cell = obj.asInstanceOf[EntityLinkCell]
-      cell must matchEntityChainCell(c)
-      cell.entityLink must_== c.entityLink
+    fromCbor(cbor) must beRightXor { obj: EntityLinkCell =>
+      obj must matchEntityChainCell(c)
+      obj.entityLink must_== c.entityLink
     }
   }
 
@@ -120,9 +119,8 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = c.toCbor
     cbor must matchTypeName(MediachainTypes.ArtefactChainCell)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      val artefactCell = obj.asInstanceOf[ArtefactChainCell]
-      artefactCell must matchArtefactChainCell(c)
+    fromCbor(cbor) must beRightXor { obj: ArtefactChainCell =>
+      obj must matchArtefactChainCell(c)
     }
   }.setArbitrary(abArtefactChainCell)
 
@@ -130,9 +128,8 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = c.toCbor
     cbor must matchTypeName(MediachainTypes.ArtefactUpdateCell)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      val artefactCell = obj.asInstanceOf[ArtefactUpdateCell]
-      artefactCell must matchArtefactChainCell(c)
+    fromCbor(cbor) must beRightXor { obj: ArtefactUpdateCell =>
+      obj must matchArtefactChainCell(c)
     }
   }
 
@@ -140,10 +137,9 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = c.toCbor
     cbor must matchTypeName(MediachainTypes.ArtefactCreationCell)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      val artefactCell = obj.asInstanceOf[ArtefactCreationCell]
-      artefactCell must matchArtefactChainCell(c)
-      artefactCell.entity must_== c.entity
+    fromCbor(cbor) must beRightXor { obj: ArtefactCreationCell =>
+      obj must matchArtefactChainCell(c)
+      obj.entity must_== c.entity
     }
   }
 
@@ -151,10 +147,9 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = c.toCbor
     cbor must matchTypeName(MediachainTypes.ArtefactDerivationCell)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      val artefactCell = obj.asInstanceOf[ArtefactDerivationCell]
-      artefactCell must matchArtefactChainCell(c)
-      artefactCell.artefactOrigin must_== c.artefactOrigin
+    fromCbor(cbor) must beRightXor { obj: ArtefactDerivationCell =>
+      obj must matchArtefactChainCell(c)
+      obj.artefactOrigin must_== c.artefactOrigin
     }
   }
 
@@ -162,10 +157,9 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = c.toCbor
     cbor must matchTypeName(MediachainTypes.ArtefactOwnershipCell)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      val artefactCell = obj.asInstanceOf[ArtefactOwnershipCell]
-      artefactCell must matchArtefactChainCell(c)
-      artefactCell.entity must_== c.entity
+    fromCbor(cbor) must beRightXor { obj: ArtefactOwnershipCell =>
+      obj must matchArtefactChainCell(c)
+      obj.entity must_== c.entity
     }
   }
 
@@ -173,10 +167,9 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = c.toCbor
     cbor must matchTypeName(MediachainTypes.ArtefactReferenceCell)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      val artefactCell = obj.asInstanceOf[ArtefactReferenceCell]
-      artefactCell must matchArtefactChainCell(c)
-      artefactCell.entity must_== c.entity
+    fromCbor(cbor) must beRightXor { obj: ArtefactReferenceCell =>
+      obj must matchArtefactChainCell(c)
+      obj.entity must_== c.entity
     }
   }
 
@@ -184,8 +177,8 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = e.toCbor
     cbor must matchTypeName(MediachainTypes.CanonicalEntry)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      obj.asInstanceOf[CanonicalEntry] must_== e
+    fromCbor(cbor) must beRightXor { obj: CanonicalEntry =>
+      obj must_== e
     }
   }
 
@@ -193,8 +186,8 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = e.toCbor
     cbor must matchTypeName(MediachainTypes.ChainEntry)
 
-    fromCbor(cbor) must beRightXor { obj =>
-      obj.asInstanceOf[ChainEntry] must_== e
+    fromCbor(cbor) must beRightXor { obj: ChainEntry =>
+      obj must_== e
     }
   }
 
@@ -202,7 +195,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     val cbor = b.toCbor
     cbor must matchTypeName(MediachainTypes.JournalBlock)
 
-    fromCbor(cbor) must beRightXor { obj =>
+    fromCbor(cbor) must beRightXor { obj: JournalBlock =>
       val expected = b
 
       obj must beLike {
@@ -220,7 +213,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
   def transactorDeserializersDecodesToBaseTypes =
     prop { c: ArtefactChainCell =>
       implicit val deserializers = transactorDeserializers
-      fromCbor(c.toCbor) must beRightXor { obj =>
+      fromCbor(c.toCbor) must beRightXor { obj: ArtefactChainCell =>
         obj must haveClass[ArtefactChainCell]
       }
     }.setGen(Gen.oneOf(
