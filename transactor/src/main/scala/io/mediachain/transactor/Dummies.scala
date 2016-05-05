@@ -25,7 +25,7 @@ object Dummies {
 
   class DummyStore extends Datastore {
     var seqno = 0
-    val store: MMap[Ref, DataObject] = new MHashMap
+    val store: MMap[Reference, DataObject] = new MHashMap
 
     override def put(obj: DataObject): Reference = {
       val ref = new DummyReference(seqno)
