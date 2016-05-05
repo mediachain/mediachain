@@ -3,7 +3,6 @@ package io.mediachain.transactor
 import scala.collection.mutable.{HashMap => MHashMap, Map => MMap}
 
 object Dummies {
-  import io.mediachain.types.Datastore
   import io.mediachain.types.Datastore._
   import io.mediachain.util.cbor.CborAST._
 
