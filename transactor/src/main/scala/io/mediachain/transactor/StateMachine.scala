@@ -98,7 +98,7 @@ object StateMachine {
           (cref, cell) match {
             case (EntityChainReference(chain), EntityChainCell(entity, xchain, meta)) => {
               if (checkUpdate(ref, chain, entity, xchain)) {
-                val newcell = EntityChainCell(ref, chain, meta)
+                val newcell = cell.cons(chain)
                 val newchain = datastore.put(newcell)
                 index.put(ref, EntityChainReference(Some(newchain)))
                 commit(ref, newchain, chain)
@@ -106,7 +106,7 @@ object StateMachine {
             }
             case (ArtefactChainReference(chain), ArtefactChainCell(artefact, xchain, meta)) => {
               if (checkUpdate(ref, chain, artefact, xchain)) {
-                val newcell = ArtefactChainCell(ref, chain, meta)
+                val newcell = cell.cons(chain)
                 val newchain = datastore.put(newcell)
                 index.put(ref, ArtefactChainReference(Some(newchain)))
                 commit(ref, newchain, chain)
