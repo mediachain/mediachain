@@ -1,4 +1,4 @@
-package io.mediachain.types
+package io.mediachain.protocol
 
 import java.nio.charset.StandardCharsets
 
@@ -8,7 +8,7 @@ object DataObjectGenerators {
   import Arbitrary.arbitrary
 
   import io.mediachain.multihash.MultiHash
-  import io.mediachain.types.Datastore._
+  import io.mediachain.protocol.Datastore._
   import io.mediachain.util.cbor.CborAST._
   import io.mediachain.util.cbor.CValueGenerators._
 
