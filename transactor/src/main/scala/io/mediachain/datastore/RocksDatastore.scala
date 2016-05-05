@@ -1,31 +1,20 @@
 package io.mediachain.datastore
 
 import org.rocksdb._
-import io.mediachain.transactor.Types.{DataObject, MultiHashDatastore, MultihashReference}
-import io.mediachain.multihash.MultiHash
 
 class RocksDatastore(path: String)
-  extends MultiHashDatastore with AutoCloseable {
+  extends BinaryDatastore with AutoCloseable {
   val db = RocksDB.open(path)
-
-  override def put(obj: DataObject): Ref = {
-    val bytes = obj.toCborBytes
-    val hash = MultiHash.hashWithSHA256(bytes)
-    db.put(hash.bytes, bytes)
-    MultihashReference(hash)
+  
+  override def put(key: Array[Byte], data: Array[Byte]) {
+    db.put(key, data)
   }
-
-  override def close: Unit = {
+  
+  override def close() {
     db.close()
   }
-
-  override def get(ref: MultihashReference): Option[DataObject] = {
-    val result = db.get(ref.multihash.bytes)
-
-    Option(result).flatMap { bytes =>
-      // here we need to deserialize using yusef's chg
-      ???
-    }
-  }
+  
+  override def get(key: Array[Byte]): Option[Array[Byte]] = 
+    Option(db.get(key))
 }
 

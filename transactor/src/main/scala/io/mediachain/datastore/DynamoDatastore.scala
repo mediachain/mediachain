@@ -1,26 +1,22 @@
 package io.mediachain.datastore
 
-import io.mediachain.multihash.MultiHash
-import io.mediachain.transactor.Types._
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
-import java.nio.ByteBuffer
+import java.nio.{ByteBuffer,BufferUnderflowException}
+import scala.collection.mutable.{Buffer, ArrayBuffer}
 
 class DynamoDatastore(table: String, creds: BasicAWSCredentials)
-  extends MultiHashDatastore with AutoCloseable {
+  extends BinaryDatastore with AutoCloseable {
   import scala.collection.JavaConversions._
 
   val db = new AmazonDynamoDBClient(creds)
 
-  override def put(obj: DataObject): Ref = {
-    val bytes = obj.toCborBytes
-    val hash = MultiHash.hashWithSHA256(bytes)
-
+  override def put(key: Array[Byte], value: Array[Byte]) {
     val hashBytes = new AttributeValue()
-    hashBytes.setB(ByteBuffer.wrap(hash.bytes))
+    hashBytes.setB(ByteBuffer.wrap(key))
     val objBytes = new AttributeValue()
-    objBytes.setB(ByteBuffer.wrap(bytes))
+    objBytes.setB(ByteBuffer.wrap(value))
 
     val data = Map(
       "multihash" -> hashBytes,
@@ -28,24 +24,48 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
     )
 
     db.putItem(table, data)
-
-    MultihashReference(hash)
   }
 
-  override def close(): Unit = {
+  override def close() {
     db.shutdown()
   }
 
-  override def get(ref: Ref): Option[DataObject] = {
+  override def get(key: Array[Byte]): Option[Array[Byte]] = {
     val hashBytes = new AttributeValue()
-    hashBytes.setB(ByteBuffer.wrap(ref.multihash.bytes))
+    hashBytes.setB(ByteBuffer.wrap(key))
     val data = Map(
       "multihash" -> hashBytes
     )
     val result = db.getItem(table, data)
-    val bytes = result.getItem.get("data").getB
+    val rdata = result.getItem.get("data")
+    
+    if (rdata != null) {
+      Some(bufferBytes(rdata.getB))
+    } else {
+      None
+    }
+  }
+  
+  // this is ugly, perhaps we should serialize len+payload
+  private def bufferBytes(ibuf: ByteBuffer): Array[Byte] = {
+    def getByte(): Option[Byte] = {
+      try {
+        Some(ibuf.get())
+      } catch {
+        case (e: BufferUnderflowException) => None
+      }
+    }
 
-    // here we need to deserialize the obj pending yusef's chgs
-    ???
+    def getBytes(obuf: Buffer[Byte]): Array[Byte] = {
+      getByte() match {
+        case Some(byte) => {
+          obuf += byte
+          getBytes(obuf)
+        }
+        case None => obuf.toArray
+      }
+    }
+    
+    getBytes(new ArrayBuffer)
   }
 }
