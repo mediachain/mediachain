@@ -35,8 +35,16 @@ object MediachainBuild extends Build {
   ))
 
   lazy val transactor = Project("transactor", file("transactor"))
-    .settings(settings)
-    .dependsOn(scalaMultihash)
+    .settings(settings ++ Seq(
+      libraryDependencies ++= Seq(
+        "io.atomix.copycat" % "copycat-server" % "1.0.0-rc7",
+        "io.atomix.copycat" % "copycat-client" % "1.0.0-rc7",
+        "io.atomix.catalyst" % "catalyst-netty" % "1.0.7",
+        "org.slf4j" % "slf4j-api" % "1.7.21",
+        "org.slf4j" % "slf4j-simple" % "1.7.21"
+      )
+    ))
+    .dependsOn(protocol)
 
   Resolver.sonatypeRepo("public")
 
@@ -49,6 +57,14 @@ object MediachainBuild extends Build {
       orientdb_migrations_commit),
     "orientdb-migrations-root"
   )
+
+  lazy val protocol = Project("protocol", file("protocol"))
+    .settings(settings ++ Seq(
+      libraryDependencies ++= Seq(
+        "co.nstant.in" % "cbor" % "0.7"
+      )
+    ))
+    .dependsOn(scalaMultihash)
 
   // schema translator/ingester (candidate to spin out into own project)
   lazy val translation_engine = Project("translation_engine", file("translation_engine")).settings(settings ++ List(
@@ -81,9 +97,6 @@ object MediachainBuild extends Build {
     .dependsOn(l_space % "test->test")
     .dependsOn(protocol)
     .dependsOn(core)
-
-  lazy val protocol = Project("protocol", file("protocol"))
-    .settings(settings)
 
   // core types, errors, etc (L-SPACE only, FIXME -- remove!!!)
   lazy val core = Project("core", file("core")).settings(settings ++ List(
