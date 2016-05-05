@@ -4,11 +4,11 @@ import java.nio.charset.StandardCharsets
 
 import io.mediachain.BaseSpec
 import io.mediachain.multihash.MultiHash
-import io.mediachain.types.CborSerialization
+import io.mediachain.protocol.CborSerialization
 import org.specs2.matcher.Matcher
 
 object CborSerializationSpec extends BaseSpec {
-  import io.mediachain.types.Datastore._
+  import io.mediachain.protocol.Datastore._
   import CborSerialization._
   import io.mediachain.util.cbor.CborAST._
 
