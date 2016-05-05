@@ -15,7 +15,6 @@ import cats.data.Xor
 
 object Copycat {
   import io.mediachain.transactor.StateMachine._
-  import io.mediachain.types.Datastore
   import io.mediachain.types.Datastore._
   import io.mediachain.types.Transactor._
 
