@@ -1,3 +1,0 @@
-[submodule "rpc/src/main/protobuf"]
-	path = rpc/src/main/protobuf
-	url = git@github.com:mediachain/protos.git
