@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import java.nio.{ByteBuffer,BufferUnderflowException}
 import scala.collection.mutable.{Buffer, ArrayBuffer}
+import io.mediachain.multihash.MultiHash
 
 class DynamoDatastore(table: String, creds: BasicAWSCredentials)
   extends BinaryDatastore with AutoCloseable {
@@ -12,9 +13,9 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
 
   val db = new AmazonDynamoDBClient(creds)
 
-  override def put(key: Array[Byte], value: Array[Byte]) {
+  override def put(key: MultiHash, value: Array[Byte]) {
     val hashBytes = new AttributeValue()
-    hashBytes.setB(ByteBuffer.wrap(key))
+    hashBytes.setS(key.base58)
     val objBytes = new AttributeValue()
     objBytes.setB(ByteBuffer.wrap(value))
 
@@ -30,9 +31,9 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
     db.shutdown()
   }
 
-  override def get(key: Array[Byte]): Option[Array[Byte]] = {
+  override def get(key: MultiHash): Option[Array[Byte]] = {
     val hashBytes = new AttributeValue()
-    hashBytes.setB(ByteBuffer.wrap(key))
+    hashBytes.setS(key.base58)
     val data = Map(
       "multihash" -> hashBytes
     )
