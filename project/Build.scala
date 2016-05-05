@@ -1,7 +1,5 @@
 import sbt._
 import Keys._
-import sbtassembly.AssemblyKeys._
-import sbtassembly._
 import com.trueaccord.scalapb.{ScalaPbPlugin => PB}
 
 object MediachainBuild extends Build {
@@ -23,7 +21,9 @@ object MediachainBuild extends Build {
       "org.specs2" %% "specs2-matcher-extra" % specs2Version % "test",
       "org.specs2" %% "specs2-scalacheck" % specs2Version % "test",
       "org.scalacheck" %% "scalacheck" % scalaCheckVersion % "test",
-      "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0-RC1"
+      "org.scala-lang.modules" %% "scala-java8-compat" % "0.8.0-RC1",
+      "com.github.scopt" %% "scopt" % "3.4.0",
+      "com.lihaoyi" % "ammonite-repl" % "0.5.7" % "test" cross CrossVersion.full
     ),
     scalacOptions in Test ++= Seq("-Yrangepos")
   )
@@ -38,43 +38,11 @@ object MediachainBuild extends Build {
     .settings(settings)
     .dependsOn(scalaMultihash)
 
-  lazy val peer = Project("peer", file("peer"))
-    .settings(settings)
-
-  lazy val client = Project("client", file("client"))
-    .settings(settings)
-}
-
-object LSpaceBuild extends Build{
-  val lSpaceConfigPath = Option(System.getProperty("LSPACE_CONFIG_PATH"))
-    .getOrElse("/etc/lspace/")
-
-  lazy val scalaSettings = Seq(
-    scalaVersion := "2.11.7",
-    version := "0.0.1-WORKSHOP",
-    scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings", "-feature"),
-    libraryDependencies ++= Seq(
-      "org.specs2" %% "specs2-core" % "3.7" % "test",
-      "org.specs2" %% "specs2-junit" % "3.7" % "test",
-      "org.specs2" %% "specs2-matcher-extra" % "3.7" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.13.0" % "test",
-      "com.github.scopt" %% "scopt" % "3.4.0",
-      "com.lihaoyi" % "ammonite-repl" % "0.5.7" % "test" cross CrossVersion.full
-    ),
-    fork in Test := true,
-    scalacOptions in Test ++= Seq("-Yrangepos")
-  )
-
-  assemblyMergeStrategy in assembly := {
-    case x if x.endsWith("project.clj") => MergeStrategy.discard // Leiningen build files
-    case x if x.toLowerCase.startsWith("meta-inf") => MergeStrategy.discard // More bumf
-    case _ => MergeStrategy.first
-  }
-
   Resolver.sonatypeRepo("public")
 
   updateOptions := updateOptions.value.withCachedResolution(true)
 
+  // TODO: use maven version
   val orientdb_migrations_commit = "5f345cefda34f5671e6bb9e6c30312299d11f371"
   lazy val orientdb_migrations = ProjectRef(
     uri("git://github.com/mediachain/orientdb-migrations.git#" +
@@ -82,9 +50,8 @@ object LSpaceBuild extends Build{
     "orientdb-migrations-root"
   )
 
-  // Projects
   // schema translator/ingester (candidate to spin out into own project)
-  lazy val translation_engine = Project("translation_engine", file("translation_engine")).settings(scalaSettings ++ List(
+  lazy val translation_engine = Project("translation_engine", file("translation_engine")).settings(settings ++ List(
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats" % "0.4.1",
       "org.json4s" %% "json4s-jackson" % "3.3.0"
@@ -94,7 +61,7 @@ object LSpaceBuild extends Build{
     .dependsOn(l_space % "test->test")
     .dependsOn(core)
 
-  lazy val rpc = Project("rpc", file("rpc")).settings(scalaSettings ++
+  lazy val rpc = Project("rpc", file("rpc")).settings(settings ++
     PB.protobufSettings ++
     List(
 
@@ -112,10 +79,14 @@ object LSpaceBuild extends Build{
     )
   ).dependsOn(l_space)
     .dependsOn(l_space % "test->test")
+    .dependsOn(protocol)
     .dependsOn(core)
 
-  // core types, errors, etc
-  lazy val core = Project("core", file("core")).settings(scalaSettings ++ List(
+  lazy val protocol = Project("protocol", file("protocol"))
+    .settings(settings)
+
+  // core types, errors, etc (L-SPACE only, FIXME -- remove!!!)
+  lazy val core = Project("core", file("core")).settings(settings ++ List(
     libraryDependencies ++= Seq(
       "com.michaelpollmeier" % "gremlin-scala_2.11" % "3.1.1-incubating.1",
       "org.typelevel" %% "cats" % "0.4.1",
@@ -123,7 +94,6 @@ object LSpaceBuild extends Build{
     )
   ))
 
-  // main project
   lazy val predef =  """
   import com.orientechnologies.orient.core.Orient
   import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
@@ -134,7 +104,7 @@ object LSpaceBuild extends Build{
 
   lazy val graph = MigrationHelper.newInMemoryGraph()
                      """.split("\n").mkString("; ")
-  lazy val l_space = Project("l_space", file("l_space")).settings(scalaSettings ++ List(
+  lazy val l_space = Project("l_space", file("l_space")).settings(settings ++ List(
     mainClass := Some("io.mediachain.LSpace"),
 
     libraryDependencies ++= Seq(
