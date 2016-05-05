@@ -25,6 +25,14 @@ object DataObjectGenerators {
     MultiHash.hashWithSHA256(str.getBytes(StandardCharsets.UTF_8))
   )
 
+  val genEntity = for {
+    meta <- genMeta
+  } yield Entity(meta)
+
+  val genArtefact = for {
+    meta <- genMeta
+  } yield Artefact(meta)
+
   val genEntityChainCell = for {
     entity <- genReference
     chain <- genReference
@@ -85,7 +93,22 @@ object DataObjectGenerators {
   val genJournalBlock = for {
     index <- arbitrary[BigInt]
     chain <- genReference
-    entries <- Gen.containerOfN[Array, JournalEntry](4096, Gen.oneOf(genCanonicalEntry, genChainEntry))
+    entries <- Gen.containerOf[Array, JournalEntry](Gen.oneOf(genCanonicalEntry, genChainEntry))
   } yield JournalBlock(index, Some(chain), entries)
 
+
+  implicit def abEntity: Arbitrary[Entity] = Arbitrary(genEntity)
+  implicit def abArtefact: Arbitrary[Artefact] = Arbitrary(genArtefact)
+  implicit def abEntityChainCell: Arbitrary[EntityChainCell] = Arbitrary(genEntityChainCell)
+  implicit def abArtefactChainCell: Arbitrary[ArtefactChainCell] = Arbitrary(genArtefactChainCell)
+  implicit def abEntityUpdateCell: Arbitrary[EntityUpdateCell] = Arbitrary(genEntityUpdateCell)
+  implicit def abEntityLinkCell: Arbitrary[EntityLinkCell] = Arbitrary(genEntityLinkCell)
+  implicit def abArtefactUpdateCell: Arbitrary[ArtefactUpdateCell] = Arbitrary(genArtefactUpdateCell)
+  implicit def abArtefactCreationCell: Arbitrary[ArtefactCreationCell] = Arbitrary(genArtefactCreationCell)
+  implicit def abArtefactDerivationCell: Arbitrary[ArtefactDerivationCell] = Arbitrary(genArtefactDerivationCell)
+  implicit def abArtefactOwnershipCell: Arbitrary[ArtefactOwnershipCell] = Arbitrary(genArtefactOwnershipCell)
+  implicit def abArtefactReferenceCell: Arbitrary[ArtefactReferenceCell] = Arbitrary(genArtefactReferenceCell)
+  implicit def abCanonicalEntry: Arbitrary[CanonicalEntry] = Arbitrary(genCanonicalEntry)
+  implicit def abChainEntry: Arbitrary[ChainEntry] = Arbitrary(genChainEntry)
+  implicit def abJournalBlock: Arbitrary[JournalBlock] = Arbitrary(genJournalBlock)
 }
