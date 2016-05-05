@@ -131,9 +131,9 @@ object CborSerialization {
       )
       typedDeserializer <- Xor.fromTry(
         Try(deserializer.asInstanceOf[CborDeserializer[T]])
-      ).leftMap(_ => IncompatibleDeserializerType(
+      ).leftMap(ex => IncompatibleDeserializerType(
         s"Deserializer of type ${deserializer.getClass.getTypeName} cannot " +
-        "produce a value of required type."
+        s"produce a value of required type: $ex"
       ))
       value <- typedDeserializer.fromCMap(cMap)
     } yield value
