@@ -6,3 +6,27 @@ project/boot/
 .history
 .cache
 .idea
+
+*.class
+*.log
+
+# sbt specific
+.cache
+.history
+.lib/
+dist/*
+project/plugins/project/
+
+# Scala-IDE specific
+.scala_dependencies
+.worksheet
+.idea/
+
+
+# mediachain specific
+private
+.env
+
+# ignore test datasets for translation engine
+translation_engine/test-resources/datasets/*
+!translation_engine/test-resources/datasets/README.md
