@@ -345,19 +345,29 @@ object CborSerialization {
   /**
     * Indicates that deserialization from cbor failed
     */
-  sealed trait DeserializationError
+  sealed trait DeserializationError {
+    def message: String
+  }
 
-  case class CborDecodingFailed() extends DeserializationError
+  case class CborDecodingFailed() extends DeserializationError {
+    def message = "CBOR Decoding error"
+  }
 
   case class UnexpectedCborType(message: String) extends DeserializationError
 
   case class ReferenceDecodingFailed(message: String) extends DeserializationError
 
-  case class TypeNameNotFound() extends DeserializationError
+  case class TypeNameNotFound() extends DeserializationError {
+    def message = "Unknown Type name"
+  }
 
-  case class UnexpectedObjectType(typeName: String) extends DeserializationError
+  case class UnexpectedObjectType(typeName: String) extends DeserializationError {
+    def message = "Unexpected type " + typeName
+  }
 
-  case class RequiredFieldNotFound(fieldName: String) extends DeserializationError
+  case class RequiredFieldNotFound(fieldName: String) extends DeserializationError {
+    def message = "Missing field " + fieldName
+  }
 
 
   object EntityDeserializer extends CborDeserializer[Entity]

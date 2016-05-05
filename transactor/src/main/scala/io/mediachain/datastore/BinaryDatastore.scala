@@ -1,7 +1,9 @@
 package io.mediachain.datastore
 
+import cats.data.Xor
 import io.mediachain.multihash.MultiHash
 import io.mediachain.types.Datastore._
+import io.mediachain.types.CborSerialization
 
 abstract class BinaryDatastore extends Datastore {
   override def get(ref: Reference): Option[DataObject] = {
@@ -14,8 +16,15 @@ abstract class BinaryDatastore extends Datastore {
   def get(key: Array[Byte]): Option[Array[Byte]]
   
   def decode(opt: Option[Array[Byte]]): Option[DataObject] = {
-    // deserialize CBOR to DataObject
-    throw new RuntimeException("XXX Implement me")
+    opt.map { bytes =>
+      CborSerialization.dataObjectFromCborBytes(bytes) match {
+        case Xor.Right(obj) => obj
+        case Xor.Left(err) => {
+          // this is probably indicative of a bug, so throw
+          throw new RuntimeException("Object deserialization error: " + err.message)
+        }
+      }
+    }
   }
   
   override def put(obj: DataObject): Reference = {
