@@ -62,8 +62,23 @@ object MediachainBuild extends Build {
     .settings(settings ++ Seq(
       libraryDependencies ++= Seq(
         "co.nstant.in" % "cbor" % "0.7"
+      )) ++
+      PB.protobufSettings ++
+      Seq(
+
+        // tell protobuf compiler to use version 3 syntax
+        PB.runProtoc in PB.protobufConfig := (args =>
+          com.github.os72.protocjar.Protoc.runProtoc("-v300" +: args.toArray)),
+
+        version in PB.protobufConfig := "3.0.0-beta-2",
+
+        libraryDependencies ++= Seq(
+          "io.grpc" % "grpc-all" % "0.9.0",
+          "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" %
+            (PB.scalapbVersion in PB.protobufConfig).value
+        )
       )
-    ))
+    )
     .dependsOn(scalaMultihash)
 
   // schema translator/ingester (candidate to spin out into own project)
@@ -77,23 +92,8 @@ object MediachainBuild extends Build {
     .dependsOn(l_space % "test->test")
     .dependsOn(core)
 
-  lazy val rpc = Project("rpc", file("rpc")).settings(settings ++
-    PB.protobufSettings ++
-    List(
-
-      // tell protobuf compiler to use version 3 syntax
-      PB.runProtoc in PB.protobufConfig := (args =>
-        com.github.os72.protocjar.Protoc.runProtoc("-v300" +: args.toArray)),
-
-      version in PB.protobufConfig := "3.0.0-beta-2",
-
-      libraryDependencies ++= Seq(
-        "io.grpc" % "grpc-all" % "0.9.0",
-        "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" %
-          (PB.scalapbVersion in PB.protobufConfig).value
-      )
-    )
-  ).dependsOn(l_space)
+  lazy val rpc = Project("rpc", file("rpc")).settings(settings)
+    .dependsOn(l_space)
     .dependsOn(l_space % "test->test")
     .dependsOn(protocol)
     .dependsOn(core)
@@ -159,8 +159,6 @@ object MediachainBuild extends Build {
   // dependsOn means classes will be available
   lazy val root = (project in file("."))
     .aggregate(core, l_space,
-      translation_engine, rpc)
-    .dependsOn(core, l_space,
-      translation_engine, rpc)
+      translation_engine, rpc, transactor, protocol)
 }
 
