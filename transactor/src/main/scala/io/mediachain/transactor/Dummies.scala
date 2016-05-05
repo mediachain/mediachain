@@ -24,19 +24,17 @@ object Dummies {
   }
 
   class DummyStore extends Datastore {
-    type Ref = DummyReference
-
     var seqno = 0
     val store: MMap[Ref, DataObject] = new MHashMap
 
-    override def put(obj: DataObject): Ref = {
+    override def put(obj: DataObject): Reference = {
       val ref = new DummyReference(seqno)
       seqno += 1
       store += (ref -> obj)
       ref
     }
 
-    def get(ref: Ref): Option[DataObject] = store.get(ref)
+    override def get(ref: Reference): Option[DataObject] = store.get(ref)
   }
 
 }

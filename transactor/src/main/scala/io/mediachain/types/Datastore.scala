@@ -10,6 +10,7 @@ object Datastore {
 
   // Datastore interface
   trait Datastore {
+    def get(ref: Reference): Option[DataObject]
     def put(obj: DataObject): Reference
   }
 
