@@ -3,7 +3,8 @@ package io.mediachain.transactor
 import scala.collection.mutable.{HashMap => MHashMap, Map => MMap}
 
 object Dummies {
-  import io.mediachain.transactor.Types._
+  import io.mediachain.types.Datastore
+  import io.mediachain.types.Datastore._
   import io.mediachain.util.cbor.CborAST._
 
   class DummyReference(val num: Int) extends Reference {

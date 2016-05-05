@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-import Types._
+import io.mediachain.types.Datastore._
 
 object JournalIndexSpec extends io.mediachain.BaseSpec
   with BeforeAll
