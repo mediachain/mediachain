@@ -1,4 +1,4 @@
-package io.mediachain.util.datastore
+package io.mediachain.datastore
 
 import org.rocksdb._
 import io.mediachain.transactor.Types.{DataObject, MultiHashDatastore, MultihashReference}

@@ -1,4 +1,4 @@
-package io.mediachain.util.datastore
+package io.mediachain.datastore
 
 import io.mediachain.multihash.MultiHash
 import io.mediachain.transactor.Types._
