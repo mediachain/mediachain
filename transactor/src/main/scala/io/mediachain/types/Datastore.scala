@@ -65,6 +65,7 @@ object Datastore {
   // Chain cells
   sealed abstract class ChainCell extends Record {
     def chain: Option[Reference]
+    def cons(chain: Option[Reference]): ChainCell
   }
 
   class EntityChainCell(
@@ -72,6 +73,9 @@ object Datastore {
     val chain: Option[Reference],
     val meta: Map[String, CValue]
   ) extends ChainCell {
+    override def cons(xchain: Option[Reference]): ChainCell =
+      EntityChainCell(entity, xchain, meta)
+
     val mediachainType: Option[MediachainType] =
       meta.get("type")
         .flatMap(t => MediachainTypes.fromCValue(t).toOption)
@@ -97,6 +101,9 @@ object Datastore {
     val chain: Option[Reference],
     val meta: Map[String, CValue]
   ) extends ChainCell {
+    override def cons(xchain: Option[Reference]): ChainCell =
+      ArtefactChainCell(artefact, xchain, meta)
+    
     val mediachainType: Option[MediachainType] =
       meta.get("type")
         .flatMap(t => MediachainTypes.fromCValue(t).toOption)
@@ -124,6 +131,9 @@ object Datastore {
     override val chain: Option[Reference],
     override val meta: Map[String,CValue]
   ) extends EntityChainCell(entity, chain, meta) {
+    override def cons(xchain: Option[Reference]): ChainCell =
+      EntityUpdateCell(entity, xchain, meta)
+
     override val mediachainType: Option[MediachainType] =
       Some(MediachainTypes.EntityUpdateCell)
   }
@@ -135,6 +145,9 @@ object Datastore {
     entityLink: Reference
   ) extends EntityChainCell(entity, chain, meta)
   {
+    override def cons(xchain: Option[Reference]): ChainCell =
+      EntityLinkCell(entity, xchain, meta, entityLink)
+
     override val mediachainType: Option[MediachainType] =
       Some(MediachainTypes.EntityLinkCell)
 
@@ -153,6 +166,9 @@ object Datastore {
     override val chain: Option[Reference],
     override val meta: Map[String, CValue]
   ) extends ArtefactChainCell(artefact, chain, meta) {
+    override def cons(xchain: Option[Reference]): ChainCell =
+      ArtefactUpdateCell(artefact, xchain, meta)
+
     override val mediachainType: Option[MediachainType] =
       Some(MediachainTypes.ArtefactUpdateCell)
   }
@@ -164,6 +180,9 @@ object Datastore {
     entity: Reference
   ) extends ArtefactChainCell(artefact, chain, meta)
   {
+    override def cons(xchain: Option[Reference]): ChainCell =
+      ArtefactCreationCell(artefact, xchain, meta, entity)
+
     override val mediachainType: Option[MediachainType] =
       Some(MediachainTypes.ArtefactCreationCell)
 
@@ -182,6 +201,9 @@ object Datastore {
     artefactOrigin: Reference
   ) extends ArtefactChainCell(artefact, chain, meta)
   {
+    override def cons(xchain: Option[Reference]): ChainCell =
+      ArtefactDerivationCell(artefact, xchain, meta, artefactOrigin)
+
     override val mediachainType: Option[MediachainType] =
       Some(MediachainTypes.ArtefactDerivationCell)
 
@@ -201,6 +223,9 @@ object Datastore {
     entity: Reference
   ) extends ArtefactChainCell(artefact, chain, meta)
   {
+    override def cons(xchain: Option[Reference]): ChainCell =
+      ArtefactOwnershipCell(artefact, xchain, meta, entity)
+
     override val mediachainType: Option[MediachainType] =
       Some(MediachainTypes.ArtefactOwnershipCell)
 
@@ -219,6 +244,9 @@ object Datastore {
     entity: Reference
   ) extends ArtefactChainCell(artefact, chain, meta)
   {
+    override def cons(xchain: Option[Reference]): ChainCell =
+      ArtefactReferenceCell(artefact, xchain, meta, entity)
+
     override val mediachainType: Option[MediachainType] =
       Some(MediachainTypes.ArtefactReferenceCell)
 
