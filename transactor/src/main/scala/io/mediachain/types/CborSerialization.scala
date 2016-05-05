@@ -41,10 +41,7 @@ object CborSerialization {
   def dataObjectFromCValue(cValue: CValue)
     (implicit deserializers: DeserializerMap = defaultDeserializers)
   : Xor[DeserializationError, DataObject] =
-    for {
-      serializable <- fromCbor(cValue)
-      obj <- asDataObject(serializable)
-    } yield obj
+    fromCbor[DataObject](cValue)(deserializers)
 
 
   /**
@@ -55,10 +52,7 @@ object CborSerialization {
   def dataObjectFromCborBytes(bytes: Array[Byte])
     (implicit deserializers: DeserializerMap = defaultDeserializers)
   : Xor[DeserializationError, DataObject] =
-    for {
-      serializable <- fromCborBytes(bytes)
-      obj <- asDataObject(serializable)
-    } yield obj
+    fromCborBytes[DataObject](bytes)(deserializers)
 
 
   /**
@@ -69,10 +63,7 @@ object CborSerialization {
   def journalEntryFromCValue(cValue: CValue)
     (implicit deserializers: DeserializerMap = defaultDeserializers)
   : Xor[DeserializationError, JournalEntry] =
-    for {
-      serializable <- fromCbor(cValue)
-      entry <- asJournalEntry(serializable)
-    } yield entry
+    fromCbor[JournalEntry](cValue)(deserializers)
 
 
   /**
@@ -83,44 +74,9 @@ object CborSerialization {
   def journalEntryFromCborBytes(bytes: Array[Byte])
     (implicit deserializers: DeserializerMap = defaultDeserializers)
   : Xor[DeserializationError, JournalEntry] =
-    for {
-      serializable <- fromCborBytes(bytes)
-      entry <- asJournalEntry(serializable)
-    } yield entry
+    fromCborBytes[JournalEntry](bytes)(deserializers)
 
 
-  /**
-    * Try to cast a `CborSerializable` to a `DataObject`
-    *
-    * @param cborSerializable the `CborSerializable` to cast
-    * @return a `DataObject`, or `DeserializationError` on failure
-    */
-  def asDataObject(cborSerializable: CborSerializable)
-  : Xor[DeserializationError, DataObject] =
-    cborSerializable match {
-      case dataObject: DataObject => Xor.right(dataObject)
-      case unknownObject =>
-        Xor.left(UnexpectedCborType(
-          s"Expected DataObject, but got ${unknownObject.getClass.getTypeName}"
-        ))
-    }
-
-
-  /**
-    * Try to cast the `CborSerializable` to a `JournalEntry`
-    *
-    * @param cborSerializable the `CValue` to decode
-    * @return a `JournalEntry`, or DeserializationError on failure
-    */
-  def asJournalEntry(cborSerializable: CborSerializable)
-  : Xor[DeserializationError, JournalEntry] =
-    cborSerializable match {
-      case journalEntry: JournalEntry => Xor.right(journalEntry)
-      case unknownObject =>
-        Xor.left(UnexpectedCborType(
-          s"Expected JournalEntry, but got ${unknownObject.getClass.getTypeName}"
-        ))
-    }
 
   /**
     * Try to deserialize some `CborSerializable` object from a byte array.
@@ -128,9 +84,9 @@ object CborSerialization {
     * @param bytes an array of (presumably) cbor-encoded data
     * @return a `CborSerializable` object, or a `DeserializationError` on failure
     */
-  def fromCborBytes(bytes: Array[Byte])
+  def fromCborBytes[T <: CborSerializable](bytes: Array[Byte])
     (implicit deserializers: DeserializerMap = defaultDeserializers)
-  : Xor[DeserializationError, CborSerializable] =
+  : Xor[DeserializationError, T] =
     CborCodec.decode(bytes) match {
       case (_: CTag) :: (taggedValue: CValue) :: _ => fromCbor(taggedValue)(deserializers)
       case (cValue: CValue) :: _ => fromCbor(cValue)(deserializers)
@@ -143,9 +99,9 @@ object CborSerialization {
     * @param cValue the `CValue` to decode
     * @return a `CborSerializable` object, or a `DeserializationError` on failure
     */
-  def fromCbor(cValue: CValue)
+  def fromCbor[T <: CborSerializable](cValue: CValue)
     (implicit deserializers: DeserializerMap = defaultDeserializers)
-  : Xor[DeserializationError, CborSerializable] =
+  : Xor[DeserializationError, T] =
     cValue match {
       case (cMap: CMap) => fromCMap(cMap)(deserializers)
       case _ => Xor.left(UnexpectedCborType(
@@ -159,16 +115,22 @@ object CborSerialization {
     * @param cMap a cbor map representing the object to decode
     * @return a `CborSerializable` object, or a `DeserializationError` on failure
     */
-  def fromCMap(cMap: CMap)
+  def fromCMap[T <: CborSerializable](cMap: CMap)
     (implicit deserializers: DeserializerMap = defaultDeserializers)
-  : Xor[DeserializationError, CborSerializable] = {
+  : Xor[DeserializationError, T] = {
     for {
       typeName <- getTypeName(cMap)
       deserializer <- Xor.fromOption(
         deserializers.get(typeName),
         UnexpectedObjectType(typeName.toString)
       )
-      value <- deserializer.fromCMap(cMap)
+      typedDeserializer <- Xor.fromTry(
+        Try(deserializer.asInstanceOf[CborDeserializer[T]])
+      ).leftMap(ex => IncompatibleDeserializerType(
+        s"Deserializer of type ${deserializer.getClass.getTypeName} cannot " +
+        s"produce a value of required type: $ex"
+      ))
+      value <- typedDeserializer.fromCMap(cMap)
     } yield value
   }
 
@@ -369,6 +331,7 @@ object CborSerialization {
     def message = "Missing field " + fieldName
   }
 
+  case class IncompatibleDeserializerType(message: String) extends DeserializationError
 
   object EntityDeserializer extends CborDeserializer[Entity]
   {
