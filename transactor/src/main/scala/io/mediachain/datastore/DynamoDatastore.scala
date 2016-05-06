@@ -2,9 +2,11 @@ package io.mediachain.datastore
 
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
-import com.amazonaws.services.dynamodbv2.model.AttributeValue
+import com.amazonaws.services.dynamodbv2.model.{AttributeValue, KeysAndAttributes}
 import java.nio.{ByteBuffer,BufferUnderflowException}
-import scala.collection.mutable.{Buffer, ArrayBuffer}
+import java.util.{Map => JMap}
+import scala.collection.mutable.{Buffer, ArrayBuffer, 
+                                 Map => MMap, HashMap => MHashMap}
 import io.mediachain.multihash.MultiHash
 
 // TODO error handling
@@ -133,24 +135,47 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
   
   private def getChunks(chunkIds: List[String]) = {
     val buf = new ArrayBuffer[Byte]
-    // this should use the BatchGetItemRequest API (PITA alert)
+    val chunks = getChunksBatch(chunkIds)
     chunkIds.foreach { chunkId =>
-      val keyAttr = new AttributeValue
-      keyAttr.setS(chunkId)
-      
-      val item = Map(
-        "chunkId" -> keyAttr
-      )
-      val res = db.getItem(chunkTable, item).getItem // yes, please.
-      val data = res.get("data")
-      if (data != null) {
-        val bytes = buffer2Bytes(data.getB)
-        buf ++= bytes
-      } else {
-        throw new RuntimeException("Missing chunk: " + chunkId)
+      chunks.get(chunkId) match {
+        case Some(attr) => {
+          val bytes = buffer2Bytes(attr.getB)
+          buf ++= bytes
+        }
+        case None => throw new RuntimeException("Missing chunk: " + chunkId)
       }
     }
     buf.toArray
+  }
+
+  private def getChunksBatch(chunkIds: List[String]) = {
+    def loop(req: JMap[String, KeysAndAttributes], chunks: MMap[String, AttributeValue])
+    : MMap[String, AttributeValue]= {
+      val res = db.batchGetItem(req)
+      val xchunks = res.getResponses.get(chunkTable)
+      xchunks.foreach { jmap => chunks.put(jmap.get("chunkId").getS, jmap.get("data")) }
+      val rest = res.getUnprocessedKeys
+      if (rest.isEmpty) {
+        chunks
+      } else {
+        loop(rest, chunks)
+      }
+    }
+    
+    loop(batchKeysAndAttributes(chunkIds), new MHashMap)
+  }
+
+  private def batchKeysAndAttributes(chunkIds: List[String]) = {
+    val keysAndAttrs = new KeysAndAttributes
+    val keys = chunkIds.map { chunkId =>
+      val keyAttr = new AttributeValue
+      keyAttr.setS(chunkId)
+      val jmap: JMap[String, AttributeValue] = Map("chunkId" -> keyAttr)
+      jmap
+    }
+    keysAndAttrs.setKeys(keys)
+    val jmap: JMap[String, KeysAndAttributes] = Map(chunkTable -> keysAndAttrs)
+    jmap
   }
   
   private def buffer2Bytes(buf: ByteBuffer) = {
