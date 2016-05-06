@@ -3,9 +3,9 @@ package io.mediachain.rpc
 import gremlin.scala._
 import io.grpc.inprocess.InProcessChannelBuilder
 import io.mediachain.Types._
-import io.mediachain.protocol.client.Services._
+import io.mediachain.types.client.Services._
 import io.mediachain.rpc.client.LSpaceClient
-import io.mediachain.protocol.client.{Types => RPCTypes}
+import io.mediachain.types.client.{Types => RPCTypes}
 import io.mediachain.rpc.TypeConversions._
 import io.mediachain.{BaseSpec, GraphFixture}
 import io.mediachain.util.orient.MigrationHelper

@@ -1,6 +1,6 @@
 syntax = "proto3";
 package protocol;
-option java_package = "io.mediachain.protocol.client";
+option java_package = "io.mediachain.types.client";
 
 import "Types.proto";
 
