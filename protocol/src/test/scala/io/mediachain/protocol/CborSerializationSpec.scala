@@ -1,4 +1,4 @@
-package io.mediachain.types
+package io.mediachain.protocol
 
 import io.mediachain.BaseSpec
 import org.specs2.ScalaCheck
@@ -6,8 +6,8 @@ import org.specs2.ScalaCheck
 
 object CborSerializationSpec extends BaseSpec with ScalaCheck {
   import CborSerialization._
-  import io.mediachain.types.DataObjectGenerators._
-  import io.mediachain.types.Datastore._
+  import io.mediachain.protocol.DataObjectGenerators._
+  import io.mediachain.protocol.Datastore._
   import io.mediachain.util.cbor.CborAST._
   import org.scalacheck.{Arbitrary, Gen}
   import org.scalacheck.Test.Parameters
