@@ -1,7 +1,7 @@
 package io.mediachain.rpc
 
 import io.mediachain.Types._
-import io.mediachain.protocol.client.{Types => RPCTypes}
+import io.mediachain.types.client.{Types => RPCTypes}
 
 object TypeConversions {
 
