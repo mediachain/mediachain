@@ -5,8 +5,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.model.{AttributeValue, KeysAndAttributes}
 import java.nio.{ByteBuffer,BufferUnderflowException}
 import java.util.{Map => JMap}
-import scala.collection.mutable.{Buffer, ArrayBuffer, 
-                                 Map => MMap, HashMap => MHashMap}
+import scala.collection.mutable.{Buffer, ArrayBuffer}
 import io.mediachain.multihash.MultiHash
 
 // TODO error handling
@@ -149,20 +148,20 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
   }
 
   private def getChunksBatch(chunkIds: List[String]) = {
-    def loop(req: JMap[String, KeysAndAttributes], chunks: MMap[String, AttributeValue])
-    : MMap[String, AttributeValue]= {
+    def loop(req: JMap[String, KeysAndAttributes], chunks: Map[String, AttributeValue])
+    : Map[String, AttributeValue] = {
       val res = db.batchGetItem(req)
       val xchunks = res.getResponses.get(chunkTable)
-      xchunks.foreach { jmap => chunks.put(jmap.get("chunkId").getS, jmap.get("data")) }
+       .map { jmap => (jmap.get("chunkId").getS -> jmap.get("data")) }
       val rest = res.getUnprocessedKeys
       if (rest.isEmpty) {
-        chunks
+        chunks ++ xchunks
       } else {
-        loop(rest, chunks)
+        loop(rest, chunks ++ xchunks)
       }
     }
     
-    loop(batchKeysAndAttributes(chunkIds), new MHashMap)
+    loop(batchKeysAndAttributes(chunkIds), Map())
   }
 
   private def batchKeysAndAttributes(chunkIds: List[String]) = {
@@ -170,12 +169,10 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
     val keys = chunkIds.map { chunkId =>
       val keyAttr = new AttributeValue
       keyAttr.setS(chunkId)
-      val jmap: JMap[String, AttributeValue] = Map("chunkId" -> keyAttr)
-      jmap
+      (Map("chunkId" -> keyAttr) : JMap[String, AttributeValue] )
     }
     keysAndAttrs.setKeys(keys)
-    val jmap: JMap[String, KeysAndAttributes] = Map(chunkTable -> keysAndAttrs)
-    jmap
+    (Map(chunkTable -> keysAndAttrs) : JMap[String, KeysAndAttributes])
   }
   
   private def buffer2Bytes(buf: ByteBuffer) = {
