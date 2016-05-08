@@ -94,7 +94,7 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
     val buf = ByteBuffer.allocate(bytes.length + 4)
     buf.putInt(bytes.length)
     buf.put(bytes)
-    buf
+    ByteBuffer.wrap(buf.array)
   }
   
   private def bytes2BufferChunk(bytes: Array[Byte], chunk: Int) = {
@@ -103,7 +103,7 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
     val buf = ByteBuffer.allocate(len + 4)
     buf.putInt(len)
     buf.put(bytes, offset, len)
-    buf
+    ByteBuffer.wrap(buf.array)
   }
   
   override def close() {
@@ -119,15 +119,17 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
     )
     val res = db.getItem(table, item).getItem  // yes, really.
     
-    val data = res.get("data")
-    val chunks = res.get("chunks")
+    Option(res).map { item =>
+      val data = item.get("data")
+      val chunks = item.get("chunks")
     
-    if (data != null) {
-      Some(buffer2Bytes(data.getB))
-    } else if (chunks != null) {
-      Some(getChunks(chunks.getSS.toList))
-    } else {
-      None
+      if (data != null) {
+        buffer2Bytes(data.getB)
+      } else if (chunks != null) {
+        getChunks(chunks.getSS.toList)
+      } else {
+        throw new RuntimeException("Bad record: " + key.base58)
+      }
     }
   }
   
@@ -142,10 +144,14 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
         "chunkId" -> keyAttr
       )
       val res = db.getItem(chunkTable, item).getItem // yes, please.
-      val data = res.get("data")
-      if (data != null) {
-        val bytes = buffer2Bytes(data.getB)
-        buf ++= bytes
+      if (res != null) {
+        val data = res.get("data")
+        if (data != null) {
+          val bytes = buffer2Bytes(data.getB)
+          buf ++= bytes
+        } else {
+          throw new RuntimeException("Bad chunk record: " + chunkId)
+        }
       } else {
         throw new RuntimeException("Missing chunk: " + chunkId)
       }
