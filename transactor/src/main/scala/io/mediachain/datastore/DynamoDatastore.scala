@@ -90,20 +90,13 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
     }
   }
   
-  private def bytes2Buffer(bytes: Array[Byte]) = {
-    val buf = ByteBuffer.allocate(bytes.length + 4)
-    buf.putInt(bytes.length)
-    buf.put(bytes)
-    ByteBuffer.wrap(buf.array)
-  }
+  private def bytes2Buffer(bytes: Array[Byte]) = 
+    ByteBuffer.wrap(bytes)
   
   private def bytes2BufferChunk(bytes: Array[Byte], chunk: Int) = {
     val offset = chunk * chunkSize
     val len = Math.min(chunkSize, bytes.length - offset)
-    val buf = ByteBuffer.allocate(len + 4)
-    buf.putInt(len)
-    buf.put(bytes, offset, len)
-    ByteBuffer.wrap(buf.array)
+    ByteBuffer.wrap(bytes.slice(offset, offset + len))
   }
   
   override def close() {
@@ -159,10 +152,6 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
     buf.toArray
   }
   
-  private def buffer2Bytes(buf: ByteBuffer) = {
-    val len = buf.getInt()
-    val data = new Array[Byte](len)
-    buf.get(data)
-    data
-  }
+  private def buffer2Bytes(buf: ByteBuffer) = 
+    buf.array
 }
