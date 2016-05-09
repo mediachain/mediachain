@@ -25,6 +25,12 @@ object DataObjectGenerators {
     MultiHash.hashWithSHA256(str.getBytes(StandardCharsets.UTF_8))
   )
 
+  val genOptionalReference: Gen[Option[Reference]] =
+    Gen.oneOf(Gen.const(None), genReference.map(r => Some(r)))
+
+  val genNilReference: Gen[Option[Reference]] = Gen.const(None)
+
+
   val genEntity = for {
     meta <- genMeta
   } yield Entity(meta)
@@ -41,32 +47,32 @@ object DataObjectGenerators {
 
   def genEntityChainCell(
     entityGen: Gen[Entity] = genEntity,
-    chainGen: Gen[Reference] = genReference
+    chainGen: Gen[Option[Reference]] = genOptionalReference
   ) = for {
     entity <- genReferenceFor(entityGen)
     chain <- chainGen
     meta <- genMeta
-  } yield EntityChainCell(entity, Some(chain), meta)
+  } yield EntityChainCell(entity, chain, meta)
 
   def genArtefactChainCell(
     artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Reference] = genReference
+    chainGen: Gen[Option[Reference]] = genOptionalReference
   ) = for {
     artefact <- genReferenceFor(artefactGen)
     chain <- chainGen
     meta <- genMeta
-  } yield ArtefactChainCell(artefact, Some(chain), meta)
+  } yield ArtefactChainCell(artefact, chain, meta)
 
   def genEntityUpdateCell(
     entityGen: Gen[Entity] = genEntity,
-    chainGen: Gen[Reference] = genReference
+    chainGen: Gen[Option[Reference]] = genOptionalReference
   ) = for {
     base <- genEntityChainCell(entityGen, chainGen)
   } yield EntityUpdateCell(base.entity, base.chain, base.meta)
 
   def genEntityLinkCell(
     entityGen: Gen[Entity] = genEntity,
-    chainGen: Gen[Reference] = genReference
+    chainGen: Gen[Option[Reference]] = genOptionalReference
   ) = for {
     base <- genEntityChainCell(entityGen, chainGen)
     entityLink <- genReference
@@ -74,14 +80,14 @@ object DataObjectGenerators {
 
   def genArtefactUpdateCell(
     artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Reference] = genReference
+    chainGen: Gen[Option[Reference]] = genOptionalReference
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
   } yield ArtefactUpdateCell(base.artefact, base.chain, base.meta)
 
   def genArtefactCreationCell(
     artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Reference] = genReference
+    chainGen: Gen[Option[Reference]] = genOptionalReference
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     entity <- genReference
@@ -89,7 +95,7 @@ object DataObjectGenerators {
 
   def genArtefactDerivationCell(
     artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Reference] = genReference
+    chainGen: Gen[Option[Reference]] = genOptionalReference
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     artefactOrigin <- genReference
@@ -97,7 +103,7 @@ object DataObjectGenerators {
 
   def genArtefactOwnershipCell(
     artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Reference] = genReference
+    chainGen: Gen[Option[Reference]] = genOptionalReference
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     entity <- genReference
@@ -105,7 +111,7 @@ object DataObjectGenerators {
 
   def genArtefactReferenceCell(
     artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Reference] = genReference
+    chainGen: Gen[Option[Reference]] = genOptionalReference
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     entity <- genReference
