@@ -114,42 +114,6 @@ object JournalBlockGenerators {
 
 
 
-  def previousBlock(
-    block: JournalBlock,
-    datastore: Map[Reference, DataObject]
-  ): Option[JournalBlock] = for {
-    prevBlockRef <- block.chain
-    obj <- datastore.get(prevBlockRef)
-    asBlock <- Try(obj.asInstanceOf[JournalBlock]).toOption
-  } yield asBlock
-
-
-  def canonicalRecordsInBlock(
-    block: JournalBlock,
-    datastore: Map[Reference, DataObject])
-  : List[CanonicalRecord] = block.entries.toList.flatMap {
-      case CanonicalEntry(_, ref) => Some(ref)
-        .flatMap(datastore.get)
-        .flatMap(obj => Try(obj.asInstanceOf[CanonicalRecord]).toOption)
-      case _ => None
-    }
-
-  def canonicalRecordsInBlockchain(
-    block: Option[JournalBlock],
-    datastore: Map[Reference, DataObject]
-  ):
-  List[CanonicalRecord] = {
-    if (block.isEmpty) {
-      List()
-    } else {
-      val refs: List[CanonicalRecord] = block.toList
-        .flatMap(canonicalRecordsInBlock(_, datastore))
-
-      val prevBlock = block.flatMap(previousBlock(_, datastore))
-      refs ++ canonicalRecordsInBlockchain(prevBlock, datastore)
-    }
-  }
-
   def entityReferences(canonicals: List[CanonicalRecord]): List[Reference] =
     canonicals.collect { case e: Entity => MultihashReference.forDataObject(e) }
 
@@ -169,17 +133,14 @@ object JournalBlockGenerators {
     val numEntities = (numCanonicals * 0.25).toInt
     val numArtefacts = numCanonicals - numEntities
 
-    val existingCanonicals =
-      canonicalRecordsInBlockchain(blockchain, datastore)
 
     for {
       entities <- Gen.listOfN(numEntities, genEntity)
       artefacts <- Gen.listOfN(numArtefacts, genArtefact)
 
       canonicals = entities ++ artefacts
-      allCanonicals = existingCanonicals ++ canonicals
-      entityRefs = entityReferences(allCanonicals)
-      artefactRefs = artefactReferences(allCanonicals)
+      entityRefs = entities.map(MultihashReference.forDataObject)
+      artefactRefs = artefacts.map(MultihashReference.forDataObject)
 
       cellGen = Gen.oneOf(canonicals)
         .flatMap(genCellFor(_, entityRefs, artefactRefs))
