@@ -15,4 +15,5 @@ cache:
   directories:
     - $HOME/.ivy2
     - $HOME/.sbt
-
+notifications:
+  slack: mediachain:gzFe4w4HwIlNnxaHy1vAKW3q
