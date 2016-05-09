@@ -15,7 +15,7 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
   extends BinaryDatastore with AutoCloseable {
   import scala.collection.JavaConversions._
   
-  val chunkSize = 256 * 384 // 384 KB; DynamoDB has 400KB limit
+  val chunkSize = 1024 * 384 // 384 KB; DynamoDB has 400KB limit
   val chunkTable = table + "Chunks"
   
   val db = new AmazonDynamoDBClient(creds)
