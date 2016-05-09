@@ -1,5 +1,7 @@
 package io.mediachain.protocol
 
+import scala.util.Try
+
 object JournalBlockGenerators {
   import io.mediachain.protocol.Datastore._
   import org.scalacheck._
@@ -32,6 +34,7 @@ object JournalBlockGenerators {
 
   /**
     * Make a generator that returns an `EntityChainCell` for the given `Entity`
+    *
     * @param entity the `Entity` to generate a cell for
     * @param entityReferences a list of references to Entities to choose from
     *                         when constructing relationships.  If empty,
@@ -54,6 +57,7 @@ object JournalBlockGenerators {
 
   /**
     * Make a generator that returns an `ArtefactChainCell` for the given `Artefact`
+    *
     * @param artefact the `Artefact` to generate a cell for
     * @param entityReferences a list of references to Entities to choose from
     *                         when constructing relationships.  If empty,
@@ -84,16 +88,18 @@ object JournalBlockGenerators {
   }
 
 
+  def refForCell(cell: ChainCell): Reference = cell match {
+    case e: EntityChainCell => e.entity
+    case a: ArtefactChainCell => a.artefact
+  }
+
   def consChainCells(cells: List[ChainCell]): List[ChainCell] = {
     import collection.mutable.{Map => MMap, MutableList => MList}
     val chainHeads: MMap[Reference, ChainCell] = MMap()
     val consed: MList[ChainCell] = MList()
 
     cells.foreach { c =>
-      val canonicalRef = c match {
-        case e: EntityChainCell => e.entity
-        case a: ArtefactChainCell => a.artefact
-      }
+      val canonicalRef = refForCell(c)
 
       val head = chainHeads.get(canonicalRef)
         .map(h => MultihashReference.forDataObject(h))
@@ -107,64 +113,122 @@ object JournalBlockGenerators {
   }
 
 
-  type MockMediachain = (Map[MultihashReference, DataObject], List[JournalBlock])
 
-  /**
-    * Generates a mock `Datastore` (as a `Map[MultihashReference, DataObject]`)
-    * and a journal, (as a `List[JournalBlock]`).
-    *
-    * @param length number of `JournalBlock`s to generate
-    * @param blockSize number of `JournalEntries` per block
-    * @return a tuple containing the mock datastore and the list of journal
-    *         blocks.
-    */
+  def previousBlock(
+    block: JournalBlock,
+    datastore: Map[Reference, DataObject]
+  ): Option[JournalBlock] = for {
+    prevBlockRef <- block.chain
+    obj <- datastore.get(prevBlockRef)
+    asBlock <- Try(obj.asInstanceOf[JournalBlock]).toOption
+  } yield asBlock
 
-  def genMediachain(length: Int, blockSize: Int)
-  : Gen[MockMediachain] = {
-    // the idea here is to generate all the data objects up front, then map
-    // them each into a `JournalEntry` and bundle those up into blocks until
-    // we have enough.
 
-    val numDataObjects = length * blockSize
+  def canonicalRecordsInBlock(
+    block: JournalBlock,
+    datastore: Map[Reference, DataObject])
+  : List[CanonicalRecord] = block.entries.toList.flatMap {
+      case CanonicalEntry(_, ref) => Some(ref)
+        .flatMap(datastore.get)
+        .flatMap(obj => Try(obj.asInstanceOf[CanonicalRecord]).toOption)
+      case _ => None
+    }
 
+  def canonicalRecordsInBlockchain(
+    block: Option[JournalBlock],
+    datastore: Map[Reference, DataObject]
+  ):
+  List[CanonicalRecord] = {
+    if (block.isEmpty) {
+      List()
+    } else {
+      val refs: List[CanonicalRecord] = block.toList
+        .flatMap(canonicalRecordsInBlock(_, datastore))
+
+      val prevBlock = block.flatMap(previousBlock(_, datastore))
+      refs ++ canonicalRecordsInBlockchain(prevBlock, datastore)
+    }
+  }
+
+  def entityReferences(canonicals: List[CanonicalRecord]): List[Reference] =
+    canonicals.collect { case e: Entity => MultihashReference.forDataObject(e) }
+
+  def artefactReferences(canonicals: List[CanonicalRecord]): List[Reference] =
+    canonicals.collect { case a: Artefact => MultihashReference.forDataObject(a) }
+
+  def genJournalBlock(
+    blockSize: Int,
+    datastore: Map[Reference, DataObject],
+    blockchain: Option[JournalBlock]
+  ): Gen[(JournalBlock, Map[Reference, DataObject])] = {
     // generate ~ twice as many chain cells as canonical entries
-    val numCanonicals = (numDataObjects * 0.3).toInt
-    val numChainCells = numDataObjects - numCanonicals
+    val numCanonicals = (blockSize * 0.3).toInt
+    val numChainCells = blockSize - numCanonicals
 
     // generate ~ 3x as many artefacts as entities
     val numEntities = (numCanonicals * 0.25).toInt
     val numArtefacts = numCanonicals - numEntities
+
+    val existingCanonicals =
+      canonicalRecordsInBlockchain(blockchain, datastore)
 
     for {
       entities <- Gen.listOfN(numEntities, genEntity)
       artefacts <- Gen.listOfN(numArtefacts, genArtefact)
 
       canonicals = entities ++ artefacts
-      entityReferences = entities.map(e => MultihashReference.forDataObject(e))
-      artefactReferences = artefacts.map(a => MultihashReference.forDataObject(a))
+      allCanonicals = existingCanonicals ++ canonicals
+      entityRefs = entityReferences(allCanonicals)
+      artefactRefs = artefactReferences(allCanonicals)
 
       cellGen = Gen.oneOf(canonicals)
-        .flatMap(genCellFor(_, entityReferences, artefactReferences))
+        .flatMap(genCellFor(_, entityRefs, artefactRefs))
 
-      chainCells <- Gen.listOfN(numChainCells, cellGen)
-      consed = consChainCells(chainCells)
+      chainCells <- Gen.listOfN(numChainCells, cellGen).map(consChainCells)
     } yield {
+      val startIndex: BigInt = blockchain.map(_.index).getOrElse(0)
+      val entries = toJournalEntries(startIndex, canonicals, chainCells)
+      val blockIndex = entries.lastOption.map(_.index + 1).getOrElse(startIndex)
 
-      ???
+      val prevBlockRef = blockchain.map(MultihashReference.forDataObject)
+      val block = JournalBlock(blockIndex, prevBlockRef, entries.toArray)
+
+      val generatedObjects = canonicals ++ chainCells
+      val updatedDatastore = datastore ++ generatedObjects.map { o =>
+        MultihashReference.forDataObject(o) -> o
+      }
+
+      (block, updatedDatastore)
     }
   }
 
 
-  private def toJournalEntries(canonicals: List[CanonicalRecord], chainCells: List[ChainCell]):
-    List[JournalEntry] = {
-    import collection.mutable.{MutableList => MList}
-    val mCanonicals = MList(canonicals)
-    val mCells = MList(chainCells)
 
 
-    val entries: MList[JournalEntry] = MList()
+  private def toJournalEntries(
+    startIndex: BigInt,
+    canonicals: List[CanonicalRecord],
+    chainCells: List[ChainCell]): List[JournalEntry] = {
+    // TODO: I'd like to interleave the canonical entries with the chain cell entries
+    // but that's a bit more involved, since you need to make sure that the canonical
+    // entry comes before any chain entries for that canonical
 
+    val canonicalEntries: List[CanonicalEntry] =
+      canonicals.zipWithIndex.map { pair =>
+        val (c, i) = pair
+        val index = startIndex + i
+        CanonicalEntry(i, MultihashReference.forDataObject(c))
+    }
 
-    ???
+    val chainStartIndex = startIndex + canonicalEntries.length
+
+    val chainEntries: List[ChainEntry] =
+      chainCells.zipWithIndex.map { pair =>
+        val (c: ChainCell, i: Int) = pair
+        val index = chainStartIndex + i
+        ChainEntry(index, refForCell(c), MultihashReference.forDataObject(c), c.chain)
+      }
+
+    canonicalEntries ++ chainEntries
   }
 }
