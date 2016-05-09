@@ -11,4 +11,8 @@ env:
   - SBT_TARGET=rpc
 script:
   - sbt $SBT_TARGET/test
+cache:
+  directories:
+    - $HOME/.ivy2
+    - $HOME/.sbt
 
