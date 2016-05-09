@@ -10,5 +10,5 @@ env:
   - SBT_TARGET=protocol
   - SBT_TARGET=rpc
 script:
-  - sbt test $SBT_TARGET
+  - sbt $SBT_TARGET/test
 
