@@ -154,7 +154,7 @@ object JournalBlockGenerators {
       val prevBlockRef = blockchain.map(MultihashReference.forDataObject)
       val block = JournalBlock(blockIndex, prevBlockRef, entries.toArray)
 
-      val generatedObjects = canonicals ++ chainCells
+      val generatedObjects = block :: (canonicals ++ chainCells)
       val updatedDatastore = datastore ++ generatedObjects.map { o =>
         MultihashReference.forDataObject(o) -> o
       }
