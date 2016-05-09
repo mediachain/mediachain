@@ -14,6 +14,8 @@ object Datastore {
     def put(obj: DataObject): Reference
   }
 
+  class DatastoreException(what: String) extends RuntimeException(what)
+
   // Base class of all objects storable in the Datastore
   sealed trait DataObject extends Serializable with CborSerializable
 

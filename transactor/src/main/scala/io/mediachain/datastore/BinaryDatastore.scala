@@ -21,7 +21,7 @@ abstract class BinaryDatastore extends Datastore {
         case Xor.Right(obj) => obj
         case Xor.Left(err) => {
           // this is probably indicative of a bug, so throw
-          throw new RuntimeException("Object deserialization error: " + err.message)
+          throw new DatastoreException("Object deserialization error: " + err.message)
         }
       }
     }

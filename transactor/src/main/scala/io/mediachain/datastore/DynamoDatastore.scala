@@ -3,9 +3,10 @@ package io.mediachain.datastore
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
-import java.nio.{ByteBuffer,BufferUnderflowException}
+import java.nio.ByteBuffer
 import scala.collection.mutable.{Buffer, ArrayBuffer}
 import io.mediachain.multihash.MultiHash
+import io.mediachain.types.Datastore.DatastoreException
 
 // TODO error handling
 //      queued eventual writes in the background with disk backing of 
@@ -121,7 +122,7 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
       } else if (chunks != null) {
         getChunks(chunks.getSS.toList)
       } else {
-        throw new RuntimeException("Bad record: " + key.base58)
+        throw new DatastoreException("Bad record: " + key.base58)
       }
     }
   }
@@ -143,10 +144,10 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
           val bytes = buffer2Bytes(data.getB)
           buf ++= bytes
         } else {
-          throw new RuntimeException("Bad chunk record: " + chunkId)
+          throw new DatastoreException("Bad chunk record: " + chunkId)
         }
       } else {
-        throw new RuntimeException("Missing chunk: " + chunkId)
+        throw new DatastoreException("Missing chunk: " + chunkId)
       }
     }
     buf.toArray
