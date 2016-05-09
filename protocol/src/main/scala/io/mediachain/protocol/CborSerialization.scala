@@ -36,6 +36,7 @@ object CborSerialization {
 
   /**
     * Try to deserialize a `DataObject` from a cbor `CValue`
+ *
     * @param cValue the `CValue` to deserialize from
     * @return the decoded `DataObject`, or a `DeserializationError` on failure
     */
@@ -47,6 +48,7 @@ object CborSerialization {
 
   /**
     * Try to deserialize a `DataObject` from a cbor-encoded byte array
+ *
     * @param bytes the byte array to deserialize from
     * @return the decoded `DataObject`, or a `DeserializationError` on failure
     */
@@ -58,6 +60,7 @@ object CborSerialization {
 
   /**
     * Try to deserialize a `JournalEntry` from a cbor `CValue`
+ *
     * @param cValue the `CValue` to deserialize from
     * @return the decoded `JournalEntry`, or a `DeserializationError` on failure
     */
@@ -69,6 +72,7 @@ object CborSerialization {
 
   /**
     * Try to deserialize a `JournalEntry` from a cbor-encoded byte array
+ *
     * @param bytes the byte array to deserialize from
     * @return the decoded `JournalEntry`, or a `DeserializationError` on failure
     */
