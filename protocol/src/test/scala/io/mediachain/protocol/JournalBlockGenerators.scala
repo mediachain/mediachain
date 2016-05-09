@@ -1,7 +1,5 @@
 package io.mediachain.protocol
 
-import scala.util.Try
-
 object JournalBlockGenerators {
   import io.mediachain.protocol.Datastore._
   import org.scalacheck._
@@ -12,95 +10,37 @@ object JournalBlockGenerators {
     * Make a generator that returns a chain cell for the given `CanonicalRecord`
     *
     * @param canonical either an `Entity` or `Artefact` to generate a cell for
-    * @param entityReferences a list of references to Entities to choose from
-    *                         when constructing relationships.  If empty,
-    *                         only generic `EntityUpdateCell`s or
-    *                         `ArtefactUpdateCell`s will be generated.
     * @return depending on the type of `CanonicalRecord` given, a generator for
     *         either a subtype of `EntityChainCell` or `EntityArtefactCell`.
     *         Note that the `chain` field of the generated cell will be
     *         set to `None`
     *
     */
-  def genCellFor(canonical: CanonicalRecord,
-    entityReferences: List[Reference],
-    artefactReferences: List[Reference])
+  def genCellFor(canonical: CanonicalRecord)
   : Gen[ChainCell] =
     canonical match {
-      case e: Entity => genEntityCellFor(e, entityReferences)
-      case a: Artefact => genArtefactCellFor(a, entityReferences, artefactReferences)
+      case e: Entity => genEntityUpdateCell(e, genNilReference)
+      case a: Artefact => genArtefactUpdateCell(a, genNilReference)
     }
 
 
   /**
-    * Make a generator that returns an `EntityChainCell` for the given `Entity`
+    * Takes a list of `ChainCell`s with nil `chain` references,
+    * and joins them together so that cells which refer to the same
+    * `CanonicalRecord` are "consed" together via their `chain` references.
     *
-    * @param entity the `Entity` to generate a cell for
-    * @param entityReferences a list of references to Entities to choose from
-    *                         when constructing relationships.  If empty,
-    *                         only generic `EntityUpdateCell`s will be generated.
-    * @return a generator for a subtype of `EntityChainCell`. Note that the
-    *         `chain` field of the generated cell will be set to `None`
+    * @param cells a list of `ChainCell`s with nil `chain` references
+    * @return the input list, with the `chain` field of each cell updated
+    *         so that it points to the previous cell that refers to the same
+    *         `CanonicalRecord`.
     */
-  def genEntityCellFor(entity: Entity, entityReferences: List[Reference])
-  : Gen[EntityChainCell] = {
-    val entityGen = Gen.const(entity)
-    if (entityReferences.isEmpty) {
-      genEntityUpdateCell(entityGen, genNilReference)
-    } else {
-      Gen.oneOf(
-        genEntityUpdateCell(entityGen, genNilReference),
-        genEntityLinkCell(entityGen, genNilReference, Gen.oneOf(entityReferences))
-      )
-    }
-  }
-
-  /**
-    * Make a generator that returns an `ArtefactChainCell` for the given `Artefact`
-    *
-    * @param artefact the `Artefact` to generate a cell for
-    * @param entityReferences a list of references to Entities to choose from
-    *                         when constructing relationships.  If empty,
-    *                         only generic `ArtefactUpdateCell`s will be generated.
-    * @param artefactReferences a list of references to Artefacts to choose from
-    *                         when constructing relationships.  If empty,
-    *                         only generic `ArtefactUpdateCell`s will be generated.
-    * @return a generator for a subtype of `ArtefactChainCell`. Note that the
-    *         `chain` field of the generated cell will be set to `None`
-    */
-  def genArtefactCellFor(
-    artefact: Artefact,
-    entityReferences: List[Reference],
-    artefactReferences: List[Reference]
-  ): Gen[ArtefactChainCell] = {
-    val artefactGen = Gen.const(artefact)
-    if (entityReferences.isEmpty || artefactReferences.isEmpty) {
-      genArtefactUpdateCell(artefactGen, genNilReference)
-    } else {
-      Gen.oneOf(
-        genArtefactUpdateCell(artefactGen, genNilReference),
-        genArtefactCreationCell(artefactGen, genNilReference, Gen.oneOf(entityReferences)),
-        genArtefactDerivationCell(artefactGen, genNilReference, Gen.oneOf(artefactReferences)),
-        genArtefactOwnershipCell(artefactGen, genNilReference, Gen.oneOf(entityReferences)),
-        genArtefactReferenceCell(artefactGen, genNilReference, Gen.oneOf(entityReferences))
-      )
-    }
-  }
-
-
-  def refForCell(cell: ChainCell): Reference = cell match {
-    case e: EntityChainCell => e.entity
-    case a: ArtefactChainCell => a.artefact
-  }
-
   def consChainCells(cells: List[ChainCell]): List[ChainCell] = {
     import collection.mutable.{Map => MMap, MutableList => MList}
     val chainHeads: MMap[Reference, ChainCell] = MMap()
     val consed: MList[ChainCell] = MList()
 
     cells.foreach { c =>
-      val canonicalRef = refForCell(c)
-
+      val canonicalRef = c.ref
       val head = chainHeads.get(canonicalRef)
         .map(h => MultihashReference.forDataObject(h))
 
@@ -113,13 +53,23 @@ object JournalBlockGenerators {
   }
 
 
-
-  def entityReferences(canonicals: List[CanonicalRecord]): List[Reference] =
-    canonicals.collect { case e: Entity => MultihashReference.forDataObject(e) }
-
-  def artefactReferences(canonicals: List[CanonicalRecord]): List[Reference] =
-    canonicals.collect { case a: Artefact => MultihashReference.forDataObject(a) }
-
+  /**
+    * Makes a generator that generates a `JournalBlock` and mock `Datastore`
+    * (as a `Map[Reference, DataObject]`).
+    *
+    * The output of the returned generator can be fed back into this function
+    * to create a generator for the next block.  The resulting mock `Datastore`
+    * will contain all of the generated blocks, as well as the `DataObject`s
+    * refered to in each block.
+    *
+    * @param blockSize - number of journal entries per block
+    * @param datastore - an in-memory datastore containing any previously
+    *                  generated objects and journal blocks
+    * @param blockchain the head of a previously generated journal blockchain
+    * @return a generator of the new head of a journal blockchain, and an
+    *         in-memory datastore containing all generated objects (including
+    *         journal blocks)
+    */
   def genJournalBlock(
     blockSize: Int,
     datastore: Map[Reference, DataObject],
@@ -139,11 +89,9 @@ object JournalBlockGenerators {
       artefacts <- Gen.listOfN(numArtefacts, genArtefact)
 
       canonicals = entities ++ artefacts
-      entityRefs = entities.map(MultihashReference.forDataObject)
-      artefactRefs = artefacts.map(MultihashReference.forDataObject)
 
       cellGen = Gen.oneOf(canonicals)
-        .flatMap(genCellFor(_, entityRefs, artefactRefs))
+        .flatMap(genCellFor(_))
 
       chainCells <- Gen.listOfN(numChainCells, cellGen).map(consChainCells)
     } yield {
@@ -164,8 +112,13 @@ object JournalBlockGenerators {
   }
 
 
-
-
+  /**
+    * Map DataObjects to JournalEntries.
+    * @param startIndex index of first entry
+    * @param canonicals generated `CanonicalRecord`s
+    * @param chainCells generated `ChainCell`s
+    * @return list of `JournalEntry` objects for each record
+    */
   private def toJournalEntries(
     startIndex: BigInt,
     canonicals: List[CanonicalRecord],
@@ -187,7 +140,7 @@ object JournalBlockGenerators {
       chainCells.zipWithIndex.map { pair =>
         val (c: ChainCell, i: Int) = pair
         val index = chainStartIndex + i
-        ChainEntry(index, refForCell(c), MultihashReference.forDataObject(c), c.chain)
+        ChainEntry(index, c.ref, MultihashReference.forDataObject(c), c.chain)
       }
 
     canonicalEntries ++ chainEntries
