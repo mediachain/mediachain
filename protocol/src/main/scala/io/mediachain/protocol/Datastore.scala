@@ -1,11 +1,11 @@
-package io.mediachain.types
+package io.mediachain.protocol
 
 
 
 object Datastore {
   import io.mediachain.multihash.MultiHash
-  import io.mediachain.types.CborSerialization._
-  import io.mediachain.types.Transactor.{ArtefactChainReference, ChainReference, EntityChainReference}
+  import io.mediachain.protocol.CborSerialization._
+  import io.mediachain.protocol.Transactor.{ArtefactChainReference, ChainReference, EntityChainReference}
   import io.mediachain.util.cbor.CborAST._
 
   // Datastore interface

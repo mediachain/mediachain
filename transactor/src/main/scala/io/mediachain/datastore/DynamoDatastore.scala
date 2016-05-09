@@ -6,7 +6,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import java.nio.ByteBuffer
 import scala.collection.mutable.{Buffer, ArrayBuffer}
 import io.mediachain.multihash.MultiHash
-import io.mediachain.types.Datastore.DatastoreException
+import io.mediachain.protocol.Datastore.DatastoreException
 
 // TODO error handling
 //      queued eventual writes in the background with disk backing of 
