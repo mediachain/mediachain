@@ -17,3 +17,5 @@ cache:
     - $HOME/.sbt
 notifications:
   slack: mediachain:gzFe4w4HwIlNnxaHy1vAKW3q
+  on_success: change
+  on_failure: change
