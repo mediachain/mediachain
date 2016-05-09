@@ -1,4 +1,4 @@
-package io.mediachain.types
+package io.mediachain.protocol
 
 import cats.data.Xor
 

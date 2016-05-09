@@ -2,8 +2,8 @@ package io.mediachain.datastore
 
 import cats.data.Xor
 import io.mediachain.multihash.MultiHash
-import io.mediachain.types.Datastore._
-import io.mediachain.types.CborSerialization
+import io.mediachain.protocol.Datastore._
+import io.mediachain.protocol.CborSerialization
 
 abstract class BinaryDatastore extends Datastore {
   override def get(ref: Reference): Option[DataObject] = {
