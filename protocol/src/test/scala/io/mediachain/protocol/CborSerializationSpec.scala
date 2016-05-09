@@ -94,7 +94,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     fromCbor(cbor) must beRightXor { obj: EntityChainCell =>
       obj must matchEntityChainCell(c)
     }
-  }.setArbitrary(Arbitrary(genEntityChainCell))
+  }.setArbitrary(abEntityChainCell)
 
   def roundTripEntityUpdateCell = prop { c: EntityUpdateCell =>
     val cbor = c.toCbor
@@ -217,10 +217,10 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
         obj must haveClass[ArtefactChainCell]
       }
     }.setGen(Gen.oneOf(
-        genArtefactReferenceCell,
-        genArtefactUpdateCell,
-        genArtefactOwnershipCell,
-        genArtefactDerivationCell,
-        genArtefactCreationCell
+        genArtefactReferenceCell(),
+        genArtefactUpdateCell(),
+        genArtefactOwnershipCell(),
+        genArtefactDerivationCell(),
+        genArtefactCreationCell()
       ))
 }
