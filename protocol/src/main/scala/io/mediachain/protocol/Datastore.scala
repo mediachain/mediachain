@@ -1,5 +1,6 @@
 package io.mediachain.protocol
 
+import io.mediachain.multihash.MultiHash
 
 
 object Datastore {
@@ -36,6 +37,12 @@ object Datastore {
       CMap.withStringKeys("@link" -> CBytes(multihash.bytes))
   }
 
+  object MultihashReference {
+    def forDataObject(dataObject: DataObject): MultihashReference =
+      MultihashReference(
+        MultiHash.hashWithSHA256(dataObject.toCborBytes)
+      )
+  }
 
   // Canonical records: Entities and Artefacts
   sealed abstract class CanonicalRecord extends Record {
