@@ -21,7 +21,7 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
   
   val db = new AmazonDynamoDBClient(creds)
 
-  override def put(key: MultiHash, value: Array[Byte]) {
+  override def putData(key: MultiHash, value: Array[Byte]) {
     if (value.length < chunkSize) {
       putSimple(key, value)
     } else {
@@ -104,7 +104,7 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
     db.shutdown()
   }
 
-  override def get(key: MultiHash): Option[Array[Byte]] = {
+  override def getData(key: MultiHash): Option[Array[Byte]] = {
     val keyAttr = new AttributeValue
     keyAttr.setS(key.base58)
     

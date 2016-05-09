@@ -8,12 +8,12 @@ import io.mediachain.types.CborSerialization
 abstract class BinaryDatastore extends Datastore {
   override def get(ref: Reference): Option[DataObject] = {
     ref match {
-      case MultihashReference(multihash) => decode(get(multihash))
+      case MultihashReference(multihash) => decode(getData(multihash))
       case _ => None
     }
   }
 
-  def get(key: MultiHash): Option[Array[Byte]]
+  def getData(key: MultiHash): Option[Array[Byte]]
   
   def decode(opt: Option[Array[Byte]]): Option[DataObject] = {
     opt.map { bytes =>
@@ -30,10 +30,10 @@ abstract class BinaryDatastore extends Datastore {
   override def put(obj: DataObject): Reference = {
     val data = obj.toCborBytes
     val key = MultiHash.hashWithSHA256(data)
-    put(key, data)
+    putData(key, data)
     MultihashReference(key)
   }
   
-  def put(key: MultiHash, data: Array[Byte]): Unit
+  def putData(key: MultiHash, data: Array[Byte]): Unit
 
 }

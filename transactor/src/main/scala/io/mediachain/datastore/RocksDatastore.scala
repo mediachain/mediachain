@@ -7,7 +7,7 @@ class RocksDatastore(path: String)
   extends BinaryDatastore with AutoCloseable {
   val db = RocksDB.open(path)
   
-  override def put(key: MultiHash, data: Array[Byte]) {
+  override def putData(key: MultiHash, data: Array[Byte]) {
     db.put(key.bytes, data)
   }
   
@@ -15,7 +15,7 @@ class RocksDatastore(path: String)
     db.close()
   }
   
-  override def get(key: MultiHash): Option[Array[Byte]] = 
+  override def getData(key: MultiHash): Option[Array[Byte]] = 
     Option(db.get(key.bytes))
 }
 
