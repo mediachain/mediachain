@@ -74,6 +74,7 @@ object Datastore {
 
   // Chain cells
   sealed abstract class ChainCell extends Record {
+    def ref: Reference
     def chain: Option[Reference]
     def cons(chain: Option[Reference]): ChainCell
   }
@@ -83,6 +84,8 @@ object Datastore {
     val chain: Option[Reference],
     val meta: Map[String, CValue]
   ) extends ChainCell {
+    val ref = entity
+
     override def cons(xchain: Option[Reference]): ChainCell =
       EntityChainCell(entity, xchain, meta)
 
@@ -111,6 +114,8 @@ object Datastore {
     val chain: Option[Reference],
     val meta: Map[String, CValue]
   ) extends ChainCell {
+    val ref = artefact
+
     override def cons(xchain: Option[Reference]): ChainCell =
       ArtefactChainCell(artefact, xchain, meta)
     
