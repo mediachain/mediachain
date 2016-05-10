@@ -72,8 +72,8 @@ object JournalBlockGenerators {
     */
   def genJournalBlock(
     blockSize: Int,
-    datastore: InMemoryDatastore,
-    blockchain: Option[JournalBlock]
+    datastore: InMemoryDatastore = new InMemoryDatastore,
+    blockchain: Option[JournalBlock] = None
   ): Gen[(JournalBlock, InMemoryDatastore)] = {
     // generate ~ twice as many chain cells as canonical entries
     val numCanonicals = (blockSize * 0.3).toInt
@@ -178,4 +178,13 @@ object JournalBlockGenerators {
 
     canonicalEntries ++ chainEntries
   }
+
+
+  // Arbitrary instances for journal blocks and blockchain, for use with
+  // specs2 scalacheck integration
+  val abJournalBlock: Arbitrary[(JournalBlock, InMemoryDatastore)] =
+    Arbitrary(Gen.sized { size => genJournalBlock(size) })
+
+  val abBlockChain: Arbitrary[(List[JournalBlock], InMemoryDatastore)] =
+    Arbitrary(Gen.sized { size => genBlockChain(size, size * 4) })
 }
