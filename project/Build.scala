@@ -153,17 +153,11 @@ object MediachainBuild extends Build {
     initialCommands in (Test, console) := "ammonite.repl.Main.run(\"" + predef + "\")"
   )).dependsOn(orientdb_migrations)
     .dependsOn(core)
-
-
-  // for separating work on CircleCI containers (try to keep these balanced)
-  lazy val circle_1 = project
-    .aggregate(translation_engine, rpc)
-  lazy val circle_2 = project
-    .aggregate(core, l_space)
+  
 
   // aggregate means commands will cascade to the subprojects
   // dependsOn means classes will be available
-  lazy val root = (project in file("."))
+  lazy val mediachain = (project in file("."))
     .aggregate(core, l_space,
       translation_engine, rpc, transactor, protocol)
 }
