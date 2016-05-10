@@ -4,7 +4,6 @@ import java.util.Random
 import java.util.concurrent.LinkedBlockingDeque
 import com.amazonaws.AmazonServiceException
 import io.mediachain.multihash.MultiHash
-import io.mediachain.protocol.Datastore.DatastoreException
 
 class PersistentDatastore(config: PersistentDatastore.Config)
   extends BinaryDatastore with AutoCloseable with Runnable {
@@ -72,7 +71,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
         key
       }
     } catch {
-      case e @ (_: AmazonServiceException | _: DatastoreException) => {
+      case e: AmazonServiceException => {
         // XXX log exception
         queue.addFirst(key)
         None
