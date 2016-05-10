@@ -19,6 +19,7 @@ class DynamoDatastore(config: DynamoDatastore.Config)
   val chunkTable = table + "Chunks"
   
   val db = new AmazonDynamoDBClient(creds)
+  config.endpoint.foreach(endpoint => db.withEndpoint(endpoint))
 
   override def putData(key: MultiHash, value: Array[Byte]) {
     if (value.length < chunkSize) {
@@ -157,5 +158,9 @@ class DynamoDatastore(config: DynamoDatastore.Config)
 }
 
 object DynamoDatastore {
-  case class Config(baseTable: String, awscreds: BasicAWSCredentials)
+  case class Config(
+    baseTable: String,
+    awscreds: BasicAWSCredentials,
+    endpoint: Option[String] = None
+  )
 }
