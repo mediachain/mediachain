@@ -130,7 +130,7 @@ object JournalBlockGenerators {
       canonicals.zipWithIndex.map { pair =>
         val (c, i) = pair
         val index = startIndex + i
-        CanonicalEntry(i, MultihashReference.forDataObject(c))
+        CanonicalEntry(index, MultihashReference.forDataObject(c))
     }
 
     val chainStartIndex = startIndex + canonicalEntries.length
