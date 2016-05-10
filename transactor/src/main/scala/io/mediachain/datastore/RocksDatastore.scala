@@ -17,5 +17,9 @@ class RocksDatastore(path: String)
   
   override def getData(key: MultiHash): Option[Array[Byte]] = 
     Option(db.get(key.bytes))
+  
+  def removeData(key: MultiHash) {
+    // XXX Implement me!
+  }
 }
 
