@@ -6,6 +6,9 @@ object JournalBlockGenerators {
   import DataObjectGenerators._
 
 
+  case class JournalBlockWithDatastore(block: JournalBlock, datastore: InMemoryDatastore)
+  case class BlockChainWithDatastore(blockChain: List[JournalBlock], datastore: InMemoryDatastore)
+
   /**
     * Make a generator that returns a chain cell for the given `CanonicalRecord`
     *
@@ -72,9 +75,9 @@ object JournalBlockGenerators {
     */
   def genJournalBlock(
     blockSize: Int,
-    datastore: InMemoryDatastore = new InMemoryDatastore,
+    datastore: => InMemoryDatastore = new InMemoryDatastore,
     blockchain: Option[JournalBlock] = None
-  ): Gen[(JournalBlock, InMemoryDatastore)] = {
+  ): Gen[JournalBlockWithDatastore] = {
     // generate ~ twice as many chain cells as canonical entries
     val numCanonicals = (blockSize * 0.3).toInt
     val numChainCells = blockSize - numCanonicals
@@ -106,7 +109,7 @@ object JournalBlockGenerators {
 
       val updatedStore = datastore.copy
       generatedObjects.foreach(updatedStore.put)
-      (block, updatedStore)
+      JournalBlockWithDatastore(block, updatedStore)
     }
   }
 
@@ -125,23 +128,23 @@ object JournalBlockGenerators {
   def genBlockChain(
     length: Int,
     blockSize: Int,
-    datastore: InMemoryDatastore = new InMemoryDatastore,
+    datastore: => InMemoryDatastore = new InMemoryDatastore,
     chainHead: Option[JournalBlock] = None)
-    : Gen[(List[JournalBlock], InMemoryDatastore)] = {
+    : Gen[BlockChainWithDatastore] = {
 
       if (length <= 0) {
-        Gen.const((List[JournalBlock](), datastore))
+        val empty = BlockChainWithDatastore(List(), datastore)
+        Gen.const(empty)
       } else if (length == 1) {
         genJournalBlock(blockSize, datastore, chainHead).map { res =>
-          val (block: JournalBlock, store: InMemoryDatastore) = res
-          (List(block), store)
+          BlockChainWithDatastore(List(res.block), res.datastore)
         }
       } else {
         for {
-          (generatedBlock, updatedStore) <- genJournalBlock(blockSize, datastore, chainHead)
-          (chainBlocks, finalStore) <- genBlockChain(length - 1, blockSize, updatedStore, Some(generatedBlock))
-          result = (generatedBlock :: chainBlocks, finalStore)
-        } yield result
+          blockWithStore <- genJournalBlock(blockSize, datastore, chainHead)
+          chainWithStore <- genBlockChain(length - 1, blockSize, blockWithStore.datastore, Some(blockWithStore.block))
+          blocks = blockWithStore.block :: chainWithStore.blockChain
+        } yield BlockChainWithDatastore(blocks, chainWithStore.datastore)
       }
     }
 
@@ -182,9 +185,9 @@ object JournalBlockGenerators {
 
   // Arbitrary instances for journal blocks and blockchain, for use with
   // specs2 scalacheck integration
-  val abJournalBlock: Arbitrary[(JournalBlock, InMemoryDatastore)] =
-    Arbitrary(Gen.sized { size => genJournalBlock(size) })
+  implicit val abJournalBlock: Arbitrary[JournalBlockWithDatastore] =
+    Arbitrary(Gen.sized(size => genJournalBlock(size)))
 
-  val abBlockChain: Arbitrary[(List[JournalBlock], InMemoryDatastore)] =
-    Arbitrary(Gen.sized { size => genBlockChain(size, size * 4) })
+  implicit val abBlockChain: Arbitrary[BlockChainWithDatastore] =
+    Arbitrary(Gen.sized(size => genBlockChain(size, size*2)))
 }
