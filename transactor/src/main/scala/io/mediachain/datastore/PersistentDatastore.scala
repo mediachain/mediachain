@@ -12,11 +12,12 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   val logger = LoggerFactory.getLogger(classOf[PersistentDatastore])
   val dynamo = new DynamoDatastore(config.dynamo)
   val rocks = new RocksDatastore(config.rocks)
+  val random = new Random
+  val maxBackoffRetry = 60 // second
   val queue = new LinkedBlockingDeque[MultiHash]
   val writer = new Thread(this)
-  val random = new Random
-  val maxBackoffRetry = 60 // seconds
-
+  writer.start()
+  
   override def putData(key: MultiHash, value: Array[Byte]) {
     rocks.putData(key, value)
     queue.putLast(key)
