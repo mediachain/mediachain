@@ -15,7 +15,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   val random = new Random
   val maxBackoffRetry = 60 // second
   val queue = new LinkedBlockingDeque[MultiHash]
-  val writer = new Thread(this)
+  val writer = new Thread(this, "PersistentDataStore#write")
   writer.start()
   
   override def putData(key: MultiHash, value: Array[Byte]) {
@@ -36,8 +36,13 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   
   // background writer
   override def run() {
-    recover()
-    loop(0)
+    try {
+      recover()
+      loop(0)
+    } catch {
+      case e: InterruptedException => ()
+      case e: Throwable => logger.error("Unhandled exception", e)
+    }
   }
   
   private def recover() {
