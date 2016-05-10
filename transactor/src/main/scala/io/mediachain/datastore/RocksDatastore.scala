@@ -19,7 +19,7 @@ class RocksDatastore(path: String)
     Option(db.get(key.bytes))
   
   def removeData(key: MultiHash) {
-    // XXX Implement me!
+    db.remove(key.bytes)
   }
 }
 
