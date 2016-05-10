@@ -6,30 +6,48 @@ import io.mediachain.protocol.Transactor.JournalListener
 class JournalFollower(datastore: Datastore) extends JournalListener {
   import collection.mutable.{Set => MSet}
 
-  private val blocks: MSet[JournalBlock] = MSet()
-  def sortedBlocks = blocks.toList.sortBy(_.index)
+  private val blockSet: MSet[JournalBlock] = MSet()
+  def blocks = blockSet.toList.sortBy(_.index)
+  def currentBlock: Option[JournalBlock] = blocks.lastOption
 
-  def currentBlock: Option[JournalBlock] = sortedBlocks.lastOption
-
-  def bootstrapJournal(currentBlockRef: Reference): Unit = {
-    val blockOpt: Option[JournalBlock] = getBlock(currentBlockRef)
-
-    blockOpt.foreach { block =>
-      blocks.add(block)
-      catchupPriorBlocks(block)
+  def canonicals: Set[CanonicalRecord] =
+    blockSet.toSet.flatMap { block: JournalBlock =>
+      val refs = block.entries.collect {
+        case e: CanonicalEntry => e.ref
+      }
+      refs.flatMap(getCanonical)
     }
-  }
 
-  private def getBlock(ref: Reference): Option[JournalBlock] =
+
+  def chainCells: Set[ChainCell] =
+    blockSet.toSet.flatMap { block: JournalBlock =>
+      val refs = block.entries.collect {
+        case e: ChainEntry => e.chain
+      }
+      refs.flatMap(getChainCell)
+    }
+
+  def bootstrapJournal(currentBlockRef: Reference): Unit =
+    onJournalBlock(currentBlockRef)
+
+  def getBlock(ref: Reference): Option[JournalBlock] =
     datastore.get(ref).collect { case b: JournalBlock => b }
+
+  def getCanonical(ref: Reference): Option[CanonicalRecord] =
+    datastore.get(ref).collect { case c: CanonicalRecord => c}
+
+  def getChainCell(ref: Reference): Option[ChainCell] =
+    datastore.get(ref).collect { case c: ChainCell => c}
 
   private def catchupPriorBlocks(currentBlock: JournalBlock): Unit = {
     for {
       prevRef <- currentBlock.chain
       prevBlock <- getBlock(prevRef)
     } yield {
-      blocks.add(prevBlock)
-      catchupPriorBlocks(prevBlock)
+      if (!blockSet.contains(prevBlock)) {
+        blockSet.add(prevBlock)
+        catchupPriorBlocks(prevBlock)
+      }
     }
   }
 
@@ -38,6 +56,11 @@ class JournalFollower(datastore: Datastore) extends JournalListener {
   }
 
   override def onJournalBlock(ref: Reference): Unit = {
+    val blockOpt: Option[JournalBlock] = getBlock(ref)
 
+    blockOpt.foreach { block =>
+      blockSet.add(block)
+      catchupPriorBlocks(block)
+    }
   }
 }
