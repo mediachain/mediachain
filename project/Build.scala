@@ -157,7 +157,7 @@ object MediachainBuild extends Build {
 
   // aggregate means commands will cascade to the subprojects
   // dependsOn means classes will be available
-  lazy val root = (project in file("."))
+  lazy val mediachain = (project in file("."))
     .aggregate(core, l_space,
       translation_engine, rpc, transactor, protocol)
 }
