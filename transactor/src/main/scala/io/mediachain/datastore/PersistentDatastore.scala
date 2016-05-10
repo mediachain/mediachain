@@ -81,7 +81,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
     } catch {
       case e: AmazonServiceException =>
         logger.error("AWS Error writing " + key.base58, e)
-        queue.putFirst(key)
+        queue.putLast(key)
         None
     }
   }
