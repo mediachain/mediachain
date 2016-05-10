@@ -17,9 +17,9 @@ class DynamoDatastore(config: DynamoDatastore.Config)
   val table = config.baseTable
   val chunkSize = 1024 * 384 // 384 KB; DynamoDB has 400KB limit
   val chunkTable = table + "Chunks"
-  
+
   val db = new AmazonDynamoDBClient(creds)
-  config.endpoint.foreach(endpoint => db.withEndpoint(endpoint))
+  config.endpoint.foreach(ep => db.withEndpoint[AmazonDynamoDBClient](ep))
 
   override def putData(key: MultiHash, value: Array[Byte]) {
     if (value.length < chunkSize) {
