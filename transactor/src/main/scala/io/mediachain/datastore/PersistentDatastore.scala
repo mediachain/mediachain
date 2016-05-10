@@ -15,8 +15,11 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   val random = new Random
   val maxBackoffRetry = 60 // second
   val queue = new LinkedBlockingDeque[MultiHash]
-  val writer = new Thread(this, "PersistentDataStore#write")
-  writer.start()
+  val writer = new Thread(this, s"PersistentDataStore@${this.hashCode}#write")
+  
+  def start() {
+    writer.start()
+  }
   
   override def putData(key: MultiHash, value: Array[Byte]) {
     rocks.putData(key, value)
