@@ -40,8 +40,9 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   }
   
   private def recover() {
-    // XXX Implement me: crash recovery
-    //     enqueue all rocks persisted keys for write through to dynamo
+    // Crash recovery: schedule all keys still in rocks db for
+    //  write-through to dynamo
+    rocks.synchronized {rocks.getKeys}.foreach {key => queue.putLast(key)}
   }
   
   private def loop(backoff: Int) {
