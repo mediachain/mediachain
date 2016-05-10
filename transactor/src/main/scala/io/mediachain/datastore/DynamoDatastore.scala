@@ -47,7 +47,7 @@ class DynamoDatastore(config: DynamoDatastore.Config)
   private def putChunked(key: MultiHash, value: Array[Byte]) {
     val key58 = key.base58
     val chunks = chunkCount(value.length)
-    val chunkIds = (1 to chunks).map { n => key58 + "#" + n }
+    val chunkIds = (1 to chunks).map { n => s"${key58}#${n}" }
     
     // this should use the BatchWriteItemRequest API (PITA alert)
     chunkIds.zipWithIndex.foreach {
