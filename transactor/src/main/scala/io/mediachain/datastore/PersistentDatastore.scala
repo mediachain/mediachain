@@ -71,7 +71,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
         key
       }
     } catch {
-      case e: AmazonServiceException => {
+      case e @ (_: AmazonServiceException | _: DatastoreException) => {
         // XXX log exception
         queue.addFirst(key)
         None
