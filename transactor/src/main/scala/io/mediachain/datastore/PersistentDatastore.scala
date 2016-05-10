@@ -41,7 +41,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
       loop(0)
     } catch {
       case e: InterruptedException => ()
-      case e: Throwable => logger.error("Unhandled exception", e)
+      case e: Throwable => logger.error("FATAL: Unhandled exception in background write thread", e)
     }
   }
   
