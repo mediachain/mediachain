@@ -8,14 +8,13 @@ import scala.collection.mutable.{Buffer, ArrayBuffer}
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.Datastore.DatastoreException
 
-// TODO error handling
-//      queued eventual writes in the background with disk backing of 
-//       in-progress writes
-//      use batch writes for chunked puts
-class DynamoDatastore(table: String, creds: BasicAWSCredentials)
+// TODO use batch read/writes for chunked get/puts
+class DynamoDatastore(config: DynamoDatastore.Config)
   extends BinaryDatastore with AutoCloseable {
   import scala.collection.JavaConversions._
   
+  val creds = config.awscreds
+  val table = config.baseTable
   val chunkSize = 1024 * 384 // 384 KB; DynamoDB has 400KB limit
   val chunkTable = table + "Chunks"
   
@@ -155,4 +154,8 @@ class DynamoDatastore(table: String, creds: BasicAWSCredentials)
   
   private def buffer2Bytes(buf: ByteBuffer) = 
     buf.array
+}
+
+object DynamoDatastore {
+  case class Config(baseTable: String, awscreds: BasicAWSCredentials)
 }
