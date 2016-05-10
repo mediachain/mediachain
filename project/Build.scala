@@ -164,6 +164,6 @@ object MediachainBuild extends Build {
   // dependsOn means classes will be available
   lazy val mediachain = (project in file("."))
     .aggregate(core, l_space,
-      translation_engine, rpc, transactor, protocol)
+      translation_engine, rpc, transactor, protocol, client)
 }
 
