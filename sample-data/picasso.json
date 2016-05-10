@@ -1,0 +1,50 @@
+{
+  "Qm000": { "type": "nil" },
+
+  "Qm001": {
+    "type": "entity",
+    "name": "Pablo Picasso",
+
+    "@context": "http://schema.org/Person",
+    "birthDate": "1881-10-25"
+  },
+
+  "Qm002": {
+    "type": "artefact",
+    "name": "The Starry Night",
+
+    "@context": "http://schema.org/Painting",
+    "dateCreated": "1889"
+  },
+
+  "Qm003": {
+    "type": "artefactCreatedBy",
+    "artefact": {"@link": "Qm002"},
+    "entity": {"@link": "Qm001"},
+    "chain": {"@link": "Qm000"}
+  },
+
+  "Qm004": {
+    "type": "artefact",
+    "name": "Cypresses in Starry Night",
+
+    "@context": "http://schema.org/VisualArtwork",
+    "artform": "Drawing",
+    "artMedium": "Ink, Reed Pen",
+    "dateCreated": "1889"
+  },
+
+  "Qm005": {
+    "type": "artefactCreatedBy",
+    "artefact": {"@link": "Qm004"},
+    "entity": {"@link": "Qm001"},
+    "chain": {"@link": "Qm000"}
+  },
+
+  "Qm006": {
+    "type": "artefactDerivedBy",
+    "artefact": "Qm004",
+    "artefactOrigin": "Qm002",
+    "chain": "Qm005"
+  }
+}
