@@ -218,10 +218,10 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
         obj must haveClass[ArtefactChainCell]
       }
     }.setGen(Gen.oneOf(
-        genArtefactReferenceCell(),
-        genArtefactUpdateCell(),
-        genArtefactOwnershipCell(),
-        genArtefactDerivationCell(),
-        genArtefactCreationCell()
+        genArtefactReferenceCell,
+        genArtefactUpdateCell,
+        genArtefactOwnershipCell,
+        genArtefactDerivationCell,
+        genArtefactCreationCell
       ))
 }

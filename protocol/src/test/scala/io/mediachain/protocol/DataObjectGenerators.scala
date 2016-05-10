@@ -43,11 +43,11 @@ object DataObjectGenerators {
 
   val genNilReference: Gen[Option[Reference]] = Gen.const(None)
 
-  val genEntity = for {
+  val genEntity: Gen[Entity] = for {
     meta <- genMeta
   } yield Entity(meta)
 
-  val genArtefact = for {
+  val genArtefact: Gen[Artefact] = for {
     meta <- genMeta
   } yield Artefact(meta)
 
@@ -57,81 +57,90 @@ object DataObjectGenerators {
     } yield MultihashReference.forDataObject(canonical)
 
   def genEntityChainCell(
-    entityGen: Gen[Entity] = genEntity,
-    chainGen: Gen[Option[Reference]] = genOptionalReference
+    entityGen: Gen[Entity],
+    chainGen: Gen[Option[Reference]]
   ) = for {
     entity <- genReferenceFor(entityGen)
     chain <- chainGen
     meta <- genMeta
   } yield EntityChainCell(entity, chain, meta)
+  val genEntityChainCell: Gen[EntityChainCell] = genEntityChainCell(genEntity, genOptionalReference)
 
   def genArtefactChainCell(
-    artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Option[Reference]] = genOptionalReference
+    artefactGen: Gen[Artefact],
+    chainGen: Gen[Option[Reference]]
   ) = for {
     artefact <- genReferenceFor(artefactGen)
     chain <- chainGen
     meta <- genMeta
   } yield ArtefactChainCell(artefact, chain, meta)
+  val genArtefactChainCell: Gen[ArtefactChainCell] = genArtefactChainCell(genArtefact, genOptionalReference)
 
   def genEntityUpdateCell(
-    entityGen: Gen[Entity] = genEntity,
-    chainGen: Gen[Option[Reference]] = genOptionalReference
+    entityGen: Gen[Entity],
+    chainGen: Gen[Option[Reference]]
   ) = for {
     base <- genEntityChainCell(entityGen, chainGen)
   } yield EntityUpdateCell(base.entity, base.chain, base.meta)
+  val genEntityUpdateCell: Gen[EntityUpdateCell] = genEntityUpdateCell(genEntity, genOptionalReference)
 
   def genEntityLinkCell(
-    entityGen: Gen[Entity] = genEntity,
-    chainGen: Gen[Option[Reference]] = genOptionalReference,
-    entityLinkGen: Gen[Reference] = genReference
+    entityGen: Gen[Entity],
+    chainGen: Gen[Option[Reference]],
+    entityLinkGen: Gen[Reference]
   ) = for {
     base <- genEntityChainCell(entityGen, chainGen)
     entityLink <- entityLinkGen
   } yield EntityLinkCell(base.entity, base.chain, base.meta, entityLink)
+  val genEntityLinkCell: Gen[EntityLinkCell] = genEntityLinkCell(genEntity, genOptionalReference, genReference)
 
   def genArtefactUpdateCell(
-    artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Option[Reference]] = genOptionalReference
+    artefactGen: Gen[Artefact],
+    chainGen: Gen[Option[Reference]]
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
   } yield ArtefactUpdateCell(base.artefact, base.chain, base.meta)
+  val genArtefactUpdateCell: Gen[ArtefactUpdateCell] = genArtefactUpdateCell(genArtefact, genOptionalReference)
 
   def genArtefactCreationCell(
-    artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Option[Reference]] = genOptionalReference,
-    entityGen: Gen[Reference] = genReference
+    artefactGen: Gen[Artefact],
+    chainGen: Gen[Option[Reference]],
+    entityGen: Gen[Reference]
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     entity <- entityGen
   } yield ArtefactCreationCell(base.artefact, base.chain, base.meta, entity)
+  val genArtefactCreationCell: Gen[ArtefactCreationCell] = genArtefactCreationCell(genArtefact, genOptionalReference, genReference)
 
   def genArtefactDerivationCell(
-    artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Option[Reference]] = genOptionalReference,
-    artefactOriginGen: Gen[Reference] = genReference
+    artefactGen: Gen[Artefact],
+    chainGen: Gen[Option[Reference]],
+    artefactOriginGen: Gen[Reference]
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     artefactOrigin <- artefactOriginGen
   } yield ArtefactDerivationCell(base.artefact, base.chain, base.meta, artefactOrigin)
+  val genArtefactDerivationCell: Gen[ArtefactDerivationCell] = genArtefactDerivationCell(genArtefact, genOptionalReference, genReference)
 
   def genArtefactOwnershipCell(
-    artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Option[Reference]] = genOptionalReference,
-    entityGen: Gen[Reference] = genReference
+    artefactGen: Gen[Artefact],
+    chainGen: Gen[Option[Reference]],
+    entityGen: Gen[Reference]
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     entity <- entityGen
   } yield ArtefactOwnershipCell(base.artefact, base.chain, base.meta, entity)
+  val genArtefactOwnershipCell: Gen[ArtefactOwnershipCell] = genArtefactOwnershipCell(genArtefact, genOptionalReference, genReference)
 
   def genArtefactReferenceCell(
-    artefactGen: Gen[Artefact] = genArtefact,
-    chainGen: Gen[Option[Reference]] = genOptionalReference,
-    entityGen: Gen[Reference] = genReference
+    artefactGen: Gen[Artefact],
+    chainGen: Gen[Option[Reference]],
+    entityGen: Gen[Reference]
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     entity <- entityGen
   } yield ArtefactReferenceCell(base.artefact, base.chain, base.meta, entity)
+  val genArtefactReferenceCell: Gen[ArtefactReferenceCell] = genArtefactReferenceCell(genArtefact, genOptionalReference, genReference)
 
   val genCanonicalEntry = for {
     index <- arbitrary[BigInt]
@@ -154,15 +163,15 @@ object DataObjectGenerators {
 
   implicit def abEntity: Arbitrary[Entity] = Arbitrary(genEntity)
   implicit def abArtefact: Arbitrary[Artefact] = Arbitrary(genArtefact)
-  implicit def abEntityChainCell: Arbitrary[EntityChainCell] = Arbitrary(genEntityChainCell())
-  implicit def abArtefactChainCell: Arbitrary[ArtefactChainCell] = Arbitrary(genArtefactChainCell())
-  implicit def abEntityUpdateCell: Arbitrary[EntityUpdateCell] = Arbitrary(genEntityUpdateCell())
-  implicit def abEntityLinkCell: Arbitrary[EntityLinkCell] = Arbitrary(genEntityLinkCell())
-  implicit def abArtefactUpdateCell: Arbitrary[ArtefactUpdateCell] = Arbitrary(genArtefactUpdateCell())
-  implicit def abArtefactCreationCell: Arbitrary[ArtefactCreationCell] = Arbitrary(genArtefactCreationCell())
-  implicit def abArtefactDerivationCell: Arbitrary[ArtefactDerivationCell] = Arbitrary(genArtefactDerivationCell())
-  implicit def abArtefactOwnershipCell: Arbitrary[ArtefactOwnershipCell] = Arbitrary(genArtefactOwnershipCell())
-  implicit def abArtefactReferenceCell: Arbitrary[ArtefactReferenceCell] = Arbitrary(genArtefactReferenceCell())
+  implicit def abEntityChainCell: Arbitrary[EntityChainCell] = Arbitrary(genEntityChainCell)
+  implicit def abArtefactChainCell: Arbitrary[ArtefactChainCell] = Arbitrary(genArtefactChainCell)
+  implicit def abEntityUpdateCell: Arbitrary[EntityUpdateCell] = Arbitrary(genEntityUpdateCell)
+  implicit def abEntityLinkCell: Arbitrary[EntityLinkCell] = Arbitrary(genEntityLinkCell)
+  implicit def abArtefactUpdateCell: Arbitrary[ArtefactUpdateCell] = Arbitrary(genArtefactUpdateCell)
+  implicit def abArtefactCreationCell: Arbitrary[ArtefactCreationCell] = Arbitrary(genArtefactCreationCell)
+  implicit def abArtefactDerivationCell: Arbitrary[ArtefactDerivationCell] = Arbitrary(genArtefactDerivationCell)
+  implicit def abArtefactOwnershipCell: Arbitrary[ArtefactOwnershipCell] = Arbitrary(genArtefactOwnershipCell)
+  implicit def abArtefactReferenceCell: Arbitrary[ArtefactReferenceCell] = Arbitrary(genArtefactReferenceCell)
   implicit def abCanonicalEntry: Arbitrary[CanonicalEntry] = Arbitrary(genCanonicalEntry)
   implicit def abChainEntry: Arbitrary[ChainEntry] = Arbitrary(genChainEntry)
   implicit def abJournalBlock: Arbitrary[JournalBlock] = Arbitrary(genJournalBlock)
