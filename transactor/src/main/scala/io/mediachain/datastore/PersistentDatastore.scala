@@ -16,13 +16,12 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   val maxBackoffRetry = 60 // seconds
 
   override def putData(key: MultiHash, value: Array[Byte]) {
-    rocks.synchronized {rocks.putData(key, value)}
+    rocks.putData(key, value)
     queue.putLast(key)
   }
 
   override def getData(key: MultiHash): Option[Array[Byte]] = {
-    rocks.synchronized {rocks.getData(key)}
-      .orElse {dynamo.synchronized {dynamo.getData(key)}}
+    rocks.getData(key).orElse {dynamo.synchronized {dynamo.getData(key)}}
   }
   
   override def close() {
@@ -41,14 +40,14 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   private def recover() {
     // Crash recovery: schedule all keys still in rocks db for
     //  write-through to dynamo
-    rocks.synchronized {rocks.getKeys}.foreach {key => queue.putLast(key)}
+    rocks.getKeys.foreach {key => queue.putLast(key)}
   }
   
   private def loop(backoff: Int) {
     if (!Thread.interrupted) {
       writeNext() match {
         case Some(key) => {
-          rocks.synchronized {rocks.removeData(key)}
+          rocks.removeData(key)
           loop(0)
         }
           
@@ -66,7 +65,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   private def writeNext(): Option[MultiHash] = {
     val key = queue.takeFirst
     try {
-      rocks.synchronized {rocks.getData(key)}.map { data =>
+      rocks.getData(key).map { data =>
         dynamo.synchronized {dynamo.putData(key, data)}
         key
       }
