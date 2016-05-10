@@ -72,9 +72,9 @@ object JournalBlockGenerators {
     */
   def genJournalBlock(
     blockSize: Int,
-    datastore: Map[Reference, DataObject],
+    datastore: InMemoryDatastore,
     blockchain: Option[JournalBlock]
-  ): Gen[(JournalBlock, Map[Reference, DataObject])] = {
+  ): Gen[(JournalBlock, InMemoryDatastore)] = {
     // generate ~ twice as many chain cells as canonical entries
     val numCanonicals = (blockSize * 0.3).toInt
     val numChainCells = blockSize - numCanonicals
@@ -103,11 +103,10 @@ object JournalBlockGenerators {
       val block = JournalBlock(blockIndex, prevBlockRef, entries.toArray)
 
       val generatedObjects = block :: (canonicals ++ chainCells)
-      val updatedDatastore = datastore ++ generatedObjects.map { o =>
-        MultihashReference.forDataObject(o) -> o
-      }
 
-      (block, updatedDatastore)
+      val updatedStore = datastore.copy
+      generatedObjects.foreach(updatedStore.put)
+      (block, updatedStore)
     }
   }
 
