@@ -1,6 +1,7 @@
 package io.mediachain.protocol
 
 import java.nio.charset.StandardCharsets
+import java.util.Date
 
 
 object DataObjectGenerators {
@@ -12,12 +13,24 @@ object DataObjectGenerators {
   import io.mediachain.util.cbor.CborAST._
   import io.mediachain.util.cbor.CValueGenerators._
 
+  val stringMetaGens: List[Gen[(String, CValue)]] = (1 to 25).toList.map { _ =>
+    for {
+      key <- Gen.alphaStr
+      value <- genCPrimitive
+    } yield (key, value)
+  }
+
+  val dateMetaGen: Gen[(String, CString)] = for {
+    date <- arbitrary[Date]
+  } yield ("date", CString(date.toString))
+
+  val authorMetaGen: Gen[(String, CString)] = for {
+    author <- arbitrary[String] // TODO: make this a MultiHash etc
+  } yield ("author", CString(author))
 
   val genMeta: Gen[Map[String, CValue]] = for {
-    keys <- Gen.containerOf[List, String](arbitrary[String])
-    vals <- Gen.containerOfN[List, CValue](keys.length, genCPrimitive)
-    kvs = (keys, vals).zipped.toList
-  } yield Map[String, CValue](kvs:_*)
+    meta <- Gen.someOf[(String, CValue)](authorMetaGen, dateMetaGen, stringMetaGens:_*)
+  } yield meta.toMap
 
   val genReference: Gen[Reference] = for {
     str <- arbitrary[String]
@@ -29,7 +42,6 @@ object DataObjectGenerators {
     Gen.option(genReference)
 
   val genNilReference: Gen[Option[Reference]] = Gen.const(None)
-
 
   val genEntity = for {
     meta <- genMeta
@@ -43,7 +55,6 @@ object DataObjectGenerators {
     for {
       canonical <- canonicalGen
     } yield MultihashReference.forDataObject(canonical)
-
 
   def genEntityChainCell(
     entityGen: Gen[Entity] = genEntity,
