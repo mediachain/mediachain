@@ -21,7 +21,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   }
 
   override def getData(key: MultiHash): Option[Array[Byte]] = {
-    rocks.getData(key).orElse {dynamo.synchronized {dynamo.getData(key)}}
+    rocks.getData(key).orElse {dynamo.getData(key)}
   }
   
   override def close() {
@@ -66,7 +66,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
     val key = queue.takeFirst
     try {
       rocks.getData(key).map { data =>
-        dynamo.synchronized {dynamo.putData(key, data)}
+        dynamo.putData(key, data)
         key
       }
     } catch {
