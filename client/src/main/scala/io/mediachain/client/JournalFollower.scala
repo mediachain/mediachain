@@ -3,31 +3,37 @@ package io.mediachain.client
 import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.Transactor.JournalListener
 
+import scala.collection.immutable.SortedMap
+
 class JournalFollower(val datastore: Datastore) extends JournalListener {
-  import collection.mutable.{Set => MSet, Map => MMap}
 
   override def onJournalCommit(entry: JournalEntry): Unit = {
     // TODO
   }
 
   override def onJournalBlock(ref: Reference): Unit =
-    handleNewBlock(ref)
+    datastore.getAs[JournalBlock](ref).foreach { block =>
+      handleNewBlock(ref, block)
+    }
 
 
-  private val blockRefs: MSet[Reference] = MSet()
-  private def blockSet: Set[JournalBlock] =
-    blockRefs.toSet.flatMap(datastore.getAs[JournalBlock])
+  private var blockRefMap: SortedMap[BigInt, Reference] = SortedMap()
 
-  def blocks: List[JournalBlock] = blockSet.toList.sortBy(_.index)
-  def currentBlock: Option[JournalBlock] = blocks.lastOption
+  def blocks: List[JournalBlock] =
+    blockRefMap.values.toList.flatMap(datastore.getAs[JournalBlock])
+
+  def currentBlock: Option[JournalBlock] =
+    blockRefMap
+      .lastOption
+      .flatMap(pair => datastore.getAs[JournalBlock](pair._2))
 
   // Map of canonical reference to most recent ChainEntry
   // for that canonical
-  private val chainHeads: MMap[Reference, ChainEntry] = MMap()
+  private var chainHeads: Map[Reference, ChainEntry] = Map()
 
   /// Set of all `CanonicalRecord`s referenced in the blockchain
   def canonicals: Set[CanonicalRecord] =
-    blockSet.flatMap { block: JournalBlock =>
+    blocks.toSet.flatMap { block: JournalBlock =>
       val refs = block.entries.collect {
        case e: CanonicalEntry => e.ref
       }
@@ -37,7 +43,7 @@ class JournalFollower(val datastore: Datastore) extends JournalListener {
 
   /// Set of all chain cells in the block chain.
   def chainCells: Set[ChainCell] =
-    blockSet.flatMap { block: JournalBlock =>
+    blocks.toSet.flatMap { block: JournalBlock =>
       val refs = block.entries.collect {
         case e: ChainEntry => e.chain
       }
@@ -57,6 +63,7 @@ class JournalFollower(val datastore: Datastore) extends JournalListener {
   /**
     * Get the most recent `ChainCell` that's been applied to the referenced
     * `CanonicalRecord`.
+    *
     * @param canonicalRef reference to a `CanonicalRecord`
     * @return the most recently applied `ChainCell`, or None if none exist
     */
@@ -71,30 +78,30 @@ class JournalFollower(val datastore: Datastore) extends JournalListener {
         case Some(existing) if existing.index >= entry.index => existing
         case _ => entry
       }
-      chainHeads.put(entry.ref, latest)
+      chainHeads += (entry.ref -> latest)
     }
   }
 
 
   private def catchupPriorBlocks(block: JournalBlock): Unit = {
-    block.chain
-      .foreach { prevBlockRef =>
-        if (!blockRefs.contains(prevBlockRef)) {
-          handleNewBlock(prevBlockRef)
-        }
+    for {
+      prevBlockRef <- block.chain
+      prevBlock <- datastore.getAs[JournalBlock](prevBlockRef)
+    } yield {
+      if (!blockRefMap.contains(prevBlock.index)) {
+        handleNewBlock(prevBlockRef, prevBlock)
       }
+    }
   }
 
 
-  private def handleNewBlock(blockRef: Reference): Unit = {
-    datastore.getAs[JournalBlock](blockRef).foreach { block =>
-      blockRefs.add(blockRef)
-      val chainEntries = block.entries.toSeq
-        .collect { case e: ChainEntry => e }
+  private def handleNewBlock(blockRef: Reference, block: JournalBlock): Unit = {
+    blockRefMap += (block.index -> blockRef)
+    val chainEntries = block.entries.toSeq
+      .collect { case e: ChainEntry => e }
 
-      updateChainHeads(chainEntries)
-      catchupPriorBlocks(block)
-    }
+    updateChainHeads(chainEntries)
+    catchupPriorBlocks(block)
   }
 
 
