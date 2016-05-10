@@ -52,6 +52,11 @@ object MediachainBuild extends Build {
     ))
     .dependsOn(protocol)
 
+  lazy val client = Project("client", file("client"))
+    .settings(settings)
+    .dependsOn(protocol)
+    .dependsOn(protocol % "test->test")
+
   Resolver.sonatypeRepo("public")
 
   updateOptions := updateOptions.value.withCachedResolution(true)
