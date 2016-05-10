@@ -3,11 +3,13 @@ package io.mediachain.datastore
 import java.util.Random
 import java.util.concurrent.LinkedBlockingDeque
 import com.amazonaws.AmazonServiceException
+import org.slf4j.{Logger, LoggerFactory}
 import io.mediachain.multihash.MultiHash
 
 class PersistentDatastore(config: PersistentDatastore.Config)
   extends BinaryDatastore with AutoCloseable with Runnable {
   
+  val logger = LoggerFactory.getLogger(classOf[PersistentDatastore])
   val dynamo = new DynamoDatastore(config.dynamo)
   val rocks = new RocksDatastore(config.rocks)
   val queue = new LinkedBlockingDeque[MultiHash]
@@ -54,7 +56,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
         case None => {
           val xbackoff = Math.min(maxBackoffRetry, Math.max(1, 2 * backoff))
           val sleep = random.nextInt(1000 * xbackoff)
-          // XXX log sleep?
+          logger.info("Backing off for " + sleep + "ms")
           Thread.sleep(sleep)
           loop(xbackoff)
         }
@@ -71,7 +73,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
       }
     } catch {
       case e: AmazonServiceException => {
-        // XXX log exception
+        logger.error("AWS Error writing " + key.base58, e)
         queue.addFirst(key)
         None
       }
