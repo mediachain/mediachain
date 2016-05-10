@@ -3,7 +3,7 @@ package io.mediachain.client
 import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.Transactor.JournalListener
 
-class JournalFollower(datastore: Datastore) extends JournalListener {
+class JournalFollower(val datastore: Datastore) extends JournalListener {
   import collection.mutable.{Set => MSet, Map => MMap}
 
   override def onJournalCommit(entry: JournalEntry): Unit = {
