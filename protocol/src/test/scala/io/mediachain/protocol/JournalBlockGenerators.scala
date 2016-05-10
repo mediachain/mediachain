@@ -112,6 +112,40 @@ object JournalBlockGenerators {
 
 
   /**
+    * Generate a journal blockchain of `length` blocks, each containing
+    * `blockSize` journal entries.
+    * @param length number of blocks to generate
+    * @param blockSize number of journal entries per block
+    * @param datastore if given, generated objects will be added to a copy
+    *                  of this in-memory datastore
+    * @param chainHead if given, new blocks will be chained to this existing
+    *                  blockchain head
+    * @return
+    */
+  def genBlockChain(
+    length: Int,
+    blockSize: Int,
+    datastore: InMemoryDatastore = new InMemoryDatastore,
+    chainHead: Option[JournalBlock] = None)
+    : Gen[(List[JournalBlock], InMemoryDatastore)] = {
+
+      if (length <= 0) {
+        Gen.const((List[JournalBlock](), datastore))
+      } else if (length == 1) {
+        genJournalBlock(blockSize, datastore, chainHead).map { res =>
+          val (block: JournalBlock, store: InMemoryDatastore) = res
+          (List(block), store)
+        }
+      } else {
+        for {
+          (generatedBlock, updatedStore) <- genJournalBlock(blockSize, datastore, chainHead)
+          (chainBlocks, finalStore) <- genBlockChain(length - 1, blockSize, updatedStore, Some(generatedBlock))
+          result = (generatedBlock :: chainBlocks, finalStore)
+        } yield result
+      }
+    }
+
+  /**
     * Map DataObjects to JournalEntries.
     * @param startIndex index of first entry
     * @param canonicals generated `CanonicalRecord`s
