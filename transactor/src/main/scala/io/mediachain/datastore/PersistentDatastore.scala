@@ -57,18 +57,16 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   private def loop(backoff: Int) {
     if (!Thread.interrupted) {
       writeNext() match {
-        case Some(key) => {
+        case Some(key) =>
           rocks.removeData(key)
           loop(0)
-        }
           
-        case None => {
+        case None => 
           val xbackoff = Math.min(maxBackoffRetry, Math.max(1, 2 * backoff))
           val sleep = random.nextInt(1000 * xbackoff)
           logger.info("Backing off for " + sleep + "ms")
           Thread.sleep(sleep)
           loop(xbackoff)
-        }
       }
     }
   }
@@ -81,11 +79,10 @@ class PersistentDatastore(config: PersistentDatastore.Config)
         key
       }
     } catch {
-      case e: AmazonServiceException => {
+      case e: AmazonServiceException =>
         logger.error("AWS Error writing " + key.base58, e)
         queue.putFirst(key)
         None
-      }
     }
   }
 }
