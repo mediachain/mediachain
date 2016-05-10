@@ -1,18 +1,20 @@
 package io.mediachain.protocol
 
-import io.mediachain.multihash.MultiHash
-
 
 object Datastore {
   import io.mediachain.multihash.MultiHash
   import io.mediachain.protocol.CborSerialization._
   import io.mediachain.protocol.Transactor.{ArtefactChainReference, ChainReference, EntityChainReference}
   import io.mediachain.util.cbor.CborAST._
+  import scala.util.Try
 
   // Datastore interface
   trait Datastore {
     def get(ref: Reference): Option[DataObject]
     def put(obj: DataObject): Reference
+
+    def getAs[T <: DataObject](ref: Reference): Option[T] =
+      get(ref).flatMap(obj => Try(obj.asInstanceOf[T]).toOption)
   }
 
   class DatastoreException(what: String) extends RuntimeException(what)
