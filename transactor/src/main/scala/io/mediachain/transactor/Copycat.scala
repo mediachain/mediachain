@@ -48,6 +48,8 @@ object Copycat {
   class Client(client: CopycatClient) extends JournalClient {
     private var listeners: Set[JournalListener] = Set()
     
+    def copycat = client
+    
     // Journal 
     def insert(rec: CanonicalRecord): Future[Xor[JournalError, CanonicalEntry]] =
       FutureConverters.toScala(client.submit(JournalInsert(rec)))
