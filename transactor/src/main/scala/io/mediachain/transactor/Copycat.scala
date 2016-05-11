@@ -2,7 +2,7 @@ package io.mediachain.transactor
 
 import java.io.File
 import java.util.function.{Consumer, Supplier}
-import io.atomix.copycat.client.CopycatClient
+import io.atomix.copycat.client.{CopycatClient, ConnectionStrategies, RecoveryStrategies}
 import io.atomix.copycat.server.{CopycatServer, StateMachine => CopycatStateMachine}
 import io.atomix.copycat.server.storage.{Storage, StorageLevel}
 import io.atomix.catalyst.transport.{Address, NettyTransport}
@@ -97,6 +97,8 @@ object Copycat {
                     .withTransport(NettyTransport.builder()
                                     .withThreads(2)
                                     .build())
+                    .withConnectionStrategy(ConnectionStrategies.EXPONENTIAL_BACKOFF)
+                    .withRecoveryStrategy(RecoveryStrategies.RECOVER)
                     .build()
       Serializers.register(client.serializer)
       new Client(client)
