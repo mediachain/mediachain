@@ -1,17 +1,20 @@
 package io.mediachain.protocol
 
 
-
 object Datastore {
   import io.mediachain.multihash.MultiHash
   import io.mediachain.protocol.CborSerialization._
   import io.mediachain.protocol.Transactor.{ArtefactChainReference, ChainReference, EntityChainReference}
   import io.mediachain.util.cbor.CborAST._
+  import scala.util.Try
 
   // Datastore interface
   trait Datastore {
     def get(ref: Reference): Option[DataObject]
     def put(obj: DataObject): Reference
+
+    def getAs[T <: DataObject](ref: Reference): Option[T] =
+      get(ref).flatMap(obj => Try(obj.asInstanceOf[T]).toOption)
   }
 
   class DatastoreException(what: String) extends RuntimeException(what)
@@ -36,6 +39,12 @@ object Datastore {
       CMap.withStringKeys("@link" -> CBytes(multihash.bytes))
   }
 
+  object MultihashReference {
+    def forDataObject(dataObject: DataObject): MultihashReference =
+      MultihashReference(
+        MultiHash.hashWithSHA256(dataObject.toCborBytes)
+      )
+  }
 
   // Canonical records: Entities and Artefacts
   sealed abstract class CanonicalRecord extends Record {
@@ -67,6 +76,7 @@ object Datastore {
 
   // Chain cells
   sealed abstract class ChainCell extends Record {
+    def ref: Reference
     def chain: Option[Reference]
     def cons(chain: Option[Reference]): ChainCell
   }
@@ -76,6 +86,8 @@ object Datastore {
     val chain: Option[Reference],
     val meta: Map[String, CValue]
   ) extends ChainCell {
+    val ref = entity
+
     override def cons(xchain: Option[Reference]): ChainCell =
       EntityChainCell(entity, xchain, meta)
 
@@ -104,6 +116,8 @@ object Datastore {
     val chain: Option[Reference],
     val meta: Map[String, CValue]
   ) extends ChainCell {
+    val ref = artefact
+
     override def cons(xchain: Option[Reference]): ChainCell =
       ArtefactChainCell(artefact, xchain, meta)
     

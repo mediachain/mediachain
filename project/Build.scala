@@ -52,6 +52,11 @@ object MediachainBuild extends Build {
     ))
     .dependsOn(protocol)
 
+  lazy val client = Project("client", file("client"))
+    .settings(settings)
+    .dependsOn(protocol)
+    .dependsOn(protocol % "test->test")
+
   Resolver.sonatypeRepo("public")
 
   updateOptions := updateOptions.value.withCachedResolution(true)
@@ -159,6 +164,6 @@ object MediachainBuild extends Build {
   // dependsOn means classes will be available
   lazy val mediachain = (project in file("."))
     .aggregate(core, l_space,
-      translation_engine, rpc, transactor, protocol)
+      translation_engine, rpc, transactor, protocol, client)
 }
 
