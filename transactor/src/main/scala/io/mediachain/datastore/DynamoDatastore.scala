@@ -15,10 +15,13 @@ class DynamoDatastore(config: DynamoDatastore.Config)
   
   val creds = config.awscreds
   val table = config.baseTable
-  val chunkSize = 1024 * 384 // 384 KB; DynamoDB has 400KB limit
   val chunkTable = table + "Chunks"
-  
+  val chunkSize = 1024 * 384 // 384 KB; DynamoDB has 400KB limit for item size.
+                             // this item size includes field names as well as
+                             // values.
+
   val db = new AmazonDynamoDBClient(creds)
+  config.endpoint.foreach(ep => db.setEndpoint(ep))
 
   override def putData(key: MultiHash, value: Array[Byte]) {
     if (value.length < chunkSize) {
@@ -46,7 +49,7 @@ class DynamoDatastore(config: DynamoDatastore.Config)
   private def putChunked(key: MultiHash, value: Array[Byte]) {
     val key58 = key.base58
     val chunks = chunkCount(value.length)
-    val chunkIds = (1 to chunks).map { n => key58 + "#" + n }
+    val chunkIds = (1 to chunks).map { n => s"${key58}#${n}" }
     
     // this should use the BatchWriteItemRequest API (PITA alert)
     chunkIds.zipWithIndex.foreach {
@@ -157,5 +160,9 @@ class DynamoDatastore(config: DynamoDatastore.Config)
 }
 
 object DynamoDatastore {
-  case class Config(baseTable: String, awscreds: BasicAWSCredentials)
+  case class Config(
+    baseTable: String,
+    awscreds: BasicAWSCredentials,
+    endpoint: Option[String] = None
+  )
 }
