@@ -3,7 +3,6 @@ package io.mediachain.protocol
 import java.nio.charset.StandardCharsets
 import java.util.Date
 
-
 object DataObjectGenerators {
   import org.scalacheck._
   import Arbitrary.arbitrary
@@ -12,73 +11,60 @@ object DataObjectGenerators {
   import io.mediachain.protocol.Datastore._
   import io.mediachain.util.cbor.CborAST._
   import io.mediachain.util.cbor.CValueGenerators._
+  import io.mediachain.util.gen.GenInstances._
+
+  import cats.syntax.cartesian._
 
   // arbitrary string metadata kv pairs
   val genStringMetas: List[Gen[(String, CValue)]] = (1 to 10).toList.map { _ =>
-    for {
-      key <- Gen.alphaStr
-      value <- genCPrimitive
-    } yield (key, value)
+    (Gen.alphaStr |@| genCPrimitive).map((_, _))
   }
 
   // a date field
-  val genDateMeta: Gen[(String, CString)] = for {
-    date <- arbitrary[Date]
-  } yield ("date", CString(date.toString))
+  val genDateMeta: Gen[(String, CString)] =
+    arbitrary[Date].map(date => ("date", CString(date.toString)))
 
   // some named fields for fold testing
   val genNamedMetas: List[Gen[(String, CValue)]] = List("AAA", "BBB", "CCC").map { k =>
-    for {
-      v <- Gen.alphaStr
-    } yield (k, CString(v))
+    Gen.alphaStr.map(x => (k, CString(x)))
   }
 
   val genMeta: Gen[Map[String, CValue]] = for {
-    meta <- Gen.someOf[(String, CValue)](genDateMeta, genDateMeta, (genStringMetas ++ genNamedMetas):_*)
+    meta <- Gen.someOf[(String, CValue)](genDateMeta, genDateMeta, genStringMetas ++ genNamedMetas:_*)
   } yield meta.toMap
 
-  val genReference: Gen[Reference] = for {
-    str <- arbitrary[String]
-  } yield MultihashReference(
-    MultiHash.hashWithSHA256(str.getBytes(StandardCharsets.UTF_8))
-  )
+  val genReference: Gen[Reference] = arbitrary[String].map { x =>
+    val hash = MultiHash.hashWithSHA256(x.getBytes(StandardCharsets.UTF_8))
+    MultihashReference(hash)
+  }
 
   val genOptionalReference: Gen[Option[Reference]] =
     Gen.option(genReference)
 
   val genNilReference: Gen[Option[Reference]] = Gen.const(None)
 
-  val genEntity: Gen[Entity] = for {
-    meta <- genMeta
-  } yield Entity(meta)
-
-  val genArtefact: Gen[Artefact] = for {
-    meta <- genMeta
-  } yield Artefact(meta)
+  val genEntity: Gen[Entity] = genMeta.map(Entity)
+  val genArtefact: Gen[Artefact] = genMeta.map(Artefact)
 
   def genReferenceFor(canonicalGen: Gen[CanonicalRecord]): Gen[Reference] =
-    for {
-      canonical <- canonicalGen
-    } yield MultihashReference.forDataObject(canonical)
+    canonicalGen.map(MultihashReference.forDataObject)
 
   def genEntityChainCell(
     entityGen: Gen[Entity],
     chainGen: Gen[Option[Reference]]
-  ) = for {
-    entity <- genReferenceFor(entityGen)
-    chain <- chainGen
-    meta <- genMeta
-  } yield EntityChainCell(entity, chain, meta)
+  ): Gen[EntityChainCell] =
+    (genReferenceFor(entityGen) |@| chainGen |@| genMeta)
+      .map(EntityChainCell.apply)
+
   val genEntityChainCell: Gen[EntityChainCell] = genEntityChainCell(genEntity, genOptionalReference)
 
   def genArtefactChainCell(
     artefactGen: Gen[Artefact],
     chainGen: Gen[Option[Reference]]
-  ) = for {
-    artefact <- genReferenceFor(artefactGen)
-    chain <- chainGen
-    meta <- genMeta
-  } yield ArtefactChainCell(artefact, chain, meta)
+  ): Gen[ArtefactChainCell] =
+    (genReferenceFor(artefactGen) |@| chainGen |@| genMeta)
+      .map(ArtefactChainCell.apply)
+
   val genArtefactChainCell: Gen[ArtefactChainCell] = genArtefactChainCell(genArtefact, genOptionalReference)
 
   def genEntityUpdateCell(
