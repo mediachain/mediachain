@@ -38,21 +38,17 @@ object JournalBlockGenerators {
     *         `CanonicalRecord`.
     */
   def consChainCells(cells: List[ChainCell]): List[ChainCell] = {
-    import collection.mutable.{Map => MMap, MutableList => MList}
-    val chainHeads: MMap[Reference, ChainCell] = MMap()
-    val consed: MList[ChainCell] = MList()
-
-    cells.foreach { c =>
-      val canonicalRef = c.ref
+    val empty = (Map[Reference, ChainCell](), List[ChainCell]())
+    val (chainHeads, consed) = cells.foldLeft(empty) { (acc, cell) =>
+      val (chainHeads, consed) = acc
+      val canonicalRef = cell.ref
       val head = chainHeads.get(canonicalRef)
         .map(h => MultihashReference.forDataObject(h))
-
-      val consedCell = c.cons(head)
-      chainHeads.put(canonicalRef, consedCell)
-      consed += consedCell
+      val consedCell = cell.cons(head)
+      (chainHeads + (canonicalRef -> consedCell), consed :+ consedCell)
     }
 
-    consed.toList
+    consed
   }
 
 
