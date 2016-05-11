@@ -13,23 +13,28 @@ object DataObjectGenerators {
   import io.mediachain.util.cbor.CborAST._
   import io.mediachain.util.cbor.CValueGenerators._
 
-  val genStringMetas: List[Gen[(String, CValue)]] = (1 to 25).toList.map { _ =>
+  // arbitrary string metadata kv pairs
+  val genStringMetas: List[Gen[(String, CValue)]] = (1 to 10).toList.map { _ =>
     for {
       key <- Gen.alphaStr
       value <- genCPrimitive
     } yield (key, value)
   }
 
+  // a date field
   val genDateMeta: Gen[(String, CString)] = for {
     date <- arbitrary[Date]
   } yield ("date", CString(date.toString))
 
-  val genAuthorMeta: Gen[(String, CString)] = for {
-    author <- arbitrary[String] // TODO: make this a real special type
-  } yield ("author", CString(author))
+  // some named fields for fold testing
+  val genNamedMetas: List[Gen[(String, CValue)]] = List("AAA", "BBB", "CCC").map { k =>
+    for {
+      v <- Gen.alphaStr
+    } yield (k, CString(v))
+  }
 
   val genMeta: Gen[Map[String, CValue]] = for {
-    meta <- Gen.someOf[(String, CValue)](genAuthorMeta, genDateMeta, genStringMetas:_*)
+    meta <- Gen.someOf[(String, CValue)](genDateMeta, genDateMeta, (genStringMetas ++ genNamedMetas):_*)
   } yield meta.toMap
 
   val genReference: Gen[Reference] = for {
