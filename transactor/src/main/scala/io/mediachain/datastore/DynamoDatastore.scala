@@ -15,10 +15,10 @@ class DynamoDatastore(config: DynamoDatastore.Config)
   
   val creds = config.awscreds
   val table = config.baseTable
+  val chunkTable = table + "Chunks"
   val chunkSize = 1024 * 384 // 384 KB; DynamoDB has 400KB limit for item size.
                              // this item size includes field names as well as
                              // values.
-  val chunkTable = table + "Chunks"
 
   val db = new AmazonDynamoDBClient(creds)
   config.endpoint.foreach(ep => db.setEndpoint(ep))
