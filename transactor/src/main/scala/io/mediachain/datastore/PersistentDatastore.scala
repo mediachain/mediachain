@@ -2,7 +2,7 @@ package io.mediachain.datastore
 
 import java.util.Random
 import java.util.concurrent.LinkedBlockingDeque
-import com.amazonaws.AmazonServiceException
+import com.amazonaws.AmazonClientException
 import org.slf4j.{Logger, LoggerFactory}
 import io.mediachain.multihash.MultiHash
 
@@ -79,7 +79,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
         key
       }
     } catch {
-      case e: AmazonServiceException =>
+      case e : AmazonClientException =>
         logger.error("AWS Error writing " + key.base58, e)
         queue.putLast(key)
         None
