@@ -20,7 +20,7 @@ class DynamoDatastore(config: DynamoDatastore.Config)
   val chunkTable = table + "Chunks"
 
   val db = new AmazonDynamoDBClient(creds)
-  config.endpoint.foreach(ep => db.withEndpoint[AmazonDynamoDBClient](ep))
+  config.endpoint.foreach(ep => db.setEndpoint(ep))
 
   override def putData(key: MultiHash, value: Array[Byte]) {
     if (value.length < chunkSize) {
