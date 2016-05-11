@@ -10,9 +10,9 @@ env:
   - SBT_TARGET=protocol
   - SBT_TARGET=rpc
 script:
-  - sbt $SBT_TARGET/test
+  - sbt clean coverage $SBT_TARGET/test
 after_success:
-  - sbt coveralls
+  - sbt coverageAggregate && sbt coverageReport coveralls
 cache:
   directories:
     - $HOME/.ivy2
