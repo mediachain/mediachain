@@ -71,9 +71,9 @@ class CanonicalFolder(datastore: Datastore) {
     * @param canonical - the canonical record
     * @param chainHead - the head of the `CanonicalRecord`'s chain of update cells
     * @return - a new `CanonicalRecord` with the metadata from each cell merged in
-    * @throws IllegalStateException if given a `ChainCell` of the incorrect
-    *                               type for the given `CanonicalRecord`, e.g.
-    *                               if given an `Entity` and an `ArtefactUpdateCell`
+    * @throws IllegalArgumentException if given a `ChainCell` of the incorrect
+    *                                  type for the given `CanonicalRecord`, e.g.
+    *                                  if given an `Entity` and an `ArtefactUpdateCell`
     *
     */
   def foldedCanonical(canonical: CanonicalRecord, chainHead: Option[ChainCell]): CanonicalRecord = {
@@ -88,7 +88,7 @@ class CanonicalFolder(datastore: Datastore) {
         foldedArtefact(a, Some(c))
 
       case _ =>
-        throw new IllegalStateException(
+        throw new IllegalArgumentException(
           s"type mismatch between canonical of type ${canonical.getClass.getTypeName}" +
             s" and cell of type ${chainHead.get.getClass.getTypeName}"
         )
