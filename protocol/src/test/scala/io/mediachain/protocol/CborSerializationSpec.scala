@@ -10,7 +10,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
   import io.mediachain.protocol.Datastore._
   import io.mediachain.util.cbor.CborAST._
   import org.scalacheck.{Arbitrary, Gen}
-  import org.scalacheck.Test.Parameters
+  import org.specs2.scalacheck.Parameters
   import org.specs2.matcher.Matcher
 
   def is =
@@ -38,10 +38,11 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
       """
 
 
-  implicit val scalaCheckParams = Parameters.default
-    .withMinSuccessfulTests(10) // # of tests needed to pass before marking as success
-    .withMaxSize(5) // # of items to generate for containers (lists, etc)
-
+  implicit val scalaCheckParams =
+    Parameters(
+      minTestsOk = 10, // # of tests needed to pass before marking as success
+      maxSize = 5 // # of items to generate for containers (lists, etc)
+    )
 
   def matchTypeName(typeName: MediachainType): Matcher[CValue] =
     beLike {
@@ -94,7 +95,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     fromCbor(cbor) must beRightXor { obj: EntityChainCell =>
       obj must matchEntityChainCell(c)
     }
-  }.setArbitrary(Arbitrary(genEntityChainCell))
+  }.setArbitrary(abEntityChainCell)
 
   def roundTripEntityUpdateCell = prop { c: EntityUpdateCell =>
     val cbor = c.toCbor
