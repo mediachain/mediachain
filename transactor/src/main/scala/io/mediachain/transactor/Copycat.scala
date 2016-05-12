@@ -110,6 +110,7 @@ object Copycat {
     }
     
     def close() {
+      timer.cancel()
       client.close().join()
     }
     
