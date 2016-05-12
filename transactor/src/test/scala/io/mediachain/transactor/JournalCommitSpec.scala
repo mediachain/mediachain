@@ -12,7 +12,7 @@ object JournalCommitSpec extends io.mediachain.BaseSpec
   with BeforeAll
   with AfterAll
 {
-  val timeout = Duration(30, TimeUnit.SECONDS)
+  val timeout = Duration(120, TimeUnit.SECONDS)
 
   def is =
     sequential ^
