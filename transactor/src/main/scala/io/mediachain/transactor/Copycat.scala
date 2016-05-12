@@ -12,7 +12,7 @@ import io.atomix.catalyst.serializer.Serializer
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{Future, Promise}
-import scala.util.Try
+import scala.util.{Try, Success, Failure}
 import scala.compat.java8.FutureConverters
 
 import cats.data.Xor
@@ -50,7 +50,7 @@ object Copycat {
   }
 
   trait ClientStateListener {
-    def onStateChange(state: CopycatClient.State): Unit
+    // TODO synthetic client state event interface
   }
   
   class Client(client: CopycatClient) extends JournalClient {
@@ -119,13 +119,40 @@ object Copycat {
           
         case CopycatClient.State.CLOSED =>
           if (!shutdown) {
-            server.foreach { address =>
-              logger.info("Copycat session closed; attempting to reconnect")
-              client.connect(new Address(address))
-            }
+            logger.info("Copycat session closed; attempting to reconnect")
+            reconnect()
           }
       }
-      stateListeners.foreach(_.onStateChange(state))
+      
+    }
+    
+    private def reconnect() {
+      server.foreach { address =>
+        val thread = new Thread(new Runnable {
+          def run() {
+            def loop(retry: Int) {
+              if (retry < maxRetries) {
+                logger.info("Reconnecting to " + address)
+                Try(client.connect(new Address(address)).join()) match {
+                  case Success(_) => ()
+                  case Failure(e) =>
+                    logger.error("Connection error", e)
+                    if (!shutdown) { 
+                      val sleep = random.nextInt(Math.pow(2, retry).toInt * 1000)
+                      logger.info("Backing off reconnect for " + sleep + " ms")
+                      Thread.sleep(sleep)
+                      loop(retry + 1) 
+                    }
+                }
+              } else {
+                logger.info("Failed to reconnect; giving up.")
+              }
+            }
+            loop(0)
+          }
+        }, s"Copycat.Client@${this.hashCode}#reconnect")
+        thread.start()
+      }
     }
     
     def addStateListener(listener: ClientStateListener) {
