@@ -48,6 +48,10 @@ object Copycat {
       server
     }
   }
+
+  trait ClientStateListener {
+    def onStateChange(state: CopycatClient.State): Unit
+  }
   
   class Client(client: CopycatClient) extends JournalClient {
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -55,6 +59,7 @@ object Copycat {
     private var shutdown = false
     private var server: Option[String] = None
     private var listeners: Set[JournalListener] = Set()
+    private var stateListeners: Set[ClientStateListener] = Set()
     private val logger = LoggerFactory.getLogger(classOf[Client])
     private val random = new Random
     private val timer = new Timer(true) // runAsDaemon
@@ -64,8 +69,6 @@ object Copycat {
                                 onStateChange(state)
                               }
     })
-   
-    def copycat = client
     
     // submit a state machine operation with retry logic to account
     // for potentially transient client connectivity errors
@@ -122,6 +125,11 @@ object Copycat {
             }
           }
       }
+      stateListeners.foreach(_.onStateChange(state))
+    }
+    
+    def addStateListener(listener: ClientStateListener) {
+      stateListeners += listener
     }
 
     // Journal 
