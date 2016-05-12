@@ -26,8 +26,8 @@ object JournalFollowerSpec extends BaseSpec with ScalaCheck {
     maxSize = 5
   )
 
-  private def bootstrappedFollower(chainWithStore: BlockChainWithDatastore): JournalFollower = {
-    val follower = new JournalFollower(chainWithStore.datastore)
+  private def bootstrappedFollower(chainWithStore: BlockChainWithDatastore): InMemoryJournalFollower = {
+    val follower = new InMemoryJournalFollower(chainWithStore.datastore)
 
     val chainHead = chainWithStore.blockChain.lastOption
     val chainHeadRef = chainHead.map(MultihashReference.forDataObject)

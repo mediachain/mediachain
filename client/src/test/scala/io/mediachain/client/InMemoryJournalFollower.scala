@@ -5,7 +5,7 @@ import io.mediachain.protocol.Transactor.JournalListener
 
 import scala.collection.immutable.SortedMap
 
-class JournalFollower(val datastore: Datastore) extends JournalListener {
+class InMemoryJournalFollower(val datastore: Datastore) extends JournalListener {
 
   override def onJournalCommit(entry: JournalEntry): Unit = {
     // TODO
