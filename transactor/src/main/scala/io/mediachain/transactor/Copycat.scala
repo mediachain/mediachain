@@ -49,8 +49,16 @@ object Copycat {
     }
   }
 
+  sealed abstract class ClientState
+  
+  object ClientState {
+    case object Connected extends ClientState
+    case object Suspended extends ClientState
+    case object Disconnected extends ClientState
+  }
+
   trait ClientStateListener {
-    // TODO synthetic client state event interface
+    def onStateChange(state: ClientState): Unit
   }
   
   class Client(client: CopycatClient) extends JournalClient {
@@ -110,20 +118,23 @@ object Copycat {
       state match {
         case CopycatClient.State.CONNECTED => 
           logger.info("Copycat client connected")
+          stateListeners.foreach(_.onStateChange(ClientState.Connected))
           
         case CopycatClient.State.SUSPENDED =>
           if (!shutdown) {
             logger.info("Copycat session suspended; attempting to recover")
             client.recover()
+            stateListeners.foreach(_.onStateChange(ClientState.Suspended))
           }
           
         case CopycatClient.State.CLOSED =>
           if (!shutdown) {
             logger.info("Copycat session closed; attempting to reconnect")
             reconnect()
+          } else {
+            stateListeners.foreach(_.onStateChange(ClientState.Disconnected))
           }
       }
-      
     }
     
     private def reconnect() {
@@ -146,6 +157,7 @@ object Copycat {
                 }
               } else {
                 logger.info("Failed to reconnect; giving up.")
+                stateListeners.foreach(_.onStateChange(ClientState.Disconnected))
               }
             }
             loop(0)
