@@ -56,6 +56,7 @@ object MediachainBuild extends Build {
     .settings(settings)
     .dependsOn(protocol)
     .dependsOn(protocol % "test->test")
+    .dependsOn(transactor) // for access to CopycatClient
 
   Resolver.sonatypeRepo("public")
 
