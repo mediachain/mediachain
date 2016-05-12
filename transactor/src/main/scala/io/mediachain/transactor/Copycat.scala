@@ -84,7 +84,7 @@ object Copycat {
                 logger.info("Retrying operation " + op)
                 submit(op, retry + 1)
               } else {
-                Future {throw new RuntimeException("client shutdown")}
+                Future {throw new IllegalStateException("client shutdown")}
               }
             }
         }
