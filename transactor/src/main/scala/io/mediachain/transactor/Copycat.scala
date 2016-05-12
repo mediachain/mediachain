@@ -4,7 +4,7 @@ import java.io.File
 import java.util.function.{Consumer, Supplier}
 import java.util.{Random, Timer, TimerTask}
 import io.atomix.copycat.Operation
-import io.atomix.copycat.client.{CopycatClient, ConnectionStrategies, RecoveryStrategies}
+import io.atomix.copycat.client.{CopycatClient, ConnectionStrategies}
 import io.atomix.copycat.server.{CopycatServer, StateMachine => CopycatStateMachine}
 import io.atomix.copycat.server.storage.{Storage, StorageLevel}
 import io.atomix.catalyst.transport.{Address, NettyTransport}
@@ -52,25 +52,37 @@ object Copycat {
   class Client(client: CopycatClient) extends JournalClient {
     import scala.concurrent.ExecutionContext.Implicits.global
     
+    private var shutdown = false
+    private var server: Option[String] = None
     private var listeners: Set[JournalListener] = Set()
     private val logger = LoggerFactory.getLogger(classOf[Client])
     private val random = new Random
-    private val timer = new Timer
-    
+    private val timer = new Timer(true) // runAsDaemon
+ 
+    client.onStateChange(new Consumer[CopycatClient.State] {
+                              def accept(state: CopycatClient.State) {
+                                onStateChange(state)
+                              }
+    })
+   
     def copycat = client
     
     // submit a state machine operation with retry logic to account
     // for potentially transient client connectivity errors
     val maxRetries = 5
-    def submit[T](op: Operation[T], retry: Int = 0): Future[T] = {
+    private def submit[T](op: Operation[T], retry: Int = 0): Future[T] = {
       val fut = FutureConverters.toScala(client.submit(op))
       if (retry < maxRetries) {
         fut.recoverWith { 
           case e: Throwable =>
             logger.error("Copycat client error in " + op, e)
             backoff(retry).flatMap { retry => 
-              logger.info("Retrying operation " + op)
-              submit(op, retry + 1)
+              if (!shutdown) {
+                logger.info("Retrying operation " + op)
+                submit(op, retry + 1)
+              } else {
+                Future {throw new RuntimeException("client shutdown")}
+              }
             }
         }
       } else {
@@ -78,7 +90,7 @@ object Copycat {
       }
     }
     
-    def backoff(retry: Int): Future[Int] = {
+    private def backoff(retry: Int): Future[Int] = {
       val promise = Promise[Int]
       val delay = random.nextInt(Math.pow(2, retry).toInt * 1000)
       
@@ -89,6 +101,27 @@ object Copycat {
         }
       }, delay)
       promise.future
+    }
+    
+    private def onStateChange(state: CopycatClient.State) {
+      state match {
+        case CopycatClient.State.CONNECTED => 
+          logger.info("Copycat client connected")
+          
+        case CopycatClient.State.SUSPENDED =>
+          if (!shutdown) {
+            logger.info("Copycat session suspended; attempting to recover")
+            client.recover()
+          }
+          
+        case CopycatClient.State.CLOSED =>
+          if (!shutdown) {
+            server.foreach { address =>
+              logger.info("Copycat session closed; attempting to reconnect")
+              client.connect(new Address(address))
+            }
+          }
+      }
     }
 
     // Journal 
@@ -106,11 +139,12 @@ object Copycat {
     
     // JournalClient
     def connect(address: String) {
+      server = Some(address)
       client.connect(new Address(address)).join()
     }
     
     def close() {
-      timer.cancel()
+      shutdown = true
       client.close().join()
     }
     
@@ -142,7 +176,6 @@ object Copycat {
                                     .withThreads(2)
                                     .build())
                     .withConnectionStrategy(ConnectionStrategies.EXPONENTIAL_BACKOFF)
-                    .withRecoveryStrategy(RecoveryStrategies.RECOVER)
                     .build()
       Serializers.register(client.serializer)
       new Client(client)
