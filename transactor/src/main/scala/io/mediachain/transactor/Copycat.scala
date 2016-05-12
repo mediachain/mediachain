@@ -128,42 +128,8 @@ object Copycat {
           }
           
         case CopycatClient.State.CLOSED =>
-          if (!shutdown) {
-            logger.info("Copycat session closed; attempting to reconnect")
-            reconnect()
-          } else {
-            stateListeners.foreach(_.onStateChange(ClientState.Disconnected))
-          }
-      }
-    }
-    
-    private def reconnect() {
-      server.foreach { address =>
-        val thread = new Thread(new Runnable {
-          def run() {
-            def loop(retry: Int) {
-              if (retry < maxRetries) {
-                logger.info("Reconnecting to " + address)
-                Try(client.connect(new Address(address)).join()) match {
-                  case Success(_) => ()
-                  case Failure(e) =>
-                    logger.error("Connection error", e)
-                    if (!shutdown) { 
-                      val sleep = random.nextInt(Math.pow(2, retry).toInt * 1000)
-                      logger.info("Backing off reconnect for " + sleep + " ms")
-                      Thread.sleep(sleep)
-                      loop(retry + 1) 
-                    }
-                }
-              } else {
-                logger.info("Failed to reconnect; giving up.")
-                stateListeners.foreach(_.onStateChange(ClientState.Disconnected))
-              }
-            }
-            loop(0)
-          }
-        }, s"Copycat.Client@${this.hashCode}#reconnect")
-        thread.start()
+          logger.info("Copycat session closed")
+          stateListeners.foreach(_.onStateChange(ClientState.Disconnected))
       }
     }
     
