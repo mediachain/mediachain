@@ -2,13 +2,17 @@ package io.mediachain.transactor
 
 import java.io.File
 import java.util.function.{Consumer, Supplier}
+import java.util.{Random, Timer, TimerTask}
+import io.atomix.copycat.Operation
 import io.atomix.copycat.client.{CopycatClient, ConnectionStrategies, RecoveryStrategies}
 import io.atomix.copycat.server.{CopycatServer, StateMachine => CopycatStateMachine}
 import io.atomix.copycat.server.storage.{Storage, StorageLevel}
 import io.atomix.catalyst.transport.{Address, NettyTransport}
 import io.atomix.catalyst.serializer.Serializer
+import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
+import scala.util.Try
 import scala.compat.java8.FutureConverters
 
 import cats.data.Xor
@@ -46,22 +50,59 @@ object Copycat {
   }
   
   class Client(client: CopycatClient) extends JournalClient {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    
     private var listeners: Set[JournalListener] = Set()
+    private val logger = LoggerFactory.getLogger(classOf[Client])
+    private val random = new Random
+    private val timer = new Timer
     
     def copycat = client
     
+    // submit a state machine operation with retry logic to account
+    // for potentially transient client connectivity errors
+    val maxRetries = 5
+    def submit[T](op: Operation[T], retry: Int = 0): Future[T] = {
+      val fut = FutureConverters.toScala(client.submit(op))
+      if (retry < maxRetries) {
+        fut.recoverWith { 
+          case e: Throwable =>
+            logger.error("Copycat client error in " + op, e)
+            backoff(retry + 1).flatMap { retry => 
+              logger.info("Retrying operation " + op)
+              submit(op, retry)
+            }
+        }
+      } else {
+        fut
+      }
+    }
+    
+    def backoff(retry: Int): Future[Int] = {
+      val promise = Promise[Int]
+      val delay = random.nextInt(retry * 1000)
+      
+      logger.info("Backing off for " + delay + " ms")
+      timer.schedule(new TimerTask {
+        def run {
+          promise.complete(Try(retry))
+        }
+      }, delay)
+      promise.future
+    }
+
     // Journal 
     def insert(rec: CanonicalRecord): Future[Xor[JournalError, CanonicalEntry]] =
-      FutureConverters.toScala(client.submit(JournalInsert(rec)))
+      submit(JournalInsert(rec))
 
     def update(ref: Reference, cell: ChainCell): Future[Xor[JournalError, ChainEntry]] =
-      FutureConverters.toScala(client.submit(JournalUpdate(ref, cell)))
+      submit(JournalUpdate(ref, cell))
     
     def lookup(ref: Reference): Future[Option[Reference]] = 
-      FutureConverters.toScala(client.submit(JournalLookup(ref)))
+      submit(JournalLookup(ref))
     
     def currentBlock: Future[JournalBlock] =
-      FutureConverters.toScala(client.submit(JournalCurrentBlock()))
+      submit(JournalCurrentBlock())
     
     // JournalClient
     def connect(address: String) {
