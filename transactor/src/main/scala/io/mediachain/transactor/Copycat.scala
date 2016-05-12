@@ -68,9 +68,9 @@ object Copycat {
         fut.recoverWith { 
           case e: Throwable =>
             logger.error("Copycat client error in " + op, e)
-            backoff(retry + 1).flatMap { retry => 
+            backoff(retry).flatMap { retry => 
               logger.info("Retrying operation " + op)
-              submit(op, retry)
+              submit(op, retry + 1)
             }
         }
       } else {
@@ -80,7 +80,7 @@ object Copycat {
     
     def backoff(retry: Int): Future[Int] = {
       val promise = Promise[Int]
-      val delay = random.nextInt(retry * 1000)
+      val delay = random.nextInt(Math.pow(2, retry).toInt * 1000)
       
       logger.info("Backing off for " + delay + " ms")
       timer.schedule(new TimerTask {
