@@ -6,56 +6,52 @@ import io.mediachain.util.cbor.CborAST._
 import co.nstant.in.cbor.model.{DataItem, RationalNumber, UnsignedInteger, LanguageTaggedString}
 
 object CValueGenerators {
-
+  import io.mediachain.util.gen.GenInstances._
+  import cats.syntax.cartesian._
 
   val genCNull = Gen.const(CNull)
   val genCUndefined = Gen.const(CUndefined)
-  val genCTag = for (t <- arbitrary[Long]) yield CTag(t)
-  val genCInt = for (i <- arbitrary[BigInt]) yield CInt(i)
-  val genCDouble = for (d <- arbitrary[Double]) yield CDouble(d)
-  val genCBool = for (b <- arbitrary[Boolean]) yield CBool(b)
-  val genCString = for(s <- arbitrary[String]) yield CString(s)
-  val genCBytes = for (b <- arbitrary[Array[Byte]]) yield CBytes(b)
+  val genCTag = arbitrary[Long].map(CTag)
+  val genCInt = arbitrary[BigInt].map(CInt)
+  val genCDouble = arbitrary[Double].map(CDouble)
+  val genCBool = arbitrary[Boolean].map(CBool)
+  val genCString = arbitrary[String].map(CString)
+  val genCBytes = arbitrary[Array[Byte]].map(CBytes)
 
 
   val genCPrimitive = Gen.oneOf(
-    genCNull, genCUndefined, genCTag, genCInt, genCDouble, genCBool, genCBytes, genCString
+    genCNull, genCUndefined, genCTag, genCInt, genCDouble, genCBool,genCBytes,
+    genCString
   )
 
   val genCArray = for {
     list <- Gen.containerOf[List, CValue](genCPrimitive)
   } yield CArray(list)
 
-
   val genCMap = for {
-    keys <- Gen.containerOf[List, CValue](Gen.oneOf(genCInt, genCDouble, genCString))
-    vals <- Gen.containerOfN[List, CValue](keys.length, genCPrimitive)
+    keys <- Gen.containerOf[List, CValue](
+      Gen.oneOf(genCInt, genCDouble, genCString)
+    )
+    vals <- Gen.containerOfN[List, CValue](
+      keys.length, genCPrimitive
+    )
     kvs = (keys, vals).zipped.toList
   } yield CMap(kvs)
 
-
   // Generate some DataItems we don't unwrap for CUnhandled generator
-  val genRational = for {
-    numerator <- Gen.posNum[Long]
-    denominator <- Gen.posNum[Long]
-  } yield new RationalNumber(
-    new UnsignedInteger(numerator),
-    new UnsignedInteger(denominator)
-  )
+  val genRational =
+    (Gen.posNum[Long].map(new UnsignedInteger(_)) |@|
+      Gen.posNum[Long].map(new UnsignedInteger(_))
+      ).map(new RationalNumber(_, _))
 
-  val genTaggedString = for {
-    lang <- Gen.oneOf("en", "fr", "es")
-    str <- Gen.alphaStr
-  } yield new LanguageTaggedString(lang, str)
+  val genTaggedString =
+    (Gen.oneOf("en", "fr", "es") |@| Gen.alphaStr)
+      .map(new LanguageTaggedString(_, _))
 
-  val genCUnhandled = for {
-    dataItem <- Gen.oneOf[DataItem](genRational, genTaggedString)
-  } yield CUnhandled(dataItem)
+  val genCUnhandled = Gen.oneOf[DataItem](genRational, genTaggedString)
+    .map(CUnhandled)
 
-  val genCValue = Gen.oneOf(
-    genCPrimitive, genCArray, genCMap,
-    genCUnhandled
-  )
+  val genCValue =Gen.oneOf(genCPrimitive, genCArray, genCMap, genCUnhandled)
 
   implicit def arbitraryCValue: Arbitrary[CValue] = Arbitrary(genCValue)
 }
