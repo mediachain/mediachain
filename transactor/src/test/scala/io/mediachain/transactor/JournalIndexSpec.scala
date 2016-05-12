@@ -12,7 +12,7 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
   with AfterAll
 {
   
-  val timeout = Duration(5, TimeUnit.SECONDS)
+  val timeout = Duration(30, TimeUnit.SECONDS)
   
   def is =
     sequential ^
