@@ -9,8 +9,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 sealed trait MediachainClientEvent
 object MediachainClientEvent {
-  case class CanonicalAdded(ref: Reference)
-  case class CanonicalUpdated(chainRef: Reference)
+  case class CanonicalAdded(ref: Reference) extends MediachainClientEvent
+  case class CanonicalUpdated(chainRef: Reference) extends MediachainClientEvent
 }
 
 trait ClientEventListener {
@@ -51,9 +51,10 @@ class MediachainCopycatClient(datastore: Datastore)
   }
 
   def addListener(listener: ClientEventListener): Unit = {
-    // TODO
+    listeners += listener
   }
 
+  var listeners: Set[ClientEventListener] = Set()
   var canonicalRefs: Set[Reference] = Set()
   var clusterClientState: ClientState = ClientState.Disconnected
 
