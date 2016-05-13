@@ -67,8 +67,8 @@ object Copycat {
     import scala.concurrent.ExecutionContext.Implicits.global
     import ClientState._
     
-    private var shutdown = false
-    private var state: ClientState = Disconnected
+    @volatile private var shutdown = false
+    @volatile private var state: ClientState = Disconnected
     private var server: Option[String] = None
     private var reconnectThread: Option[Thread] = None
     private var listeners: Set[JournalListener] = Set()
