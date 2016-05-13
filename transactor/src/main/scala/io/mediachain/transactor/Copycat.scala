@@ -49,6 +49,8 @@ object Copycat {
     }
   }
 
+  class ClientException(what: String) extends RuntimeException(what)
+
   sealed abstract class ClientState
   
   object ClientState {
@@ -63,9 +65,12 @@ object Copycat {
   
   class Client(client: CopycatClient) extends JournalClient {
     import scala.concurrent.ExecutionContext.Implicits.global
+    import ClientState._
     
     private var shutdown = false
+    private var state: ClientState = Disconnected
     private var server: Option[String] = None
+    private var reconnectThread: Option[Thread] = None
     private var listeners: Set[JournalListener] = Set()
     private var stateListeners: Set[ClientStateListener] = Set()
     private val logger = LoggerFactory.getLogger(classOf[Client])
@@ -82,22 +87,34 @@ object Copycat {
     // for potentially transient client connectivity errors
     val maxRetries = 5
     private def submit[T](op: Operation[T], retry: Int = 0): Future[T] = {
-      val fut = FutureConverters.toScala(client.submit(op))
-      if (retry < maxRetries) {
-        fut.recoverWith { 
-          case e: Throwable =>
-            logger.error("Copycat client error in " + op, e)
-            backoff(retry).flatMap { retry => 
-              if (!shutdown) {
-                logger.info("Retrying operation " + op)
-                submit(op, retry + 1)
-              } else {
-                Future {throw new IllegalStateException("client shutdown")}
-              }
+      (state, shutdown) match {
+        case (_, true) =>
+          Future {throw new ClientException("Copycat client has shutdown")}
+
+        case (Disconnected, _) => 
+          Future {throw new ClientException("Copycat client is disconnected")}
+
+        case (Suspended, _) =>
+          logger.info("Copycat client is suspended; delaying "+ op)
+          backoff(1).flatMap { _ =>
+            logger.info("Retrying operation " + op)
+            submit(op, retry)
+          }
+          
+        case (Connected, _) =>
+          val fut = FutureConverters.toScala(client.submit(op))
+          if (retry < maxRetries) {
+            fut.recoverWith { 
+              case e: Throwable =>
+                logger.error("Copycat client error in " + op, e)
+                backoff(retry).flatMap { retry => 
+                  logger.info("Retrying operation " + op)
+                  submit(op, retry + 1)
+                }
             }
-        }
-      } else {
-        fut
+          } else {
+            fut
+          }
       }
     }
     
@@ -114,23 +131,83 @@ object Copycat {
       promise.future
     }
     
-    private def onStateChange(state: CopycatClient.State) {
-      state match {
+    private def onStateChange(cstate: CopycatClient.State) {
+      cstate match {
         case CopycatClient.State.CONNECTED => 
-          logger.info("Copycat client connected")
-          stateListeners.foreach(_.onStateChange(ClientState.Connected))
+          state = Connected
+          logger.info("Copycat session connected")
+          stateListeners.foreach(_.onStateChange(Connected))
           
         case CopycatClient.State.SUSPENDED =>
+          state = Suspended
           if (!shutdown) {
             logger.info("Copycat session suspended; attempting to recover")
+            stateListeners.foreach(_.onStateChange(Suspended))
             client.recover()
-            stateListeners.foreach(_.onStateChange(ClientState.Suspended))
           }
           
         case CopycatClient.State.CLOSED =>
-          logger.info("Copycat session closed")
-          stateListeners.foreach(_.onStateChange(ClientState.Disconnected))
+          if (!shutdown) {
+            val ostate = state
+            state = Suspended
+            logger.info("Copycat session closed; attempting to reconnect")
+            if (ostate != state) {
+              stateListeners.foreach(_.onStateChange(Suspended))
+            }
+            reconnect()
+          } else {
+            state = Disconnected
+            logger.info("Copycat sesison closed")
+            stateListeners.foreach(_.onStateChange(Disconnected))
+          }
       }
+    }
+    
+    private def reconnect() {
+      def loop(retry: Int) {
+        server.foreach { address =>
+          if (!shutdown) {
+            if (retry < maxRetries) {
+              logger.info("Reconnecting to " + address)
+              Try(client.connect(new Address(address)).join()) match {
+                case Success(_) => ()
+                case Failure(e) =>
+                  logger.error("Connection error", e)
+                  val sleep = random.nextInt(Math.pow(2, retry).toInt * 1000)
+                  logger.info("Backing off reconnect for " + sleep + " ms")
+                  Thread.sleep(sleep)
+                  loop(retry + 1) 
+              }
+            } else {
+              disconnect("Failed to reconnect; giving up.")
+            }
+          } else {
+            disconnect("Client has shutdown")
+          }
+        }
+      }
+      
+      def disconnect(what: String) {
+        state = Disconnected
+        logger.info(what)
+        stateListeners.foreach(_.onStateChange(Disconnected))
+      }
+      
+      val thread = new Thread(new Runnable {
+        def run() { 
+          try {
+            loop(0) 
+          } catch {
+            case e: InterruptedException => ()
+            case e: Throwable =>
+              logger.error("Unhandled exception in Client#reconnect", e)
+          } finally {
+            reconnectThread = None
+          }
+        }
+      }, s"Copycat.Client@${this.hashCode}#reconnect")
+      reconnectThread = Some(thread)
+      thread.start()
     }
     
     def addStateListener(listener: ClientStateListener) {
@@ -158,6 +235,7 @@ object Copycat {
     
     def close() {
       shutdown = true
+      reconnectThread.foreach(_.interrupt())
       client.close().join()
     }
     
