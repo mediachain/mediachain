@@ -156,11 +156,15 @@ object Copycat {
             }
             reconnect()
           } else {
-            state = Disconnected
-            logger.info("Copycat session closed")
-            stateListeners.foreach(_.onStateChange(Disconnected))
+            disconnect("Copycat session closed")
           }
       }
+    }
+    
+    private def disconnect(what: String) {
+      state = Disconnected
+      logger.info(what)
+      stateListeners.foreach(_.onStateChange(Disconnected))
     }
     
     private def reconnect() {
@@ -190,20 +194,16 @@ object Copycat {
         }
       }
       
-      def disconnect(what: String) {
-        state = Disconnected
-        logger.info(what)
-        stateListeners.foreach(_.onStateChange(Disconnected))
-      }
-      
       val thread = new Thread(new Runnable {
         def run() { 
           try {
             server.foreach { address => loop(address, 0) }
           } catch {
-            case e: InterruptedException => ()
+            case e: InterruptedException => 
+              disconnect("Client reconnect thread interrupted")
             case e: Throwable =>
               logger.error("Unhandled exception in Client#reconnect", e)
+              disconnect("Client reconnect failed")
           } finally {
             reconnectThread = None
           }
@@ -232,14 +232,20 @@ object Copycat {
     
     // JournalClient
     def connect(address: String) {
-      server = Some(address)
-      client.connect(new Address(address)).join()
+      if (!shutdown) {
+        server = Some(address)
+        client.connect(new Address(address)).join()
+      } else {
+        throw new IllegalStateException("client has been shutdown")
+      }
     }
     
     def close() {
-      shutdown = true
-      reconnectThread.foreach(_.interrupt())
-      client.close().join()
+      if (!shutdown) {
+        shutdown = true
+        reconnectThread.foreach(_.interrupt())
+        client.close().join()
+      }
     }
     
     def listen(listener: JournalListener) {
