@@ -76,16 +76,15 @@ object Copycat {
     private val logger = LoggerFactory.getLogger(classOf[Client])
     private val random = new Random
     private val timer = new Timer(true) // runAsDaemon
+    private val maxRetries = 5
  
     client.onStateChange(new Consumer[CopycatClient.State] {
-                              def accept(state: CopycatClient.State) {
-                                onStateChange(state)
-                              }
-    })
+      def accept(state: CopycatClient.State) {
+        onStateChange(state)
+      }})
     
     // submit a state machine operation with retry logic to account
     // for potentially transient client connectivity errors
-    val maxRetries = 5
     private def submit[T](op: Operation[T], retry: Int = 0): Future[T] = {
       (state, shutdown) match {
         case (_, true) =>
