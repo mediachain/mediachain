@@ -15,10 +15,13 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   val random = new Random
   val maxBackoffRetry = 60 // second
   val queue = new LinkedBlockingDeque[MultiHash]
-  val writer = new Thread(this, s"PersistentDataStore@${this.hashCode}#write")
+  val writers = (1 to config.threads).map { n =>
+    new Thread(this, s"PersistentDataStore@${this.hashCode}#write-${n}")
+  }
   
   def start() {
-    writer.start()
+    recover()
+    writers.foreach(_.start())
   }
   
   override def putData(key: MultiHash, value: Array[Byte]) {
@@ -31,8 +34,8 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   }
   
   override def close() {
-    writer.interrupt()
-    writer.join()
+    writers.foreach(_.interrupt())
+    writers.foreach(_.join())
     rocks.close()
     dynamo.close()
   }
@@ -40,7 +43,6 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   // background writer
   override def run() {
     try {
-      recover()
       loop(0)
     } catch {
       case e: InterruptedException => ()
@@ -88,5 +90,9 @@ class PersistentDatastore(config: PersistentDatastore.Config)
 }
 
 object PersistentDatastore {
-  case class Config(dynamo: DynamoDatastore.Config, rocks: String)
+  case class Config(
+    dynamo: DynamoDatastore.Config, 
+    rocks: String,
+    threads: Int = Runtime.getRuntime.availableProcessors
+  )
 }
