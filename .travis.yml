@@ -9,21 +9,8 @@ env:
   - SBT_TARGET=translation_engine
   - SBT_TARGET=protocol
   - SBT_TARGET=rpc
-  - SBT_TARGET=mediachain
 script:
-  - curl -Lo travis_after_all.py https://raw.github.com/dmakhno/travis_after_all/master/travis_after_all.py && sbt clean coverage $SBT_TARGET/test
-after_success:
-  - python travis_after_all.py https://api.travis-ci.com
-  - export $(cat .to_export_back)
-  - |
-      if [ "$BUILD_LEADER" = "YES" ]; then
-        if [ "$BUILD_AGGREGATE_STATUS" = "others_succeeded" ]; then
-          echo "All jobs succeeded! Pushing coveralls..."
-          sbt coverageAggregate && sbt coverageReport coveralls
-        else
-          echo "Some jobs failed, not pushing"
-        fi
-      fi
+  - sbt $SBT_TARGET/test
 cache:
   directories:
     - $HOME/.ivy2
@@ -32,8 +19,3 @@ notifications:
   slack: mediachain:gzFe4w4HwIlNnxaHy1vAKW3q
   on_success: change
   on_failure: change
-matrix:
-  fast_finish: true
-  allow_failures:
-    - env: SBT_TARGET=transactor
-    - env: SBT_TARGET=mediachain
