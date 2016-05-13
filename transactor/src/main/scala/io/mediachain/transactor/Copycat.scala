@@ -157,33 +157,36 @@ object Copycat {
             reconnect()
           } else {
             state = Disconnected
-            logger.info("Copycat sesison closed")
+            logger.info("Copycat session closed")
             stateListeners.foreach(_.onStateChange(Disconnected))
           }
       }
     }
     
     private def reconnect() {
-      def loop(retry: Int) {
-        server.foreach { address =>
-          if (!shutdown) {
-            if (retry < maxRetries) {
-              logger.info("Reconnecting to " + address)
-              Try(client.connect(new Address(address)).join()) match {
-                case Success(_) => ()
-                case Failure(e) =>
-                  logger.error("Connection error", e)
-                  val sleep = random.nextInt(Math.pow(2, retry).toInt * 1000)
-                  logger.info("Backing off reconnect for " + sleep + " ms")
-                  Thread.sleep(sleep)
-                  loop(retry + 1) 
-              }
-            } else {
-              disconnect("Failed to reconnect; giving up.")
+      def loop(address: String, retry: Int) {
+        if (!shutdown) {
+          if (retry < maxRetries) {
+            logger.info("Reconnecting to " + address)
+            Try(client.connect(new Address(address)).join()) match {
+              case Success(_) => 
+                if (shutdown) {
+                  // lost race with user calling #close
+                  // make sure the client is closed
+                  client.close()
+                }
+              case Failure(e) =>
+                logger.error("Connection error", e)
+                val sleep = random.nextInt(Math.pow(2, retry).toInt * 1000)
+                logger.info("Backing off reconnect for " + sleep + " ms")
+                Thread.sleep(sleep)
+                loop(address, retry + 1) 
             }
           } else {
-            disconnect("Client has shutdown")
+            disconnect("Failed to reconnect; giving up.")
           }
+        } else {
+          disconnect("Client has shutdown")
         }
       }
       
@@ -196,7 +199,7 @@ object Copycat {
       val thread = new Thread(new Runnable {
         def run() { 
           try {
-            loop(0) 
+            server.foreach { address => loop(address, 0) }
           } catch {
             case e: InterruptedException => ()
             case e: Throwable =>
