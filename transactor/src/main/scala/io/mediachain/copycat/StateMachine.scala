@@ -1,4 +1,4 @@
-package io.mediachain.transactor
+package io.mediachain.copycat
 
 import scala.collection.mutable.{Set => MSet, HashSet => MHashSet, 
                                  Map => MMap, HashMap => MHashMap,

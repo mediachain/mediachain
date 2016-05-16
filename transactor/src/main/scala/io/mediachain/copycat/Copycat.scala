@@ -1,4 +1,4 @@
-package io.mediachain.transactor
+package io.mediachain.copycat
 
 import java.io.File
 import java.util.function.{Consumer, Supplier}
@@ -18,7 +18,7 @@ import scala.compat.java8.FutureConverters
 import cats.data.Xor
 
 object Copycat {
-  import io.mediachain.transactor.StateMachine._
+  import io.mediachain.copycat.StateMachine._
   import io.mediachain.protocol.Datastore._
   import io.mediachain.protocol.Transactor._
 
