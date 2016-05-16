@@ -25,7 +25,7 @@ object DummyContext {
   
   def setupLogdir() = {
     import sys.process._
-    val logdir = "mktemp -d".!!
+    val logdir = "mktemp -d".!!.trim
     (s"mkdir -p $logdir").!
     logdir
   }
