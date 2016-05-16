@@ -42,8 +42,7 @@ object SeedingCopycatClientSpec extends BaseSpec
       throw new Exception("Can't generate testing blockchain")
     )
 
-    val seedingClient = new SeedingCopycatClient("127.0.0.1:12345")(ExecutionContext.global)
-    val f = seedingClient.seed(chainWithDatastore.blockChain, chainWithDatastore.datastore)
+    val f = context.client.seed(chainWithDatastore.blockChain, chainWithDatastore.datastore)
 
     try {
       Await.result(f, 5.seconds) must beRightXor
@@ -61,6 +60,7 @@ object SeedingCopycatClientSpec extends BaseSpec
 
 case class CopycatContext(
   server: CopycatServer,
+  client: SeedingCopycatClient,
   store: Datastore,
   logdir: Path) {
 
@@ -83,7 +83,8 @@ object CopycatContext {
     val logdir = Files.createTempDirectory("mediachain-copycat-client-spec")
     val store = new InMemoryDatastore
     val server = copycat.Server.build(address, logdir.toAbsolutePath.toString, store)
-    CopycatContext(server, store, logdir)
+    val client = new SeedingCopycatClient(address)(ExecutionContext.global)
+    CopycatContext(server, client, store, logdir)
   }
 
 }

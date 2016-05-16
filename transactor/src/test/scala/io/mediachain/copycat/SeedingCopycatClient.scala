@@ -9,7 +9,8 @@ import io.mediachain.protocol.Transactor.{JournalCommitError, JournalError, Jour
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class SeedingCopycatClient(serverAddress: String)
-  (implicit executionContext: ExecutionContext) {
+  (implicit executionContext: ExecutionContext)
+  extends JournalListener {
 
   val client = Client.build()
 
@@ -62,14 +63,6 @@ class SeedingCopycatClient(serverAddress: String)
         case _ => f2
       }
 
-    client.listen(new JournalListener {
-      override def onJournalBlock(ref: Reference): Unit =
-        println(s"*** journal block committed: ${datastore.get(ref)}")
-
-      override def onJournalCommit(entry: JournalEntry): Unit =
-        println(s"*** journal entry committed: $entry")
-    })
-
     val p = Promise[Xor[JournalError, JournalEntry]]()
     client.addStateListener(new ClientStateListener {
       override def onStateChange(state: ClientState): Unit = {
@@ -90,8 +83,15 @@ class SeedingCopycatClient(serverAddress: String)
     }
 
     client.connect(serverAddress)
+    client.listen(this)
+
     p.future
   }
 
 
+  override def onJournalBlock(ref: Reference): Unit =
+    println(s"*** journal block committed: $ref")
+
+  override def onJournalCommit(entry: JournalEntry): Unit =
+    println(s"*** journal entry committed: $entry")
 }
