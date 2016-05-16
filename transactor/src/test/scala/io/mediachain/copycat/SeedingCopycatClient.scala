@@ -1,19 +1,19 @@
-package io.mediachain.transactor
+package io.mediachain.copycat
 
 import cats.data.Xor
+import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
+import io.mediachain.copycat.Dummies.DummyReference
 import io.mediachain.protocol.Datastore.{CanonicalRecord, ChainCell, ChainEntry, _}
-import io.mediachain.protocol.Transactor.{JournalCommitError, JournalError, JournalListener}
-import io.mediachain.transactor.Copycat.{ClientState, ClientStateListener}
-import io.mediachain.transactor.Dummies.DummyReference
+import io.mediachain.protocol.Transactor.{JournalCommitError, JournalError}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class SeedingCopycatClient(serverAddress: String)
   (implicit executionContext: ExecutionContext) {
 
-  val client = Copycat.Client.build()
+  val client = Client.build()
 
-  def replayEntry(journalEntry: JournalEntry, client: Copycat.Client, datastore: Datastore)
+  def replayEntry(journalEntry: JournalEntry, client: Client, datastore: Datastore)
     (implicit executionContext: ExecutionContext)
   : Future[Xor[JournalError, JournalEntry]] = {
     journalEntry match {
@@ -36,7 +36,11 @@ class SeedingCopycatClient(serverAddress: String)
       case e: ChainEntry => {
         val cell = datastore.getAs[ChainCell](e.chain)
 
-        cell.map(c => client.update(c.ref, c))
+        cell.map(c => client.update(c.ref, c)
+          .map { res =>
+            println(s"replayed entry ${journalEntry.index}. result: $res")
+            res
+        })
           .getOrElse(
             Future.successful(
               Xor.left[JournalError, JournalEntry](
@@ -64,10 +68,10 @@ class SeedingCopycatClient(serverAddress: String)
     client.addStateListener(new ClientStateListener {
       override def onStateChange(state: ClientState): Unit = {
         println(s"client state changed: $state")
-//        val serialOps = journalEntries.foldRight(empty) {
-//          (entry, accumF) => serialize(accumF, replayEntry(entry, client, datastore))
-//        }
-        p.completeWith(replayEntry(journalEntries.head, client, datastore))
+        val serialOps = journalEntries.foldRight(empty) {
+          (entry, accumF) => serialize(accumF, replayEntry(entry, client, datastore))
+        }
+        p.completeWith(serialOps)
       }
     })
 

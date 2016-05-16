@@ -8,9 +8,9 @@ import io.mediachain.BaseSpec
 import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.InMemoryDatastore
 import io.mediachain.protocol.Transactor.{JournalCommitError, JournalError, JournalListener}
-import io.mediachain.transactor.{Copycat, SeedingCopycatClient}
-import io.mediachain.transactor.Copycat.{ClientState, ClientStateListener}
-import io.mediachain.transactor.Dummies.DummyReference
+import io.mediachain.copycat
+import io.mediachain.copycat.SeedingCopycatClient
+import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
 import io.mediachain.util.FileUtils
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.specification.ForEach
@@ -39,7 +39,7 @@ object CopycatContext {
   def apply(address: String, blocksize: Int): CopycatContext = {
     val logdir = Files.createTempDirectory("mediachain-copycat-client-spec")
     val store = new InMemoryDatastore
-    val server = Copycat.Server.build(address, logdir.toAbsolutePath.toString, store)
+    val server = copycat.Server.build(address, logdir.toAbsolutePath.toString, store)
     CopycatContext(server, store, logdir)
   }
 
@@ -75,7 +75,13 @@ object MediachainCopycatClientSpec extends BaseSpec
 
     val seedingClient = new SeedingCopycatClient("127.0.0.1:12345")(ExecutionContext.global)
     val f = seedingClient.seed(chainWithDatastore.blockChain, chainWithDatastore.datastore)
-    Await.result(f, 30.seconds) must beRightXor
+
+    try {
+      Await.result(f, 5.seconds) must beRightXor
+    } finally {
+      seedingClient.client.close()
+      context.shutdown()
+    }
 
 
     val seedObjectRefs = chainWithDatastore.datastore.store.keys
