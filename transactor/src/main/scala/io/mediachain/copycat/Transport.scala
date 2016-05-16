@@ -13,7 +13,8 @@ object Transport {
     val builder = NettyTransport.builder().withThreads(threads)
     sslConfig match {
       case Some(SSLConfig(path, pass, keypass)) =>
-        builder.withKeyStorePath(path)
+        builder.withSsl()
+          .withKeyStorePath(path)
           .withKeyStorePassword(pass)
           .withKeyStoreKeyPassword(keypass)
           .build()
