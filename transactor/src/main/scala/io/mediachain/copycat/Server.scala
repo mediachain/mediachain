@@ -11,7 +11,7 @@ import io.mediachain.copycat.StateMachine._
 
 object Server {
   def build(address: String, logdir: String, datastore: Datastore,
-            keyStorePath: Option[String] = None,
+            sslConfig: Option[Transport.SSLConfig] = None,
             blocksize: Int = StateMachine.JournalBlockSize)
   : CopycatServer = {
     def stateMachineSupplier() = {
@@ -28,7 +28,7 @@ object Server {
         .withDirectory(new File(logdir))
         .withStorageLevel(StorageLevel.DISK)
         .build())
-      .withTransport(Transport.build(4, keyStorePath))
+      .withTransport(Transport.build(4, sslConfig))
       .build()
     Serializers.register(server.serializer)
     server

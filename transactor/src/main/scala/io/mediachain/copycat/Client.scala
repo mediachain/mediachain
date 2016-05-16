@@ -239,9 +239,9 @@ object Client {
     def onStateChange(state: ClientState): Unit
   }
   
-  def build(keyStorePath: Option[String] = None): Client = {
+  def build(sslConfig: Option[Transport.SSLConfig] = None): Client = {
     val client = CopycatClient.builder()
-      .withTransport(Transport.build(2, keyStorePath))
+      .withTransport(Transport.build(2, sslConfig))
       .withConnectionStrategy(ConnectionStrategies.EXPONENTIAL_BACKOFF)
       .build()
     Serializers.register(client.serializer)
