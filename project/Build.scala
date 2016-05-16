@@ -33,7 +33,7 @@ object MediachainBuild extends Build {
     .settings(settings)
 
   // TODO: replace this with maven-published version
-  val scalaMultihashCommit = "c21efd1b3534d9a4c5f7b2bc2d971eed0e5a2744"
+  val scalaMultihashCommit = "f8ddda5c98ff0d73fdcadfc8a66332cb22f9c23b"
   lazy val scalaMultihash = RootProject(uri(
     s"git://github.com/mediachain/scala-multihash.git#$scalaMultihashCommit"
   ))
