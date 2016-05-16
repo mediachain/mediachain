@@ -1,4 +1,4 @@
-package io.mediachain.transactor
+package io.mediachain.copycat
 
 import io.atomix.copycat.server.CopycatServer
 import io.atomix.catalyst.transport.Address
