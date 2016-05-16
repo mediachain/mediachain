@@ -18,7 +18,7 @@ object DummyContext {
     val store = new Dummies.DummyStore
     val server = Server.build(address, logdir, store, blocksize)
     server.bootstrap().join()
-    val client = Copycat.Client.build()
+    val client = Client.build()
     client.connect(address)
     DummyContext(server, client, store, logdir)
   }
@@ -56,7 +56,7 @@ object DummyClusterContext {
         val store = new Dummies.DummyStore
         val logdir = DummyContext.setupLogdir()
         val server = Server.build(address, logdir, store, blocksize)
-        val client = Copycat.Client.build()
+        val client = Client.build()
         DummyContext(server, client, store, logdir)
     }
     
