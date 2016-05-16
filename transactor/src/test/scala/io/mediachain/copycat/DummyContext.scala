@@ -16,7 +16,7 @@ object DummyContext {
     println("*** SETUP DUMMY COPYCAT CONTEXT")
     val logdir = setupLogdir()
     val store = new Dummies.DummyStore
-    val server = Copycat.Server.build(address, logdir, store, blocksize)
+    val server = Server.build(address, logdir, store, blocksize)
     server.bootstrap().join()
     val client = Copycat.Client.build()
     client.connect(address)
@@ -55,7 +55,7 @@ object DummyClusterContext {
       .map { address =>
         val store = new Dummies.DummyStore
         val logdir = DummyContext.setupLogdir()
-        val server = Copycat.Server.build(address, logdir, store, blocksize)
+        val server = Server.build(address, logdir, store, blocksize)
         val client = Copycat.Client.build()
         DummyContext(server, client, store, logdir)
     }

@@ -1,14 +1,10 @@
 package io.mediachain.copycat
 
-import java.io.File
-import java.util.function.{Consumer, Supplier}
+import java.util.function.Consumer
 import java.util.{Random, Timer, TimerTask}
 import io.atomix.copycat.Operation
 import io.atomix.copycat.client.{CopycatClient, ConnectionStrategies}
-import io.atomix.copycat.server.{CopycatServer, StateMachine => CopycatStateMachine}
-import io.atomix.copycat.server.storage.{Storage, StorageLevel}
 import io.atomix.catalyst.transport.{Address, NettyTransport}
-import io.atomix.catalyst.serializer.Serializer
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{Future, Promise}
@@ -21,34 +17,7 @@ object Copycat {
   import io.mediachain.copycat.StateMachine._
   import io.mediachain.protocol.Datastore._
   import io.mediachain.protocol.Transactor._
-
-
-  object Server {
-    def build(address: String, logdir: String, datastore: Datastore,
-              blocksize: Int = StateMachine.JournalBlockSize): CopycatServer = {
-      def stateMachineSupplier() = {
-        new Supplier[CopycatStateMachine] {
-          override def get: CopycatStateMachine = {
-            new JournalStateMachine(datastore, blocksize)
-          }
-        }
-      }
-      
-      val server = CopycatServer.builder(new Address(address))
-                    .withStateMachine(stateMachineSupplier())
-                    .withStorage(Storage.builder()
-                                  .withDirectory(new File(logdir))
-                                  .withStorageLevel(StorageLevel.DISK)
-                                  .build())
-                    .withTransport(NettyTransport.builder()
-                                    .withThreads(4)
-                                    .build())
-                    .build()
-      Serializers.register(server.serializer)
-      server
-    }
-  }
-
+  
   class ClientException(what: String) extends RuntimeException(what)
 
   sealed abstract class ClientState
@@ -282,18 +251,6 @@ object Copycat {
     
   }
 
-  object Serializers {
-    val klasses = List(classOf[JournalInsert],
-                       classOf[JournalUpdate],
-                       classOf[JournalLookup],
-                       classOf[JournalCurrentBlock],
-                       classOf[JournalCommitEvent],
-                       classOf[JournalBlockEvent],
-                       classOf[JournalState])
-    def register(serializer: Serializer) {
-      klasses.foreach(serializer.register(_))
-    }
-  }
   
   
 }
