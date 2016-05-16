@@ -1,4 +1,4 @@
-package io.mediachain.transactor
+package io.mediachain.copycat
 
 import io.atomix.copycat.server.CopycatServer
 import io.atomix.catalyst.transport.Address
@@ -16,16 +16,16 @@ object DummyContext {
     println("*** SETUP DUMMY COPYCAT CONTEXT")
     val logdir = setupLogdir()
     val store = new Dummies.DummyStore
-    val server = Copycat.Server.build(address, logdir, store, blocksize)
+    val server = Server.build(address, logdir, store, None, blocksize)
     server.bootstrap().join()
-    val client = Copycat.Client.build()
+    val client = Client.build()
     client.connect(address)
     DummyContext(server, client, store, logdir)
   }
   
   def setupLogdir() = {
     import sys.process._
-    val logdir = "mktemp -d".!!
+    val logdir = "mktemp -d".!!.trim
     (s"mkdir -p $logdir").!
     logdir
   }
@@ -55,8 +55,8 @@ object DummyClusterContext {
       .map { address =>
         val store = new Dummies.DummyStore
         val logdir = DummyContext.setupLogdir()
-        val server = Copycat.Server.build(address, logdir, store, blocksize)
-        val client = Copycat.Client.build()
+        val server = Server.build(address, logdir, store, None, blocksize)
+        val client = Client.build()
         DummyContext(server, client, store, logdir)
     }
     

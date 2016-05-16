@@ -1,4 +1,4 @@
-package io.mediachain.transactor
+package io.mediachain.copycat
 
 import org.specs2.specification.{AfterAll, BeforeAll}
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue, TimeUnit}

@@ -1,4 +1,4 @@
-package io.mediachain.transactor
+package io.mediachain.copycat
 
 import org.specs2.specification.{AfterAll, BeforeAll}
 
@@ -90,7 +90,7 @@ object JournalCommitSpec extends io.mediachain.BaseSpec
 }
 
 class JournalCommitSpecContext(val dummy: DummyContext, 
-                               val qclient: Copycat.Client, 
+                               val qclient: Client, 
                                val queue: BlockingQueue[JournalEntry]) {
   var ref: Reference = null
 }
@@ -99,7 +99,7 @@ object JournalCommitSpecContext {
   var instance: JournalCommitSpecContext = null
   def setup(): Unit = {
     val dummy = DummyContext.setup("127.0.0.1:10001")
-    val qclient = Copycat.Client.build()
+    val qclient = Client.build()
     val queue = new LinkedBlockingQueue[JournalEntry]
     qclient.connect("127.0.0.1:10001")
     qclient.listen(new JournalListener {
