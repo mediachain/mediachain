@@ -4,7 +4,7 @@ import java.util.function.Consumer
 import java.util.{Random, Timer, TimerTask}
 import io.atomix.copycat.Operation
 import io.atomix.copycat.client.{CopycatClient, ConnectionStrategies}
-import io.atomix.catalyst.transport.{Address, NettyTransport}
+import io.atomix.catalyst.transport.Address
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{Future, Promise}
@@ -239,11 +239,9 @@ object Client {
     def onStateChange(state: ClientState): Unit
   }
   
-  def build(): Client = {
+  def build(keyStorePath: Option[String] = None): Client = {
     val client = CopycatClient.builder()
-      .withTransport(NettyTransport.builder()
-        .withThreads(2)
-        .build())
+      .withTransport(Transport.build(2, keyStorePath))
       .withConnectionStrategy(ConnectionStrategies.EXPONENTIAL_BACKOFF)
       .build()
     Serializers.register(client.serializer)
