@@ -242,8 +242,8 @@ object Client {
   def build(): Client = {
     val client = CopycatClient.builder()
       .withTransport(NettyTransport.builder()
-      .withThreads(2)
-      .build())
+        .withThreads(2)
+        .build())
       .withConnectionStrategy(ConnectionStrategies.EXPONENTIAL_BACKOFF)
       .build()
     Serializers.register(client.serializer)
