@@ -51,10 +51,12 @@ object MediachainBuild extends Build {
       )
     ))
     .dependsOn(protocol)
+    .dependsOn(utils)
+    .dependsOn(protocol % "test->test")
+
 
   lazy val client = Project("client", file("client"))
     .settings(settings)
-    .dependsOn(utils)
     .dependsOn(protocol)
     .dependsOn(protocol % "test->test")
     .dependsOn(transactor) // for access to CopycatClient

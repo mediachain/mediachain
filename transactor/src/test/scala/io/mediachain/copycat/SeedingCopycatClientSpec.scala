@@ -1,51 +1,20 @@
-package io.mediachain.client
+package io.mediachain.copycat
 
 import java.nio.file.{Files, Path}
 
-import cats.data.Xor
 import io.atomix.copycat.server.CopycatServer
-import io.mediachain.BaseSpec
 import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.InMemoryDatastore
-import io.mediachain.protocol.Transactor.{JournalCommitError, JournalError, JournalListener}
-import io.mediachain.copycat
-import io.mediachain.copycat.SeedingCopycatClient
-import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
 import io.mediachain.util.FileUtils
+import io.mediachain.{BaseSpec, copycat}
 import org.specs2.execute.{AsResult, Result}
 import org.specs2.specification.ForEach
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
-
-case class CopycatContext(
-  server: CopycatServer,
-  store: Datastore,
-  logdir: Path) {
+import scala.concurrent.{Await, ExecutionContext}
 
 
-  def startup(): Unit =
-    server.bootstrap().join()
-
-
-
-  def shutdown(): Unit = {
-    server.shutdown().join()
-    FileUtils.rm_rf(logdir.toFile)
-  }
-}
-
-object CopycatContext {
-  def apply(address: String, blocksize: Int): CopycatContext = {
-    val logdir = Files.createTempDirectory("mediachain-copycat-client-spec")
-    val store = new InMemoryDatastore
-    val server = copycat.Server.build(address, logdir.toAbsolutePath.toString, store)
-    CopycatContext(server, store, logdir)
-  }
-
-}
-
-object MediachainCopycatClientSpec extends BaseSpec
+object SeedingCopycatClientSpec extends BaseSpec
   with ForEach[CopycatContext]
 {
 
@@ -79,13 +48,42 @@ object MediachainCopycatClientSpec extends BaseSpec
     try {
       Await.result(f, 5.seconds) must beRightXor
     } finally {
-      seedingClient.client.close()
       context.shutdown()
     }
 
 
     val seedObjectRefs = chainWithDatastore.datastore.store.keys
-    seedObjectRefs.map(context.store.get) must contain(beSome[DataObject])
+    seedObjectRefs.map(context.store.get) must contain(allOf(beSome[DataObject]))
+  }
+
+}
+
+
+case class CopycatContext(
+  server: CopycatServer,
+  store: Datastore,
+  logdir: Path) {
+
+
+  def startup(): Unit =
+    server.bootstrap().join()
+
+
+
+  def shutdown(): Unit = {
+    if (server.isRunning) {
+      server.shutdown().join()
+    }
+    FileUtils.rm_rf(logdir.toFile)
+  }
+}
+
+object CopycatContext {
+  def apply(address: String, blocksize: Int): CopycatContext = {
+    val logdir = Files.createTempDirectory("mediachain-copycat-client-spec")
+    val store = new InMemoryDatastore
+    val server = copycat.Server.build(address, logdir.toAbsolutePath.toString, store)
+    CopycatContext(server, store, logdir)
   }
 
 }

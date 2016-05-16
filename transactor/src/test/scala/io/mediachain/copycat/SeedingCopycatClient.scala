@@ -4,7 +4,7 @@ import cats.data.Xor
 import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
 import io.mediachain.copycat.Dummies.DummyReference
 import io.mediachain.protocol.Datastore.{CanonicalRecord, ChainCell, ChainEntry, _}
-import io.mediachain.protocol.Transactor.{JournalCommitError, JournalError}
+import io.mediachain.protocol.Transactor.{JournalCommitError, JournalError, JournalListener}
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
@@ -28,10 +28,9 @@ class SeedingCopycatClient(serverAddress: String)
             }
         )
           .getOrElse(
-            Future.successful(
-              Xor.left[JournalError, JournalEntry](
-                JournalCommitError("Unable to replay journal entry: " +
-                  s"can't retrieve canonical for ref ${e.ref}"))))
+            Future.failed(
+              new RuntimeException("Unable to replay journal entry: " +
+                  s"can't retrieve canonical for ref ${e.ref}")))
       }
       case e: ChainEntry => {
         val cell = datastore.getAs[ChainCell](e.chain)
@@ -42,10 +41,9 @@ class SeedingCopycatClient(serverAddress: String)
             res
         })
           .getOrElse(
-            Future.successful(
-              Xor.left[JournalError, JournalEntry](
-                JournalCommitError("Unable to replay journal entry: " +
-                  s"can't retrieve chain cell for ref ${e.ref}"))))
+            Future.failed(
+              new RuntimeException("Unable to replay journal entry: " +
+                  s"can't retrieve chain cell for ref ${e.ref}")))
       }
     }
   }
@@ -64,14 +62,25 @@ class SeedingCopycatClient(serverAddress: String)
         case _ => f2
       }
 
+    client.listen(new JournalListener {
+      override def onJournalBlock(ref: Reference): Unit =
+        println(s"*** journal block committed: ${datastore.get(ref)}")
+
+      override def onJournalCommit(entry: JournalEntry): Unit =
+        println(s"*** journal entry committed: $entry")
+    })
+
     val p = Promise[Xor[JournalError, JournalEntry]]()
     client.addStateListener(new ClientStateListener {
       override def onStateChange(state: ClientState): Unit = {
-        println(s"client state changed: $state")
-        val serialOps = journalEntries.foldRight(empty) {
-          (entry, accumF) => serialize(accumF, replayEntry(entry, client, datastore))
-        }
-        p.completeWith(serialOps)
+        println(s"*** client state changed: $state")
+//        val serialOps = journalEntries.foldLeft(empty) {
+//          (accumF, entry) => serialize(accumF, replayEntry(entry, client, datastore))
+//        }
+//        p.completeWith(serialOps)
+
+        val headOp = replayEntry(journalEntries.head, client, datastore)
+        p.completeWith(headOp)
       }
     })
 
