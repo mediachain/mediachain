@@ -1,5 +1,7 @@
 import sbt._
 import Keys._
+import sbtassembly.AssemblyKeys._
+import sbtassembly.{MergeStrategy,PathList}
 import com.trueaccord.scalapb.{ScalaPbPlugin => PB}
 
 object MediachainBuild extends Build {
@@ -26,14 +28,15 @@ object MediachainBuild extends Build {
       "com.github.scopt" %% "scopt" % "3.4.0",
       "com.lihaoyi" % "ammonite-repl" % "0.5.7" % "test" cross CrossVersion.full
     ),
-    scalacOptions in Test ++= Seq("-Yrangepos")
+    scalacOptions in Test ++= Seq("-Yrangepos"),
+    test in assembly := {}
   )
 
   lazy val utils = Project("utils", file("utils"))
     .settings(settings)
 
   // TODO: replace this with maven-published version
-  val scalaMultihashCommit = "c21efd1b3534d9a4c5f7b2bc2d971eed0e5a2744"
+  val scalaMultihashCommit = "f8ddda5c98ff0d73fdcadfc8a66332cb22f9c23b"
   lazy val scalaMultihash = RootProject(uri(
     s"git://github.com/mediachain/scala-multihash.git#$scalaMultihashCommit"
   ))
@@ -48,9 +51,17 @@ object MediachainBuild extends Build {
         "org.slf4j" % "slf4j-simple" % "1.7.21",
         "org.rocksdb" % "rocksdbjni" % "4.5.1",
         "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.74"
-      )
+      ),
+      assemblyMergeStrategy in assembly := {
+        case "META-INF/io.netty.versions.properties" => 
+          MergeStrategy.filterDistinctLines
+        case x => 
+          val oldStrategy = (assemblyMergeStrategy in assembly).value
+          oldStrategy(x)
+      }
     ))
     .dependsOn(protocol)
+    .dependsOn(scalaMultihash)
 
   Resolver.sonatypeRepo("public")
 
