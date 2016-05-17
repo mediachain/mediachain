@@ -66,5 +66,5 @@ object TestJournalClient {
   }
   
   def fail(what: String): Future[Unit] =
-    Future {throw new RuntimeException(what)}
+    Future.failed {throw new RuntimeException(what)}
 }
