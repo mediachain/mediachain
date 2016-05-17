@@ -1,5 +1,7 @@
 import sbt._
 import Keys._
+import sbtassembly.AssemblyKeys._
+import sbtassembly.{MergeStrategy,PathList}
 import com.trueaccord.scalapb.{ScalaPbPlugin => PB}
 
 object MediachainBuild extends Build {
@@ -26,7 +28,8 @@ object MediachainBuild extends Build {
       "com.github.scopt" %% "scopt" % "3.4.0",
       "com.lihaoyi" % "ammonite-repl" % "0.5.7" % "test" cross CrossVersion.full
     ),
-    scalacOptions in Test ++= Seq("-Yrangepos")
+    scalacOptions in Test ++= Seq("-Yrangepos"),
+    test in assembly := {}
   )
 
   lazy val utils = Project("utils", file("utils"))
@@ -48,9 +51,16 @@ object MediachainBuild extends Build {
         "org.slf4j" % "slf4j-simple" % "1.7.21",
         "org.rocksdb" % "rocksdbjni" % "4.5.1",
         "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.74"
-      )
+      ),
+      assemblyMergeStrategy in assembly := {
+        case "META-INF/io.netty.versions.properties" => MergeStrategy.discard
+        case x => 
+          val oldStrategy = (assemblyMergeStrategy in assembly).value
+          oldStrategy(x)
+      }
     ))
     .dependsOn(protocol)
+    .dependsOn(scalaMultihash)
 
   Resolver.sonatypeRepo("public")
 
