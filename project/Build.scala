@@ -53,7 +53,8 @@ object MediachainBuild extends Build {
         "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.74"
       ),
       assemblyMergeStrategy in assembly := {
-        case "META-INF/io.netty.versions.properties" => MergeStrategy.discard
+        case "META-INF/io.netty.versions.properties" => 
+          MergeStrategy.filterDistinctLines
         case x => 
           val oldStrategy = (assemblyMergeStrategy in assembly).value
           oldStrategy(x)
