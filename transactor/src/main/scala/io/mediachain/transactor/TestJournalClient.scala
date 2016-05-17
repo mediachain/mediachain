@@ -28,11 +28,16 @@ object TestJournalClient {
     run(client, magic, chainlen)
     client.close()
   }
-  
+
   def run(client: Client, magic: String, chainlen: Int) {
+    val op = createChain(client, magic, chainlen)
+    Await.result(op, Duration.Inf)
+  }
+  
+  def createChain(client: Client, magic: String, chainlen: Int): Future[Unit] = {
     println("insert artefact with magic " + magic)
     val artefact = Artefact(Map("magic" -> CString(magic)))
-    val op = client.insert(artefact)
+    client.insert(artefact)
       .flatMap { 
       case Xor.Left(err) =>
         fail(err.toString)
@@ -41,7 +46,6 @@ object TestJournalClient {
         println("Artefact reference: " + ref + "; building chain")
         buildChain(client, ref, chainlen)
     }
-    Await.result(op, Duration.Inf)
   }
   
   def buildChain(client: Client, ref: Reference, chainlen: Int) = {
