@@ -8,6 +8,7 @@ import io.atomix.copycat.{Command, Query}
 import io.atomix.copycat.server.{Commit, StateMachine => CopycatStateMachine, Snapshottable}
 import io.atomix.copycat.server.session.{ServerSession, SessionListener}
 import io.atomix.copycat.server.storage.snapshot.{SnapshotReader, SnapshotWriter}
+import org.slf4j.{Logger, LoggerFactory}
 
 import cats.data.Xor
 
@@ -49,7 +50,8 @@ object StateMachine {
   ) extends CopycatStateMachine with Snapshottable with SessionListener {
     private var state: JournalState = new JournalState
     private val clients: MSet[ServerSession] = new MHashSet // this wanted to be called sessions
-    
+    private val logger = LoggerFactory.getLogger(classOf[JournalStateMachine])
+
     private def commitError(what: String) = Xor.left(JournalCommitError(what))
     
     // Journal Interface
@@ -147,6 +149,7 @@ object StateMachine {
         state.blockchain = Some(blockref)
         state.block = new ArrayBuffer
         publishBlock(blockref)
+        logger.info(s"Generated block ${newblock.index} -> ${blockref}")
       }
     }
 
