@@ -37,7 +37,4 @@ object BatchTestJournalClient {
   
   def createChain(client: Client, magic: String, chainlen: Int) =
     TestJournalClient.createChain(client, magic, chainlen)
-  
-  def fail(what: String): Future[Unit] =
-    Future.failed {throw new RuntimeException(what)}
 }
