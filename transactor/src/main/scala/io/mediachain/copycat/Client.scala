@@ -2,6 +2,7 @@ package io.mediachain.copycat
 
 import java.util.function.Consumer
 import java.util.{Random, Timer, TimerTask}
+import java.util.concurrent.{ExecutorService, Executors}
 import io.atomix.copycat.Operation
 import io.atomix.copycat.client.{CopycatClient, ConnectionStrategies}
 import io.atomix.catalyst.transport.Address
@@ -25,7 +26,7 @@ class Client(client: CopycatClient) extends JournalClient {
   @volatile private var shutdown = false
   @volatile private var state: ClientState = Disconnected
   private var server: Option[String] = None
-  private var reconnectThread: Option[Thread] = None
+  private var recoveryExecutor: ExecutorService = Executors.newSingleThreadExecutor()
   private var listeners: Set[JournalListener] = Set()
   private var stateListeners: Set[ClientStateListener] = Set()
   private val logger = LoggerFactory.getLogger(classOf[Client])
@@ -43,10 +44,10 @@ class Client(client: CopycatClient) extends JournalClient {
   private def submit[T](op: Operation[T], retry: Int = 0): Future[T] = {
     (state, shutdown) match {
       case (_, true) =>
-        Future {throw new ClientException("Copycat client has shutdown")}
+        Future.failed {new ClientException("Copycat client has shutdown")}
 
       case (Disconnected, _) => 
-        Future {throw new ClientException("Copycat client is disconnected")}
+        Future.failed {new ClientException("Copycat client is disconnected")}
 
       case (Suspended, _) =>
         logger.info("Copycat client is suspended; delaying "+ op)
@@ -97,7 +98,7 @@ class Client(client: CopycatClient) extends JournalClient {
         if (!shutdown) {
           logger.info("Copycat session suspended; attempting to recover")
           stateListeners.foreach(_.onStateChange(Suspended))
-          client.recover()
+          recover()
         }
         
       case CopycatClient.State.CLOSED =>
@@ -119,6 +120,20 @@ class Client(client: CopycatClient) extends JournalClient {
     state = Disconnected
     logger.info(what)
     stateListeners.foreach(_.onStateChange(Disconnected))
+  }
+  
+  private def recover() {
+    val cf = client.recover()
+    recoveryExecutor.submit(new Runnable {
+      def run {
+        try {
+          cf.join()
+        } catch {
+          case e: InterruptedException => ()
+          case e: Throwable =>
+            logger.error("Session Recovery failed", e)
+        }
+      }})
   }
   
   private def reconnect() {
@@ -148,23 +163,18 @@ class Client(client: CopycatClient) extends JournalClient {
       }
     }
     
-    val thread = new Thread(new Runnable {
-      def run() { 
+    recoveryExecutor.submit(new Runnable {
+      def run { 
         try {
           server.foreach { address => loop(address, 0) }
         } catch {
           case e: InterruptedException => 
-            disconnect("Client reconnect thread interrupted")
+            disconnect("Client reconnect interrupted")
           case e: Throwable =>
             logger.error("Unhandled exception in Client#reconnect", e)
             disconnect("Client reconnect failed")
-        } finally {
-          reconnectThread = None
         }
-      }
-    }, s"Copycat.Client@${this.hashCode}#reconnect")
-    reconnectThread = Some(thread)
-    thread.start()
+      }})
   }
   
   def addStateListener(listener: ClientStateListener) {
@@ -197,7 +207,7 @@ class Client(client: CopycatClient) extends JournalClient {
   def close() {
     if (!shutdown) {
       shutdown = true
-      reconnectThread.foreach(_.interrupt())
+      recoveryExecutor.shutdownNow()
       client.close().join()
     }
   }
