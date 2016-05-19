@@ -25,6 +25,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   }
   
   override def putData(key: MultiHash, value: Array[Byte]) {
+    logger.debug("Queuing write {}", key.base58)
     rocks.putData(key, value)
     queue.putLast(key)
   }
@@ -53,7 +54,10 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   private def recover() {
     // Crash recovery: schedule all keys still in rocks db for
     //  write-through to dynamo
-    rocks.getKeys.foreach {key => queue.putLast(key)}
+    rocks.getKeys.foreach {key => 
+      logger.debug("Queing incomplete write {}", key.base58)
+      queue.putLast(key)
+    }
   }
   
   private def loop(backoff: Int) {
@@ -75,6 +79,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
   
   private def writeNext(): Option[MultiHash] = {
     val key = queue.takeFirst
+    logger.debug("Writing {}", key.base58)
     try {
       rocks.getData(key).map { data =>
         dynamo.putData(key, data)
