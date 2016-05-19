@@ -131,7 +131,7 @@ class Client(client: CopycatClient) extends JournalClient {
         } catch {
           case e: InterruptedException => ()
           case e: Throwable =>
-            logger.error("Session Recovery failed", e)
+            logger.error("Session recovery failed", e)
         }
       }})
   }
