@@ -128,10 +128,11 @@ class Client(client: CopycatClient) extends JournalClient {
       def run {
         try {
           cf.join()
+          logger.info("Copycat session recovered")
         } catch {
           case e: InterruptedException => ()
           case e: Throwable =>
-            logger.error("Session recovery failed", e)
+            logger.error("Copycat session recovery failed", e)
         }
       }})
   }
@@ -143,6 +144,7 @@ class Client(client: CopycatClient) extends JournalClient {
           logger.info("Reconnecting to " + address)
           Try(client.connect(new Address(address)).join()) match {
             case Success(_) => 
+              logger.info("Successfully reconnected to " + address)
               if (shutdown) {
                 // lost race with user calling #close
                 // make sure the client is closed
