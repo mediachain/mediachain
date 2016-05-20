@@ -9,7 +9,6 @@ env:
   - SBT_TARGET=translation_engine
   - SBT_TARGET=protocol
   - SBT_TARGET=rpc
-  - SBT_TARGET=mediachain
 script:
   - sbt $SBT_TARGET/test
 cache:
