@@ -270,7 +270,7 @@ object Client {
 
   val random = new Random  
   def randomBackoff(retry: Int, max: Int = 60) = 
-    random.nextInt(Math.max(60, Math.pow(2, retry).toInt) * 1000)
+    random.nextInt(Math.min(max, Math.pow(2, retry).toInt) * 1000)
   
   def build(sslConfig: Option[Transport.SSLConfig] = None): Client = {
     val client = CopycatClient.builder()
