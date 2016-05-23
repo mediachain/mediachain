@@ -3,8 +3,9 @@ package io.mediachain.copycat
 import java.util.function.Consumer
 import java.util.{Random, Timer, TimerTask}
 import java.util.concurrent.{ExecutorService, Executors}
+import java.time.Duration
 import io.atomix.copycat.Operation
-import io.atomix.copycat.client.{CopycatClient, ConnectionStrategies}
+import io.atomix.copycat.client.{CopycatClient, ConnectionStrategy}
 import io.atomix.catalyst.transport.Address
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -251,10 +252,31 @@ object Client {
     def onStateChange(state: ClientState): Unit
   }
   
+  class ClientConnectionStrategy extends ConnectionStrategy {
+    val maxRetries = 10
+    val logger = LoggerFactory.getLogger(classOf[ClientConnectionStrategy])
+    
+    def attemptFailed(at: ConnectionStrategy.Attempt) {
+      val retry = at.attempt - 1
+      if (retry < maxRetries) {
+        val sleep = randomBackoff(retry)
+        logger.info(s"Connection attempt ${at.attempt} failed. Retrying in ${sleep} ms")
+        at.retry(Duration.ofMillis(sleep))
+      } else {
+        logger.error(s"Connection attempt ${at.attempt} failed; giving up.")
+        at.fail()
+      }
+    }
+  }
+
+  val random = new Random  
+  def randomBackoff(retry: Int, max: Int = 60) = 
+    random.nextInt(Math.max(60, Math.pow(2, retry).toInt) * 1000)
+  
   def build(sslConfig: Option[Transport.SSLConfig] = None): Client = {
     val client = CopycatClient.builder()
       .withTransport(Transport.build(2, sslConfig))
-      .withConnectionStrategy(ConnectionStrategies.EXPONENTIAL_BACKOFF)
+      .withConnectionStrategy(new ClientConnectionStrategy)
       .build()
     Serializers.register(client.serializer)
     new Client(client)
