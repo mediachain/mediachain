@@ -31,7 +31,6 @@ class Client(client: CopycatClient) extends JournalClient {
   private var listeners: Set[JournalListener] = Set()
   private var stateListeners: Set[ClientStateListener] = Set()
   private val logger = LoggerFactory.getLogger(classOf[Client])
-  private val random = new Random
   private val timer = new Timer(true) // runAsDaemon
   private val maxRetries = 5
   
@@ -76,7 +75,7 @@ class Client(client: CopycatClient) extends JournalClient {
   
   private def backoff(retry: Int): Future[Int] = {
     val promise = Promise[Int]
-    val delay = random.nextInt(Math.pow(2, retry).toInt * 1000)
+    val delay = Client.randomBackoff(retry)
     
     logger.info("Backing off for " + delay + " ms")
     timer.schedule(new TimerTask {
@@ -153,7 +152,7 @@ class Client(client: CopycatClient) extends JournalClient {
               }
             case Failure(e) =>
               logger.error("Connection error", e)
-              val sleep = random.nextInt(Math.pow(2, retry).toInt * 1000)
+              val sleep = Client.randomBackoff(retry)
               logger.info("Backing off reconnect for " + sleep + " ms")
               Thread.sleep(sleep)
               loop(address, retry + 1) 
