@@ -62,12 +62,13 @@ by Mediachain. They can be images, video, text, or any other
 common media found in the Internet. 
 
 In Mediachain schema, entities are instances of data objects with
-their type field set to `entity` and a mandatory `name` field.
-Artefacts are instances of data objects with their type field set
-to `artefact`, a mandatory name and optional `description` and creation
-date fields.
+their type field set to `entity`, while Artefacts are instances
+of data objects with their type set to `artefact`. Both can contain
+arbitrary metadata in the form of key values pairs stored in a `meta`
+field. At a minimum both contain a `name` metadata field, while artefacts
+also carry optional `description` and creation data fields.
 
-Artefacts can also have associated their data stored in IPFS, so that media
+Artefacts can also have their associated data stored in IPFS, so that media
 can be directly accessed from references to their Canonicals.
 If this is the case, then the artefact object will contain a link to
 the IPFS datablob in its `data` field
@@ -81,20 +82,24 @@ We can make things more concrete with the following schema:
 ```
 Entity = {
  "type" : "entity"
- "name" : <String>
  ["keychain" : <Reference>]
  "signatures" : <Signatures>
- <Key> : <Value> ... ; entity metadata
+ "meta" : {
+  "name" : <String>
+  <Key> : <Value> ... ; entity metadata
+  }
  }
 
 Artefact = {
  "type" : "artefact"
- "name" : <String>
- ["created" : <Date>]
- ["description" : <String>]
  ["data" : <Reference>]
  "signatures" : <Signatures>
- <Key> : <Value> ... ; artefact metadata
+ "meta" : {
+  "name" : <String>
+  ["created" : <Date>]
+  ["description" : <String>]
+  <Key> : <Value> ... ; artefact metadata
+  }
  }
 
 Reference = {
@@ -130,7 +135,8 @@ canonical of a global `Nil` object:
 Chain = <ChainCell> | <Nil>
 ChainCell = {
  "type" : ...
- "chain" : <Reference>
+ "chain" : <Reference> ; previous chain head
+ "ref" : <Reference>   ; canonical reference associated with the chain
  <Key> : <Value> ...
  }
 Nil = { "type" : "nil" }
@@ -174,23 +180,27 @@ EntityChainCell =
 EntityUpdateCell = {
  "type" : "entityUpdate"
  "chain" : <Reference>
- "entity" : <Reference>
+ "ref" : <Reference>
  "signatures" : <Signatures>
-  <Key> : <Value> ... ; metadata updates
+ "meta" : {
+   <Key> : <Value> ... ; metadata updates
+  }
  }
 
 EntityLinkCell = {
  "type" : "entityLink"
  "chain" : <Reference>
- "entity" : <Reference>
+ "ref" : <Reference>
  "entityLink" : <Reference>
- ["relationship" : <Reference>]
  "signatures" : <Signatures>
- <Key> : <Value> ... ; entity relationship metadata
+ "meta" : {
+  <Key> : <Value> ... ; entity relationship metadata
+  }
  }
 
 ArtefactChainCell =
    <ArtefactUpdateCell>
+ | <ArtefactLinkCell>
  | <ArtefactCreationCell>
  | <ArtefactDerivationCell>
  | <ArtefactOwnershipCell>
@@ -200,47 +210,68 @@ ArtefactChainCell =
 ArtefactUpdateCell = {
  "type" : "artefactUpdate"
  "chain" : <Reference>
- "artefact" : <Reference>
+ "ref" : <Reference>
  "signatures" : <Signatures>
- <Key> : <Value> ... ; metadata updates
+ "meta" : {
+  <Key> : <Value> ... ; metadata updates
+  }
+ }
+
+ArtefactLinkCell = {
+ "type" : "artefactLink"
+ "chain" : <Reference>
+ "ref" : <Reference>
+ "artefactLink" : <Reference>
+ "signatures" : <Signatures>
+ "meta" : {
+  <Key> : <Value> ... ; artefact relationship metadata
+  }
  }
 
 ArtefactCreationCell = {
  "type" : "artefactCreatedBy"
  "chain" : <Reference>
- "artefact" : <Reference>
+ "ref" : <Reference>
  "entity" : <Reference>
  "signatures" : <Signatures>
- <Key> : <Value> ... ; creation metadata
+ "meta" : {
+  <Key> : <Value> ... ; creation metadata
+  }
  }
 
 ArtefactDerivationCell = {
  "type" : "artefactDerivedBy"
  "chain" : <Reference>
- "artefact" : <Reference>
+ "ref" : <Reference>
  "artefactOrigin" : <Reference>
  "signatures" : <Signatures>
- <Key> : <Value> ... ; creation metadata
+ "meta" : {
+  <Key> : <Value> ... ; derivation metadata
+  }
  }
 
 ArtefactOwnershipCell = {
  "type" : "artefactRightsOwnedBy"
  "chain" : <Reference>
- "artefact" : <Reference>
+ "ref" : <Reference>
  "entity" : <Reference>
  "signatures" : <Signatures>
- <Key> : <Value> ... ; IP ownership metadata
+ "meta" : {
+  <Key> : <Value> ... ; IP ownership metadata
+  }
  }
 
 ArtefactReferenceCell = {
  "type" : "artefactReferencedBy"
  "chain" : <Reference>
- "artefact" : <Reference>
- ["entity" : <Reference>]
- ["url" : <URL>]
+ "ref" : <Reference>
  "signatures" : <Signatures>
- <Key> : <Value> ... ; reference metadata
+ "meta" : {
+  ["entity" : <Reference>]
+  ["url" : <URL>]
+  <Key> : <Value> ... ; reference metadata
   }
+ }
 ```
 
 ## Indexing and Querying Mediachain
@@ -331,18 +362,22 @@ Qm000... = Nil
 
 QmAAA... = Entity {
  "type" : "entity"
- "name" : "Hellen Green"
+ "meta" : {
+  "name" : "Hellen Green"
+  "platform" : "~cargocollective"
+  "cargocollective_user" : "+hellengreen"
+  }
  "keychain"  : {"@link" : "QmAAABBB..."}
- "platform" : "~cargocollective"
- "cargocollective_user" : "+hellengreen"
  "signatures" : {...}
 }
 
 QmBBB... = Artefact {
  "type" : "artefact"
- "name" : "Time May Change Me"
- "created" : "01/20/2016"
- "url" : "http://helengreenillustration.com/Time-May-Change-Me"
+ "meta" : {
+  "name" : "Time May Change Me"
+  "created" : "01/20/2016"
+  "url" : "http://helengreenillustration.com/Time-May-Change-Me"
+  }
  "data" : {"@link" = "QMBBBCCC..."} ; blob in IPFS
  "signatures" : {...}
  }
@@ -350,45 +385,55 @@ QmBBB... = Artefact {
 QmCCC... = ArtefactCreationCell {
  "type" : "artefactCreatedBy"
  "chain" : {"@link" : Qm000...}
- "artefact" : {"@link" : QmBBB...}
+ "ref" : {"@link" : QmBBB...}
  "entity" : {"@link" : QmAAA...}
- "comment" : "I made this!"
+ "meta": {
+  "comment" : "I made this!"
+ }
  "signatures" : {...}
  }
 
 QmDDD... = Entity {
  "type" : "entity"
- "name" : "Eva Tolkin"
+ "meta" : {
+  "name" : "Eva Tolkin"
+  "platform" : "~pinterest"
+  "pinterest_user" : "+evatolkin"
+  }
  "keychain" : {"@link" : "QmDDDBBB..."}
- "platform" : "~pinterest"
- "pinterest_user" : "+evatolkin"
  "signatures" : {...}
  }
 
 QmEEE... = ArtefactReferenceCell {
  "type" : "artifactReferencedBy"
  "chain" : {"@link" : "QmCCC..."}
- "artefact" : {"@link" : "QmBBB..."}
+ "ref" : {"@link" : "QmBBB..."}
  "entity" : {"@link" : "QmDDD..."}
- "url" : "https://www.pinterest.com/pin/..."
- "comment" : "I pinned this!"
+ "meta" : {
+  "url" : "https://www.pinterest.com/pin/..."
+  "comment" : "I pinned this!"
+  }
  "signatures" : {...}
  }
 
 QmFFF... = Entity {
  "type" : "entity"
- "name" : "retrofuture"
+ "meta" : {
+  "name" : "retrofuture"
+  "platform" : "~tumblr"
+  "tumblr_user" : "+retrofuture"
+  }
  "keychain" : {"@link" : "QmFFFBBB..."}
- "platform" : "~tumblr"
- "tumblr_user" : "+retrofuture"
  "signatures" : {...}
  }
 
 QmGGG... = Artefact {
  "type" : "artefact"
- "name" : "Cool!"
- "created" : "01/20/2016"
- "url" : "http://retrofuture.tumblr.com/cool.gif"
+ "meta" : {
+  "name" : "Cool!"
+  "created" : "01/20/2016"
+  "url" : "http://retrofuture.tumblr.com/cool.gif"
+  }
  "data" : {"@link" : "QMGGGCCC..."} ; blob in IPFS
  "signatures" : {...}
  }
@@ -396,37 +441,45 @@ QmGGG... = Artefact {
 QmHHH... = ArtefactCreationCell {
  "type" : "artefactCreatedBy"
  "chain" : {"@link" : "Qm000..."}
- "artefact" : {"@link" : "QmGGG..."}
+ "ref" : {"@link" : "QmGGG..."}
  "entity" : {"@link" : "QmFFF..."}
- "comment" : "I created this!"
+ "meta" : {
+  "comment" : "I created this!"
+  }
  "signatures" : {...}
  }
 
 QmIII... = ArtefactDerivationCell {
  "type" : "artefactDerivedBy"
  "chain" : {"@link" : "QmHHH..."}
- "artefact" : {"@link" : "QmGGG..."}
+ "ref" : {"@link" : "QmGGG..."}
  "artefactOrigin" : {"@link" : "QmBBB..."}
- "comment" : "I derived it from +hellengreen's GIF.!"
+ "meta" : {
+  "comment" : "I derived it from +hellengreen's GIF.!"
+  }
  "signatures" : {...}
  }
 
 QmJJJ... = Entity {
  "type" : "entity"
- "name" : "christina99"
+ "meta" : {
+  "name" : "christina99"
+  "platform" : "~instagram"
+  "instagram_user" : "+christina99"
+  }
  "keychain" : {"@link" : "QmJJJBBB..."}
- "platform" : "~instagram"
- "instagram_user" : "+christina99"
  "signatures" : {...}
  }
 
 QmKKK... = ArtefactReferenceCell {
  "type" : "artifactReferencedBy"
  "chain" : {"@link" : "QmIII..."}
- "artefact" : {"@link" : "QmGGG..."}
+ "ref" : {"@link" : "QmGGG..."}
  "entity" : {"@link" : "QmJJJ..."}
- "url" : "https://instagram.com/..."
- "comment" : "I posted this!"
+ "meta" : {
+  "url" : "https://instagram.com/..."
+  "comment" : "I posted this!"
+  }
  "signatures" : {...}
  }
 ```
