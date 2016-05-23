@@ -81,10 +81,8 @@ class PersistentDatastore(config: PersistentDatastore.Config)
     val key = queue.takeFirst
     logger.debug("Writing {}", key.base58)
     try {
-      rocks.getData(key).map { data =>
-        dynamo.putData(key, data)
-        key
-      }
+      rocks.getData(key).foreach {data => dynamo.putData(key, data)}
+      Some(key)
     } catch {
       case e : AmazonClientException =>
         logger.error("AWS Error writing " + key.base58, e)
