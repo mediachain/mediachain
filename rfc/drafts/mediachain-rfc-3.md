@@ -1,5 +1,4 @@
-
-# RFC 3: Mediachain Indexer
+# RFC 3: The Mediachain Indexer
 
 Status: DRAFT
 
@@ -350,7 +349,7 @@ and regression monitoring with ability to revert model and hyper-parameter updat
 
 ## Indexed Media Lifecycle
 
-1st Generation `Indexer` indiscriminately indexes all media works relayed to it from the blockchain, caches media
+The 1st Generation `Indexer` indiscriminately indexes all media works relayed to it from the blockchain, caches media
 works to accelerate possible future reindexing, and does not trim these caches or indexes.
 
 `Future` Indexer generations may require systems for prioritizing the use of the caches and `KNN Index`, evicting spam or other undesirable records
