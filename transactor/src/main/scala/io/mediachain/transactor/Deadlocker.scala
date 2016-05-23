@@ -5,6 +5,7 @@ import java.util.concurrent.Executors
 import io.mediachain.copycat._
 import io.mediachain.protocol.Datastore.{Artefact, JournalBlock}
 import io.mediachain.util.cbor.CborAST.CInt
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
@@ -12,9 +13,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random
 
 object Deadlocker {
+  val logger = LoggerFactory.getLogger(Deadlocker.getClass)
+  
   def main(args: Array[String]) {
     if (args.length != 1) {
-    println("Arguments: server-address")
+    logger.info("Arguments: server-address")
     System.exit(1)
   }
 
@@ -32,16 +35,16 @@ object Deadlocker {
     executor.execute(new Runnable {
       override def run(): Unit = {
         val client = Client.build()
-        println(s"record creation client connecting to $serverAddress")
+        logger.info(s"record creation client connecting to $serverAddress")
         client.connect(serverAddress)
-        println("connected")
+        logger.info("connected")
         while (true) {
           val magicKey = s"foo#${Random.nextInt}"
           val magicVal = Random.nextInt
           val a = Artefact(Map(magicKey -> CInt(magicVal)))
           val result = Await.result(client.insert(a), insertTimeout)
           if (result.isLeft) {
-            println(s"Error inserting record: $result")
+            logger.info(s"Error inserting record: $result")
           }
         }
       }
@@ -49,17 +52,17 @@ object Deadlocker {
 
     // then we make an infinite flatMap chain of requests for the current
     val client = Client.build()
-    println(s"current block requester client connecting to $serverAddress")
+    logger.info(s"current block requester client connecting to $serverAddress")
     client.connect(serverAddress)
-    println("connected")
+    logger.info("connected")
 
-    println("starting to request blocks")
+    logger.info("starting to request blocks")
     Await.result(requestCurrentBlock(client), Duration.Inf)
   }
 
   def requestCurrentBlock(client: Client): Future[JournalBlock] = {
     client.currentBlock.flatMap { b =>
-      println(s"got current block with index ${b.index}, requesting again")
+      logger.info(s"got current block with index ${b.index}, requesting again")
       requestCurrentBlock(client)
     }
   }
