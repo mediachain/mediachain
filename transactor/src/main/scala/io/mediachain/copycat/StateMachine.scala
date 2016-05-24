@@ -40,7 +40,7 @@ object StateMachine {
   class JournalState extends Serializable {
     var seqno: BigInt = 0                                     // next entry index
     var index: MMap[Reference, ChainReference] = new MHashMap // canonical -> chain mapp
-    var block: Buffer[JournalEntry] = new ArrayBuffer         // current block entries
+    val block: Buffer[JournalEntry] = new ArrayBuffer         // current block entries
     var blockchain: Option[Reference] = None                  // blockchain head
   }
 
@@ -147,7 +147,7 @@ object StateMachine {
         val newblock = JournalBlock(state.seqno, state.blockchain, entries)
         val blockref = datastore.put(newblock)
         state.blockchain = Some(blockref)
-        state.block = new ArrayBuffer
+        state.block.clear()
         publishBlock(blockref)
         logger.info(s"Generated block ${newblock.index} -> ${blockref}")
       }
