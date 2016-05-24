@@ -1,0 +1,16 @@
+syntax = "proto3";
+package protocol;
+option java_package = "io.mediachain.protocol.transactor";
+
+message FetchObjectChainRequest {
+    string objectID = 1;
+}
+
+message ObjectCell {
+    string objectBytes = 1;
+}
+
+service TransactorService {
+    rpc FetchObjectChainHead(FetchObjectChainRequest) returns
+    (stream ObjectCell);
+}

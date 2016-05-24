@@ -51,3 +51,5 @@ service LSpaceService {
     rpc FetchCanonicalHistory(FetchCanonicalRequest) returns (CanonicalWithHistory);
     rpc ListWorksForAuthor(WorksForAuthorRequest) returns (WorksForAuthor);
 }
+
+

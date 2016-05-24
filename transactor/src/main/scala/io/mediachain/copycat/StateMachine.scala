@@ -15,6 +15,7 @@ import cats.data.Xor
 object StateMachine {
   import io.mediachain.protocol.Datastore._
   import io.mediachain.protocol.Transactor._
+  import io.grpc.{Server, ServerBuilder}
 
   val JournalBlockSize: Int = 4096 // blocksize for Journal Blockchain
   
