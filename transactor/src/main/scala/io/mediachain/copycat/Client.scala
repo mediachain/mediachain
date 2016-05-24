@@ -130,7 +130,6 @@ class Client(client: CopycatClient) extends JournalClient {
           cf.join()
           logger.info("Copycat session recovered")
         } catch {
-          case e: InterruptedException => ()
           case e: Throwable =>
             logger.error("Copycat session recovery failed", e)
         }
