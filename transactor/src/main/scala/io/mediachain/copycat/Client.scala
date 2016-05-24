@@ -2,8 +2,10 @@ package io.mediachain.copycat
 
 import java.util.function.Consumer
 import java.util.{Random, Timer, TimerTask}
+import java.util.concurrent.{ExecutorService, Executors}
+import java.time.Duration
 import io.atomix.copycat.Operation
-import io.atomix.copycat.client.{CopycatClient, ConnectionStrategies}
+import io.atomix.copycat.client.{CopycatClient, ConnectionStrategy}
 import io.atomix.catalyst.transport.Address
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -25,11 +27,10 @@ class Client(client: CopycatClient) extends JournalClient {
   @volatile private var shutdown = false
   @volatile private var state: ClientState = Disconnected
   private var server: Option[String] = None
-  private var reconnectThread: Option[Thread] = None
+  private var recoveryExecutor: ExecutorService = Executors.newSingleThreadExecutor()
   private var listeners: Set[JournalListener] = Set()
   private var stateListeners: Set[ClientStateListener] = Set()
   private val logger = LoggerFactory.getLogger(classOf[Client])
-  private val random = new Random
   private val timer = new Timer(true) // runAsDaemon
   private val maxRetries = 5
   
@@ -43,10 +44,10 @@ class Client(client: CopycatClient) extends JournalClient {
   private def submit[T](op: Operation[T], retry: Int = 0): Future[T] = {
     (state, shutdown) match {
       case (_, true) =>
-        Future {throw new ClientException("Copycat client has shutdown")}
+        Future.failed {new ClientException("Copycat client has shutdown")}
 
       case (Disconnected, _) => 
-        Future {throw new ClientException("Copycat client is disconnected")}
+        Future.failed {new ClientException("Copycat client is disconnected")}
 
       case (Suspended, _) =>
         logger.info("Copycat client is suspended; delaying "+ op)
@@ -74,7 +75,7 @@ class Client(client: CopycatClient) extends JournalClient {
   
   private def backoff(retry: Int): Future[Int] = {
     val promise = Promise[Int]
-    val delay = random.nextInt(Math.pow(2, retry).toInt * 1000)
+    val delay = Client.randomBackoff(retry)
     
     logger.info("Backing off for " + delay + " ms")
     timer.schedule(new TimerTask {
@@ -97,7 +98,7 @@ class Client(client: CopycatClient) extends JournalClient {
         if (!shutdown) {
           logger.info("Copycat session suspended; attempting to recover")
           stateListeners.foreach(_.onStateChange(Suspended))
-          client.recover()
+          recover()
         }
         
       case CopycatClient.State.CLOSED =>
@@ -121,6 +122,20 @@ class Client(client: CopycatClient) extends JournalClient {
     stateListeners.foreach(_.onStateChange(Disconnected))
   }
   
+  private def recover() {
+    val cf = client.recover()
+    recoveryExecutor.submit(new Runnable {
+      def run {
+        try {
+          cf.join()
+          logger.info("Copycat session recovered")
+        } catch {
+          case e: Throwable =>
+            logger.error("Copycat session recovery failed", e)
+        }
+      }})
+  }
+  
   private def reconnect() {
     def loop(address: String, retry: Int) {
       if (!shutdown) {
@@ -128,6 +143,7 @@ class Client(client: CopycatClient) extends JournalClient {
           logger.info("Reconnecting to " + address)
           Try(client.connect(new Address(address)).join()) match {
             case Success(_) => 
+              logger.info("Successfully reconnected to " + address)
               if (shutdown) {
                 // lost race with user calling #close
                 // make sure the client is closed
@@ -135,7 +151,7 @@ class Client(client: CopycatClient) extends JournalClient {
               }
             case Failure(e) =>
               logger.error("Connection error", e)
-              val sleep = random.nextInt(Math.pow(2, retry).toInt * 1000)
+              val sleep = Client.randomBackoff(retry)
               logger.info("Backing off reconnect for " + sleep + " ms")
               Thread.sleep(sleep)
               loop(address, retry + 1) 
@@ -148,23 +164,18 @@ class Client(client: CopycatClient) extends JournalClient {
       }
     }
     
-    val thread = new Thread(new Runnable {
-      def run() { 
+    recoveryExecutor.submit(new Runnable {
+      def run { 
         try {
           server.foreach { address => loop(address, 0) }
         } catch {
           case e: InterruptedException => 
-            disconnect("Client reconnect thread interrupted")
+            disconnect("Client reconnect interrupted")
           case e: Throwable =>
             logger.error("Unhandled exception in Client#reconnect", e)
             disconnect("Client reconnect failed")
-        } finally {
-          reconnectThread = None
         }
-      }
-    }, s"Copycat.Client@${this.hashCode}#reconnect")
-    reconnectThread = Some(thread)
-    thread.start()
+      }})
   }
   
   def addStateListener(listener: ClientStateListener) {
@@ -197,7 +208,7 @@ class Client(client: CopycatClient) extends JournalClient {
   def close() {
     if (!shutdown) {
       shutdown = true
-      reconnectThread.foreach(_.interrupt())
+      recoveryExecutor.shutdownNow()
       client.close().join()
     }
   }
@@ -239,10 +250,31 @@ object Client {
     def onStateChange(state: ClientState): Unit
   }
   
+  class ClientConnectionStrategy extends ConnectionStrategy {
+    val maxRetries = 10
+    val logger = LoggerFactory.getLogger(classOf[ClientConnectionStrategy])
+    
+    def attemptFailed(at: ConnectionStrategy.Attempt) {
+      val retry = at.attempt - 1
+      if (retry < maxRetries) {
+        val sleep = randomBackoff(retry)
+        logger.info(s"Connection attempt ${at.attempt} failed. Retrying in ${sleep} ms")
+        at.retry(Duration.ofMillis(sleep))
+      } else {
+        logger.error(s"Connection attempt ${at.attempt} failed; giving up.")
+        at.fail()
+      }
+    }
+  }
+
+  val random = new Random  
+  def randomBackoff(retry: Int, max: Int = 60) = 
+    random.nextInt(Math.min(max, Math.pow(2, retry).toInt) * 1000)
+  
   def build(sslConfig: Option[Transport.SSLConfig] = None): Client = {
     val client = CopycatClient.builder()
       .withTransport(Transport.build(2, sslConfig))
-      .withConnectionStrategy(ConnectionStrategies.EXPONENTIAL_BACKOFF)
+      .withConnectionStrategy(new ClientConnectionStrategy)
       .build()
     Serializers.register(client.serializer)
     new Client(client)
