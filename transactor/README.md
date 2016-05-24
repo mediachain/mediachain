@@ -2,7 +2,7 @@
 
 Consensus/journal cluster server for the mediachain network. To run a test node:
 
-* brew install dynamodb-local && brew services start dynamodb-local
+* `brew install dynamodb-local && brew services start dynamodb-local`
 * Prep DynamoDB tables
 ```scala
 import com.amazonaws.auth.BasicAWSCredentials
