@@ -130,10 +130,28 @@ object StateMachine {
         commit.release()
       }
     }
-    
+
+    // A static block of entries to isolate the ConnectException we keep
+    // getting when requesting the current block.  Remove when fixed :)
+    val dummyBlock: Array[JournalEntry] = {
+      import io.mediachain.multihash.MultiHash
+
+      // on yusef's laptop, setting n to 508 results in the Deadlocker client
+      // succeeding for a few minutes, but 509 will immediately fail with a
+      // ConnectException.  If the CPU is under heavy load, it will fail with
+      // smaller values of n, and if the fans are really blaring, it will fail
+      // with n == 1.
+      val n = 509
+      val entries = for (i <- 0 to n) yield {
+        val ref = MultihashReference(multihash = MultiHash.hashWithSHA256(s"foo#$i".getBytes))
+        CanonicalEntry(i, ref)
+      }
+      entries.toArray
+    }
+
     def currentBlock(commit: Commit[JournalCurrentBlock]) : JournalBlock = {
       try {
-        JournalBlock(state.seqno, state.blockchain, state.block.toArray)
+        JournalBlock(state.seqno, state.blockchain, dummyBlock)
       } finally {
         commit.release()
       }

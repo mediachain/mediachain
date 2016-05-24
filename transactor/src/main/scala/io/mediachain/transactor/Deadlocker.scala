@@ -32,6 +32,9 @@ object Deadlocker {
   def run(serverAddress: String): Unit = {
 
     // one thread constantly creates new records
+
+    /* -- disabled to test without
+
     executor.execute(new Runnable {
       override def run(): Unit = {
         val client = Client.build()
@@ -49,6 +52,7 @@ object Deadlocker {
         }
       }
     })
+    */
 
     // then we make an infinite flatMap chain of requests for the current
     val client = Client.build()
