@@ -14,16 +14,16 @@ import scala.util.Random
 
 object Deadlocker {
   val logger = LoggerFactory.getLogger(Deadlocker.getClass)
-  
+
   def main(args: Array[String]) {
     if (args.length != 1) {
-    logger.info("Arguments: server-address")
-    System.exit(1)
-  }
+      logger.info("Arguments: server-address")
+      System.exit(1)
+    }
 
-  val serverAddress = args(0)
-  run(serverAddress)
-}
+    val serverAddress = args(0)
+    run(serverAddress)
+  }
 
   val executor = Executors.newFixedThreadPool(4)
   val insertTimeout = 60.seconds
