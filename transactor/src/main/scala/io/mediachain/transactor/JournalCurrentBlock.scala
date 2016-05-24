@@ -6,7 +6,7 @@ import scala.concurrent.duration.Duration
 import io.mediachain.copycat.Client
 import io.mediachain.protocol.Datastore.JournalBlock
 
-object CurrentBlock {
+object JournalCurrentBlock {
   def main(args: Array[String]) {
     if (args.length != 1) {
       println("Expected arguments: server-address")
