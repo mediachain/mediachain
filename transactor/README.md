@@ -2,7 +2,7 @@
 
 Consensus/journal cluster server for the mediachain network. To run a test node:
 
-* Install local DynamoDB http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html
+* brew install dynamodb-local && brew services start dynamodb-local
 * Prep DynamoDB tables
 ```scala
 import com.amazonaws.auth.BasicAWSCredentials
@@ -33,5 +33,5 @@ io.mediachain.transactor.dynamo.awscreds.secret: $AWSSECRET
 io.mediachain.transactor.dynamo.baseTable: Test
 io.mediachain.transactor.dynamo.endpoint: http://localhost:8000
 ```
-* sbt transactor/assembly
+* `sbt transactor/assembly`
 * `scala -cp $BIG_JAR_FROM_ABOVE io.mediachain.transactor.JournalServer path/to/config.conf`
