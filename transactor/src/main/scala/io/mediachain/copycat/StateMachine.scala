@@ -40,7 +40,7 @@ object StateMachine {
   class JournalState extends Serializable {
     var seqno: BigInt = 0                                     // next entry index
     var index: MMap[Reference, ChainReference] = new MHashMap // canonical -> chain mapp
-    val block: Buffer[JournalEntry] = new ArrayBuffer         // current block entries
+    var block: Buffer[JournalEntry] = new ArrayBuffer         // current block entries
     var blockchain: Option[Reference] = None                  // blockchain head
   }
 
