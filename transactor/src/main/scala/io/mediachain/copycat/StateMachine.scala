@@ -153,8 +153,8 @@ object StateMachine {
 
     def currentBlock(commit: Commit[JournalCurrentBlock]) : JournalBlock = {
       try {
-        //JournalBlock(state.seqno, state.blockchain, state.block.toArray)
-        JournalBlock(state.seqno, state.blockchain, dummyBlock)
+        JournalBlock(state.seqno, state.blockchain, state.block.toArray)
+//        JournalBlock(state.seqno, state.blockchain, dummyBlock)
       } finally {
         commit.release()
       }
