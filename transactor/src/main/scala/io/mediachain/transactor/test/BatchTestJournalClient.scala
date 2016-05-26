@@ -1,4 +1,4 @@
-package io.mediachain.transactor
+package io.mediachain.transactor.test
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration

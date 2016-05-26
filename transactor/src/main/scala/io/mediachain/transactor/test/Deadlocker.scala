@@ -1,4 +1,4 @@
-package io.mediachain.transactor
+package io.mediachain.transactor.test
 
 import java.util.concurrent.Executors
 
