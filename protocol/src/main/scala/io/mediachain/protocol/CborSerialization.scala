@@ -293,6 +293,15 @@ object CborSerialization {
 
       CMap.withStringKeys(merged.toList)
     }
+    
+    def toCMapWithMeta(
+      defaults: Map[String, CValue],
+      optionals: Map[String, Option[CValue]],
+      meta: Map[String, CValue])
+    : CMap =
+      toCMapWithDefaults(defaults + ("meta" -> CMap.withStringKeys(meta.toList)),
+                         optionals)
+    
   }
 
   /**
@@ -346,17 +355,19 @@ object CborSerialization {
   object EntityDeserializer extends CborDeserializer[Entity]
   {
     def fromCMap(cMap: CMap): Xor[DeserializationError, Entity] =
-      assertRequiredTypeName(cMap, MediachainTypes.Entity).map { _ =>
-        Entity(cMap.asStringKeyedMap)
-      }
+      for {
+        _ <- assertRequiredTypeName(cMap, MediachainTypes.Entity)
+        meta <- getRequired[CMap](cMap, "meta")
+      } yield Entity(meta.asStringKeyedMap)
   }
 
   object ArtefactDeserializer extends CborDeserializer[Artefact]
   {
     def fromCMap(cMap: CMap): Xor[DeserializationError, Artefact] =
-      assertRequiredTypeName(cMap, MediachainTypes.Artefact).map { _ =>
-        Artefact(cMap.asStringKeyedMap)
-      }
+      for {
+        _ <- assertRequiredTypeName(cMap, MediachainTypes.Artefact)
+        meta <- getRequired[CMap](cMap, "meta")
+      } yield Artefact(meta.asStringKeyedMap)
   }
 
   object ArtefactChainCellDeserializer extends CborDeserializer[ArtefactChainCell]
@@ -365,10 +376,11 @@ object CborSerialization {
       for {
         _ <- assertOneOfRequiredTypeNames(cMap, MediachainTypes.ArtefactChainCellTypes)
         artefact <- getRequiredReference(cMap, "artefact")
+        meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactChainCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = cMap.asStringKeyedMap
+        meta = meta.asStringKeyedMap
       )
   }
 
@@ -378,10 +390,11 @@ object CborSerialization {
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactUpdateCell)
         artefact <- getRequiredReference(cMap, "artefact")
+        meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactUpdateCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = cMap.asStringKeyedMap
+        meta = meta.asStringKeyedMap
       )
   }
 
@@ -392,10 +405,11 @@ object CborSerialization {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactLinkCell)
         artefact <- getRequiredReference(cMap, "artefact")
         artefactLink <- getRequiredReference(cMap, "artefactLink")
+        meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactLinkCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = cMap.asStringKeyedMap,
+        meta = meta.asStringKeyedMap,
         artefactLink = artefactLink
       )
   }
@@ -407,10 +421,11 @@ object CborSerialization {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactCreationCell)
         artefact <- getRequiredReference(cMap, "artefact")
         entity <- getRequiredReference(cMap, "entity")
+        meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactCreationCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = cMap.asStringKeyedMap,
+        meta = meta.asStringKeyedMap,
         entity = entity
       )
   }
@@ -422,10 +437,11 @@ object CborSerialization {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactDerivationCell)
         artefact <- getRequiredReference(cMap, "artefact")
         artefactOrigin <- getRequiredReference(cMap, "artefactOrigin")
+        meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactDerivationCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = cMap.asStringKeyedMap,
+        meta = meta.asStringKeyedMap,
         artefactOrigin = artefactOrigin
       )
   }
@@ -437,10 +453,11 @@ object CborSerialization {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactOwnershipCell)
         artefact <- getRequiredReference(cMap, "artefact")
         entity <- getRequiredReference(cMap, "entity")
+        meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactOwnershipCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = cMap.asStringKeyedMap,
+        meta = meta.asStringKeyedMap,
         entity = entity
       )
   }
@@ -452,10 +469,11 @@ object CborSerialization {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactReferenceCell)
         artefact <- getRequiredReference(cMap, "artefact")
         entity <- getRequiredReference(cMap, "entity")
+        meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactReferenceCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = cMap.asStringKeyedMap,
+        meta = meta.asStringKeyedMap,
         entity = entity
       )
   }
@@ -466,10 +484,11 @@ object CborSerialization {
       for {
         _ <- assertOneOfRequiredTypeNames(cMap, MediachainTypes.EntityChainCellTypes)
         entity <- getRequiredReference(cMap, "entity")
+        meta <- getRequired[CMap](cMap, "meta")
       } yield EntityChainCell(
         entity = entity,
         chain = getOptionalReference(cMap, "chain"),
-        meta = cMap.asStringKeyedMap
+        meta = meta.asStringKeyedMap
       )
   }
 
@@ -479,10 +498,11 @@ object CborSerialization {
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.EntityUpdateCell)
         entity <- getRequiredReference(cMap, "entity")
+        meta <- getRequired[CMap](cMap, "meta")
       } yield EntityUpdateCell(
         entity = entity,
         chain = getOptionalReference(cMap, "chain"),
-        meta = cMap.asStringKeyedMap
+        meta = meta.asStringKeyedMap
       )
   }
 
@@ -493,10 +513,11 @@ object CborSerialization {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.EntityLinkCell)
         entity <- getRequiredReference(cMap, "entity")
         entityLink <- getRequiredReference(cMap, "entityLink")
+        meta <- getRequired[CMap](cMap, "meta")
       } yield EntityLinkCell(
         entity = entity,
         chain = getOptionalReference(cMap, "chain"),
-        meta = cMap.asStringKeyedMap,
+        meta = meta.asStringKeyedMap,
         entityLink = entityLink
       )
   }
