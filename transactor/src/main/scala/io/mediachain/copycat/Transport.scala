@@ -12,8 +12,6 @@ object Transport {
   
   def build(threads: Int, sslConfig: Option[SSLConfig]): CopycatTransport = {
     val builder = NettyTransport.builder().withThreads(threads)
-      .withMaxFrameSize(1024*1024*5)
-
     sslConfig match {
       case Some(SSLConfig(path, pass, keypass)) =>
         builder.withSsl()
