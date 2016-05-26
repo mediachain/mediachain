@@ -375,7 +375,7 @@ object CborSerialization {
     def fromCMap(cMap: CMap): Xor[DeserializationError, ArtefactChainCell] =
       for {
         _ <- assertOneOfRequiredTypeNames(cMap, MediachainTypes.ArtefactChainCellTypes)
-        artefact <- getRequiredReference(cMap, "artefact")
+        artefact <- getRequiredReference(cMap, "ref")
         meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactChainCell(
         artefact = artefact,
@@ -389,7 +389,7 @@ object CborSerialization {
     def fromCMap(cMap: CMap): Xor[DeserializationError, ArtefactUpdateCell] =
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactUpdateCell)
-        artefact <- getRequiredReference(cMap, "artefact")
+        artefact <- getRequiredReference(cMap, "ref")
         meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactUpdateCell(
         artefact = artefact,
@@ -403,7 +403,7 @@ object CborSerialization {
     def fromCMap(cMap: CMap): Xor[DeserializationError, ArtefactLinkCell] =
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactLinkCell)
-        artefact <- getRequiredReference(cMap, "artefact")
+        artefact <- getRequiredReference(cMap, "ref")
         artefactLink <- getRequiredReference(cMap, "artefactLink")
         meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactLinkCell(
@@ -419,7 +419,7 @@ object CborSerialization {
     def fromCMap(cMap: CMap): Xor[DeserializationError, ArtefactCreationCell] =
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactCreationCell)
-        artefact <- getRequiredReference(cMap, "artefact")
+        artefact <- getRequiredReference(cMap, "ref")
         entity <- getRequiredReference(cMap, "entity")
         meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactCreationCell(
@@ -435,7 +435,7 @@ object CborSerialization {
     def fromCMap(cMap: CMap): Xor[DeserializationError, ArtefactDerivationCell] =
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactDerivationCell)
-        artefact <- getRequiredReference(cMap, "artefact")
+        artefact <- getRequiredReference(cMap, "ref")
         artefactOrigin <- getRequiredReference(cMap, "artefactOrigin")
         meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactDerivationCell(
@@ -451,7 +451,7 @@ object CborSerialization {
     def fromCMap(cMap: CMap): Xor[DeserializationError, ArtefactOwnershipCell] =
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactOwnershipCell)
-        artefact <- getRequiredReference(cMap, "artefact")
+        artefact <- getRequiredReference(cMap, "ref")
         entity <- getRequiredReference(cMap, "entity")
         meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactOwnershipCell(
@@ -467,7 +467,7 @@ object CborSerialization {
     def fromCMap(cMap: CMap): Xor[DeserializationError, ArtefactReferenceCell] =
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactReferenceCell)
-        artefact <- getRequiredReference(cMap, "artefact")
+        artefact <- getRequiredReference(cMap, "ref")
         entity <- getRequiredReference(cMap, "entity")
         meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactReferenceCell(
@@ -483,7 +483,7 @@ object CborSerialization {
     def fromCMap(cMap: CMap): Xor[DeserializationError, EntityChainCell] =
       for {
         _ <- assertOneOfRequiredTypeNames(cMap, MediachainTypes.EntityChainCellTypes)
-        entity <- getRequiredReference(cMap, "entity")
+        entity <- getRequiredReference(cMap, "ref")
         meta <- getRequired[CMap](cMap, "meta")
       } yield EntityChainCell(
         entity = entity,
@@ -497,7 +497,7 @@ object CborSerialization {
     def fromCMap(cMap: CMap): Xor[DeserializationError, EntityUpdateCell] =
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.EntityUpdateCell)
-        entity <- getRequiredReference(cMap, "entity")
+        entity <- getRequiredReference(cMap, "ref")
         meta <- getRequired[CMap](cMap, "meta")
       } yield EntityUpdateCell(
         entity = entity,
@@ -511,7 +511,7 @@ object CborSerialization {
     def fromCMap(cMap: CMap): Xor[DeserializationError, EntityLinkCell] =
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.EntityLinkCell)
-        entity <- getRequiredReference(cMap, "entity")
+        entity <- getRequiredReference(cMap, "ref")
         entityLink <- getRequiredReference(cMap, "entityLink")
         meta <- getRequired[CMap](cMap, "meta")
       } yield EntityLinkCell(
