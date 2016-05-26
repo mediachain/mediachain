@@ -25,6 +25,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
 
           - artefact chain cell $roundTripArtefactChainCell
           - artefact update cell $roundTripArtefactUpdateCell
+          - artefact link cell $roundTripArtefactLinkCell
           - artefact creation cell $roundTripArtefactCreationCell
           - artefact derivation cell $roundTripArtefactDerivationCell
           - artefact ownership cell $roundTripArtefactOwnershipCell
@@ -134,6 +135,16 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     }
   }
 
+  def roundTripArtefactLinkCell = prop { c: ArtefactLinkCell =>
+    val cbor = c.toCbor
+    cbor must matchTypeName(MediachainTypes.ArtefactLinkCell)
+
+    fromCbor(cbor) must beRightXor { obj: ArtefactLinkCell =>
+      obj must matchArtefactChainCell(c)
+      obj.artefactLink must_== c.artefactLink
+    }
+  }
+
   def roundTripArtefactCreationCell = prop { c: ArtefactCreationCell =>
     val cbor = c.toCbor
     cbor must matchTypeName(MediachainTypes.ArtefactCreationCell)
@@ -220,6 +231,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
     }.setGen(Gen.oneOf(
         genArtefactReferenceCell,
         genArtefactUpdateCell,
+        genArtefactLinkCell,
         genArtefactOwnershipCell,
         genArtefactDerivationCell,
         genArtefactCreationCell
