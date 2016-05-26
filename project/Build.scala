@@ -47,7 +47,7 @@ object MediachainBuild extends Build {
       libraryDependencies ++= Seq(
         "io.atomix.copycat" % "copycat-server" % "1.0.2-SNAPSHOT",
         "io.atomix.copycat" % "copycat-client" % "1.0.2-SNAPSHOT",
-        "io.atomix.catalyst" % "catalyst-netty" % "1.1.0",
+        "io.atomix.catalyst" % "catalyst-netty" % "1.1.1-SNAPSHOT",
         "org.slf4j" % "slf4j-api" % "1.7.21",
         "org.slf4j" % "slf4j-simple" % "1.7.21",
         "org.rocksdb" % "rocksdbjni" % "4.5.1",
