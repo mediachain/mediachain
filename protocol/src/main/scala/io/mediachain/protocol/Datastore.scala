@@ -190,6 +190,27 @@ object Datastore {
       Some(MediachainTypes.ArtefactUpdateCell)
   }
 
+  case class ArtefactLinkCell(
+    override val artefact: Reference,
+    override val chain: Option[Reference],
+    override val meta: Map[String, CValue],
+    artefactLink: Reference
+  ) extends ArtefactChainCell(artefact, chain, meta) {
+    override def cons(xchain: Option[Reference]): ChainCell =
+      ArtefactLinkCell(artefact, xchain, meta, artefactLink)
+
+    override val mediachainType: Option[MediachainType] =
+      Some(MediachainTypes.ArtefactLinkCell)
+    
+    override def toCbor = {
+      val defaults = meta + ("artefact" -> artefact.toCbor) +
+        ("artefactLink" -> artefactLink.toCbor)
+      val optionals = Map("chain" -> chain.map(_.toCbor))
+      super.toCMapWithDefaults(defaults, optionals)
+    }
+
+  }
+
   case class ArtefactCreationCell(
     override val artefact: Reference,
     override val chain: Option[Reference],
