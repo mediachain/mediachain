@@ -99,6 +99,17 @@ object DataObjectGenerators {
   val genArtefactUpdateCell: Gen[ArtefactUpdateCell] =
     genArtefactUpdateCell(genArtefact, genOptionalReference)
 
+  def genArtefactLinkCell(
+    artefactGen: Gen[Artefact],
+    chainGen: Gen[Option[Reference]],
+    artefactLinkGen: Gen[Reference]
+  ) = for {
+    base <- genArtefactChainCell(artefactGen, chainGen)
+    artefactLink <- artefactLinkGen
+  } yield ArtefactLinkCell(base.artefact, base.chain, base.meta, artefactLink)
+  val genArtefactLinkCell: Gen[ArtefactLinkCell] =
+    genArtefactLinkCell(genArtefact, genOptionalReference, genReference)
+
   def genArtefactCreationCell(
     artefactGen: Gen[Artefact],
     chainGen: Gen[Option[Reference]],
@@ -168,6 +179,7 @@ object DataObjectGenerators {
   implicit def abEntityUpdateCell: Arbitrary[EntityUpdateCell] = Arbitrary(genEntityUpdateCell)
   implicit def abEntityLinkCell: Arbitrary[EntityLinkCell] = Arbitrary(genEntityLinkCell)
   implicit def abArtefactUpdateCell: Arbitrary[ArtefactUpdateCell] = Arbitrary(genArtefactUpdateCell)
+  implicit def abArtefactLinkCell: Arbitrary[ArtefactLinkCell] = Arbitrary(genArtefactLinkCell)
   implicit def abArtefactCreationCell: Arbitrary[ArtefactCreationCell] = Arbitrary(genArtefactCreationCell)
   implicit def abArtefactDerivationCell: Arbitrary[ArtefactDerivationCell] = Arbitrary(genArtefactDerivationCell)
   implicit def abArtefactOwnershipCell: Arbitrary[ArtefactOwnershipCell] = Arbitrary(genArtefactOwnershipCell)
