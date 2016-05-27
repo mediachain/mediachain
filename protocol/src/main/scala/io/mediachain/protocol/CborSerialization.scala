@@ -599,6 +599,18 @@ object CborSerialization {
       )
   }
 
+  object ReferenceDeserializer extends CborDeserializer[Reference]
+  {
+    def fromCMap(cMap: CMap): Xor[DeserializationError, Reference] = {
+      if (cMap.contains("@link")) {
+        MultihashReferenceDeserializer.fromCMap(cMap)
+      } else if (cMap.contains("@dummy")) {
+        DummyReferenceDeserializer.fromCMap(cMap)
+      } else {
+        Xor.Left(ReferenceDecodingFailed("Unknown reference type"))
+      }
+    }
+  }
 
   object MultihashReferenceDeserializer extends CborDeserializer[MultihashReference]
   {
@@ -608,6 +620,14 @@ object CborSerialization {
         multihash <- MultiHash.fromBytes(hashBytes)
           .leftMap(err => ReferenceDecodingFailed(s"Multihash decoding failed: $err"))
       } yield MultihashReference(multihash)
+  }
+
+  object DummyReferenceDeserializer extends CborDeserializer[DummyReference]
+  {
+    def fromCMap(cMap: CMap): Xor[DeserializationError, DummyReference] =
+      for {
+        index <- getRequired[CInt](cMap, "@dummy")
+      } yield DummyReference(index.num.toInt)
   }
 
 
@@ -709,14 +729,11 @@ object CborSerialization {
   /**
     * Try to decode a `Reference` from a cbor map.
     *
-    * Only MultihashReferences are supported for deserialization;
-    * DummyReferences are for testing only, and use POJO serialization.
-    *
     * @param cMap the cbor `CMap` to decode as a `Reference`
     * @return the decoded `Reference`, or a `DeserializationError` if decoding
     *         fails
     */
   def referenceFromCMap(cMap: CMap): Xor[DeserializationError, Reference] =
-    MultihashReferenceDeserializer.fromCMap(cMap)
+    ReferenceDeserializer.fromCMap(cMap)
 
 }

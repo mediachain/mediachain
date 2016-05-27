@@ -29,7 +29,7 @@ object Datastore {
 
 
   // References to records in the underlying datastore
-  abstract class Reference extends Serializable with CborSerializable
+  sealed abstract class Reference extends Serializable with CborSerializable
 
   // Content-addressable reference using IPFS MultiHash
   case class MultihashReference(multihash: MultiHash) extends Reference {
@@ -44,6 +44,13 @@ object Datastore {
       MultihashReference(
         MultiHash.hashWithSHA256(dataObject.toCborBytes)
       )
+  }
+  
+  // DummyReferences are used for testing but still need to be CBOR serializable
+  case class DummyReference(index: Int) extends Reference {
+    override val mediachainType: Option[MediachainType] = None
+    override def toCbor: CValue =
+      CMap.withStringKeys("@dummy" -> CInt(index))
   }
 
   // Canonical records: Entities and Artefacts
