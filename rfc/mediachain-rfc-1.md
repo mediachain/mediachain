@@ -453,7 +453,7 @@ QmIII... = ArtefactDerivationCell {
  "type" : "artefactDerivedBy"
  "chain" : {"@link" : "QmHHH..."}
  "ref" : {"@link" : "QmGGG..."}
- "artefactOrigin" : {"@link" : "QmBBB..."}
+ "artefactLink" : {"@link" : "QmBBB..."}
  "meta" : {
   "comment" : "I derived it from +hellengreen's GIF.!"
   }
