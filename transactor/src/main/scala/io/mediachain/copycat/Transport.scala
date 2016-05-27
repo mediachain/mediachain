@@ -1,6 +1,7 @@
 package io.mediachain.copycat
 
-import io.atomix.catalyst.transport.{Transport => CopycatTransport, NettyTransport}
+import io.atomix.catalyst.transport.{Transport => CopycatTransport}
+import io.atomix.catalyst.transport.netty.NettyTransport
 
 object Transport {
   case class SSLConfig(

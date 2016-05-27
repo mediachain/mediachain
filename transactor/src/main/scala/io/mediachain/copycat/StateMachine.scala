@@ -130,7 +130,7 @@ object StateMachine {
         commit.release()
       }
     }
-    
+
     def currentBlock(commit: Commit[JournalCurrentBlock]) : JournalBlock = {
       try {
         JournalBlock(state.seqno, state.blockchain, state.block.toArray)
@@ -147,7 +147,7 @@ object StateMachine {
         val newblock = JournalBlock(state.seqno, state.blockchain, entries)
         val blockref = datastore.put(newblock)
         state.blockchain = Some(blockref)
-        state.block = new ArrayBuffer
+        state.block.clear()
         publishBlock(blockref)
         logger.info(s"Generated block ${newblock.index} -> ${blockref}")
       }
