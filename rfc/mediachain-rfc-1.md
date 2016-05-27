@@ -243,7 +243,7 @@ ArtefactDerivationCell = {
  "type" : "artefactDerivedBy"
  "chain" : <Reference>
  "ref" : <Reference>
- "artefactOrigin" : <Reference>
+ "artefactLink" : <Reference> ; original artefact
  "signatures" : <Signatures>
  "meta" : {
   <Key> : <Value> ... ; derivation metadata
@@ -265,9 +265,9 @@ ArtefactReferenceCell = {
  "type" : "artefactReferencedBy"
  "chain" : <Reference>
  "ref" : <Reference>
+ ["entity" : <Reference>]
  "signatures" : <Signatures>
  "meta" : {
-  ["entity" : <Reference>]
   ["url" : <URL>]
   <Key> : <Value> ... ; reference metadata
   }
