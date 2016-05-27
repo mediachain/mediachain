@@ -243,7 +243,7 @@ ArtefactDerivationCell = {
  "type" : "artefactDerivedBy"
  "chain" : <Reference>
  "ref" : <Reference>
- "artefactOrigin" : <Reference>
+ "artefactLink" : <Reference> ; original artefact
  "signatures" : <Signatures>
  "meta" : {
   <Key> : <Value> ... ; derivation metadata
@@ -265,9 +265,9 @@ ArtefactReferenceCell = {
  "type" : "artefactReferencedBy"
  "chain" : <Reference>
  "ref" : <Reference>
+ ["entity" : <Reference>]
  "signatures" : <Signatures>
  "meta" : {
-  ["entity" : <Reference>]
   ["url" : <URL>]
   <Key> : <Value> ... ; reference metadata
   }
@@ -453,7 +453,7 @@ QmIII... = ArtefactDerivationCell {
  "type" : "artefactDerivedBy"
  "chain" : {"@link" : "QmHHH..."}
  "ref" : {"@link" : "QmGGG..."}
- "artefactOrigin" : {"@link" : "QmBBB..."}
+ "artefactLink" : {"@link" : "QmBBB..."}
  "meta" : {
   "comment" : "I derived it from +hellengreen's GIF.!"
   }
