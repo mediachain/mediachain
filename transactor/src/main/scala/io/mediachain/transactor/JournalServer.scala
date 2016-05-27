@@ -4,7 +4,7 @@ import java.util.Properties
 import java.io.FileInputStream
 import com.amazonaws.auth.BasicAWSCredentials
 import io.atomix.catalyst.transport.Address
-import io.mediachain.copycat.Server
+import io.mediachain.copycat.{Server, Transport}
 import io.mediachain.datastore.{PersistentDatastore, DynamoDatastore}
 import scala.collection.JavaConversions._
 import sys.process._
@@ -36,6 +36,7 @@ object JournalServer {
     (s"mkdir $copycatdir").!
     val rockspath = rootdir + "/rocks.db"
     val address = getq("io.mediachain.transactor.server.address")
+    val sslConfig = Transport.SSLConfig.fromProperties(conf)
     val awsaccess = getq("io.mediachain.transactor.dynamo.awscreds.access")
     val awssecret = getq("io.mediachain.transactor.dynamo.awscreds.secret")
     val awscreds = new BasicAWSCredentials(awsaccess, awssecret)
@@ -46,7 +47,7 @@ object JournalServer {
         DynamoDatastore.Config(dynamoBaseTable, awscreds, dynamoEndpoint),
         rockspath))
     datastore.start
-    val server = Server.build(address, copycatdir, datastore)
+    val server = Server.build(address, copycatdir, datastore, sslConfig)
     
     if (cluster.isEmpty) {
       server.bootstrap().join()
