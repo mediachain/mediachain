@@ -39,6 +39,12 @@ object CborAST {
     def getAs[T <: CValue](key: String): Option[T] =
       getAs(CString(key))
     
+    def contains(key: String) =
+      fields.exists {
+        case (CString(fkey), _) =>
+          key == fkey
+        case _ => false
+      }
   }
   type CField = (CValue, CValue)
 
