@@ -16,7 +16,7 @@ object MediachainBuild extends Build {
     scalaVersion := "2.11.7",
     scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings",
       "-feature", "-language:higherKinds"),
-    resolvers += Resolver.mavenLocal,
+    // resolvers += Resolver.mavenLocal, // local maven for tip debugging
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats" % "0.4.1",
       "org.json4s" %% "json4s-jackson" % "3.3.0",
@@ -45,9 +45,9 @@ object MediachainBuild extends Build {
   lazy val transactor = Project("transactor", file("transactor"))
     .settings(settings ++ Seq(
       libraryDependencies ++= Seq(
-        "io.atomix.copycat" % "copycat-server" % "1.0.2-SNAPSHOT",
-        "io.atomix.copycat" % "copycat-client" % "1.0.2-SNAPSHOT",
-        "io.atomix.catalyst" % "catalyst-netty" % "1.1.1-SNAPSHOT",
+        "io.atomix.copycat" % "copycat-server" % "1.1.0",
+        "io.atomix.copycat" % "copycat-client" % "1.1.0",
+        "io.atomix.catalyst" % "catalyst-netty" % "1.1.1",
         "org.slf4j" % "slf4j-api" % "1.7.21",
         "org.slf4j" % "slf4j-simple" % "1.7.21",
         "org.rocksdb" % "rocksdbjni" % "4.5.1",
