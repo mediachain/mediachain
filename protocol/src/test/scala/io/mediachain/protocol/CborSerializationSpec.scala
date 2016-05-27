@@ -161,7 +161,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
 
     fromCbor(cbor) must beRightXor { obj: ArtefactDerivationCell =>
       obj must matchArtefactChainCell(c)
-      obj.artefactOrigin must_== c.artefactOrigin
+      obj.artefactLink must_== c.artefactLink
     }
   }
 

@@ -436,13 +436,13 @@ object CborSerialization {
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactDerivationCell)
         artefact <- getRequiredReference(cMap, "ref")
-        artefactOrigin <- getRequiredReference(cMap, "artefactOrigin")
+        artefactLink <- getRequiredReference(cMap, "artefactLink")
         meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactDerivationCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
-        artefactOrigin = artefactOrigin
+        artefactLink = artefactLink
       )
   }
 
@@ -468,13 +468,12 @@ object CborSerialization {
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.ArtefactReferenceCell)
         artefact <- getRequiredReference(cMap, "ref")
-        entity <- getRequiredReference(cMap, "entity")
         meta <- getRequired[CMap](cMap, "meta")
       } yield ArtefactReferenceCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
-        entity = entity
+        entity = getOptionalReference(cMap, "entity")
       )
   }
 

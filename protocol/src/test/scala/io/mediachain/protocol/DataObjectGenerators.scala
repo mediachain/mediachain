@@ -146,13 +146,13 @@ object DataObjectGenerators {
   def genArtefactReferenceCell(
     artefactGen: Gen[Artefact],
     chainGen: Gen[Option[Reference]],
-    entityGen: Gen[Reference]
+    entityGen: Gen[Option[Reference]]
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     entity <- entityGen
   } yield ArtefactReferenceCell(base.artefact, base.chain, base.meta, entity)
   val genArtefactReferenceCell: Gen[ArtefactReferenceCell] =
-    genArtefactReferenceCell(genArtefact, genOptionalReference, genReference)
+    genArtefactReferenceCell(genArtefact, genOptionalReference, genOptionalReference)
 
   val genCanonicalEntry =
     (arbitrary[BigInt] |@| genReference).map(CanonicalEntry)

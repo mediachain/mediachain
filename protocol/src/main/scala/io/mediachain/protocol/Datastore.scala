@@ -235,19 +235,18 @@ object Datastore {
     override val artefact: Reference,
     override val chain: Option[Reference],
     override val meta: Map[String, CValue],
-    artefactOrigin: Reference
+    artefactLink: Reference
   ) extends ArtefactChainCell(artefact, chain, meta)
   {
     override def cons(xchain: Option[Reference]): ChainCell =
-      ArtefactDerivationCell(artefact, xchain, meta, artefactOrigin)
+      ArtefactDerivationCell(artefact, xchain, meta, artefactLink)
 
     override val mediachainType: Option[MediachainType] =
       Some(MediachainTypes.ArtefactDerivationCell)
 
     override def toCbor = {
       val defaults = Map("ref" -> artefact.toCbor,
-                         "artefactOrigin" -> artefactOrigin.toCbor)
-
+                         "artefactLink" -> artefactLink.toCbor)
       val optionals = Map("chain" -> chain.map(_.toCbor))
       super.toCMapWithMeta(defaults, optionals, meta)
     }
@@ -278,7 +277,7 @@ object Datastore {
     override val artefact: Reference,
     override val chain: Option[Reference],
     override val meta: Map[String, CValue],
-    entity: Reference
+    entity: Option[Reference]
   ) extends ArtefactChainCell(artefact, chain, meta)
   {
     override def cons(xchain: Option[Reference]): ChainCell =
@@ -288,9 +287,9 @@ object Datastore {
       Some(MediachainTypes.ArtefactReferenceCell)
 
     override def toCbor = {
-      val defaults = Map("ref" -> artefact.toCbor,
-                         "entity" -> entity.toCbor)
-      val optionals = Map("chain" -> chain.map(_.toCbor))
+      val defaults = Map("ref" -> artefact.toCbor)
+      val optionals = Map("chain" -> chain.map(_.toCbor),
+                          "entity" -> entity.map(_.toCbor))
       super.toCMapWithMeta(defaults, optionals, meta)
     }
   }
