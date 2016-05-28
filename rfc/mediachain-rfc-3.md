@@ -22,6 +22,7 @@ Relevant Mediachain terminology background for this RFC. See RFC-1[2] and RFC-2[
 - `Folding` - Producing a single flattened representation of a chain of updates, reconciling any conflicts and discarding bad information in the process.
 - `Clients` - Embedded API or external nodes, which are the interface for end-user nodes to receive a stream of updates to the `Journal` from `Transactor` nodes, and for communicating writes to the `Transactors`. They also conduct reads and writes to the `Datastore`.
 - `Transactors` - Core of Mediachain. Accepts writes to the `Journal` from `Clients`, serves `Clients` with views of the `Journal`, and records transactions on their behalf. (Referred to as `Peer Nodes` in RFC-2.)
+- `Media Identifier` - One of several types of strings that can be used to indicate the identity of a media work. Most Indexer subsystems will resolve this identifier into a canonical ID. See more in the `Media Identifiers` section.
 
 
 ## Roadmap
@@ -102,7 +103,7 @@ Body of POST request is a JSON-encoded string.
 - `error_message`: Error message.
 
 
-## Ingestion Endpoints
+## Ingestion Subsystem and Endpoints
 
 The `Ingestion` Subsystem accepts media works from the `Transactors` via the `Clients`, performs basic attack mitigation and media
 prioritization, and then processes the media objects into image feature descriptors. These feature descriptors, along with the media IDs
@@ -122,11 +123,9 @@ order to minimize indexing delays, and adding more sophisticated APIs for user f
 TODO: Documenting gRPC ingestion feed API.
 
 
-## Search Endpoints
+## Search Subsystem and Endpoints
 
-The `Search` system is exposed to end-users via a REST/JSON API. The address of the REST API will be communicated to end-users via the
-Mediachain Core. This API allows users to input a query or media ID, and receive a ranked list of most semantically-relevant media IDs.
-
+The `Search` subsystem allows users to input a textual query or `media identifier`, and receive back a ranked list of most semantically-relevant media IDs.
 
 #### Endpoint: `/search`
 
@@ -157,12 +156,9 @@ Key              | Value
   r_ids          | Result media ids with scores.
 
 
-## Dedupe Endpoints
+## Dedupe Subsystem and Endpoints
 
-The 1st Generation `Indexer` `Dedupe` subsystem will consume media from the search index, and write duplicates using `ArtefactLinkCell` commands sent to `Transactors`.
-
-At a later stage, it may consume training data from external resources including `ArtefactLinkCell` commands created by other nodes, and receive linking information from JSON/REST API functions to allow end users to indicate duplicate media.
-
+Consumes already-ingested media from the `kNN Index`, and writes duplicate links back out to the blockchain. This creates a duplicates mapping which can be committed to the blockchain, queried by end users, or used to help end users resolve the best artefact identity of a media work. The `Dedupe` subsystem may consume training data from external resources and receive dedupe feedback from end users via the API Endpoints.
 
 #### Endpoint: `/dupe_lookup`
 
@@ -197,6 +193,8 @@ Outputs: See `'error'` entry.
 
 ## Other Endpoints
 
+The following endpoints are common to multiple `Indexer` subsystems.
+
 
 #### Endpoint: `/score`
 
@@ -220,11 +218,7 @@ Outputs: List of similarities or duplicate probabilities, one per similarity or 
 
 Description: System status check.
 
-Inputs:
-
-Key     | Value
---------|--------------------------------------------------
-NONE    | NONE
+Inputs: NONE
 
 Outputs: The string "pong".
 
