@@ -81,25 +81,25 @@ The following apply to all REST API endpoints.
 
 ##### Media Identifiers:
 
-      Media works can be identified by strings in any of the following formats:
+Media works can be identified by strings in any of the following formats:
 
-      - IPFS ID string, starting with 'ipfs://'
-      - Base64-encoded PNG or JPG file, starting with 'base64://'
+- IPFS ID string, starting with 'ipfs://'
+- Base64-encoded PNG or JPG file, starting with 'base64://'
 
 ##### Input format:
 
-      Body of POST is JSON-encoded string. Keys and values are as specified below.
+Body of POST is JSON-encoded string. Keys and values are as specified below.
 
 ##### Returns on success:
 
-       - `results`:       List of results.
-       - `next_page`:     Pagination link.
-       - `prev_page`:     Pagination link.
+- `results`:       List of results.
+- `next_page`:     Pagination link.
+- `prev_page`:     Pagination link.
 
 ##### Returns on error:
 
-       - `error`:         Error code.
-       - `error_message`: Error message.
+- `error`:         Error code.
+- `error_message`: Error message.
 
 
 ## Ingestion Subsystem Endpoints
