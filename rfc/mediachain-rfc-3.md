@@ -78,7 +78,7 @@ Functions performed by the `Indexer` can be broken down into the following subsy
 ##### REST API Endpoints Overview
 
 The following apply to all REST API endpoints.
-    
+
 ##### Media Identifiers:
 
       Media works can be identified by strings in any of the following formats:
@@ -89,13 +89,13 @@ The following apply to all REST API endpoints.
 ##### Input format:
 
       Body of POST is JSON-encoded string. Keys and values are as specified below.
-    
+
 ##### Returns on success:
- 
+
        - `results`:       List of results.
        - `next_page`:     Pagination link.
        - `prev_page`:     Pagination link.
-    
+
 ##### Returns on error:
 
        - `error`:         Error code.
@@ -146,7 +146,7 @@ Outputs: List of image IDs, possibly with relevance scores.
 
 #### Endpoint: `/record_relevance`
 
-Description: Accepts explicit user relevance feedback for a search query. Not present in 1st Generation `Indexer`. 
+Description: Accepts explicit user relevance feedback for a search query. Not present in 1st Generation `Indexer`.
 
 Inputs:
 
@@ -162,6 +162,23 @@ Key              | Value
 The 1st Generation `Indexer` `Dedupe` subsystem will consume media from the search index, and write duplicates using `ArtefactLinkCell` commands sent to `Transactors`.
 
 At a later stage, it may consume training data from external resources including `ArtefactLinkCell` commands created by other nodes, and receive linking information from JSON/REST API functions to allow end users to indicate duplicate media.
+
+
+#### Endpoint: `/dupe_lookup`
+
+Description: Find all known duplicates of a media work.
+
+Inputs:
+
+Key              | Value
+-----------------|-------------------------------------------------
+q_media          | Media file to query for..
+duplicate_mode   | Semantic duplicate type or matching mode. For now, defaults to 'baseline'.
+incremental      | Attempt to dedupe never-before-seen media file versus all pre-ingested media files.
+
+
+Outputs: List of matching media IDs of the form: `[{'id':'MEDIA_ID'},...]`
+
 
 
 #### Endpoint: `/record_dupe`
