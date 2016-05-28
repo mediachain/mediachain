@@ -75,7 +75,7 @@ Functions performed by the `Indexer` can be broken down into the following subsy
 - **Model Training & Hyper-Parameter Tuning Lifecycle** - Background training and tuning process that updates the information retrieval / dedupe models and tunes hyper-parameters. After each re-training, models are regression tested, put into production where live-user regression metrics are again measured. If major regressions are detected, models and hyper-parameters are reverted to an earlier version.
 
 
-##### REST API Endpoints Overview
+## REST API Endpoints Overview
 
 The following apply to all REST API endpoints.
 
@@ -83,20 +83,20 @@ The following apply to all REST API endpoints.
 
 Media works can be identified by strings in any of the following formats:
 
-- IPFS ID string, starting with 'ipfs://'
-- Base64-encoded PNG or JPG file, starting with 'base64://'
+- IPFS ID string. I.e. starting with `QmPX`.
+- PNG or JPG file, with a maximum size of 28,900 pixels, encoded using the Data URI Scheme[6]. I.e. starting with `data:`.
 
 ##### Input format:
 
-Body of POST is JSON-encoded string. Keys and values are as specified below.
+Body of POST request is a JSON-encoded string. 
 
-##### Returns on success:
+##### Returned on success:
 
 - `results`:       List of results.
 - `next_page`:     Pagination link.
 - `prev_page`:     Pagination link.
 
-##### Returns on error:
+##### Returned on error:
 
 - `error`:         Error code.
 - `error_message`: Error message.
@@ -506,3 +506,4 @@ Details of these enhancements are left to future RFCs.
 3. [Mediachain RFC 1](https://github.com/mediachain/mediachain/blob/master/rfc/mediachain-rfc-2.md)
 4. [IPFS](https://ipfs.io/)
 5. [IPLD](https://github.com/ipfs/specs/tree/master/ipld)
+6. [Data URI Scheme](https://en.wikipedia.org/wiki/Data_URI_scheme)
