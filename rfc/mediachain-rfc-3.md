@@ -102,7 +102,7 @@ Body of POST is JSON-encoded string. Keys and values are as specified below.
 - `error_message`: Error message.
 
 
-## Ingestion Subsystem Endpoints
+## Ingestion Endpoints
 
 The `Ingestion` Subsystem accepts media works from the `Transactors` via the `Clients`, performs basic attack mitigation and media
 prioritization, and then processes the media objects into image feature descriptors. These feature descriptors, along with the media IDs
@@ -122,7 +122,7 @@ order to minimize indexing delays, and adding more sophisticated APIs for user f
 TODO: Documenting gRPC ingestion feed API.
 
 
-## Search Subsystem Endpoints
+## Search Endpoints
 
 The `Search` system is exposed to end-users via a REST/JSON API. The address of the REST API will be communicated to end-users via the
 Mediachain Core. This API allows users to input a query or media ID, and receive a ranked list of most semantically-relevant media IDs.
@@ -157,7 +157,7 @@ Key              | Value
   r_ids          | Result media ids with scores.
 
 
-## Dedupe Subsystem Endpoints
+## Dedupe Endpoints
 
 The 1st Generation `Indexer` `Dedupe` subsystem will consume media from the search index, and write duplicates using `ArtefactLinkCell` commands sent to `Transactors`.
 
@@ -172,7 +172,7 @@ Inputs:
 
 Key              | Value
 -----------------|-------------------------------------------------
-q_media          | Media file to query for..
+q_media          | Media file to query for.
 duplicate_mode   | Semantic duplicate type or matching mode. For now, defaults to 'baseline'.
 incremental      | Attempt to dedupe never-before-seen media file versus all pre-ingested media files.
 
@@ -195,7 +195,7 @@ Key              | Value
 Outputs: See `'error'` entry.
 
 
-## Endpoints Common to Multiple Subsystems
+## Other Endpoints
 
 
 #### Endpoint: `/score`
