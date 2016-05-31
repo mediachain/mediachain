@@ -1,7 +1,10 @@
 package io.mediachain.copycat
 
+import java.util.concurrent.ExecutorService
+
 import cats.data.Xor
-import io.grpc.{Status, StatusRuntimeException}
+import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
+import io.mediachain.datastore.BinaryDatastore
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.protocol.Datastore._
@@ -13,10 +16,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, SECONDS}
 
 class TransactorService(client: Client,
-                        datastore: Datastore,
+                        _datastore: Datastore,
                         timeout: Duration = Duration(120, SECONDS),
                         implicit val executionContext: ExecutionContext)
   extends TransactorServiceGrpc.TransactorService {
+  private val datastore = _datastore.asInstanceOf[BinaryDatastore]
 
   override def fetchObjectChainHead(request: Transactor.MultihashReference):
   Future[Transactor.MultihashReference] = {
@@ -105,6 +109,27 @@ class TransactorService(client: Client,
           refToRPCMultihashRef(entry.chain)
       }
     }
+  }
+}
+
+object TransactorService {
+  def createServerThread(service: TransactorService,
+                         executor: ExecutorService,
+                         port: Int)
+                        (implicit executionContext: ExecutionContext)
+  : Unit = {
+    import scala.language.existentials
+
+    val builder = ServerBuilder.forPort(port)
+    val server = builder.addService(
+      TransactorServiceGrpc.bindService(service, executionContext)
+    ).build
+
+    executor.submit(new Runnable {
+      override def run(): Unit = {
+        server.start
+      }
+    })
   }
 }
 
