@@ -6,8 +6,22 @@ message MultihashReference {
     string reference = 1;
 }
 
+message InsertRequest {
+    bytes canonicalCbor = 1;
+}
+
+message UpdateRequest {
+    bytes chainCellCbor = 1;
+}
+
 service TransactorService {
     rpc FetchObjectChainHead(MultihashReference) returns
+        (MultihashReference);
+
+    rpc InsertCanonicalRecord(InsertRequest) returns
+        (MultihashReference);
+
+    rpc UpdateCanonicalRecord(UpdateRequest) returns
         (MultihashReference);
 }
 
