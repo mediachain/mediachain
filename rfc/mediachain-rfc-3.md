@@ -127,7 +127,7 @@ TODO: Documenting gRPC ingestion feed API.
 
 The `Search` subsystem allows users to input a textual query or `media identifier`, and receive back a ranked list of most semantically-relevant media IDs.
 
-#### Endpoint: `/search`
+#### Endpoint: /search
 
 Description: Search for images based on text query, a media work, or a combination of both.
 
@@ -143,7 +143,7 @@ Key             | Value
 Outputs: List of image IDs, possibly with relevance scores.
 
 
-#### Endpoint: `/record_relevance`
+#### Endpoint: /record_relevance
 
 Description: Accepts explicit user relevance feedback for a search query. Not present in 1st Generation `Indexer`.
 
@@ -160,7 +160,7 @@ Key              | Value
 
 Consumes already-ingested media from the `kNN Index`, and writes duplicate links back out to the blockchain. This creates a duplicates mapping which can be committed to the blockchain, queried by end users, or used to help end users resolve the best artefact identity of a media work. The `Dedupe` subsystem may consume training data from external resources and receive dedupe feedback from end users via the API Endpoints.
 
-#### Endpoint: `/dupe_lookup`
+#### Endpoint: /dupe_lookup
 
 Description: Find all known duplicates of a media work.
 
@@ -177,7 +177,7 @@ Outputs: List of matching media IDs of the form: `[{'id':'MEDIA_ID'},...]`
 
 
 
-#### Endpoint: `/record_dupe`
+#### Endpoint: /record_dupe
 
 Description: Accept duplicate / non-duplicate feedback from an end-user.
 
@@ -196,7 +196,7 @@ Outputs: See `'error'` entry.
 The following endpoints are common to multiple `Indexer` subsystems.
 
 
-#### Endpoint: `/score`
+#### Endpoint: /score
 
 Description: Tool for peering deeper into the similarity / relevance measurements that are the basis of dedupe / search calculations. Useful for e.g. getting a feel for why an image didn't show up in the top 100 results for a query, or why a pair of images weren't marked as duplicates. Takes a "query" and list of "candidate" media, and does 1-vs-all score calculations for all "candidate" media versus the "query".
 
@@ -214,7 +214,7 @@ level   | Level of the model at which to measure the similarity. One of: 'simila
 Outputs: List of similarities or duplicate probabilities, one per similarity or duplicate type.
 
 
-#### Endpoint: `/ping`
+#### Endpoint: /ping
 
 Description: System status check.
 
