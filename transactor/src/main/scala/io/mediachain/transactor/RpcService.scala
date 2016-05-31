@@ -54,9 +54,6 @@ object RpcService {
     )
 
     println(s"started rpc service on port $rpcPort")
-    while (true) {
-      Thread.sleep(1000)
-    }
   }
 }
 
