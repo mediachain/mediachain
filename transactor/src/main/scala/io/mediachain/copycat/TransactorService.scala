@@ -4,7 +4,6 @@ import java.util.concurrent.ExecutorService
 
 import cats.data.Xor
 import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
-import io.mediachain.datastore.BinaryDatastore
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.protocol.Datastore._
@@ -16,11 +15,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, SECONDS}
 
 class TransactorService(client: Client,
-                        _datastore: Datastore,
+                        datastore: Datastore,
                         timeout: Duration = Duration(120, SECONDS),
                         implicit val executionContext: ExecutionContext)
   extends TransactorServiceGrpc.TransactorService {
-  private val datastore = _datastore.asInstanceOf[BinaryDatastore]
 
   override def fetchObjectChainHead(request: Transactor.MultihashReference):
   Future[Transactor.MultihashReference] = {
