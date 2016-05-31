@@ -9,7 +9,7 @@ Author: [autoencoder](github.com/autoencoder)
 
 This document outlines a proposed `Indexer` system for Mediachain[1]. Core functions of this system include: media ingestion, media search and media deduplication. Specifically, this document focuses on the 1st Generation of the `Indexer` system.
 
-We will also outline a roadmap toward improved, `Future` Indexer generations. Exact details of the `Future` Indexer generations are left to future RFCs.
+We will also outline a roadmap toward improved, `Future` Indexer generations. Further details of the `Future` Indexer generations are left to future RFCs.
 
 
 ## Terminology
@@ -22,6 +22,7 @@ Relevant Mediachain terminology background for this RFC. See RFC-1[2] and RFC-2[
 - `Folding` - Producing a single flattened representation of a chain of updates, reconciling any conflicts and discarding bad information in the process.
 - `Clients` - Embedded API or external nodes, which are the interface for end-user nodes to receive a stream of updates to the `Journal` from `Transactor` nodes, and for communicating writes to the `Transactors`. They also conduct reads and writes to the `Datastore`.
 - `Transactors` - Core of Mediachain. Accepts writes to the `Journal` from `Clients`, serves `Clients` with views of the `Journal`, and records transactions on their behalf. (Referred to as `Peer Nodes` in RFC-2.)
+- `Media Identifier` - One of several types of strings that can be used to indicate the identity of a media work. Most Indexer subsystems will resolve this identifier into a canonical ID. See more in the `Media Identifiers` section.
 
 
 ## Roadmap
@@ -51,6 +52,19 @@ The 1st Generation `Indexer` will make use of technologies such as: off-the-shel
 
 `Future` Indexer enhancements will rely on technologies including: convolutional neural networks for feature extraction, neural sequence-to-sequence semantic similarity models, neural attention mechanisms for high quality semantic similarity matching and query re-ranking, end-to-end supervised training, and a comprehensive scoring & regression-testing framework.
 
+## REST API Overview
+
+The following API calls are detailed in the sections below.
+
+ Method | REST Call     | Description                                       | Returns
+ -------|---------------|---------------------------------------------------|---------------------------------------------------
+ POST   | `/search`     | Search for images based on text query, a media work, or a combination of both.   | List of image IDs, possibly with relevance scores.
+ POST   | `/dupe_lookup`      | Find all known duplicates of a media work.  | List of IDs that are duplicates of the query media ID.
+ POST   | `/score` | Tool for peering deeper into the similarity / relevance measurements that are the basis of dedupe / search calculations.  | List of similarities or duplicate probabilities, one per similarity or duplicate type.
+ POST   | `/ping`             | System status check.                               | See `'error'` entry.
+ POST   | `/record_dupe`      | User labels a set of images as dupes / non-dupes. This is added to training data. | Check for `'error'` entry.
+ POST   | `/record_relevance` | Accept user relevance feedback for a search query. | See `'error'` entry.
+
 
 ## Subsystems Overview
 
@@ -62,12 +76,38 @@ Functions performed by the `Indexer` can be broken down into the following subsy
 - **Model Training & Hyper-Parameter Tuning Lifecycle** - Background training and tuning process that updates the information retrieval / dedupe models and tunes hyper-parameters. After each re-training, models are regression tested, put into production where live-user regression metrics are again measured. If major regressions are detected, models and hyper-parameters are reverted to an earlier version.
 
 
-## Ingestion Subsystem
+## REST API Endpoints Overview
 
-The `Ingestion` subsystem accepts media works from the `Transactors` via the `Clients`, performs basic attack
-mitigation and media prioritization, and then processes the media objects into image feature descriptors. These
-feature descriptors, along with the media IDs are then inserted into the `KNN Index`, which will be queried by
-the `Search` and `Dedupe` systems.
+The following apply to all REST API endpoints.
+
+##### Media Identifiers:
+
+Media works can be identified by strings in any of the following formats:
+
+- IPFS ID string. I.e. starting with `QmPX`.
+- PNG or JPG file, with a maximum size of 28,900 pixels, encoded using the Data URI Scheme[6]. I.e. starting with `data:`.
+
+##### Input format:
+
+Body of POST request is a JSON-encoded string. 
+
+##### Returned on success:
+
+- `results`:       List of results.
+- `next_page`:     Pagination link.
+- `prev_page`:     Pagination link.
+
+##### Returned on error:
+
+- `error`:         Error code.
+- `error_message`: Error message.
+
+
+## Ingestion Subsystem and Endpoints
+
+The `Ingestion` Subsystem accepts media works from the `Transactors` via the `Clients`, performs basic attack mitigation and media
+prioritization, and then processes the media objects into image feature descriptors. These feature descriptors, along with the media IDs
+are then inserted into the `KNN Index`, which will be queried by the `Search` and `Dedupe` systems.
 
 User interfaces to the `Ingestion`  subsystem will in coordination with the `Dedupe` subsystem, to alert users if they are
 about to create duplicate entries for the same work in the MediaChain blockchain, or allow users to provide a negative training
@@ -80,94 +120,107 @@ to the same blockchain ID.
 Future `Ingestion` subsystem enhancements include receiving indexing data directly from users who are inserting media works, in
 order to minimize indexing delays, and adding more sophisticated APIs for user feedback and querying.
 
-
-## Search Subsystem
-
-The `Search` system is exposed to end-users via a REST/JSON API. The address of the REST API will be communicated to end-users via the
-Mediachain Core. This API allows users to input a query or media ID, and receive a ranked list of most semantically-relevant media IDs.
+TODO: Documenting gRPC ingestion feed API.
 
 
- Method | REST Call     | Description                                       | Returns
- -------|---------------|---------------------------------------------------|---------------------------------------------------
- POST   | `/search`     | Search by base64-encoded image or image ID.       | List of image IDs, possibly with relevancy scores.
- POST   | `/distance`   | Calculate metric-space distance between 2 images. | Numeric distance between 0.0 and 1.0.
- POST   | `/ping`       | Uptime check.                                     | See `'error'` entry.
+## Search Subsystem and Endpoints
 
+The `Search` subsystem allows users to input a textual query or `media identifier`, and receive back a ranked list of most semantically-relevant media IDs.
 
-At a later stage, this subsystem may also accept relevancy feedback from end-users:
+#### Endpoint: /search
 
+Description: Search for images based on text query, a media work, or a combination of both.
 
- Method | REST Call           | Description                                        | Returns
- -------|---------------------|----------------------------------------------------|-------------------------------
- POST   | `/record_relevancy` | Accept user relevancy feedback for a search query. | See `'error'` entry.
-
-
-#### Endpoint: `/search`
-
-Description: Search by base64-encoded image or image ID.
-
-Input: JSON-encoded payload, with keys and values of the following types:
-
+Inputs:
 
 Key             | Value
 ----------------|--------------------------------------------------
-q_text          | String - text query for text-based query.
-q_id            | String - IFPS media content address.
-q_base64        | String - Base64-encoded media object.
-q_facets        | Dictionary - Key-value dictionary of query requirements. For `Future`.
-limit           | Integer - Maximum number of results to return.
+  q             | Query text.
+  q_id          | Query media. See `Media Identifiers`.
+  limit         | Maximum number of results to return.
+  inline_images | Whether to include base64-encoded thumbnails of images directly in the results.
+
+Outputs: List of image IDs, possibly with relevance scores.
 
 
-Outputs: List of relevant media IDs in the `'data'` entry. See value of `'error'` entry in case of error.
+#### Endpoint: /record_relevance
 
+Description: Accepts explicit user relevance feedback for a search query. Not present in 1st Generation `Indexer`.
 
-#### Endpoint: `/distance`
-
-Description: Calculate metric-space distance between 2 images.
-
-Input: JSON-encoded payload, with keys and values of the following types:
-
-
-Key              | Value
------------------|--------------------------------------------------
-q_media_ids      | List of Strings - IFPS media content addresses.
-q_media_base64s  | List of Strings - Base64-encoded media objects.
-
-
-Outputs: List of relevant media IDs. See value of `'error'` entry in case of error.
-
-
-#### Endpoint: `/record_relevancy`
-
-Description: Not present in 1st Generation `Indexer`. Accept user relevancy feedback for a search query. Possibly provides instant attack mitigation for certain types of rapidly-emerging attacks.
-
-Input: JSON-encoded payload, indicating
-
+Inputs:
 
 Key              | Value
 -----------------|-------------------------------------------------
-q_media_ids      | List of Strings - IFPS media content addresses.
-q_media_base64s  | List of Strings - Base64-encoded media objects.
+  q              | Query text.
+  q_id           | Query media. See `Media Identifiers`.
+  r_ids          | Result media ids with scores.
 
 
-Outputs: List of relevant media IDs. See value of `'error'` entry in case of error.
+## Dedupe Subsystem and Endpoints
+
+Consumes already-ingested media from the `kNN Index`, and writes duplicate links back out to the blockchain. This creates a duplicates mapping which can be committed to the blockchain, queried by end users, or used to help end users resolve the best artefact identity of a media work. The `Dedupe` subsystem may consume training data from external resources and receive dedupe feedback from end users via the API Endpoints.
+
+#### Endpoint: /dupe_lookup
+
+Description: Find all known duplicates of a media work.
+
+Inputs:
+
+Key              | Value
+-----------------|-------------------------------------------------
+q_media          | Media file to query for.
+duplicate_mode   | Semantic duplicate type or matching mode. For now, defaults to 'baseline'.
+incremental      | Attempt to dedupe never-before-seen media file versus all pre-ingested media files.
 
 
-## Dedupe Subsystem
-
-The 1st Generation `Indexer` `Dedupe` subsystem will initially consume media from the search index, and write duplicates using `ArtefactLinkCell` commands sent to `Transactors`.
-
-At a later stage, it may consume training data from external resources including `ArtefactLinkCell` commands created by other nodes, and receive linking information from JSON/REST API functions to allow end users to indicate duplicate media.
+Outputs: List of matching media IDs of the form: `[{'id':'MEDIA_ID'},...]`
 
 
-Method calls, to be expanded in `Future` Indexer generations:
+
+#### Endpoint: /record_dupe
+
+Description: Accept duplicate / non-duplicate feedback from an end-user.
+
+Inputs:
+
+Key              | Value
+-----------------|-------------------------------------------------
+  as_groups      | List of lists of media IDs, with grouped IDs all considered duplicates, and split IDs all considered non-duplicates.
+  as_pairs       | Pairs of of media IDs, with a "same" or "different" labels. Pairs must be transitively consistent.
+
+Outputs: See `'error'` entry.
 
 
- Method | REST Call | Description | Returns
- -----|---------------------|---------------------------------------------------------------------|-----------------------------------------
- POST | `/dupe_check`       | Return calibrated-probability that a pair of images are duplicates. | Estimated probability, between 0.0 and 1.0.
- POST | `/record_dupe`      | User labels a set of images as dupes / non-dupes. This is added to training data. | Check for `'error'` entry.
- POST | `/record_relevancy` | User labels the relevancy of a set of search results for a query.   | Check for `'error'` entry.
+## Other Endpoints
+
+The following endpoints are common to multiple `Indexer` subsystems.
+
+
+#### Endpoint: /score
+
+Description: Tool for peering deeper into the similarity / relevance measurements that are the basis of dedupe / search calculations. Useful for e.g. getting a feel for why an image didn't show up in the top 100 results for a query, or why a pair of images weren't marked as duplicates. Takes a "query" and list of "candidate" media, and does 1-vs-all score calculations for all "candidate" media versus the "query".
+
+Inputs:
+
+
+Key     | Value
+--------|--------------------------------------------------
+q_text  | Query text.
+q_id    | Query media. See `Media Identifiers`.
+c_ids   | List of candidate media. See `Media Identifiers`.
+mode    | Type of similarity to measure. Should be one of: 'search' - Search relevance score. 'dupe'   - Duplicate probability.
+level   | Level of the model at which to measure the similarity. One of: 'similarity' - Similarity in the embedding space(s) (0.0 to 1.0). 'score' - Final relevance score for "search" mode (1.0 to 5.0) or final dupe probability score for "dupe" mode (0.0 to 1.0).
+
+Outputs: List of similarities or duplicate probabilities, one per similarity or duplicate type.
+
+
+#### Endpoint: /ping
+
+Description: System status check.
+
+Inputs: NONE
+
+Outputs: The string "pong".
 
 
 ## Architecture
@@ -230,7 +283,7 @@ Due to overlapping functionality, some components are shared between subsystems.
 
 ```
 
-## Low-level Indexer Components
+## Low-Level Components
 
 Major low-level components of the `Indexer` are as follows. Those aspects marked `Future` do not apply to the 1st Generation `Indexer`.
 
@@ -300,10 +353,10 @@ update lifecycle consumes a new batch of training data or system hyper-parameter
 the quality of the updates, and possibly reverts to an older batch of trained models and system settings, if necessary.
 
 
-(1) 1st Generation `Indexer` will initially use unsupervised, engineered features, with no labeled training data present and no regression checking:
+(1) 1st Generation `Indexer` will initially use unsupervised manual feature engineering, manual tuning of hyper-parameters, and no regression checking:
 
 ```
-     /------<----(no tuning)----<------\
+     /----<----(manual tuning)---<-----\
      |                                 |
      |                                 ^
 +----v-----+  +--------------------+   |
@@ -446,3 +499,5 @@ Details of these enhancements are left to future RFCs.
 2. [Mediachain RFC 1](https://github.com/mediachain/mediachain/blob/master/rfc/mediachain-rfc-1.md)
 3. [Mediachain RFC 1](https://github.com/mediachain/mediachain/blob/master/rfc/mediachain-rfc-2.md)
 4. [IPFS](https://ipfs.io/)
+5. [IPLD](https://github.com/ipfs/specs/tree/master/ipld)
+6. [Data URI Scheme](https://en.wikipedia.org/wiki/Data_URI_scheme)
