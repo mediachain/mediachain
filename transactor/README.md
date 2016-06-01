@@ -45,7 +45,7 @@ io.mediachain.transactor.ssl.keyStoreKeyPassword: $KEYSTOREKEYPASS
 * `sbt transactor/assembly`
 * `scala -cp $BIG_JAR_FROM_ABOVE io.mediachain.transactor.JournalServer path/to/config.conf`
 
-# Keystore - OpenSSL Mini howto
+# Keystore - OpenSSL Mini HOWTO
 In order to use SSL with copycat, we need to use java keystores.
 Java comes with a key management tool called `keytool`, but you probably want to be
 using OpenSSL for creating keys and managing certificates.
