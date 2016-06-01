@@ -3,13 +3,12 @@ package io.mediachain.copycat
 import io.atomix.catalyst.serializer.{SerializationException, Serializer, TypeSerializer}
 import io.atomix.catalyst.buffer.{BufferInput, BufferOutput}
 import cats.data.Xor
-import io.mediachain.protocol.Datastore.{CanonicalRecord, JournalBlock}
+import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.copycat.StateMachine._
 
 object Serializers {
-  val klasses = List(classOf[JournalUpdate],
-                     classOf[JournalLookup],
+  val klasses = List(classOf[JournalLookup],
                      classOf[JournalCurrentBlock],
                      classOf[JournalCommitEvent],
                      classOf[JournalBlockEvent],
@@ -19,6 +18,7 @@ object Serializers {
     klasses.foreach(serializer.register(_))
     serializer.register(classOf[JournalBlock], classOf[JournalBlockSerializer])
     serializer.register(classOf[JournalInsert], classOf[JournalInsertSerializer])
+    serializer.register(classOf[JournalUpdate], classOf[JournalUpdateSerializer])
   }
   
   class JournalBlockSerializer extends TypeSerializer[JournalBlock] {
@@ -64,6 +64,41 @@ object Serializers {
       val bytes = command.record.toCborBytes
       buf.writeInt(bytes.length)
       buf.write(bytes)
+    }
+  }
+
+  class JournalUpdateSerializer extends TypeSerializer[JournalUpdate] {
+    def read(klass: Class[JournalUpdate], buf: BufferInput[_ <: BufferInput[_]], ser: Serializer)
+    : JournalUpdate = {
+      val refLen = buf.readInt()
+      val refBytes = new Array[Byte](refLen)
+      buf.read(refBytes)
+
+      val cellLen = buf.readInt()
+      val cellBytes = new Array[Byte](cellLen)
+      buf.read(cellBytes)
+
+      val updateXor = for {
+        ref <- CborSerialization.fromCborBytes[Reference](refBytes)
+        cell <- CborSerialization.fromCborBytes[ChainCell](cellBytes)
+      } yield JournalUpdate(ref, cell)
+
+      updateXor match {
+        case Xor.Left(err) =>
+          throw new SerializationException(
+            s"Failed to deserialize JournalUpdate: ${err.message}"
+          )
+        case Xor.Right(obj) => obj
+      }
+    }
+
+    def write(update: JournalUpdate, buf: BufferOutput[_ <: BufferOutput[_]], ser: Serializer) {
+      val refBytes = update.ref.toCborBytes
+      val cellBytes = update.cell.toCborBytes
+      buf.writeInt(refBytes.length)
+      buf.write(refBytes)
+      buf.writeInt(cellBytes.length)
+      buf.write(cellBytes)
     }
   }
 
