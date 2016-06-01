@@ -125,18 +125,13 @@ object StateMachine {
     
     def lookup(commit: Commit[JournalLookup]): Option[Reference] = {
       try {
-        lookup(commit.operation.ref)
+        state.index.get(commit.operation.ref).flatMap(_.chain)
       } finally {
         commit.release()
       }
     }
     
-    def lookup(ref: Reference): Option[Reference] = {
-      state.synchronized {
-        state.index.get(ref).flatMap(_.chain)
-      }
-    }
-    
+
     def currentBlock(commit: Commit[JournalCurrentBlock]) : JournalBlock = {
       try {
         JournalBlock(state.seqno, state.blockchain, state.block.toArray)
