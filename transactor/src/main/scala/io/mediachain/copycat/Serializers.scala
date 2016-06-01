@@ -6,6 +6,7 @@ import cats.data.Xor
 import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.copycat.StateMachine._
+import io.mediachain.util.cbor.CborCodec
 
 object Serializers {
   val klasses = List(classOf[JournalLookup],
@@ -79,7 +80,7 @@ object Serializers {
       buf.read(cellBytes)
 
       val updateXor = for {
-        ref <- CborSerialization.fromCborBytes[Reference](refBytes)
+        ref <- CborSerialization.referenceFromCborBytes(refBytes)
         cell <- CborSerialization.fromCborBytes[ChainCell](cellBytes)
       } yield JournalUpdate(ref, cell)
 

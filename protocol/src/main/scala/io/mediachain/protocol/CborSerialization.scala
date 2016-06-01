@@ -81,6 +81,21 @@ object CborSerialization {
     fromCborBytes[JournalEntry](bytes)(deserializers)
 
 
+  /**
+    * Try to deserialize a `Reference` from a cbor-encoded byte array
+    * @param bytes the byte array to deserialize from
+    * @return the decoded `Reference`, or a `DeserializationError` on failure
+    */
+  def referenceFromCborBytes(bytes: Array[Byte])
+  : Xor[DeserializationError, Reference] = {
+    val refMapXor = CborCodec.decode(bytes) match {
+      case (_: CTag) :: (refMap: CMap) :: _ => Xor.right(refMap)
+      case (refMap: CMap) :: _ => Xor.right(refMap)
+      case _ => Xor.left(CborDecodingFailed())
+    }
+
+    refMapXor.flatMap(ReferenceDeserializer.fromCMap)
+  }
 
   /**
     * Try to deserialize some `CborSerializable` object from a byte array.
