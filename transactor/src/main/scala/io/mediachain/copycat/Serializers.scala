@@ -6,11 +6,10 @@ import cats.data.Xor
 import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.copycat.StateMachine._
-import io.mediachain.util.cbor.CborCodec
+
 
 object Serializers {
-  val klasses = List(classOf[JournalLookup],
-                     classOf[JournalCurrentBlock],
+  val klasses = List(classOf[JournalCurrentBlock],
                      classOf[JournalCommitEvent],
                      classOf[JournalBlockEvent],
                      classOf[JournalState])
@@ -20,6 +19,7 @@ object Serializers {
     serializer.register(classOf[JournalBlock], classOf[JournalBlockSerializer])
     serializer.register(classOf[JournalInsert], classOf[JournalInsertSerializer])
     serializer.register(classOf[JournalUpdate], classOf[JournalUpdateSerializer])
+    serializer.register(classOf[JournalLookup], classOf[JournalLookupSerializer])
   }
   
   class JournalBlockSerializer extends TypeSerializer[JournalBlock] {
@@ -103,4 +103,24 @@ object Serializers {
     }
   }
 
+  class JournalLookupSerializer extends TypeSerializer[JournalLookup] {
+    def read(klass: Class[JournalLookup], buf: BufferInput[_ <: BufferInput[_]], ser: Serializer)
+    : JournalLookup = {
+      val len = buf.readInt()
+      val bytes = new Array[Byte](len)
+      buf.read(bytes)
+      CborSerialization.referenceFromCborBytes(bytes) match {
+        case Xor.Right(ref) =>
+          JournalLookup(ref)
+        case Xor.Left(err) =>
+          throw new SerializationException("Failed to deserialize JournalLookup: " + err.message)
+      }
+    }
+
+    def write(command: JournalLookup, buf: BufferOutput[_ <: BufferOutput[_]], ser: Serializer) {
+      val bytes = command.ref.toCborBytes
+      buf.writeInt(bytes.length)
+      buf.write(bytes)
+    }
+  }
 }
