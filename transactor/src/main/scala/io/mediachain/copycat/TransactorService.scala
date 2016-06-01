@@ -15,14 +15,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, SECONDS}
 
 class TransactorService(client: Client,
-                        datastore: Datastore,
-                        timeout: Duration = Duration(120, SECONDS),
-                        implicit val executionContext: ExecutionContext)
+                        timeout: Duration = Duration(120, SECONDS))
+                       (implicit val executionContext: ExecutionContext)
   extends TransactorServiceGrpc.TransactorService {
 
   override def fetchObjectChainHead(request: Transactor.MultihashReference):
   Future[Transactor.MultihashReference] = {
-    val ref = MultiHash.fromHex(request.reference)
+    val ref = MultiHash.fromBase58(request.reference)
       .map(MultihashReference.apply)
       .getOrElse {
         throw new StatusRuntimeException(Status.INVALID_ARGUMENT)
