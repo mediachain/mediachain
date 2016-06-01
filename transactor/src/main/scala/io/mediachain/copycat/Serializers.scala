@@ -1,15 +1,14 @@
 package io.mediachain.copycat
 
-import io.atomix.catalyst.serializer.{Serializer, TypeSerializer, SerializationException}
+import io.atomix.catalyst.serializer.{SerializationException, Serializer, TypeSerializer}
 import io.atomix.catalyst.buffer.{BufferInput, BufferOutput}
 import cats.data.Xor
-import io.mediachain.protocol.Datastore.JournalBlock
+import io.mediachain.protocol.Datastore.{CanonicalRecord, JournalBlock}
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.copycat.StateMachine._
 
 object Serializers {
-  val klasses = List(classOf[JournalInsert],
-                     classOf[JournalUpdate],
+  val klasses = List(classOf[JournalUpdate],
                      classOf[JournalLookup],
                      classOf[JournalCurrentBlock],
                      classOf[JournalCommitEvent],
@@ -19,6 +18,7 @@ object Serializers {
   def register(serializer: Serializer) {
     klasses.foreach(serializer.register(_))
     serializer.register(classOf[JournalBlock], classOf[JournalBlockSerializer])
+    serializer.register(classOf[JournalInsert], classOf[JournalInsertSerializer])
   }
   
   class JournalBlockSerializer extends TypeSerializer[JournalBlock] {
@@ -39,6 +39,29 @@ object Serializers {
     
     def write(block: JournalBlock, buf: BufferOutput[_ <: BufferOutput[_]], ser: Serializer) {
       val bytes = block.toCborBytes
+      buf.writeInt(bytes.length)
+      buf.write(bytes)
+    }
+  }
+
+  class JournalInsertSerializer extends TypeSerializer[JournalInsert] {
+    def read(klass: Class[JournalInsert], buf: BufferInput[_ <: BufferInput[_]], ser: Serializer)
+    : JournalInsert = {
+      val len = buf.readInt()
+      val bytes = new Array[Byte](len)
+      buf.read(bytes)
+      CborSerialization.dataObjectFromCborBytes(bytes) match {
+        case Xor.Right(record: CanonicalRecord) =>
+          JournalInsert(record)
+        case Xor.Right(obj) =>
+          throw new SerializationException("Failed to deserialize JournalInsert: unexpected object " + obj)
+        case Xor.Left(err) =>
+          throw new SerializationException("Failed to deserialize JournalInsert: " + err.message)
+      }
+    }
+
+    def write(command: JournalInsert, buf: BufferOutput[_ <: BufferOutput[_]], ser: Serializer) {
+      val bytes = command.record.toCborBytes
       buf.writeInt(bytes.length)
       buf.write(bytes)
     }
