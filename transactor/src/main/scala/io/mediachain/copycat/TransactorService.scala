@@ -54,9 +54,9 @@ class TransactorService(client: Client,
       request.canonicalCbor.toByteArray
     )
 
-    val future = recXor match {
+    val insertF = recXor match {
       case Xor.Left(err) => throw new StatusRuntimeException(
-        Status.FAILED_PRECONDITION.withDescription(
+        Status.INVALID_ARGUMENT.withDescription(
           s"Object deserialization error: ${err.message}"
         )
       )
@@ -64,7 +64,7 @@ class TransactorService(client: Client,
         client.insert(obj)
     }
 
-    future.map { entryXor: Xor[JournalError, CanonicalEntry] =>
+    insertF.map { entryXor: Xor[JournalError, CanonicalEntry] =>
       entryXor match {
         case Xor.Left(err) =>
           throw new StatusRuntimeException(
@@ -84,9 +84,9 @@ class TransactorService(client: Client,
       request.chainCellCbor.toByteArray
     )
 
-    val future = cellXor match {
+    val updateF = cellXor match {
       case Xor.Left(err) => throw new StatusRuntimeException(
-        Status.FAILED_PRECONDITION.withDescription(
+        Status.INVALID_ARGUMENT.withDescription(
           s"Object deserialization error: ${err.message}"
         )
       )
@@ -94,7 +94,7 @@ class TransactorService(client: Client,
         client.update(cell.ref, cell)
     }
 
-    future.map { entryXor: Xor[JournalError, ChainEntry] =>
+    updateF.map { entryXor: Xor[JournalError, ChainEntry] =>
       entryXor match {
         case Xor.Left(err) =>
           throw new StatusRuntimeException(
