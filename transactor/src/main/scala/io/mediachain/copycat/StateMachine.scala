@@ -15,7 +15,6 @@ import cats.data.Xor
 object StateMachine {
   import io.mediachain.protocol.Datastore._
   import io.mediachain.protocol.Transactor._
-  import io.grpc.{Server, ServerBuilder}
 
   val JournalBlockSize: Int = 4096 // blocksize for Journal Blockchain
   
@@ -126,12 +125,18 @@ object StateMachine {
     
     def lookup(commit: Commit[JournalLookup]): Option[Reference] = {
       try {
-        state.index.get(commit.operation.ref).flatMap(_.chain)
+        lookup(commit.operation.ref)
       } finally {
         commit.release()
       }
     }
-
+    
+    def lookup(ref: Reference): Option[Reference] = {
+      state.synchronized {
+        state.index.get(ref).flatMap(_.chain)
+      }
+    }
+    
     def currentBlock(commit: Commit[JournalCurrentBlock]) : JournalBlock = {
       try {
         JournalBlock(state.seqno, state.blockchain, state.block.toArray)
