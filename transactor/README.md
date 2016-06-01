@@ -69,7 +69,7 @@ keytool -importkeystore \
         -srckeystore server.p12 -srcstoretype PKCS12 -srcstorepass changeme \
         -alias server
 keytool -importcert -noprompt -file root.crt -alias root -keystore server.jks\
-        -store-pass changeme
+        -storepass changeme
 ```
 
 
