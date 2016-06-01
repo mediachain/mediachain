@@ -24,29 +24,9 @@ object RpcService {
     logger.info(s"Connecting to server at $serverAddress...")
     client.connect(serverAddress)
 
-    val dynamoEndpoint = sys.env.get("DYNAMO_ENDPOINT_URL")
-    val dynamoBaseTable = sys.env.getOrElse("DYNAMO_MEDIACHAIN_TABLE",
-      "mediachain")
-
-    val awsAccessKey = sys.env.getOrElse("AWS_ACCESS_KEY",
-      "Using dummy AWS key. If not using local dynamo-db," +
-      "make sure to set the AWS_ACCESS_KEY env variable."
-    )
-
-    val awsSecretKey = sys.env.getOrElse("AWS_SECRET_KEY",
-      "Using dummy AWS key. If not using local dynamo-db," +
-        "make sure to set the AWS_SECRET_KEY env variable."
-    )
-
-    val creds = new BasicAWSCredentials(awsAccessKey, awsSecretKey)
-    val datastore = new DynamoDatastore(DynamoDatastore.Config(
-      dynamoBaseTable, creds, dynamoEndpoint
-    ))
-
     implicit val ec = ExecutionContext.global
 
-    val txService = new TransactorService(client, datastore,
-      executionContext = ec)
+    val txService = new TransactorService(client)
 
     TransactorService.createServerThread(txService,
       Executors.newSingleThreadExecutor(),
