@@ -52,4 +52,8 @@ object Transactor {
   case class JournalCommitError(what: String) extends JournalError {
     override def toString = "Journal Commit Error: " + what
   }
+  
+  case class JournalDuplicateError(ref: Reference) extends JournalError {
+    override def toString = "Duplicate Journal Insert: " + ref
+  }
 }
