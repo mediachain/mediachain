@@ -38,11 +38,9 @@ object Serializers {
     def read(klass: Class[JournalBlock], buf: BufferInput[_ <: BufferInput[_]], ser: Serializer)
     : JournalBlock = {
       val bytes = readBytes(buf)
-      CborSerialization.dataObjectFromCborBytes(bytes) match {
-        case Xor.Right(block: JournalBlock) => 
+      CborSerialization.fromCborBytes[JournalBlock](bytes) match {
+        case Xor.Right(block) => 
           block
-        case Xor.Right(obj) =>
-          throw new SerializationException("Failed to deserialize JournalBlock: unexpected object " + obj)
         case Xor.Left(err) =>
           throw new SerializationException("Failed to deserialize JournalBlock: " + err.message)
       }
@@ -57,11 +55,9 @@ object Serializers {
     def read(klass: Class[JournalInsert], buf: BufferInput[_ <: BufferInput[_]], ser: Serializer)
     : JournalInsert = {
       val bytes = readBytes(buf)
-      CborSerialization.dataObjectFromCborBytes(bytes) match {
-        case Xor.Right(record: CanonicalRecord) =>
+      CborSerialization.fromCborBytes[CanonicalRecord](bytes) match {
+        case Xor.Right(record) => 
           JournalInsert(record)
-        case Xor.Right(obj) =>
-          throw new SerializationException("Failed to deserialize JournalInsert: unexpected object " + obj)
         case Xor.Left(err) =>
           throw new SerializationException("Failed to deserialize JournalInsert: " + err.message)
       }
