@@ -67,10 +67,11 @@ object StateMachine {
       val rec = cmd.record
       val ref = datastore.put(rec)
       state.index.get(ref) match {
-        case Some(_) => commitError("duplicate insert")
+        case Some(_) => 
+          Xor.left(JournalDuplicateError(ref))
+          
         case None => {
           state.index += (ref -> rec.reference)
-
           val entry = CanonicalEntry(nextSeqno(), ref)
           publishCommit(entry)
           blockExtend(entry)
