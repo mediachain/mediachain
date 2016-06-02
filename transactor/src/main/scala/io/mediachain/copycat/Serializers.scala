@@ -22,12 +22,22 @@ object Serializers {
     serializer.register(classOf[JournalLookup], classOf[JournalLookupSerializer])
   }
   
+  def readBytes(buf: BufferInput[_ <: BufferInput[_]]): Array[Byte] = {
+    val len = buf.readInt()
+    val bytes = new Array[Byte](len)
+    buf.read(bytes)
+    bytes
+  }
+  
+  def writeBytes(buf: BufferOutput[_ <: BufferOutput[_]], bytes: Array[Byte]) {
+    buf.writeInt(bytes.length)
+    buf.write(bytes)
+  }
+  
   class JournalBlockSerializer extends TypeSerializer[JournalBlock] {
     def read(klass: Class[JournalBlock], buf: BufferInput[_ <: BufferInput[_]], ser: Serializer)
     : JournalBlock = {
-      val len = buf.readInt()
-      val bytes = new Array[Byte](len)
-      buf.read(bytes)
+      val bytes = readBytes(buf)
       CborSerialization.dataObjectFromCborBytes(bytes) match {
         case Xor.Right(block: JournalBlock) => 
           block
@@ -39,18 +49,14 @@ object Serializers {
     }
     
     def write(block: JournalBlock, buf: BufferOutput[_ <: BufferOutput[_]], ser: Serializer) {
-      val bytes = block.toCborBytes
-      buf.writeInt(bytes.length)
-      buf.write(bytes)
+      writeBytes(buf, block.toCborBytes)
     }
   }
 
   class JournalInsertSerializer extends TypeSerializer[JournalInsert] {
     def read(klass: Class[JournalInsert], buf: BufferInput[_ <: BufferInput[_]], ser: Serializer)
     : JournalInsert = {
-      val len = buf.readInt()
-      val bytes = new Array[Byte](len)
-      buf.read(bytes)
+      val bytes = readBytes(buf)
       CborSerialization.dataObjectFromCborBytes(bytes) match {
         case Xor.Right(record: CanonicalRecord) =>
           JournalInsert(record)
@@ -62,23 +68,16 @@ object Serializers {
     }
 
     def write(command: JournalInsert, buf: BufferOutput[_ <: BufferOutput[_]], ser: Serializer) {
-      val bytes = command.record.toCborBytes
-      buf.writeInt(bytes.length)
-      buf.write(bytes)
+      writeBytes(buf, command.record.toCborBytes)
     }
   }
 
   class JournalUpdateSerializer extends TypeSerializer[JournalUpdate] {
     def read(klass: Class[JournalUpdate], buf: BufferInput[_ <: BufferInput[_]], ser: Serializer)
     : JournalUpdate = {
-      val refLen = buf.readInt()
-      val refBytes = new Array[Byte](refLen)
-      buf.read(refBytes)
-
-      val cellLen = buf.readInt()
-      val cellBytes = new Array[Byte](cellLen)
-      buf.read(cellBytes)
-
+      val refBytes = readBytes(buf)
+      val cellBytes = readBytes(buf)
+      
       val updateXor = for {
         ref <- CborSerialization.referenceFromCborBytes(refBytes)
         cell <- CborSerialization.fromCborBytes[ChainCell](cellBytes)
@@ -86,29 +85,21 @@ object Serializers {
 
       updateXor match {
         case Xor.Left(err) =>
-          throw new SerializationException(
-            s"Failed to deserialize JournalUpdate: ${err.message}"
-          )
+          throw new SerializationException("Failed to deserialize JournalUpdate: " + err.message)
         case Xor.Right(obj) => obj
       }
     }
 
     def write(update: JournalUpdate, buf: BufferOutput[_ <: BufferOutput[_]], ser: Serializer) {
-      val refBytes = update.ref.toCborBytes
-      val cellBytes = update.cell.toCborBytes
-      buf.writeInt(refBytes.length)
-      buf.write(refBytes)
-      buf.writeInt(cellBytes.length)
-      buf.write(cellBytes)
+      writeBytes(buf, update.ref.toCborBytes)
+      writeBytes(buf, update.cell.toCborBytes)
     }
   }
 
   class JournalLookupSerializer extends TypeSerializer[JournalLookup] {
     def read(klass: Class[JournalLookup], buf: BufferInput[_ <: BufferInput[_]], ser: Serializer)
     : JournalLookup = {
-      val len = buf.readInt()
-      val bytes = new Array[Byte](len)
-      buf.read(bytes)
+      val bytes = readBytes(buf)
       CborSerialization.referenceFromCborBytes(bytes) match {
         case Xor.Right(ref) =>
           JournalLookup(ref)
@@ -118,9 +109,7 @@ object Serializers {
     }
 
     def write(command: JournalLookup, buf: BufferOutput[_ <: BufferOutput[_]], ser: Serializer) {
-      val bytes = command.ref.toCborBytes
-      buf.writeInt(bytes.length)
-      buf.write(bytes)
+      writeBytes(buf, command.ref.toCborBytes)
     }
   }
 }
