@@ -12,6 +12,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.{Future, Promise}
 import scala.util.{Try, Success, Failure}
 import scala.compat.java8.FutureConverters
+import scala.collection.JavaConversions._
 
 import cats.data.Xor
 
@@ -26,7 +27,7 @@ class Client(client: CopycatClient) extends JournalClient {
   
   @volatile private var shutdown = false
   @volatile private var state: ClientState = Disconnected
-  private var server: Option[String] = None
+  private var cluster: Option[List[Address]] = None
   private var recoveryExecutor: ExecutorService = Executors.newSingleThreadExecutor()
   private var listeners: Set[JournalListener] = Set()
   private var stateListeners: Set[ClientStateListener] = Set()
@@ -137,13 +138,13 @@ class Client(client: CopycatClient) extends JournalClient {
   }
   
   private def reconnect() {
-    def loop(address: String, retry: Int) {
+    def loop(addresses: List[Address], retry: Int) {
       if (!shutdown) {
         if (retry < maxRetries) {
-          logger.info("Reconnecting to " + address)
-          Try(client.connect(new Address(address)).join()) match {
+          logger.info("Reconnecting to " + addresses)
+          Try(client.connect(addresses).join()) match {
             case Success(_) => 
-              logger.info("Successfully reconnected to " + address)
+              logger.info("Successfully reconnected")
               if (shutdown) {
                 // lost race with user calling #close
                 // make sure the client is closed
@@ -154,7 +155,7 @@ class Client(client: CopycatClient) extends JournalClient {
               val sleep = Client.randomBackoff(retry)
               logger.info("Backing off reconnect for " + sleep + " ms")
               Thread.sleep(sleep)
-              loop(address, retry + 1) 
+              loop(addresses, retry + 1) 
           }
         } else {
           disconnect("Failed to reconnect; giving up.")
@@ -167,7 +168,7 @@ class Client(client: CopycatClient) extends JournalClient {
     recoveryExecutor.submit(new Runnable {
       def run { 
         try {
-          server.foreach { address => loop(address, 0) }
+          cluster.foreach { addresses => loop(addresses, 0) }
         } catch {
           case e: InterruptedException => 
             disconnect("Client reconnect interrupted")
@@ -196,10 +197,11 @@ class Client(client: CopycatClient) extends JournalClient {
     submit(JournalCurrentBlock())
   
   // JournalClient
-  def connect(address: String) {
+  def connect(addresses: List[String]) {
     if (!shutdown) {
-      server = Some(address)
-      client.connect(new Address(address)).join()
+      val clusterAddresses = addresses.map {a => new Address(a)}
+      cluster = Some(clusterAddresses)
+      client.connect(clusterAddresses).join()
     } else {
       throw new IllegalStateException("client has been shutdown")
     }
