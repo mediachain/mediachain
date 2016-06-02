@@ -36,7 +36,8 @@ object Transactor {
   }
 
   trait JournalClient extends Journal {
-    def connect(address: String): Unit
+    def connect(cluster: List[String]): Unit
+    def connect(address: String) {connect(List(address))}
     def close(): Unit
     def listen(listener: JournalListener): Unit
   }
