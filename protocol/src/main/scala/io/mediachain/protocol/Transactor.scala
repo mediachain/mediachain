@@ -36,7 +36,8 @@ object Transactor {
   }
 
   trait JournalClient extends Journal {
-    def connect(address: String): Unit
+    def connect(cluster: List[String]): Unit
+    def connect(address: String) {connect(List(address))}
     def close(): Unit
     def listen(listener: JournalListener): Unit
   }
@@ -50,5 +51,9 @@ object Transactor {
 
   case class JournalCommitError(what: String) extends JournalError {
     override def toString = "Journal Commit Error: " + what
+  }
+  
+  case class JournalDuplicateError(ref: Reference) extends JournalError {
+    override def toString = "Duplicate Journal Insert: " + ref
   }
 }
