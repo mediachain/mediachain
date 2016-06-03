@@ -3,13 +3,16 @@ package io.mediachain.copycat
 import java.util.concurrent.ExecutorService
 
 import cats.data.Xor
+import io.grpc.stub.StreamObserver
 import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
+import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.protocol.Datastore._
-import io.mediachain.protocol.Transactor.JournalError
-import io.mediachain.protocol.transactor.Transactor.{InsertRequest, TransactorServiceGrpc, UpdateRequest}
+import io.mediachain.protocol.Transactor.{JournalError, JournalListener}
+import io.mediachain.protocol.transactor.Transactor.{MultihashReference => _, _}
 import io.mediachain.protocol.transactor.Transactor
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, SECONDS}
@@ -17,7 +20,13 @@ import scala.concurrent.duration.{Duration, SECONDS}
 class TransactorService(client: Client,
                         timeout: Duration = Duration(120, SECONDS))
                        (implicit val executionContext: ExecutionContext)
-  extends TransactorServiceGrpc.TransactorService {
+  extends TransactorServiceGrpc.TransactorService
+  with ClientStateListener
+  with JournalListener {
+  private val logger = LoggerFactory.getLogger(classOf[TransactorService])
+
+  client.addStateListener(this)
+  client.listen(this)
 
   override def lookupChain(request: Transactor.MultihashReference):
   Future[Transactor.MultihashReference] = {
@@ -80,7 +89,7 @@ class TransactorService(client: Client,
   }
   
   override def updateChain(request: UpdateRequest)
-  : Future[Transactor.MultihashReference] = {
+  : Future[ChainUpdateDescription] = {
     val bytes = request.chainCellCbor.toByteArray
     checkRecordSize(bytes)
     
@@ -104,9 +113,28 @@ class TransactorService(client: Client,
               s"Journal Error: $err"
             )
           )
-        case Xor.Right(entry) =>
-          refToRPCMultihashRef(entry.chain)
+        case Xor.Right(entry) => {
+          ChainUpdateDescription()
+            .withCanonicalRef(refToRPCMultihashRef(entry.ref))
+            .withChainHeadRef(refToRPCMultihashRef(entry.chain))
+        }
       }
+    }
+  }
+
+
+  import collection.mutable.{Set => MSet}
+  private val journalEventObservers: MSet[StreamObserver[JournalEvent]] = MSet()
+
+  override def streamJournalUpdates(request: JournalStreamRequest,
+    responseObserver: StreamObserver[JournalEvent]): Unit = {
+
+    // TODO: play event stream following lastBlockRef in request.
+    // this involves accessing the datastore, keeping local state
+    // per-observer, etc.
+
+    journalEventObservers.synchronized {
+      journalEventObservers.add(responseObserver)
     }
   }
 
@@ -117,6 +145,60 @@ class TransactorService(client: Client,
         Status.INVALID_ARGUMENT.withDescription("Maximum record size exceeded"))
     }
   }
+
+
+  override def onStateChange(state: ClientState): Unit = {
+    logger.info(s"copycat state changed to $state")
+    if (state == ClientState.Disconnected) {
+      journalEventObservers.synchronized {
+        journalEventObservers.foreach { observer =>
+          observer.onError(
+            new StatusRuntimeException(
+              Status.UNAVAILABLE
+                .withDescription("disconnected from transactor cluster")
+            )
+          )
+        }
+        journalEventObservers.clear()
+      }
+    }
+  }
+
+  override def onJournalCommit(entry: JournalEntry): Unit = {
+    import JournalEvent.Event
+
+    val event = entry match {
+      case CanonicalEntry(_, ref) =>
+        Event.CanonicalInserted(refToRPCMultihashRef(ref))
+
+      case ChainEntry(_, ref, chain, _) =>
+        Event.ChainUpdated(
+          ChainUpdateDescription()
+            .withCanonicalRef(refToRPCMultihashRef(ref))
+            .withChainHeadRef(refToRPCMultihashRef(chain))
+        )
+    }
+    publishEvent(event)
+  }
+
+  override def onJournalBlock(ref: Reference): Unit = {
+    import JournalEvent.Event
+    val event = Event.JournalBlockPublished(
+      refToRPCMultihashRef(ref)
+    )
+
+    publishEvent(event)
+  }
+
+
+  private def publishEvent(event: JournalEvent.Event): Unit = {
+    journalEventObservers.synchronized {
+      journalEventObservers.foreach { observer =>
+        observer.onNext(JournalEvent().withEvent(event))
+      }
+    }
+  }
+
 }
 
 object TransactorService {

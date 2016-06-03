@@ -24,7 +24,6 @@ message ChainUpdateDescription {
 }
 
 message JournalEvent {
-    uint64 journalIndex = 1;
     oneof event {
         MultihashReference canonicalInserted = 2;
         ChainUpdateDescription chainUpdated = 3;
