@@ -19,7 +19,7 @@ class TransactorService(client: Client,
                        (implicit val executionContext: ExecutionContext)
   extends TransactorServiceGrpc.TransactorService {
 
-  override def fetchObjectChainHead(request: Transactor.MultihashReference):
+  override def lookupChain(request: Transactor.MultihashReference):
   Future[Transactor.MultihashReference] = {
     val ref = MultiHash.fromBase58(request.reference)
       .map(MultihashReference.apply)
@@ -48,7 +48,7 @@ class TransactorService(client: Client,
       )
   }
 
-  override def insertCanonicalRecord(request: InsertRequest)
+  override def insertCanonical(request: InsertRequest)
   : Future[Transactor.MultihashReference] = {
     val recXor = CborSerialization.fromCborBytes[CanonicalRecord](
       request.canonicalCbor.toByteArray
@@ -78,7 +78,7 @@ class TransactorService(client: Client,
     }
   }
 
-  override def updateCanonicalRecord(request: UpdateRequest)
+  override def updateChain(request: UpdateRequest)
   : Future[Transactor.MultihashReference] = {
     val cellXor = CborSerialization.fromCborBytes[ChainCell](
       request.chainCellCbor.toByteArray

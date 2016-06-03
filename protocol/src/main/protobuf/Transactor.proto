@@ -15,13 +15,13 @@ message UpdateRequest {
 }
 
 service TransactorService {
-    rpc FetchObjectChainHead(MultihashReference) returns
+    rpc InsertCanonical(InsertRequest) returns
         (MultihashReference);
 
-    rpc InsertCanonicalRecord(InsertRequest) returns
+    rpc UpdateChain(UpdateRequest) returns
         (MultihashReference);
 
-    rpc UpdateCanonicalRecord(UpdateRequest) returns
+    rpc LookupChain(MultihashReference) returns
         (MultihashReference);
 }
 
