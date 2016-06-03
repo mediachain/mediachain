@@ -20,10 +20,10 @@ object JournalServer {
   }
   
   def parseArgs(args: Array[String]) = {
-    args match {
-      case Array("-i", config, cluster@_*) =>
+    args.toList match {
+      case "-i" :: config :: cluster =>
         (true, config, cluster.toList)
-      case Array(config, cluster@_*) =>
+      case config :: cluster =>
         (false, config, cluster.toList)
       case _ =>
         throw new RuntimeException("Expected arguments: [-i] config [cluster-address ...]")
