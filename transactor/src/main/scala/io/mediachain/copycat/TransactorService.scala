@@ -50,9 +50,10 @@ class TransactorService(client: Client,
 
   override def insertCanonical(request: InsertRequest)
   : Future[Transactor.MultihashReference] = {
-    val recXor = CborSerialization.fromCborBytes[CanonicalRecord](
-      request.canonicalCbor.toByteArray
-    )
+    val bytes = request.canonicalCbor.toByteArray
+    checkRecordSize(bytes)
+    
+    val recXor = CborSerialization.fromCborBytes[CanonicalRecord](bytes)
 
     val insertF = recXor match {
       case Xor.Left(err) => throw new StatusRuntimeException(
@@ -77,13 +78,14 @@ class TransactorService(client: Client,
       }
     }
   }
-
+  
   override def updateChain(request: UpdateRequest)
   : Future[Transactor.MultihashReference] = {
-    val cellXor = CborSerialization.fromCborBytes[ChainCell](
-      request.chainCellCbor.toByteArray
-    )
-
+    val bytes = request.chainCellCbor.toByteArray
+    checkRecordSize(bytes)
+    
+    val cellXor = CborSerialization.fromCborBytes[ChainCell](bytes)      
+    
     val updateF = cellXor match {
       case Xor.Left(err) => throw new StatusRuntimeException(
         Status.INVALID_ARGUMENT.withDescription(
@@ -105,6 +107,14 @@ class TransactorService(client: Client,
         case Xor.Right(entry) =>
           refToRPCMultihashRef(entry.chain)
       }
+    }
+  }
+
+  val maxRecordSize = 64 * 1024 // 64k ought to be enough for everyone
+  private def checkRecordSize(bytes: Array[Byte]) {
+    if (bytes.length > maxRecordSize) {
+      throw new StatusRuntimeException(
+        Status.INVALID_ARGUMENT.withDescription("Maximum record size exceeded"))
     }
   }
 }
