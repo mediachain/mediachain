@@ -1,0 +1,27 @@
+syntax = "proto3";
+package protocol;
+option java_package = "io.mediachain.protocol.transactor";
+
+message MultihashReference {
+    string reference = 1;
+}
+
+message InsertRequest {
+    bytes canonicalCbor = 1;
+}
+
+message UpdateRequest {
+    bytes chainCellCbor = 1;
+}
+
+service TransactorService {
+    rpc InsertCanonical(InsertRequest) returns
+        (MultihashReference);
+
+    rpc UpdateChain(UpdateRequest) returns
+        (MultihashReference);
+
+    rpc LookupChain(MultihashReference) returns
+        (MultihashReference);
+}
+
