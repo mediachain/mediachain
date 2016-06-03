@@ -13,7 +13,7 @@ object RpcService {
 
   def main(args: Array[String]) {
     if (args.length < 2) {
-      print("arguments: rpc-service-port server-address ...")
+      println("arguments: rpc-service-port server-address ...")
       sys.exit(1)
     }
 
