@@ -12,17 +12,17 @@ object RpcService {
   val logger = LoggerFactory.getLogger(RpcService.getClass)
 
   def main(args: Array[String]) {
-    if (args.length != 2) {
-      print("arguments: server-address rpc-service-port")
+    if (args.length < 2) {
+      print("arguments: rpc-service-port server-address ...")
       sys.exit(1)
     }
 
-    val serverAddress = args(0)
-    val rpcPort = Integer.parseInt(args(1))
-
+    val rpcPort = Integer.parseInt(args.head)
+    val cluster = args.tail.toList
+    
     val client = Client.build()
-    logger.info(s"Connecting to server at $serverAddress...")
-    client.connect(serverAddress)
+    logger.info(s"Connecting to cluster at $cluster...")
+    client.connect(cluster)
 
     implicit val ec = ExecutionContext.global
 
