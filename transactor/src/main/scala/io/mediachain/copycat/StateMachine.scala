@@ -131,7 +131,6 @@ object StateMachine {
         commit.release()
       }
     }
-    
 
     def currentBlock(commit: Commit[JournalCurrentBlock]) : JournalBlock = {
       try {

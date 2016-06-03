@@ -133,10 +133,9 @@ object TransactorService {
     ).build
 
     executor.submit(new Runnable {
-      override def run(): Unit = {
+      def run {
         server.start
-      }
-    })
+      }})
   }
 }
 
