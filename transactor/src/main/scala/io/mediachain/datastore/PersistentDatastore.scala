@@ -70,7 +70,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
         case None => 
           val xbackoff = Math.min(maxBackoffRetry, Math.max(1, 2 * backoff))
           val sleep = random.nextInt(1000 * xbackoff)
-          logger.info("Backing off for " + sleep + "ms")
+          logger.info("Backing off for " + sleep + "ms; queue backlog: " + queue.size)
           Thread.sleep(sleep)
           loop(xbackoff)
       }
