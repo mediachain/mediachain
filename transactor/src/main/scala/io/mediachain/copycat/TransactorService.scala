@@ -18,12 +18,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, SECONDS}
 
 class TransactorListener extends ClientStateListener with JournalListener {
-  import collection.mutable.ArrayBuffer
+  import collection.mutable.{Set => MSet}
   import TransactorService.refToRPCMultihashRef
 
   private val logger = LoggerFactory.getLogger(classOf[TransactorService])
-  private val observers: ArrayBuffer[StreamObserver[JournalEvent]] =
-    ArrayBuffer()
+  private val observers: MSet[StreamObserver[JournalEvent]] = MSet()
 
   override def onStateChange(state: ClientState): Unit = {
     logger.info(s"copycat state changed to $state")
@@ -51,8 +50,7 @@ class TransactorListener extends ClientStateListener with JournalListener {
 
       case ChainEntry(_, ref, chain, chainPrevious) =>
         Event.ChainUpdated(
-          UpdateChainResult(chainPrevious =
-            chainPrevious.map(refToRPCMultihashRef))
+          UpdateChainResult(chainPrevious = chainPrevious.map(refToRPCMultihashRef))
             .withCanonical(refToRPCMultihashRef(ref))
             .withChain(refToRPCMultihashRef(chain))
         )
@@ -62,7 +60,9 @@ class TransactorListener extends ClientStateListener with JournalListener {
 
   override def onJournalBlock(ref: Reference): Unit = {
     import JournalEvent.Event
-    val event = Event.JournalBlockPublished(refToRPCMultihashRef(ref))
+    val event = Event.JournalBlockPublished(
+      refToRPCMultihashRef(ref)
+    )
 
     publishEvent(event)
   }
@@ -70,9 +70,20 @@ class TransactorListener extends ClientStateListener with JournalListener {
 
   private def publishEvent(event: JournalEvent.Event): Unit = {
     observers.synchronized {
+      val cancelledObservers: MSet[StreamObserver[JournalEvent]] = MSet()
       observers.foreach { observer =>
-        observer.onNext(JournalEvent().withEvent(event))
+        try {
+          observer.onNext(JournalEvent().withEvent(event))
+        } catch {
+          case e: StatusRuntimeException if e.getStatus == Status.CANCELLED =>
+            // if the client killed the connection, remove the observer
+            cancelledObservers.add(observer)
+          case t: Throwable =>
+            throw t
+        }
       }
+
+      observers --= cancelledObservers
     }
   }
 }
