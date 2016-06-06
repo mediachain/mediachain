@@ -24,6 +24,12 @@ class TransactorListener extends ClientStateListener with JournalListener {
   private val logger = LoggerFactory.getLogger(classOf[TransactorService])
   private val observers: MSet[StreamObserver[JournalEvent]] = MSet()
 
+  def addObserver(streamObserver: StreamObserver[JournalEvent]): Unit = {
+    observers.synchronized {
+      observers.add(streamObserver)
+    }
+  }
+
   override def onStateChange(state: ClientState): Unit = {
     logger.info(s"copycat state changed to $state")
     if (state == ClientState.Disconnected) {
@@ -179,10 +185,6 @@ class TransactorService(client: Client,
     }
   }
 
-
-  import collection.mutable.{Set => MSet}
-  private val journalEventObservers: MSet[StreamObserver[JournalEvent]] = MSet()
-
   override def journalStream(request: JournalStreamRequest,
     responseObserver: StreamObserver[JournalEvent]): Unit = {
 
@@ -190,9 +192,7 @@ class TransactorService(client: Client,
     // this involves accessing the datastore, keeping local state
     // per-observer, etc.
 
-    journalEventObservers.synchronized {
-      journalEventObservers.add(responseObserver)
-    }
+    listener.addObserver(responseObserver)
   }
 
   val maxRecordSize = 64 * 1024 // 64k ought to be enough for everyone
