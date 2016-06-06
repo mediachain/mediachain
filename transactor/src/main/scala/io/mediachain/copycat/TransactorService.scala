@@ -123,7 +123,7 @@ class TransactorService(client: Client,
   import collection.mutable.{Set => MSet}
   private val journalEventObservers: MSet[StreamObserver[JournalEvent]] = MSet()
 
-  override def streamJournalUpdates(request: JournalStreamRequest,
+  override def journalStream(request: JournalStreamRequest,
     responseObserver: StreamObserver[JournalEvent]): Unit = {
 
     // TODO: play event stream following lastBlockRef in request.
@@ -168,11 +168,11 @@ class TransactorService(client: Client,
       case CanonicalEntry(_, ref) =>
         Event.CanonicalInserted(refToRPCMultihashRef(ref))
 
-      case ChainEntry(_, ref, chain, _) =>
+      case ChainEntry(_, ref, chain, chainPrevious) =>
         Event.ChainUpdated(
-          UpdateChainResult()
-            .withCanonicalRef(refToRPCMultihashRef(ref))
-            .withChainHeadRef(refToRPCMultihashRef(chain))
+          UpdateChainResult(chainPrevious = chainPrevious.map(refToRPCMultihashRef))
+            .withCanonical(refToRPCMultihashRef(ref))
+            .withChain(refToRPCMultihashRef(chain))
         )
     }
     publishEvent(event)

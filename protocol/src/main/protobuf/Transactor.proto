@@ -19,9 +19,9 @@ message JournalStreamRequest {
 }
 
 message UpdateChainResult {
-    MultihashReference canonicalRef = 1;
-    MultihashReference chainHeadRef = 2;
-    MultihashReference chainPreviousHeadRef = 3;
+    MultihashReference canonical = 1;
+    MultihashReference chain = 2;
+    MultihashReference chainPrevious = 3;
 }
 
 message JournalEvent {
@@ -42,7 +42,7 @@ service TransactorService {
     rpc LookupChain(MultihashReference) returns
         (MultihashReference);
 
-    rpc StreamJournalUpdates(JournalStreamRequest) returns
+    rpc JournalStream(JournalStreamRequest) returns
         (stream JournalEvent);
 }
 
