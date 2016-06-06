@@ -190,9 +190,20 @@ class TransactorService(client: Client,
 
   private def publishEvent(event: JournalEvent.Event): Unit = {
     journalEventObservers.synchronized {
+      val cancelledObservers: MSet[StreamObserver[JournalEvent]] = MSet()
       journalEventObservers.foreach { observer =>
-        observer.onNext(JournalEvent().withEvent(event))
+        try {
+          observer.onNext(JournalEvent().withEvent(event))
+        } catch {
+          case e: StatusRuntimeException if e.getStatus == Status.CANCELLED =>
+            // if the client killed the connection, remove the observer
+            cancelledObservers.add(observer)
+          case t: Throwable =>
+            throw t
+        }
       }
+
+      journalEventObservers --= cancelledObservers
     }
   }
 
