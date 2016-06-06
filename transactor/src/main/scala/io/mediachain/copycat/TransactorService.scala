@@ -17,16 +17,75 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, SECONDS}
 
+class TransactorListener extends ClientStateListener with JournalListener {
+  import collection.mutable.ArrayBuffer
+  import TransactorService.refToRPCMultihashRef
+
+  private val logger = LoggerFactory.getLogger(classOf[TransactorService])
+  private val observers: ArrayBuffer[StreamObserver[JournalEvent]] =
+    ArrayBuffer()
+
+  override def onStateChange(state: ClientState): Unit = {
+    logger.info(s"copycat state changed to $state")
+    if (state == ClientState.Disconnected) {
+      observers.synchronized {
+        observers.foreach { observer =>
+          observer.onError(
+            new StatusRuntimeException(
+              Status.UNAVAILABLE
+                .withDescription("disconnected from transactor cluster")
+            )
+          )
+        }
+        observers.clear()
+      }
+    }
+  }
+
+  override def onJournalCommit(entry: JournalEntry): Unit = {
+    import JournalEvent.Event
+
+    val event = entry match {
+      case CanonicalEntry(_, ref) =>
+        Event.CanonicalInserted(refToRPCMultihashRef(ref))
+
+      case ChainEntry(_, ref, chain, chainPrevious) =>
+        Event.ChainUpdated(
+          UpdateChainResult(chainPrevious =
+            chainPrevious.map(refToRPCMultihashRef))
+            .withCanonical(refToRPCMultihashRef(ref))
+            .withChain(refToRPCMultihashRef(chain))
+        )
+    }
+    publishEvent(event)
+  }
+
+  override def onJournalBlock(ref: Reference): Unit = {
+    import JournalEvent.Event
+    val event = Event.JournalBlockPublished(refToRPCMultihashRef(ref))
+
+    publishEvent(event)
+  }
+
+
+  private def publishEvent(event: JournalEvent.Event): Unit = {
+    observers.synchronized {
+      observers.foreach { observer =>
+        observer.onNext(JournalEvent().withEvent(event))
+      }
+    }
+  }
+}
+
 class TransactorService(client: Client,
                         timeout: Duration = Duration(120, SECONDS))
                        (implicit val executionContext: ExecutionContext)
-  extends TransactorServiceGrpc.TransactorService
-  with ClientStateListener
-  with JournalListener {
+  extends TransactorServiceGrpc.TransactorService {
   private val logger = LoggerFactory.getLogger(classOf[TransactorService])
+  private val listener = new TransactorListener()
 
-  client.addStateListener(this)
-  client.listen(this)
+  client.addStateListener(listener)
+  client.listen(listener)
 
   override def lookupChain(request: Transactor.MultihashReference):
   Future[Transactor.MultihashReference] = {
@@ -40,21 +99,11 @@ class TransactorService(client: Client,
       .lookup(ref)
       .map { (x: Option[Reference]) =>
         x.map { ref =>
-          refToRPCMultihashRef(ref)
+          TransactorService.refToRPCMultihashRef(ref)
         }.getOrElse {
           throw new StatusRuntimeException(Status.NOT_FOUND)
         }
       }
-  }
-
-  private def refToRPCMultihashRef(ref: Reference)
-  : Transactor.MultihashReference = ref match {
-    case MultihashReference(multihash) =>
-      Transactor.MultihashReference(multihash.base58)
-    case r =>
-      throw new ClassCastException(
-        s"Expected MultihashReference, got type ${r.getClass.getTypeName}"
-      )
   }
 
   override def insertCanonical(request: InsertRequest)
@@ -83,7 +132,7 @@ class TransactorService(client: Client,
             )
           )
         case Xor.Right(entry) =>
-          refToRPCMultihashRef(entry.ref)
+          TransactorService.refToRPCMultihashRef(entry.ref)
       }
     }
   }
@@ -114,7 +163,7 @@ class TransactorService(client: Client,
             )
           )
         case Xor.Right(entry) =>
-          refToRPCMultihashRef(entry.chain)
+          TransactorService.refToRPCMultihashRef(entry.chain)
       }
     }
   }
@@ -142,63 +191,20 @@ class TransactorService(client: Client,
         Status.INVALID_ARGUMENT.withDescription("Maximum record size exceeded"))
     }
   }
-
-
-  override def onStateChange(state: ClientState): Unit = {
-    logger.info(s"copycat state changed to $state")
-    if (state == ClientState.Disconnected) {
-      journalEventObservers.synchronized {
-        journalEventObservers.foreach { observer =>
-          observer.onError(
-            new StatusRuntimeException(
-              Status.UNAVAILABLE
-                .withDescription("disconnected from transactor cluster")
-            )
-          )
-        }
-        journalEventObservers.clear()
-      }
-    }
-  }
-
-  override def onJournalCommit(entry: JournalEntry): Unit = {
-    import JournalEvent.Event
-
-    val event = entry match {
-      case CanonicalEntry(_, ref) =>
-        Event.CanonicalInserted(refToRPCMultihashRef(ref))
-
-      case ChainEntry(_, ref, chain, chainPrevious) =>
-        Event.ChainUpdated(
-          UpdateChainResult(chainPrevious = chainPrevious.map(refToRPCMultihashRef))
-            .withCanonical(refToRPCMultihashRef(ref))
-            .withChain(refToRPCMultihashRef(chain))
-        )
-    }
-    publishEvent(event)
-  }
-
-  override def onJournalBlock(ref: Reference): Unit = {
-    import JournalEvent.Event
-    val event = Event.JournalBlockPublished(
-      refToRPCMultihashRef(ref)
-    )
-
-    publishEvent(event)
-  }
-
-
-  private def publishEvent(event: JournalEvent.Event): Unit = {
-    journalEventObservers.synchronized {
-      journalEventObservers.foreach { observer =>
-        observer.onNext(JournalEvent().withEvent(event))
-      }
-    }
-  }
-
 }
 
 object TransactorService {
+  def refToRPCMultihashRef(ref: Reference)
+  : Transactor.MultihashReference = ref match {
+    case MultihashReference(multihash) =>
+      Transactor.MultihashReference(multihash.base58)
+    case r =>
+      throw new ClassCastException(
+        s"Expected MultihashReference, got type ${r.getClass.getTypeName}"
+      )
+  }
+
+
   def createServerThread(service: TransactorService,
                          executor: ExecutorService,
                          port: Int)
