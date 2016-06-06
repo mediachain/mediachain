@@ -18,15 +18,16 @@ message JournalStreamRequest {
     MultihashReference lastJournalBlock = 1;
 }
 
-message ChainUpdateDescription {
+message UpdateChainResult {
     MultihashReference canonicalRef = 1;
     MultihashReference chainHeadRef = 2;
+    MultihashReference chainPreviousHeadRef = 3;
 }
 
 message JournalEvent {
     oneof event {
         MultihashReference canonicalInserted = 2;
-        ChainUpdateDescription chainUpdated = 3;
+        UpdateChainResult chainUpdated = 3;
         MultihashReference journalBlockPublished = 4;
     }
 }
@@ -36,7 +37,7 @@ service TransactorService {
         (MultihashReference);
 
     rpc UpdateChain(UpdateRequest) returns
-        (ChainUpdateDescription);
+        (MultihashReference);
 
     rpc LookupChain(MultihashReference) returns
         (MultihashReference);

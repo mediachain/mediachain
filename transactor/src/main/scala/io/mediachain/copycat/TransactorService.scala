@@ -89,12 +89,12 @@ class TransactorService(client: Client,
   }
   
   override def updateChain(request: UpdateRequest)
-  : Future[ChainUpdateDescription] = {
+  : Future[Transactor.MultihashReference] = {
     val bytes = request.chainCellCbor.toByteArray
     checkRecordSize(bytes)
-    
-    val cellXor = CborSerialization.fromCborBytes[ChainCell](bytes)      
-    
+
+    val cellXor = CborSerialization.fromCborBytes[ChainCell](bytes)
+
     val updateF = cellXor match {
       case Xor.Left(err) => throw new StatusRuntimeException(
         Status.INVALID_ARGUMENT.withDescription(
@@ -113,11 +113,8 @@ class TransactorService(client: Client,
               s"Journal Error: $err"
             )
           )
-        case Xor.Right(entry) => {
-          ChainUpdateDescription()
-            .withCanonicalRef(refToRPCMultihashRef(entry.ref))
-            .withChainHeadRef(refToRPCMultihashRef(entry.chain))
-        }
+        case Xor.Right(entry) =>
+          refToRPCMultihashRef(entry.chain)
       }
     }
   }
@@ -173,7 +170,7 @@ class TransactorService(client: Client,
 
       case ChainEntry(_, ref, chain, _) =>
         Event.ChainUpdated(
-          ChainUpdateDescription()
+          UpdateChainResult()
             .withCanonicalRef(refToRPCMultihashRef(ref))
             .withChainHeadRef(refToRPCMultihashRef(chain))
         )
