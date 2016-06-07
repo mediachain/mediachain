@@ -66,7 +66,9 @@ their type field set to `entity`, while Artefacts are instances
 of data objects with their type set to `artefact`. Both can contain
 arbitrary metadata in the form of key values pairs stored in a `meta`
 field. At a minimum both contain a `name` metadata field, while artefacts
-also carry optional `description` and creation data fields.
+also carry optional `description` and creation data fields. When the
+object metadata have been ingested from an external dataset,
+the original unparsed metadata are linked through a `metaSource` reference.
 
 Artefacts can also have their associated data stored in IPFS, so that media
 can be directly accessed from references to their Canonicals.
@@ -88,6 +90,7 @@ Entity = {
   "name" : <String>
   <Key> : <Value> ... ; entity metadata
   }
+ ["metaSource": <Reference>]
  }
 
 Artefact = {
@@ -100,6 +103,7 @@ Artefact = {
   ["description" : <String>]
   <Key> : <Value> ... ; artefact metadata
   }
+ ["metaSource": <Reference>]
  }
 
 Reference = {
@@ -185,6 +189,7 @@ EntityUpdateCell = {
  "meta" : {
    <Key> : <Value> ... ; metadata updates
   }
+ ["metaSource": <Reference>]
  }
 
 EntityLinkCell = {
@@ -196,6 +201,7 @@ EntityLinkCell = {
  "meta" : {
   <Key> : <Value> ... ; entity relationship metadata
   }
+ ["metaSource": <Reference>]
  }
 
 ArtefactChainCell =
@@ -215,6 +221,7 @@ ArtefactUpdateCell = {
  "meta" : {
   <Key> : <Value> ... ; metadata updates
   }
+ ["metaSource": <Reference>]
  }
 
 ArtefactLinkCell = {
@@ -226,6 +233,7 @@ ArtefactLinkCell = {
  "meta" : {
   <Key> : <Value> ... ; artefact relationship metadata
   }
+ ["metaSource": <Reference>]
  }
 
 ArtefactCreationCell = {
@@ -237,6 +245,7 @@ ArtefactCreationCell = {
  "meta" : {
   <Key> : <Value> ... ; creation metadata
   }
+ ["metaSource": <Reference>]
  }
 
 ArtefactDerivationCell = {
@@ -248,6 +257,7 @@ ArtefactDerivationCell = {
  "meta" : {
   <Key> : <Value> ... ; derivation metadata
   }
+ ["metaSource": <Reference>]
  }
 
 ArtefactOwnershipCell = {
@@ -259,6 +269,7 @@ ArtefactOwnershipCell = {
  "meta" : {
   <Key> : <Value> ... ; IP ownership metadata
   }
+ ["metaSource": <Reference>]
  }
 
 ArtefactReferenceCell = {
@@ -271,6 +282,7 @@ ArtefactReferenceCell = {
   ["url" : <URL>]
   <Key> : <Value> ... ; reference metadata
   }
+ ["metaSource": <Reference>]
  }
 ```
 
