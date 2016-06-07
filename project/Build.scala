@@ -18,7 +18,8 @@ object MediachainBuild extends Build {
       "-feature", "-language:higherKinds"),
     // resolvers += Resolver.mavenLocal, // local maven for tip debugging
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats" % "0.4.1",
+      "org.typelevel" %% "cats" % "0.6.0",
+      "org.typelevel" %% "dogs-core" % "0.2.2",
       "org.json4s" %% "json4s-jackson" % "3.3.0",
       "org.specs2" %% "specs2-core" % specs2Version % "test",
       "org.specs2" %% "specs2-junit" % specs2Version % "test",
