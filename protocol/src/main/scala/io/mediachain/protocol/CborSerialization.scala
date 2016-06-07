@@ -312,10 +312,11 @@ object CborSerialization {
     def toCMapWithMeta(
       defaults: Map[String, CValue],
       optionals: Map[String, Option[CValue]],
-      meta: Map[String, CValue])
+      meta: Map[String, CValue],
+      metaSource: Option[Reference])
     : CMap =
       toCMapWithDefaults(defaults + ("meta" -> CMap.withStringKeys(meta.toList)),
-                         optionals)
+                         optionals + ("metaSource" -> metaSource.map(_.toCbor)))
     
   }
 
@@ -373,7 +374,8 @@ object CborSerialization {
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.Entity)
         meta <- getRequired[CMap](cMap, "meta")
-      } yield Entity(meta.asStringKeyedMap)
+      } yield Entity(meta.asStringKeyedMap, 
+                     getOptionalReference(cMap, "metaSource"))
   }
 
   object ArtefactDeserializer extends CborDeserializer[Artefact]
@@ -382,7 +384,8 @@ object CborSerialization {
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.Artefact)
         meta <- getRequired[CMap](cMap, "meta")
-      } yield Artefact(meta.asStringKeyedMap)
+      } yield Artefact(meta.asStringKeyedMap,
+                       getOptionalReference(cMap, "metaSource"))
   }
 
   object ArtefactChainCellDeserializer extends CborDeserializer[ArtefactChainCell]
@@ -395,7 +398,8 @@ object CborSerialization {
       } yield ArtefactChainCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = meta.asStringKeyedMap
+        meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource")
       )
   }
 
@@ -409,7 +413,8 @@ object CborSerialization {
       } yield ArtefactUpdateCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = meta.asStringKeyedMap
+        meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource")
       )
   }
 
@@ -425,6 +430,7 @@ object CborSerialization {
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         artefactLink = artefactLink
       )
   }
@@ -441,6 +447,7 @@ object CborSerialization {
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         entity = entity
       )
   }
@@ -457,6 +464,7 @@ object CborSerialization {
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         artefactLink = artefactLink
       )
   }
@@ -473,6 +481,7 @@ object CborSerialization {
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         entity = entity
       )
   }
@@ -488,6 +497,7 @@ object CborSerialization {
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         entity = getOptionalReference(cMap, "entity")
       )
   }
@@ -502,7 +512,8 @@ object CborSerialization {
       } yield EntityChainCell(
         entity = entity,
         chain = getOptionalReference(cMap, "chain"),
-        meta = meta.asStringKeyedMap
+        meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource")
       )
   }
 
@@ -516,7 +527,8 @@ object CborSerialization {
       } yield EntityUpdateCell(
         entity = entity,
         chain = getOptionalReference(cMap, "chain"),
-        meta = meta.asStringKeyedMap
+        meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource")
       )
   }
 
@@ -532,6 +544,7 @@ object CborSerialization {
         entity = entity,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         entityLink = entityLink
       )
   }
