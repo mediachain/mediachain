@@ -1,6 +1,7 @@
 package io.mediachain.copycat
 
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.atomic.AtomicBoolean
 
 import cats.data.Xor
 import dogs.Streaming
@@ -16,15 +17,19 @@ import io.mediachain.protocol.transactor.Transactor
 import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event.JournalBlockPublished
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.concurrent.duration.{Duration, SECONDS}
-import java.util.concurrent.Executors
+import scala.collection.mutable.{Queue => MQueue}
 
 class BackfillRunner(offset: Reference,
                      head: Reference,
                      observer: StreamObserver[JournalEvent],
                      datastore: Datastore)
   extends Runnable {
+  private val queue: MQueue[JournalEvent] = MQueue()
+  private var backfilled: AtomicBoolean = new AtomicBoolean(false)
+  @volatile private var queueEmptied = false
+
   /** For the time being, this naively executes in a single thread.
     * This should eventually become a batched read of a few chain blocks
     * followed by re-enqueuing this worker in the executor with an
@@ -56,6 +61,24 @@ class BackfillRunner(offset: Reference,
           observer.onNext(event)
         case _ => ()
       }
+
+    backfilled.set(true)
+    while (queue.nonEmpty) {
+      observer.onNext(queue.dequeue())
+    }
+    queueEmptied = true
+  }
+
+  def onNext(event: JournalEvent): Unit = {
+    if (backfilled.get) {
+      while (!queueEmptied) {
+        Thread.`yield`()
+      }
+
+      observer.onNext(event)
+    } else {
+      queue.enqueue(event)
+    }
   }
 }
 
@@ -64,29 +87,44 @@ class TransactorListener(executor: ExecutorService,
                          client: Client)
   extends ClientStateListener with JournalListener {
 
-  import collection.mutable.{Set => MSet, Map => MMap, ArrayBuffer}
+  import collection.mutable.{Set => MSet, Map => MMap}
   import TransactorService.refToRPCMultihashRef
 
-  type ObserverMap =
-  MMap[StreamObserver[JournalEvent], Option[ArrayBuffer[JournalEvent]]]
+  type OnNextFn = JournalEvent => Unit
+  type ObserverMap = MMap[StreamObserver[JournalEvent], OnNextFn]
 
   private val logger = LoggerFactory.getLogger(classOf[TransactorService])
   private val observers: ObserverMap = MMap()
 
+  private def makeContinuation(offset: MultihashReference,
+                               streamObserver: StreamObserver[JournalEvent])
+  : OnNextFn = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    Await.result(client.currentBlock, Duration(30, SECONDS)) match {
+      case JournalBlock(_, Some(chain), _) =>
+        val backfiller =
+          new BackfillRunner(offset, chain, streamObserver, datastore)
+        executor.execute(backfiller)
+
+        backfiller.onNext
+      case _ =>
+        // for now, just subscribe them. we can decide on error handling
+        // logic later.
+        streamObserver.onNext
+    }
+
+  }
+
   def addObserver(streamObserver: StreamObserver[JournalEvent],
                   offset: Option[MultihashReference]): Unit = {
     observers.synchronized {
-      val buffer = offset.map(_ => ArrayBuffer[JournalEvent]())
-      observers += (streamObserver -> buffer)
-    }
-    offset.foreach { o =>
-      import scala.concurrent.ExecutionContext.Implicits.global
-      client.currentBlock.onSuccess {
-        case JournalBlock(_, Some(chain), _) =>
-          val backfiller =
-            new BackfillRunner(o, chain, streamObserver, datastore)
-          executor.submit(backfiller)
+      val onNext: OnNextFn = offset match {
+        case Some(o) => makeContinuation(o, streamObserver)
+        case _ => streamObserver.onNext
       }
+
+      observers += (streamObserver -> onNext)
     }
   }
 
@@ -137,9 +175,9 @@ class TransactorListener(executor: ExecutorService,
   private def publishEvent(event: JournalEvent.Event): Unit = {
     observers.synchronized {
       val cancelledObservers: MSet[StreamObserver[JournalEvent]] = MSet()
-      observers.foreach { case (observer, _) =>
+      observers.foreach { case (observer, onNext) =>
         try {
-          observer.onNext(JournalEvent().withEvent(event))
+          onNext(JournalEvent().withEvent(event))
         } catch {
           case e: StatusRuntimeException if e.getStatus == Status.CANCELLED =>
             // if the client killed the connection, remove the observer
