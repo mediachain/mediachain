@@ -5,6 +5,15 @@ package io.mediachain.transactor
   *
   */
 object Entrypoints {
+  import io.mediachain.datastore.DynamoDatastore
+  import com.amazonaws.auth.BasicAWSCredentials
+
+  private val datastoreConfig = DynamoDatastore.Config(
+    "Mediachain",
+    new BasicAWSCredentials("", ""),
+    Some("http://localhost:8000")
+  )
+
   def startTransactorService(copycatAddr: String, listen: Int): Unit = {
     import io.mediachain.copycat.Client
     import io.mediachain.copycat.TransactorService
@@ -14,8 +23,9 @@ object Entrypoints {
     val client = Client.build()
     client.connect(copycatAddr)
 
-    val service = new TransactorService(client)
-    val executor = Executors.newSingleThreadExecutor()
+    val executor = Executors.newFixedThreadPool(4)
+    val datastore = new DynamoDatastore(datastoreConfig)
+    val service = new TransactorService(client, executor, datastore)
 
     TransactorService.createServerThread(service, executor, listen)
   }
@@ -23,14 +33,7 @@ object Entrypoints {
   def startCopycatService(listenAddr: String,
                           logDir: String = "tmp"): Unit = {
     import io.mediachain.copycat.Server
-    import io.mediachain.datastore.DynamoDatastore
-    import com.amazonaws.auth.BasicAWSCredentials
 
-    val datastoreConfig = DynamoDatastore.Config(
-      "Mediachain",
-      new BasicAWSCredentials("", ""),
-      Some("http://localhost:8000")
-    )
     val datastore = new DynamoDatastore(datastoreConfig)
     val server = Server.build(listenAddr, logDir, datastore)
 

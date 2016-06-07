@@ -3,6 +3,7 @@ package io.mediachain.copycat
 import java.util.concurrent.ExecutorService
 
 import cats.data.Xor
+import dogs.Streaming
 import io.grpc.stub.StreamObserver
 import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
 import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
@@ -12,21 +13,80 @@ import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.Transactor.{JournalError, JournalListener}
 import io.mediachain.protocol.transactor.Transactor.{MultihashReference => _, _}
 import io.mediachain.protocol.transactor.Transactor
+import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event.JournalBlockPublished
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, SECONDS}
+import java.util.concurrent.Executors
 
-class TransactorListener extends ClientStateListener with JournalListener {
-  import collection.mutable.{Set => MSet}
+class BackfillRunner(offset: Reference,
+                     head: Reference,
+                     observer: StreamObserver[JournalEvent],
+                     datastore: Datastore)
+  extends Runnable {
+  /** For the time being, this naively executes in a single thread.
+    * This should eventually become a batched read of a few chain blocks
+    * followed by re-enqueuing this worker in the executor with an
+    * updated offset.
+    */
+  override def run(): Unit = {
+    import TransactorService.refToRPCMultihashRef
+
+    val chain = datastore.get(head).collect {
+      case x: JournalBlock => x.toStream(datastore)
+    }.getOrElse(Streaming.empty).map(_.chain)
+
+    /*
+    a note: i'd really prefer to do something like
+
+    stream.flatMap(_.map(Streaming.apply).getOrElse(Streaming.empty))
+
+    but i'm not sure if that breaks the original continuation i'd set
+    up. i'll investigate. @bigs
+     */
+    Streaming.cons(Some(head), chain)
+      .takeWhile(x => x.isDefined && !x.contains(offset))
+      .iterator
+      .foreach {
+        case Some(x) =>
+          val event = JournalEvent(
+            JournalBlockPublished(refToRPCMultihashRef(x))
+          )
+          observer.onNext(event)
+        case _ => ()
+      }
+  }
+}
+
+class TransactorListener(executor: ExecutorService,
+                         datastore: Datastore,
+                         client: Client)
+  extends ClientStateListener with JournalListener {
+
+  import collection.mutable.{Set => MSet, Map => MMap, ArrayBuffer}
   import TransactorService.refToRPCMultihashRef
 
-  private val logger = LoggerFactory.getLogger(classOf[TransactorService])
-  private val observers: MSet[StreamObserver[JournalEvent]] = MSet()
+  type ObserverMap =
+  MMap[StreamObserver[JournalEvent], Option[ArrayBuffer[JournalEvent]]]
 
-  def addObserver(streamObserver: StreamObserver[JournalEvent]): Unit = {
+  private val logger = LoggerFactory.getLogger(classOf[TransactorService])
+  private val observers: ObserverMap = MMap()
+
+  def addObserver(streamObserver: StreamObserver[JournalEvent],
+                  offset: Option[MultihashReference]): Unit = {
     observers.synchronized {
-      observers.add(streamObserver)
+      val buffer = offset.map(_ => ArrayBuffer[JournalEvent]())
+      observers += (streamObserver -> buffer)
+    }
+    offset.foreach { o =>
+      import scala.concurrent.ExecutionContext.Implicits.global
+      client.currentBlock.onSuccess {
+        case JournalBlock(_, Some(chain), _) =>
+          val backfiller =
+            new BackfillRunner(o, chain, streamObserver, datastore)
+          executor.submit(backfiller)
+      }
     }
   }
 
@@ -34,7 +94,7 @@ class TransactorListener extends ClientStateListener with JournalListener {
     logger.info(s"copycat state changed to $state")
     if (state == ClientState.Disconnected) {
       observers.synchronized {
-        observers.foreach { observer =>
+        observers.foreach { case (observer, _) =>
           observer.onError(
             new StatusRuntimeException(
               Status.UNAVAILABLE
@@ -77,7 +137,7 @@ class TransactorListener extends ClientStateListener with JournalListener {
   private def publishEvent(event: JournalEvent.Event): Unit = {
     observers.synchronized {
       val cancelledObservers: MSet[StreamObserver[JournalEvent]] = MSet()
-      observers.foreach { observer =>
+      observers.foreach { case (observer, _) =>
         try {
           observer.onNext(JournalEvent().withEvent(event))
         } catch {
@@ -95,11 +155,13 @@ class TransactorListener extends ClientStateListener with JournalListener {
 }
 
 class TransactorService(client: Client,
+                        executor: ExecutorService,
+                        datastore: Datastore,
                         timeout: Duration = Duration(120, SECONDS))
                        (implicit val executionContext: ExecutionContext)
   extends TransactorServiceGrpc.TransactorService {
   private val logger = LoggerFactory.getLogger(classOf[TransactorService])
-  private val listener = new TransactorListener()
+  private val listener = new TransactorListener(executor, datastore, client)
 
   client.addStateListener(listener)
   client.listen(listener)
@@ -192,7 +254,11 @@ class TransactorService(client: Client,
     // this involves accessing the datastore, keeping local state
     // per-observer, etc.
 
-    listener.addObserver(responseObserver)
+    val offset = MultiHash.fromBase58(request.offset)
+      .map(MultihashReference.apply)
+      .toOption
+
+    listener.addObserver(responseObserver, offset)
   }
 
   val maxRecordSize = 64 * 1024 // 64k ought to be enough for everyone
