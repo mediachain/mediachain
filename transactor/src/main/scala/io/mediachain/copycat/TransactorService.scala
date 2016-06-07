@@ -53,13 +53,12 @@ class BackfillRunner(offset: Reference,
     Streaming.cons(Some(head), chain)
       .takeWhile(x => x.isDefined && !x.contains(offset))
       .iterator
-      .foreach {
-        case Some(x) =>
-          val event = JournalEvent(
-            JournalBlockPublished(refToRPCMultihashRef(x))
-          )
-          observer.onNext(event)
-        case _ => ()
+      .collect { case Some(ref) => ref }
+      .foreach { x =>
+        val event = JournalEvent(
+          JournalBlockPublished(refToRPCMultihashRef(x))
+        )
+        observer.onNext(event)
       }
 
     backfilled.set(true)
