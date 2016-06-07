@@ -19,13 +19,14 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.{Duration, SECONDS}
-import scala.collection.mutable.{Queue => MQueue}
+import scala.collection.mutable.{Queue => MQueue, Stack => MStack}
 
 class BackfillRunner(offset: Reference,
                      head: Reference,
                      observer: StreamObserver[JournalEvent],
                      datastore: Datastore)
   extends Runnable {
+  private val backfillStack: MStack[JournalEvent] = MStack()
   private val queue: MQueue[JournalEvent] = MQueue()
   private var backfilled: AtomicBoolean = new AtomicBoolean(false)
   @volatile private var queueEmptied = false
@@ -58,8 +59,10 @@ class BackfillRunner(offset: Reference,
         val event = JournalEvent(
           JournalBlockPublished(refToRPCMultihashRef(x))
         )
-        observer.onNext(event)
+        backfillStack.push(event)
       }
+
+    backfillStack.foreach(e => observer.onNext(e))
 
     backfilled.set(true)
     while (queue.nonEmpty) {
