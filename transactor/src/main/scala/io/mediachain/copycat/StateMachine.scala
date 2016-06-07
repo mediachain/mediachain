@@ -102,7 +102,7 @@ object StateMachine {
         case None => commitError("invalid reference")
         case Some(cref) => {
           (cref, cell) match {
-            case (EntityChainReference(chain), EntityChainCell(entity, xchain, meta)) => {
+            case (EntityChainReference(chain), EntityChainCell(entity, xchain, _, _)) => {
               if (checkUpdate(ref, chain, entity, xchain)) {
                 val newcell = cell.cons(chain)
                 val newchain = datastore.put(newcell)
@@ -110,7 +110,7 @@ object StateMachine {
                 commit(ref, newchain, chain)
               } else commitError("invalid chain cell")
             }
-            case (ArtefactChainReference(chain), ArtefactChainCell(artefact, xchain, meta)) => {
+            case (ArtefactChainReference(chain), ArtefactChainCell(artefact, xchain, _, _)) => {
               if (checkUpdate(ref, chain, artefact, xchain)) {
                 val newcell = cell.cons(chain)
                 val newchain = datastore.put(newcell)

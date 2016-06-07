@@ -45,8 +45,10 @@ object DataObjectGenerators {
 
   val genNilReference: Gen[Option[Reference]] = Gen.const(None)
 
-  val genEntity: Gen[Entity] = genMeta.map(Entity)
-  val genArtefact: Gen[Artefact] = genMeta.map(Artefact)
+  val genMetaSource = genOptionalReference
+
+  val genEntity: Gen[Entity] = genMeta.map(meta => Entity(meta))
+  val genArtefact: Gen[Artefact] = genMeta.map(meta => Artefact(meta))
 
   def genReferenceFor(canonicalGen: Gen[CanonicalRecord]): Gen[Reference] =
     canonicalGen.map(MultihashReference.forDataObject)
@@ -55,7 +57,7 @@ object DataObjectGenerators {
     entityGen: Gen[Entity],
     chainGen: Gen[Option[Reference]]
   ): Gen[EntityChainCell] =
-    (genReferenceFor(entityGen) |@| chainGen |@| genMeta)
+    (genReferenceFor(entityGen) |@| chainGen |@| genMeta |@| genMetaSource)
       .map(EntityChainCell.apply)
 
   val genEntityChainCell: Gen[EntityChainCell] = genEntityChainCell(genEntity, genOptionalReference)
@@ -64,7 +66,7 @@ object DataObjectGenerators {
     artefactGen: Gen[Artefact],
     chainGen: Gen[Option[Reference]]
   ): Gen[ArtefactChainCell] =
-    (genReferenceFor(artefactGen) |@| chainGen |@| genMeta)
+    (genReferenceFor(artefactGen) |@| chainGen |@| genMeta |@| genMetaSource)
       .map(ArtefactChainCell.apply)
 
   val genArtefactChainCell: Gen[ArtefactChainCell] = genArtefactChainCell(genArtefact, genOptionalReference)
@@ -73,7 +75,7 @@ object DataObjectGenerators {
     entityGen: Gen[Entity],
     chainGen: Gen[Option[Reference]]
   ) = genEntityChainCell(entityGen, chainGen).map { base =>
-    EntityUpdateCell(base.entity, base.chain, base.meta)
+    EntityUpdateCell(base.entity, base.chain, base.meta, base.metaSource)
   }
 
   val genEntityUpdateCell: Gen[EntityUpdateCell] =
@@ -86,7 +88,7 @@ object DataObjectGenerators {
   ) = for {
     base <- genEntityChainCell(entityGen, chainGen)
     entityLink <- entityLinkGen
-  } yield EntityLinkCell(base.entity, base.chain, base.meta, entityLink)
+  } yield EntityLinkCell(base.entity, base.chain, base.meta, base.metaSource, entityLink)
   val genEntityLinkCell: Gen[EntityLinkCell] =
     genEntityLinkCell(genEntity, genOptionalReference, genReference)
 
@@ -94,7 +96,7 @@ object DataObjectGenerators {
     artefactGen: Gen[Artefact],
     chainGen: Gen[Option[Reference]]
   ) = genArtefactChainCell(artefactGen, chainGen).map { base =>
-    ArtefactUpdateCell(base.artefact, base.chain, base.meta)
+    ArtefactUpdateCell(base.artefact, base.chain, base.meta, base.metaSource)
   }
   val genArtefactUpdateCell: Gen[ArtefactUpdateCell] =
     genArtefactUpdateCell(genArtefact, genOptionalReference)
@@ -106,7 +108,7 @@ object DataObjectGenerators {
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     artefactLink <- artefactLinkGen
-  } yield ArtefactLinkCell(base.artefact, base.chain, base.meta, artefactLink)
+  } yield ArtefactLinkCell(base.artefact, base.chain, base.meta, base.metaSource, artefactLink)
   val genArtefactLinkCell: Gen[ArtefactLinkCell] =
     genArtefactLinkCell(genArtefact, genOptionalReference, genReference)
 
@@ -117,7 +119,7 @@ object DataObjectGenerators {
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     entity <- entityGen
-  } yield ArtefactCreationCell(base.artefact, base.chain, base.meta, entity)
+  } yield ArtefactCreationCell(base.artefact, base.chain, base.meta, base.metaSource, entity)
   val genArtefactCreationCell: Gen[ArtefactCreationCell] =
     genArtefactCreationCell(genArtefact, genOptionalReference, genReference)
 
@@ -128,7 +130,7 @@ object DataObjectGenerators {
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     artefactOrigin <- artefactOriginGen
-  } yield ArtefactDerivationCell(base.artefact, base.chain, base.meta, artefactOrigin)
+  } yield ArtefactDerivationCell(base.artefact, base.chain, base.meta, base.metaSource, artefactOrigin)
   val genArtefactDerivationCell: Gen[ArtefactDerivationCell] =
     genArtefactDerivationCell(genArtefact, genOptionalReference, genReference)
 
@@ -139,7 +141,7 @@ object DataObjectGenerators {
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     entity <- entityGen
-  } yield ArtefactOwnershipCell(base.artefact, base.chain, base.meta, entity)
+  } yield ArtefactOwnershipCell(base.artefact, base.chain, base.meta, base.metaSource, entity)
   val genArtefactOwnershipCell: Gen[ArtefactOwnershipCell] =
     genArtefactOwnershipCell(genArtefact, genOptionalReference, genReference)
 
@@ -150,7 +152,7 @@ object DataObjectGenerators {
   ) = for {
     base <- genArtefactChainCell(artefactGen, chainGen)
     entity <- entityGen
-  } yield ArtefactReferenceCell(base.artefact, base.chain, base.meta, entity)
+  } yield ArtefactReferenceCell(base.artefact, base.chain, base.meta, base.metaSource, entity)
   val genArtefactReferenceCell: Gen[ArtefactReferenceCell] =
     genArtefactReferenceCell(genArtefact, genOptionalReference, genOptionalReference)
 

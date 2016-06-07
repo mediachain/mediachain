@@ -44,8 +44,9 @@ object CopycatSerializerSpec extends BaseSpec {
 
   def journalUpdateRoundTrip = {
     val meta = Map("foo" -> CMap(CString("bar") -> CString("baz")))
+    val metaSource = Some(randomRef)
     val ref = randomRef
-    val update = JournalUpdate(ref, EntityUpdateCell(ref, None, meta))
+    val update = JournalUpdate(ref, EntityUpdateCell(ref, None, meta, metaSource))
 
     roundTrip(update, new JournalUpdateSerializer)
   }
