@@ -57,6 +57,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
         c.entity must_== expected.entity
         c.chain must_== expected.chain
         c.meta must havePairs(expected.meta.toList:_*)
+        c.metaSource must_== expected.metaSource
       }
     }
 
@@ -66,6 +67,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
         c.artefact must_== expected.artefact
         c.chain must_== expected.chain
         c.meta must havePairs(expected.meta.toList:_*)
+        c.metaSource must_== expected.metaSource
       }
     }
 
