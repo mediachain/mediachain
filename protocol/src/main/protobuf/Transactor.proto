@@ -16,6 +16,7 @@ message UpdateRequest {
 
 message JournalStreamRequest {
     MultihashReference lastJournalBlock = 1;
+    string offset = 2;
 }
 
 message UpdateChainResult {
