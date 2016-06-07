@@ -12,8 +12,8 @@ object JsonLoader {
   import java.net.{URI, URL}
   import org.json4s._
   import org.json4s.jackson.JsonMethods._
-  import cats.data.{Streaming, Xor}
-  import cats.implicits._
+  import cats.data.Xor
+  import dogs.Streaming
   import com.fasterxml.jackson.core.{JsonParser, JsonToken}
 
   def createParser(s: String)(implicit factory: JsonFactory): Xor[TranslationError, JsonParser] = {
@@ -105,7 +105,7 @@ object JsonLoader {
         parseJValue(parser) match {
           case r@Xor.Right(_) =>
             parser.nextToken
-            r %:: helper
+            Streaming.cons(r, helper)
           case l => Streaming(l)
         }
       }
