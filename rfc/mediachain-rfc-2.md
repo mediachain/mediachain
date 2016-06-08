@@ -568,6 +568,6 @@ allowing the core network to scale horizontally.
 
 ## References
 
-1. [The Mediachain Blog](https://blog.mine.nyc/)
+1. [The Mediachain Blog](https://blog.mediachain.io/)
 2. [Mediachain RFC1: The Mediachain Datastore](https://github.com/mediachain/mediachain/blob/master/rfc/mediachain-rfc-1.md)
 3. [The Raft Consensus Algorithm](https://raft.github.io)
