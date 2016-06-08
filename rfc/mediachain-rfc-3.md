@@ -12,24 +12,9 @@ This document outlines a proposed `Indexer` system for Mediachain[1]. Core funct
 We will also outline a roadmap toward improved, `Future` Indexer generations. Further details of the `Future` Indexer generations are left to future RFCs.
 
 
-## Terminology
+## Background
 
-Relevant Mediachain terminology background for this RFC. See also RFC-1[2] and RFC-2[3] for more information.
-
-- `Indexer` - Collection of Mediachain subsystems described in this RFC.
-- `Datastore` - Persistent content-addressed storage system, used to store Mediachain media and blocks. Currently IPFS[4].
-- `Journal` - Flattened and partially-reconciled view of the Mediachain knowledge base. Maintained by `Transactors`.
-- `Folding` - Producing a single flattened representation of a chain of updates, reconciling any conflicts and discarding bad information in the process.
-- `Clients` - Embedded API or external nodes, which are the interface for end-user nodes to receive a stream of updates to the `Journal` from `Transactor` nodes, and for communicating writes to the `Transactors`. They also conduct reads and writes to the `Datastore`.
-- `Transactors` - Core of Mediachain. Accepts writes to the `Journal` from `Clients`, serves `Clients` with views of the `Journal`, and records transactions on their behalf. (Referred to as `Peer Nodes` in RFC-2.)
-- `Media Identifier` - String used to identify a media work. The string's prefix determines which, of several possible identifier types, each string is. See the `Media Identifiers` section in this RFC.
-- `Artefact` - Media work tracked by Mediachain. Identified in the blockchain by its latest `Canonical ID`.
-- `Entity` - Persona or organization who may associate with `Artefacts`. Identified in the blockchain by its latest `Canonical ID`.
-- `Canonical` -  Serialized blockchain block, stored in IPFS and identified by a `Canonical ID`.
-- `Canonical ID` - IPFS ID of a serialized blockchain block. In addition to identifying blockchain blocks, also used by blockchain to identify `Entities` and `Artifacts`. The current `Canonical IDs` of an `Entity` or `Artefact` can change over time, when its metadata is updated in the blockchain or when it is merged with another `Entity` or `Artefact`.
-- `Chain Head` - `Canonical ID` of latest blockchain block committed to the `Journal`. Multiple `Chain Heads` are permitted to exist during temporary blockchain forks.
-- `CanonicalEntry` - Type of `Journal` transaction that references `Canonical IDs` of `Entities` or `Artefacts`. Used to suggest that `Artefact` or `Entity` `Canonicals` should be added to the blockchain.
-- `ChainEntry` - Type of `Journal` transaction that references one or more `CanonicalEntry`. Used to suggest updates to latest state of the the blockchain.
+See the mediachain glossary[7], RFC-1[2] and RFC-2[3] for more information.
 
 
 ## Roadmap
@@ -508,3 +493,4 @@ Outputs: The string "pong".
 4. [IPFS](https://ipfs.io/)
 5. [IPLD](https://github.com/ipfs/specs/tree/master/ipld)
 6. [Data URI Scheme](https://en.wikipedia.org/wiki/Data_URI_scheme)
+7. [Mediachain Glossary](https://github.com/mediachain/mediachain/blob/master/docs/mediachain-glossary.md)
