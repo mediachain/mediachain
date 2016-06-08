@@ -18,7 +18,7 @@ object MediachainBuild extends Build {
       "-feature", "-language:higherKinds"),
     // resolvers += Resolver.mavenLocal, // local maven for tip debugging
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats" % "0.6.0",
+      "org.typelevel" %% "cats" % "0.4.1",
       "org.typelevel" %% "dogs-core" % "0.2.2",
       "org.json4s" %% "json4s-jackson" % "3.3.0",
       "org.specs2" %% "specs2-core" % specs2Version % "test",
@@ -103,7 +103,6 @@ object MediachainBuild extends Build {
   // schema translator/ingester (candidate to spin out into own project)
   lazy val translation_engine = Project("translation_engine", file("translation_engine")).settings(settings ++ List(
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats" % "0.4.1",
       "org.json4s" %% "json4s-jackson" % "3.3.0"
     ),
     unmanagedClasspath in Test += baseDirectory.value / "test-resources"
@@ -121,7 +120,6 @@ object MediachainBuild extends Build {
   lazy val core = Project("core", file("core")).settings(settings ++ List(
     libraryDependencies ++= Seq(
       "com.michaelpollmeier" % "gremlin-scala_2.11" % "3.1.1-incubating.1",
-      "org.typelevel" %% "cats" % "0.4.1",
       "org.json4s" %% "json4s-jackson" % "3.3.0"
     )
   ))
@@ -143,7 +141,6 @@ object MediachainBuild extends Build {
       "com.michaelpollmeier" % "gremlin-scala_2.11" % "3.1.1-incubating.1",
       "com.michaelpollmeier" % "orientdb-gremlin" % "3.1.0-incubating.1",
       "com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0",
-      "org.typelevel" %% "cats" % "0.4.1",
       "com.chuusai" %% "shapeless" % "2.2.5",
       "org.json4s" %% "json4s-jackson" % "3.2.11",
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.4.0",
