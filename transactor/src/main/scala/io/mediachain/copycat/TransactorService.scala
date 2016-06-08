@@ -26,6 +26,7 @@ class BackfillRunner(offset: Reference,
                      observer: StreamObserver[JournalEvent],
                      datastore: Datastore)
   extends Runnable {
+  private val logger = LoggerFactory.getLogger(classOf[BackfillRunner])
   private val backfillStack: MStack[JournalEvent] = MStack()
   private val queue: MQueue[JournalEvent] = MQueue()
   private var backfilled: AtomicBoolean = new AtomicBoolean(false)
@@ -43,6 +44,8 @@ class BackfillRunner(offset: Reference,
       case x: JournalBlock => x.toStream(datastore)
     }.getOrElse(Streaming.empty).map(_.chain)
 
+    logger.debug(s"backfiller started. stream: $chain")
+
     /*
     a note: i'd really prefer to do something like
 
@@ -54,20 +57,30 @@ class BackfillRunner(offset: Reference,
     Streaming.cons(Some(head), chain)
       .takeWhile(x => x.isDefined && !x.contains(offset))
       .iterator
-      .collect { case Some(ref) => ref }
+      .flatten
       .foreach { x =>
         val event = JournalEvent(
           JournalBlockPublished(refToRPCMultihashRef(x))
         )
+        logger.debug(s"building backfilled event: $event")
         backfillStack.push(event)
       }
 
-    backfillStack.foreach(e => observer.onNext(e))
+    logger.debug("filled backfill stack")
+
+    backfillStack.foreach(e => {
+        logger.debug(s"sending backfilled event: $e")
+        observer.onNext(e)
+      }
+    )
+
+    logger.debug("backfill complete")
 
     backfilled.set(true)
     while (queue.nonEmpty) {
       observer.onNext(queue.dequeue())
     }
+    logger.debug("event queue empty")
     queueEmptied = true
   }
 
@@ -290,16 +303,17 @@ class TransactorService(client: Client,
   override def journalStream(request: JournalStreamRequest,
     responseObserver: StreamObserver[JournalEvent]): Unit = {
 
-    // TODO: play event stream following lastBlockRef in request.
-    // this involves accessing the datastore, keeping local state
-    // per-observer, etc.
-
-    val offset = MultiHash.fromBase58(request.offset)
-      .map(MultihashReference.apply)
-      .toOption
+    val offset = for {
+      rpcRef <- request.lastJournalBlock
+      multihash = MultiHash.fromBase58(rpcRef.reference).getOrElse(
+        throw new StatusRuntimeException(
+          Status.INVALID_ARGUMENT.withDescription("Multihash reference is invalid")
+        ))
+    } yield MultihashReference(multihash)
 
     listener.addObserver(responseObserver, offset)
   }
+
 
   val maxRecordSize = 64 * 1024 // 64k ought to be enough for everyone
   private def checkRecordSize(bytes: Array[Byte]) {
