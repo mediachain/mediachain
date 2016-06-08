@@ -14,7 +14,7 @@ We will also outline a roadmap toward improved, `Future` Indexer generations. Fu
 
 ## Background
 
-See the mediachain glossary[7], RFC-1[2] and RFC-2[3] for more information.
+See the mediachain glossary, RFC-1[2] and RFC-2[3] for more information.
 
 
 ## Roadmap
@@ -493,4 +493,3 @@ Outputs: The string "pong".
 4. [IPFS](https://ipfs.io/)
 5. [IPLD](https://github.com/ipfs/specs/tree/master/ipld)
 6. [Data URI Scheme](https://en.wikipedia.org/wiki/Data_URI_scheme)
-7. [Mediachain Glossary](https://github.com/mediachain/mediachain/blob/master/docs/mediachain-glossary.md)
