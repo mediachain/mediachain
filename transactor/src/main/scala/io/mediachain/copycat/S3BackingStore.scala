@@ -62,6 +62,7 @@ extends JournalListener with ClientStateListener with AutoCloseable {
   def onJournalCommit(entry: JournalEntry) {}
 
   def onJournalBlock(ref: Reference) {
+    logger.info(s"New block ${ref}")
     execWriteBlock(ref)
   }
   
@@ -96,6 +97,7 @@ extends JournalListener with ClientStateListener with AutoCloseable {
   private def writeBlock(ref: Reference) {
     val mref = multihashRef(ref)
     val ref58 = mref.multihash.base58
+    logger.info(s"Fetching block ${ref58}")
     val block = fetchBlock(mref)
     block.chain.foreach { execWriteBlock(_) }
     // check S3 first to see if we have already archived the block
@@ -113,7 +115,8 @@ extends JournalListener with ClientStateListener with AutoCloseable {
     import sys.process._
     val archive = fetchBlockArchive(ref, block)
     val ref58 = ref.multihash.base58
-    logger.info(s"Writing block archive ${ref58}")
+    val key = ref58 + ":" + block.index
+    logger.info(s"Writing block archive ${ref58} -> ${key}")
     val path = "/tmp/" + ref58
     val ostream = new FileOutputStream(path)
     ostream.write(archive.toCborBytes)
@@ -121,7 +124,6 @@ extends JournalListener with ClientStateListener with AutoCloseable {
     ostream.close()
     (s"gzip ${path}").!
     val gzpath = path + ".gz"
-    val key = ref58 + ":" + block.index
     // XXX S3 errors
     s3.putObject(s3bucket, key, new File(gzpath))
     (s"rm ${gzpath}").!
@@ -150,6 +152,7 @@ extends JournalListener with ClientStateListener with AutoCloseable {
       newdata
     }
     
+    logger.info(s"Fetching block archive ${ref.multihash.base58}")
     var data: Map[Reference, Array[Byte]] = Map()
     block.entries.foreach {
       case entry: CanonicalEntry => 
