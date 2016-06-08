@@ -376,4 +376,24 @@ object Datastore {
       super.toCMapWithDefaults(defaults, optionals)
     }
   }
+  
+  // Fat Journal Blocks for Archival purposes
+  case class JournalBlockArchive(
+    ref: Reference,
+    block: JournalBlock,
+    data: Map[Reference, Array[Byte]]
+  ) extends DataObject {
+    override val mediachainType: Option[MediachainType] =
+      Some(MediachainTypes.JournalBlockArchive)
+    
+    override def toCbor = {
+      val xdata = data.toList.map { 
+        case (ref, bytes) => CArray(List(ref.toCbor, CBytes(bytes)))
+      }
+      val defaults = Map("ref" -> ref.toCbor,
+                         "block" -> block.toCbor,
+                         "data" -> CArray(xdata))
+      super.toCMapWithDefaults(defaults, Map())
+    }
+  }
 }
