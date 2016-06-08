@@ -14,6 +14,7 @@ import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.Transactor.{JournalError, JournalListener}
 import io.mediachain.protocol.transactor.Transactor.{MultihashReference => _, _}
 import io.mediachain.protocol.transactor.Transactor
+import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event
 import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event.JournalBlockPublished
 import org.slf4j.LoggerFactory
 
@@ -38,8 +39,6 @@ class BackfillRunner(offset: Reference,
     * updated offset.
     */
   override def run(): Unit = {
-    import TransactorService.refToRPCMultihashRef
-
     val chain = datastore.get(head).collect {
       case x: JournalBlock => x.toStream(datastore)
     }.getOrElse(Streaming.empty).map(_.chain)
@@ -58,13 +57,7 @@ class BackfillRunner(offset: Reference,
       .takeWhile(x => x.isDefined && !x.contains(offset))
       .iterator
       .flatten
-      .foreach { x =>
-        val event = JournalEvent(
-          JournalBlockPublished(refToRPCMultihashRef(x))
-        )
-        logger.debug(s"building backfilled event: $event")
-        backfillStack.push(event)
-      }
+      .foreach(backfillBlock)
 
     logger.debug("filled backfill stack")
 
@@ -82,6 +75,20 @@ class BackfillRunner(offset: Reference,
     }
     logger.debug("event queue empty")
     queueEmptied = true
+  }
+
+  def backfillBlock(blockRef: Reference): Unit = {
+    import TransactorService.refToRPCMultihashRef
+    val event = JournalEvent(
+      JournalBlockPublished(refToRPCMultihashRef(blockRef))
+    )
+    backfillStack.push(event)
+
+    // TODO: handle failure to retrieve block
+    datastore.getAs[JournalBlock](blockRef).foreach { block =>
+      val events = block.entries.reverse.map(TransactorService.journalEntryToEvent)
+      events.foreach(backfillStack.push)
+    }
   }
 
   def onNext(event: JournalEvent): Unit = {
@@ -161,19 +168,7 @@ class TransactorListener(executor: ExecutorService,
   }
 
   override def onJournalCommit(entry: JournalEntry): Unit = {
-    import JournalEvent.Event
-
-    val event = entry match {
-      case CanonicalEntry(_, ref) =>
-        Event.CanonicalInserted(refToRPCMultihashRef(ref))
-
-      case ChainEntry(_, ref, chain, chainPrevious) =>
-        Event.ChainUpdated(
-          UpdateChainResult(chainPrevious = chainPrevious.map(refToRPCMultihashRef))
-            .withCanonical(refToRPCMultihashRef(ref))
-            .withChain(refToRPCMultihashRef(chain))
-        )
-    }
+    val event = TransactorService.journalEntryToEvent(entry)
     publishEvent(event)
   }
 
@@ -183,16 +178,16 @@ class TransactorListener(executor: ExecutorService,
       refToRPCMultihashRef(ref)
     )
 
-    publishEvent(event)
+    publishEvent(JournalEvent().withEvent(event))
   }
 
 
-  private def publishEvent(event: JournalEvent.Event): Unit = {
+  private def publishEvent(event: JournalEvent): Unit = {
     observers.synchronized {
       val cancelledObservers: MSet[StreamObserver[JournalEvent]] = MSet()
       observers.foreach { case (observer, onNext) =>
         try {
-          onNext(JournalEvent().withEvent(event))
+          onNext(event)
         } catch {
           case e: StatusRuntimeException if e.getStatus == Status.CANCELLED =>
             // if the client killed the connection, remove the observer
@@ -333,6 +328,21 @@ object TransactorService {
       throw new ClassCastException(
         s"Expected MultihashReference, got type ${r.getClass.getTypeName}"
       )
+  }
+
+  def journalEntryToEvent(entry: JournalEntry): JournalEvent = {
+    val event = entry match {
+      case CanonicalEntry(_, ref) =>
+        Event.CanonicalInserted(refToRPCMultihashRef(ref))
+
+      case ChainEntry(_, ref, chain, chainPrevious) =>
+        Event.ChainUpdated(
+          UpdateChainResult(chainPrevious = chainPrevious.map(refToRPCMultihashRef))
+            .withCanonical(refToRPCMultihashRef(ref))
+            .withChain(refToRPCMultihashRef(chain))
+        )
+    }
+    JournalEvent().withEvent(event)
   }
 
 
