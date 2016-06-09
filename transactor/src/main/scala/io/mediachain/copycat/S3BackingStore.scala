@@ -118,7 +118,7 @@ extends JournalListener with ClientStateListener with AutoCloseable {
     import sys.process._
     val archive = fetchBlockArchive(ref, block)
     val ref58 = ref.multihash.base58
-    val key = ref58 + ":" + block.index
+    val key = ref58 + ":" + block.index + ".gz"
     logger.info(s"Writing block archive ${ref58} -> ${key}")
     val path = "/tmp/" + ref58
     val ostream = new FileOutputStream(path)
