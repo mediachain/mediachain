@@ -20,7 +20,7 @@ import io.mediachain.datastore.DynamoDatastore
 
 class S3BackingStore(config: S3BackingStore.Config)
 extends JournalListener with ClientStateListener with AutoCloseable {
-  private val logger = LoggerFactory.getLogger(classOf[Client])
+  private val logger = LoggerFactory.getLogger(classOf[S3BackingStore])
   private val exec = Executors.newScheduledThreadPool(Math.max(4, Runtime.getRuntime.availableProcessors))
   private val datastore = new DynamoDatastore(config.dynamo)
   private val s3 = new AmazonS3Client(config.awscreds)
