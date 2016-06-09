@@ -1,6 +1,6 @@
 package io.mediachain.copycat
 
-import java.util.concurrent.{ExecutorService, Executors}
+import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 import java.io.{File, FileOutputStream}
 import com.amazonaws.AmazonClientException
 import com.amazonaws.auth.AWSCredentials
@@ -20,7 +20,7 @@ import io.mediachain.datastore.DynamoDatastore
 class S3BackingStore(config: S3BackingStore.Config)
 extends JournalListener with ClientStateListener with AutoCloseable {
   private val logger = LoggerFactory.getLogger(classOf[Client])
-  private val exec = Executors.newScheduledThreadPool(Math.max(2, Runtime.getRuntime.availableProcessors))
+  private val exec = Executors.newScheduledThreadPool(Math.max(4, Runtime.getRuntime.availableProcessors))
   private val datastore = new DynamoDatastore(config.dynamo)
   private val s3 = new AmazonS3Client(config.awscreds)
   private val s3bucket = config.s3bucket
@@ -30,9 +30,9 @@ extends JournalListener with ClientStateListener with AutoCloseable {
   
   client.addStateListener(this)
 
-  def connect(xcluster: List[String]) {
-    cluster = Some(xcluster)
-    client.connect(xcluster)
+  def connect(addrs: List[String]) {
+    cluster = Some(addrs)
+    client.connect(addrs)
     client.listen(this)
   }
   
@@ -47,11 +47,13 @@ extends JournalListener with ClientStateListener with AutoCloseable {
   def onStateChange(state: ClientState) {
     state match {
       case ClientState.Connected =>
+        logger.info("Client connected; scheduling blockchain catchup")
         exec.submit(new Runnable {
           def run { withErrorLog(writeCurrentBlock()) }
         })
       case ClientState.Suspended => ()
       case ClientState.Disconnected =>
+        logger.info("Client disconnected; scheduling reconnect")
         exec.submit(new Runnable {
           def run { withErrorLog(reconnect()) }
         })
@@ -201,8 +203,21 @@ extends JournalListener with ClientStateListener with AutoCloseable {
     loop(ref, 0)
   }
     
-  private def reconnect() {
-    throw new RuntimeException("XXX Implement me!")
+  private def reconnect(retry: Int = 0) {
+    try {
+      cluster.foreach { addrs =>
+        logger.info(s"Attempting reconnect to ${addrs}")
+        client.connect(addrs)
+      }
+    } catch {
+      case e: Throwable =>
+        logger.error("Error connecting to cluster", e)
+        val backoff = Client.randomBackoff(retry, 300)
+        logger.info(s"Retrying reconnect in ${backoff} ms")
+        exec.schedule(new Runnable {
+          def run { withErrorLog(reconnect(retry + 1)) }
+        }, backoff, TimeUnit.MILLISECONDS)
+    }
   }
 }
 
