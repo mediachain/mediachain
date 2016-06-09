@@ -1,9 +1,10 @@
 package io.mediachain.datastore
 
-import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.auth.{AWSCredentials, BasicAWSCredentials}
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import java.nio.ByteBuffer
+import java.util.Properties
 import scala.collection.mutable.{Buffer, ArrayBuffer}
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.Datastore.DatastoreException
@@ -162,7 +163,23 @@ class DynamoDatastore(config: DynamoDatastore.Config)
 object DynamoDatastore {
   case class Config(
     baseTable: String,
-    awscreds: BasicAWSCredentials,
+    awscreds: AWSCredentials,
     endpoint: Option[String] = None
   )
+  
+  object Config {
+    def fromProperties(conf: Properties) = {
+      def getq(key: String): String =
+        getopt(key).getOrElse {throw new RuntimeException("Missing configuration property: " + key)}
+      def getopt(key: String): Option[String] =
+        Option(conf.getProperty(key))
+      
+      val awsaccess = getq("io.mediachain.transactor.awscreds.access")
+      val awssecret = getq("io.mediachain.transactor.awscreds.secret")
+      val awscreds = new BasicAWSCredentials(awsaccess, awssecret)
+      val baseTable = getq("io.mediachain.transactor.dynamo.baseTable")
+      val endpoint = getopt("io.mediachain.transactor.dynamo.endpoint")
+      Config(baseTable, awscreds, endpoint)
+    }
+  }
 }

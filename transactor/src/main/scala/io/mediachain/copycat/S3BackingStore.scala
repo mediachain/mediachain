@@ -1,9 +1,10 @@
 package io.mediachain.copycat
 
+import java.util.Properties
 import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 import java.io.{File, FileOutputStream}
 import com.amazonaws.AmazonClientException
-import com.amazonaws.auth.AWSCredentials
+import com.amazonaws.auth.{AWSCredentials, BasicAWSCredentials}
 import com.amazonaws.services.s3.AmazonS3Client
 import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.Await
@@ -227,4 +228,21 @@ object S3BackingStore {
     awscreds: AWSCredentials,
     dynamo: DynamoDatastore.Config
   )
+  
+  object Config {
+    def fromProperties(conf: Properties) = {
+      def getq(key: String): String =
+        getopt(key).getOrElse {throw new RuntimeException("Missing configuration property: " + key)}
+      
+      def getopt(key: String) =
+        Option(conf.getProperty(key))
+      
+      val s3bucket = getq("io.mediachain.transactor.s3.bucket")
+      val awsaccess = getq("io.mediachain.transactor.awscreds.access")
+      val awssecret = getq("io.mediachain.transactor.awscreds.secret")
+      val awscreds = new BasicAWSCredentials(awsaccess, awssecret)
+      val dynamoConfig = DynamoDatastore.Config.fromProperties(conf)
+      Config(s3bucket, awscreds, dynamoConfig)
+    }
+  }
 }
