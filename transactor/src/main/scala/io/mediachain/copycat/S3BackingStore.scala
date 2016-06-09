@@ -238,8 +238,8 @@ object S3BackingStore {
         Option(conf.getProperty(key))
       
       val s3bucket = getq("io.mediachain.transactor.s3.bucket")
-      val awsaccess = getq("io.mediachain.transactor.s3.awscreds.access")
-      val awssecret = getq("io.mediachain.transactor.s3.awscreds.secret")
+      val awsaccess = getq("io.mediachain.transactor.awscreds.access")
+      val awssecret = getq("io.mediachain.transactor.awscreds.secret")
       val awscreds = new BasicAWSCredentials(awsaccess, awssecret)
       val dynamoConfig = DynamoDatastore.Config.fromProperties(conf)
       Config(s3bucket, awscreds, dynamoConfig)
