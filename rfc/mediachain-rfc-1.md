@@ -579,7 +579,7 @@ ChainEntry {
 
 ## References
 
-1. [The Mediachain Blog](https://blog.mine.nyc/)
+1. [The Mediachain Blog](https://blog.mediachain.io/)
 2. [IPFS](https://ipfs.io/)
 3. [IPLD](https://github.com/ipfs/specs/tree/master/ipld)
-4. [The GIF that Fell to Earth](https://blog.mine.nyc/the-gif-that-fell-to-earth-eae706c72f1f)
+4. [The GIF that Fell to Earth](https://blog.mediachain.io/the-gif-that-fell-to-earth-eae706c72f1f)
