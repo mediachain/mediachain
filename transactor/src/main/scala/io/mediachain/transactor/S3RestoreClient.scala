@@ -11,14 +11,10 @@ object S3RestoreClient {
       System.exit(1)
     }
     
-    val (config :: s3key :: cluster) = args.toList
+    val (conf :: s3key :: cluster) = args.toList
     val props = new Properties
-    props.load(new FileInputStream(config))
-    run(props, s3key, cluster)
-  }
-  
-  def run(conf: Properties, s3key: String, cluster: List[String]) {
-    val config = S3BackingStore.Config.fromProperties(conf)
+    props.load(new FileInputStream(conf))
+    val config = S3BackingStore.Config.fromProperties(props)
     val s3r = new S3Restore(config)
     s3r.restore(cluster, s3key)
   }
