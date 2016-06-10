@@ -25,7 +25,7 @@ extends JournalListener with ClientStateListener with AutoCloseable {
   private val datastore = new DynamoDatastore(config.dynamo)
   private val s3 = new AmazonS3Client(config.awscreds)
   private val s3bucket = config.s3bucket
-  private val client = Client.build()
+  private val client = Client.build(config.sslConfig)
   private var cluster: Option[List[String]] = None
   private var blocks: Set[Reference] = Set()
   
@@ -222,11 +222,43 @@ extends JournalListener with ClientStateListener with AutoCloseable {
   }
 }
 
+class S3Restore(config: S3BackingStore.Config) {
+  private val logger = LoggerFactory.getLogger(classOf[S3Restore])
+  private val datastore = new DynamoDatastore(config.dynamo)
+  private val s3 = new AmazonS3Client(config.awscreds)
+  private val s3bucket = config.s3bucket
+  private val client = Client.build(config.sslConfig)
+  
+  // replay the blockchain starting with an S3 archive key
+  def restore(addr: String, key: String) {
+    restore(List(addr), key)
+  }
+
+  def restore(cluster: List[String], key: String) {
+    client.connect(cluster)
+    doRestore(key)
+    client.close()
+  }
+  
+  private def doRestore(key: String) {
+    fetchBlockChain(key).foreach(replayBlock(_))
+  }
+  
+  private def fetchBlockChain(key: String): List[JournalBlockArchive] = {
+    throw new RuntimeException("XXX Implement me!!!")
+  }
+  
+  private def replayBlock(arxiv: JournalBlockArchive) {
+    
+  }
+}
+
 object S3BackingStore {
   case class Config(
     s3bucket: String,
     awscreds: AWSCredentials,
-    dynamo: DynamoDatastore.Config
+    dynamo: DynamoDatastore.Config,
+    sslConfig: Option[Transport.SSLConfig]
   )
   
   object Config {
@@ -242,7 +274,8 @@ object S3BackingStore {
       val awssecret = getq("io.mediachain.transactor.awscreds.secret")
       val awscreds = new BasicAWSCredentials(awsaccess, awssecret)
       val dynamoConfig = DynamoDatastore.Config.fromProperties(conf)
-      Config(s3bucket, awscreds, dynamoConfig)
+      val sslConfig = Transport.SSLConfig.fromProperties(conf)
+      Config(s3bucket, awscreds, dynamoConfig, sslConfig)
     }
   }
 }
