@@ -2,7 +2,6 @@ package io.mediachain.transactor
 
 import java.util.Properties
 import java.io.FileInputStream
-import com.amazonaws.auth.BasicAWSCredentials
 import scala.concurrent.{Await, Promise}
 import scala.concurrent.duration.Duration
 import io.mediachain.copycat.S3BackingStore
