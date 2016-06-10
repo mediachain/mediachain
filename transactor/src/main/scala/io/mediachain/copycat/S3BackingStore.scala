@@ -3,6 +3,7 @@ package io.mediachain.copycat
 import java.util.Properties
 import java.util.concurrent.{ExecutorService, Executors, TimeUnit, LinkedBlockingQueue}
 import java.io.{File, FileOutputStream}
+import java.nio.file.Files
 import com.amazonaws.AmazonClientException
 import com.amazonaws.auth.{AWSCredentials, BasicAWSCredentials}
 import com.amazonaws.services.s3.AmazonS3Client
@@ -128,11 +129,11 @@ extends JournalListener with ClientStateListener with AutoCloseable {
     ostream.write(archive.toCborBytes)
     ostream.flush()
     ostream.close()
-    (s"gzip ${path}").!
+    s"gzip ${path}".!
     val gzpath = path + ".gz"
     // XXX S3 errors
     s3.putObject(s3bucket, key, new File(gzpath))
-    (s"rm ${gzpath}").!
+    s"rm ${gzpath}".!
   }
   
   private def fetchBlock(ref: MultihashReference) =
@@ -276,9 +277,25 @@ class S3Restore(config: S3BackingStore.Config, writeRawMeta: Boolean = true) ext
   }
   
   private def fetchBlockArchive(key: String): JournalBlockArchive = {
+    import sys.process._
     logger.info(s"Fetching block archive ${key}")
-
-    throw new RuntimeException("XXX Implement me")
+    val s3obj = s3.getObject(s3bucket, key)
+    if (s3obj != null) {
+      val path = s"/tmp/${key}"
+      val gzpath = path + ".gz"
+      Files.copy(s3obj.getObjectContent, new File(gzpath).toPath)
+      s"gunzip ${gzpath}".!
+      val bytes = Files.readAllBytes(new File(path).toPath)
+      fromCborBytes[JournalBlockArchive](bytes) match {
+        case Xor.Right(arxiv: JournalBlockArchive) => 
+          s"rm ${path}".!
+          arxiv
+        case Xor.Left(what) =>
+          throw new RuntimeException(s"Error deserializing archive ${key}: ${what}")
+      }
+    } else {
+      throw new RuntimeException(s"Unknown archive " + key)
+    }
   }
   
   private def blockKey(ref: Reference, index: BigInt) = 
