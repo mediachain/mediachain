@@ -11,22 +11,24 @@ object RpcService {
 
   val logger = LoggerFactory.getLogger(RpcService.getClass)
 
-  def main(args: Array[String]) {
-    if (args.length < 2) {
-      println("arguments: rpc-service-port server-address ...")
-      sys.exit(1)
+  def run(config: Config) {
+    val rpcPort = config.listenAddress.port
+    val cluster = config.clusterAddresses.map(_.asString).toList
+
+    if (cluster.isEmpty) {
+      throw new IllegalArgumentException(
+        "No cluster address provided, can't start rpc service")
     }
 
-    val rpcPort = Integer.parseInt(args.head)
-    val cluster = args.tail.toList
-    
     val client = Client.build()
     logger.info(s"Connecting to cluster at $cluster...")
     client.connect(cluster)
 
     implicit val ec = ExecutionContext.global
-
-    val txService = new TransactorService(client)
+    // todo: dynamic
+    val executor = Executors.newFixedThreadPool(4)
+    val datastore = new DynamoDatastore(config.dynamoConfig)
+    val txService = new TransactorService(client, executor, datastore)
 
     TransactorService.createServerThread(txService,
       Executors.newSingleThreadExecutor(),

@@ -19,6 +19,7 @@ object MediachainBuild extends Build {
     // resolvers += Resolver.mavenLocal, // local maven for tip debugging
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats" % "0.4.1",
+      "org.typelevel" %% "dogs-core" % "0.2.2",
       "org.json4s" %% "json4s-jackson" % "3.3.0",
       "org.specs2" %% "specs2-core" % specs2Version % "test",
       "org.specs2" %% "specs2-junit" % specs2Version % "test",
@@ -37,7 +38,7 @@ object MediachainBuild extends Build {
     .settings(settings)
 
   // TODO: replace this with maven-published version
-  val scalaMultihashCommit = "f8ddda5c98ff0d73fdcadfc8a66332cb22f9c23b"
+  val scalaMultihashCommit = "b2999d6c00b3acab6ea3ff5d0965634bed3a3823"
   lazy val scalaMultihash = RootProject(uri(
     s"git://github.com/mediachain/scala-multihash.git#$scalaMultihashCommit"
   ))
@@ -51,7 +52,8 @@ object MediachainBuild extends Build {
         "org.slf4j" % "slf4j-api" % "1.7.21",
         "org.slf4j" % "slf4j-simple" % "1.7.21",
         "org.rocksdb" % "rocksdbjni" % "4.5.1",
-        "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.74"
+        "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.74",
+        "com.github.scopt" %% "scopt" % "3.4.0"
       ),
       assemblyMergeStrategy in assembly := {
         case "META-INF/io.netty.versions.properties" => 
@@ -59,7 +61,8 @@ object MediachainBuild extends Build {
         case x => 
           val oldStrategy = (assemblyMergeStrategy in assembly).value
           oldStrategy(x)
-      }
+      },
+      mainClass := Some("io.mediachain.transactor.Main")
     ))
     .dependsOn(protocol)
     .dependsOn(scalaMultihash)
@@ -102,7 +105,6 @@ object MediachainBuild extends Build {
   // schema translator/ingester (candidate to spin out into own project)
   lazy val translation_engine = Project("translation_engine", file("translation_engine")).settings(settings ++ List(
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats" % "0.4.1",
       "org.json4s" %% "json4s-jackson" % "3.3.0"
     ),
     unmanagedClasspath in Test += baseDirectory.value / "test-resources"
@@ -120,7 +122,6 @@ object MediachainBuild extends Build {
   lazy val core = Project("core", file("core")).settings(settings ++ List(
     libraryDependencies ++= Seq(
       "com.michaelpollmeier" % "gremlin-scala_2.11" % "3.1.1-incubating.1",
-      "org.typelevel" %% "cats" % "0.4.1",
       "org.json4s" %% "json4s-jackson" % "3.3.0"
     )
   ))
@@ -142,7 +143,6 @@ object MediachainBuild extends Build {
       "com.michaelpollmeier" % "gremlin-scala_2.11" % "3.1.1-incubating.1",
       "com.michaelpollmeier" % "orientdb-gremlin" % "3.1.0-incubating.1",
       "com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0",
-      "org.typelevel" %% "cats" % "0.4.1",
       "com.chuusai" %% "shapeless" % "2.2.5",
       "org.json4s" %% "json4s-jackson" % "3.2.11",
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.4.0",
