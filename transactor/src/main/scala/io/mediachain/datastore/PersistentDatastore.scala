@@ -2,9 +2,11 @@ package io.mediachain.datastore
 
 import java.util.Random
 import java.util.concurrent.LinkedBlockingDeque
+
 import com.amazonaws.AmazonClientException
 import org.slf4j.{Logger, LoggerFactory}
 import io.mediachain.multihash.MultiHash
+import io.mediachain.transactor.DynamoConfig
 
 class PersistentDatastore(config: PersistentDatastore.Config)
   extends BinaryDatastore with AutoCloseable with Runnable {
@@ -94,7 +96,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
 
 object PersistentDatastore {
   case class Config(
-    dynamo: DynamoDatastore.Config, 
+    dynamo: DynamoConfig,
     rocks: String,
     threads: Int = Runtime.getRuntime.availableProcessors
   )
