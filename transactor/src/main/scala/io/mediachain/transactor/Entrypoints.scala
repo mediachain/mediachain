@@ -8,10 +8,9 @@ object Entrypoints {
   import io.mediachain.datastore.DynamoDatastore
   import com.amazonaws.auth.BasicAWSCredentials
 
-  private val datastoreConfig = DynamoDatastore.Config(
+  private val datastoreConfig = DynamoConfig(
     "Mediachain",
-    new BasicAWSCredentials("", ""),
-    Some("http://localhost:8000")
+    Some(Endpoint("localhost:8000"))
   )
 
   def startTransactorService(copycatAddr: String, listen: Int): Unit = {

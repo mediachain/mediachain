@@ -1,68 +1,45 @@
 package io.mediachain.transactor
 
-import java.util.Properties
-import java.io.FileInputStream
-import com.amazonaws.auth.BasicAWSCredentials
 import io.atomix.catalyst.transport.Address
 import io.atomix.copycat.server.CopycatServer
-import io.mediachain.copycat.{Server, Transport}
-import io.mediachain.datastore.{PersistentDatastore, DynamoDatastore}
-import scala.io.StdIn
+import io.mediachain.copycat.Server
+import io.mediachain.datastore.PersistentDatastore
+
 import scala.collection.JavaConversions._
-import sys.process._
+import scala.io.StdIn
+import scala.sys.process._
+
 
 object JournalServer {
-  def main(args: Array[String]) {
-    val (interactive, config, cluster) = parseArgs(args)
-    val props = new Properties
-    props.load(new FileInputStream(config))
-    run(interactive, props, cluster)
-  }
-  
-  def parseArgs(args: Array[String]) = {
-    args.toList match {
-      case "-i" :: config :: cluster =>
-        (true, config, cluster.toList)
-      case config :: cluster =>
-        (false, config, cluster.toList)
-      case _ =>
-        throw new RuntimeException("Expected arguments: [-i] config [cluster-address ...]")
-    }
-  }
-  
-  def run(interactive: Boolean, conf: Properties, cluster: List[String]) {
-    def getq(key: String): String =
-      getopt(key).getOrElse {throw new RuntimeException("Missing configuration property: " + key)}
-    
-    def getopt(key: String): Option[String] =
-      Option(conf.getProperty(key))
-    
-    val rootdir = getq("io.mediachain.transactor.server.rootdir")
+
+  def run(config: Config) {
+
+    val rootdir = config.transactorDataDir.getAbsolutePath
     (s"mkdir -p $rootdir").!
+
     val copycatdir = rootdir + "/copycat"
     (s"mkdir $copycatdir").!
+
     val rockspath = rootdir + "/rocks.db"
-    val address = getq("io.mediachain.transactor.server.address")
-    val sslConfig = Transport.SSLConfig.fromProperties(conf)
-    val awsaccess = getq("io.mediachain.transactor.dynamo.awscreds.access")
-    val awssecret = getq("io.mediachain.transactor.dynamo.awscreds.secret")
-    val awscreds = new BasicAWSCredentials(awsaccess, awssecret)
-    val dynamoBaseTable = getq("io.mediachain.transactor.dynamo.baseTable")
-    val dynamoEndpoint = getopt("io.mediachain.transactor.dynamo.endpoint")
+    val address = config.listenAddress.asString
+    val sslConfig = config.sslConfig
+
+    val dynamoConfig = config.dynamoConfig
     val datastore = new PersistentDatastore(
-      PersistentDatastore.Config(
-        DynamoDatastore.Config(dynamoBaseTable, awscreds, dynamoEndpoint),
-        rockspath))
+      PersistentDatastore.Config(dynamoConfig, rockspath))
+
     datastore.start
     val server = Server.build(address, copycatdir, datastore, sslConfig)
     
-    if (cluster.isEmpty) {
+    if (config.clusterAddresses.isEmpty) {
       server.bootstrap.join()
     } else {
-      server.join(cluster.map {addr => new Address(addr)}).join()
+      server.join(config.clusterAddresses.map {addr =>
+        new Address(addr.asString)}
+      ).join()
     }
     
-    if (interactive) {
+    if (config.interactive) {
       println("Running with interactive console")
       interactiveLoop(server)
     } else {

@@ -52,7 +52,8 @@ object MediachainBuild extends Build {
         "org.slf4j" % "slf4j-api" % "1.7.21",
         "org.slf4j" % "slf4j-simple" % "1.7.21",
         "org.rocksdb" % "rocksdbjni" % "4.5.1",
-        "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.74"
+        "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.74",
+        "com.github.scopt" %% "scopt" % "3.4.0"
       ),
       assemblyMergeStrategy in assembly := {
         case "META-INF/io.netty.versions.properties" => 
@@ -60,7 +61,8 @@ object MediachainBuild extends Build {
         case x => 
           val oldStrategy = (assemblyMergeStrategy in assembly).value
           oldStrategy(x)
-      }
+      },
+      mainClass := Some("io.mediachain.transactor.Main")
     ))
     .dependsOn(protocol)
     .dependsOn(scalaMultihash)

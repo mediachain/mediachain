@@ -193,6 +193,7 @@ class TransactorListener(executor: ExecutorService,
             // if the client killed the connection, remove the observer
             cancelledObservers.add(observer)
           case t: Throwable =>
+            logger.error(s"Exception when publishing event: $t")
             throw t
         }
       }
