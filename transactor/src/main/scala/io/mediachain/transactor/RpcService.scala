@@ -16,9 +16,9 @@ object RpcService {
       println("arguments: rpc-service-port server-address ...")
       sys.exit(1)
     }
+    
     val rpcPort = Integer.parseInt(args.head)
     val cluster = args.tail.toList
-
     run(rpcPort, cluster)
   }
 

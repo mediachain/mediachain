@@ -2,7 +2,6 @@ package io.mediachain.datastore
 
 import java.util.Random
 import java.util.concurrent.LinkedBlockingDeque
-
 import com.amazonaws.AmazonClientException
 import org.slf4j.{Logger, LoggerFactory}
 import io.mediachain.multihash.MultiHash

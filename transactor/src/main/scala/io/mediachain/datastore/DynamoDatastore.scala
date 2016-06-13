@@ -3,11 +3,9 @@ package io.mediachain.datastore
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import java.nio.ByteBuffer
-
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.Datastore.DatastoreException
-
 
 // TODO use batch read/writes for chunked get/puts
 class DynamoDatastore(config: DynamoDatastore.Config)
