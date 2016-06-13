@@ -1,6 +1,0 @@
----
-- hosts: transactors
-  roles:
-    - { role: jpnewman.java, tags: ["init"], become: yes, become_user: "root" }
-    - { role: milinda.sbt, become: yes, become_user: "root" }
-    - { role: dynamodb_local, become: yes, become_user: "root" }
