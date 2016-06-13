@@ -1,4 +1,0 @@
----
-dynamodb_version: "2016-05-17"
-dynamodb_sha: "832d474316c9d092de8c24885e69c9be9e22b9807e7383e0de6f247e44601a90"
-dynamodb_port: "8000"
