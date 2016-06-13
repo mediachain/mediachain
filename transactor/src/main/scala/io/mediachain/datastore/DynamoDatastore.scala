@@ -1,26 +1,26 @@
 package io.mediachain.datastore
 
-import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import java.nio.ByteBuffer
-import scala.collection.mutable.{Buffer, ArrayBuffer}
+
+import scala.collection.mutable.{ArrayBuffer, Buffer}
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.Datastore.DatastoreException
+
 
 // TODO use batch read/writes for chunked get/puts
 class DynamoDatastore(config: DynamoDatastore.Config)
   extends BinaryDatastore with AutoCloseable {
   import scala.collection.JavaConversions._
   
-  val creds = config.awscreds
   val table = config.baseTable
   val chunkTable = table + "Chunks"
   val chunkSize = 1024 * 384 // 384 KB; DynamoDB has 400KB limit for item size.
                              // this item size includes field names as well as
                              // values.
 
-  val db = new AmazonDynamoDBClient(creds)
+  val db = new AmazonDynamoDBClient()
   config.endpoint.foreach(ep => db.setEndpoint(ep))
 
   override def putData(key: MultiHash, value: Array[Byte]) {
@@ -162,7 +162,6 @@ class DynamoDatastore(config: DynamoDatastore.Config)
 object DynamoDatastore {
   case class Config(
     baseTable: String,
-    awscreds: BasicAWSCredentials,
     endpoint: Option[String] = None
   )
 }
