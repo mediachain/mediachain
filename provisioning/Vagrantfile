@@ -9,6 +9,10 @@ Vagrant.configure(2) do |config|
   # Use a box compatible with both virtualbox and vmware_fusion providers
   config.vm.box = "phusion/ubuntu-14.04-amd64"
 
+  # Since the Vagrantfile is in a subdirectory of the project root,
+  # share the parent directory at /mediachain
+  config.vm.synced_folder "../", "/mediachain"
+
   # Forward transactor rpc service port 10001
   config.vm.network "forwarded_port", guest: 10001, host: 10001
   
