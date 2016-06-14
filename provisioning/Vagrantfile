@@ -37,7 +37,7 @@ Vagrant.configure(2) do |config|
   # Ansible config
   config.vm.provision :ansible do |ansible|
     ansible.limit = "transactors"
-    ansible.playbook = "meta/dev.yml"
+    ansible.playbook = "playbooks/dev.yml"
     ansible.groups = { "transactors" => ["transactor"] }
   end
 end
