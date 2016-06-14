@@ -1,0 +1,14 @@
+galaxy_info:
+  author: Cole Brown <cole.brown@gmail.com>
+  description: > 
+    Provides the dependencies needed by the mediachain transactor
+  company: Mediachain Labs
+  license: MIT
+  min_ansible_version: 1.8.1
+  platforms:
+    - name: Ubuntu
+      versions:
+        - trusty
+dependencies:
+  - { role: jpnewman.java, tags: ["init"], become: yes, become_user: "root" }
+  - { role: milinda.sbt, become: yes, become_user: "root" }
