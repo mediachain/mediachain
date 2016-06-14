@@ -1,0 +1,14 @@
+- name: update system
+  apt: upgrade=yes
+  become: yes
+  become_user: "root"
+
+- name: setup git ppa repo
+  apt_repository: repo=ppa:git-core/ppa
+  become: yes
+  become_user: "root"
+
+- name: install git
+  apt: name=git state=present update_cache=true
+  become: yes
+  become_user: "root"

@@ -94,7 +94,7 @@ class PersistentDatastore(config: PersistentDatastore.Config)
 
 object PersistentDatastore {
   case class Config(
-    dynamo: DynamoDatastore.Config, 
+    dynamo: DynamoDatastore.Config,
     rocks: String,
     threads: Int = Runtime.getRuntime.availableProcessors
   )

@@ -29,7 +29,7 @@ object JournalServer {
         throw new RuntimeException("Expected arguments: [-i] config [cluster-address ...]")
     }
   }
-  
+
   def run(interactive: Boolean, conf: Properties, cluster: List[String]) {
     def getq(key: String): String =
       getopt(key).getOrElse {throw new RuntimeException("Missing configuration property: " + key)}
@@ -44,14 +44,11 @@ object JournalServer {
     val rockspath = rootdir + "/rocks.db"
     val address = getq("io.mediachain.transactor.server.address")
     val sslConfig = Transport.SSLConfig.fromProperties(conf)
-    val awsaccess = getq("io.mediachain.transactor.dynamo.awscreds.access")
-    val awssecret = getq("io.mediachain.transactor.dynamo.awscreds.secret")
-    val awscreds = new BasicAWSCredentials(awsaccess, awssecret)
     val dynamoBaseTable = getq("io.mediachain.transactor.dynamo.baseTable")
     val dynamoEndpoint = getopt("io.mediachain.transactor.dynamo.endpoint")
     val datastore = new PersistentDatastore(
       PersistentDatastore.Config(
-        DynamoDatastore.Config(dynamoBaseTable, awscreds, dynamoEndpoint),
+        DynamoDatastore.Config(dynamoBaseTable, dynamoEndpoint),
         rockspath))
     datastore.start
     val server = Server.build(address, copycatdir, datastore, sslConfig)
@@ -69,6 +66,22 @@ object JournalServer {
       serverLoop(server)
     }
     datastore.close()
+  }
+
+  def run(config: Config) {
+    val props = new Properties()
+    props.setProperty("io.mediachain.transactor.server.rootdir",
+      config.transactorDataDir.getAbsolutePath)
+    props.setProperty("io.mediachain.transactor.server.address",
+      config.listenAddress.asString)
+    props.setProperty("io.mediachain.transactor.dynamo.baseTable",
+      config.dynamoConfig.baseTable)
+    config.dynamoConfig.endpoint.foreach { endpoint =>
+      props.setProperty("io.mediachain.transactor.dynamo.endpoint",
+        endpoint)
+    }
+    val cluster = config.clusterAddresses.map(_.asString).toList
+    run(config.interactive, props, cluster)
   }
   
   def serverLoop(server: CopycatServer) {
