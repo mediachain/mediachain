@@ -1,6 +1,8 @@
 galaxy_info:
   author: Cole Brown <cole.brown@gmail.com>
-  description: Installs the development version of the Amazon DynamoDB server
+  description: > 
+    Installs the development version of the Amazon DynamoDB server
+    Based on https://github.com/AerisCloud/ansible-dynamodb by Stephan Donin <sdonin@wizcorp.jp>
   company: Mediachain Labs
   license: MIT
   min_ansible_version: 1.8.1
