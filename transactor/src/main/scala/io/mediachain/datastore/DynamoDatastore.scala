@@ -171,12 +171,9 @@ object DynamoDatastore {
       def getopt(key: String): Option[String] =
         Option(conf.getProperty(key))
       
-      val awsaccess = getq("io.mediachain.transactor.awscreds.access")
-      val awssecret = getq("io.mediachain.transactor.awscreds.secret")
-      val awscreds = new BasicAWSCredentials(awsaccess, awssecret)
       val baseTable = getq("io.mediachain.transactor.dynamo.baseTable")
       val endpoint = getopt("io.mediachain.transactor.dynamo.endpoint")
-      Config(baseTable, awscreds, endpoint)
+      Config(baseTable, endpoint)
     }
   }
 }

@@ -24,7 +24,7 @@ extends JournalListener with ClientStateListener with AutoCloseable {
   private val logger = LoggerFactory.getLogger(classOf[S3BackingStore])
   private val exec = Executors.newScheduledThreadPool(Math.max(4, Runtime.getRuntime.availableProcessors))
   private val datastore = new DynamoDatastore(config.dynamo)
-  private val s3 = new AmazonS3Client(config.awscreds)
+  private val s3 = new AmazonS3Client()
   private val s3bucket = config.s3bucket
   private val client = Client.build(config.sslConfig)
   private var cluster: Option[List[String]] = None
@@ -226,7 +226,6 @@ object S3BackingStore {
   
   case class Config(
     s3bucket: String,
-    awscreds: AWSCredentials,
     dynamo: DynamoDatastore.Config,
     sslConfig: Option[Transport.SSLConfig]
   )
@@ -240,12 +239,9 @@ object S3BackingStore {
         Option(conf.getProperty(key))
       
       val s3bucket = getq("io.mediachain.transactor.s3.bucket")
-      val awsaccess = getq("io.mediachain.transactor.awscreds.access")
-      val awssecret = getq("io.mediachain.transactor.awscreds.secret")
-      val awscreds = new BasicAWSCredentials(awsaccess, awssecret)
       val dynamoConfig = DynamoDatastore.Config.fromProperties(conf)
       val sslConfig = Transport.SSLConfig.fromProperties(conf)
-      Config(s3bucket, awscreds, dynamoConfig, sslConfig)
+      Config(s3bucket, dynamoConfig, sslConfig)
     }
   }
   

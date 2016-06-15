@@ -22,7 +22,7 @@ class S3Restore(config: S3BackingStore.Config, writeRawMeta: Boolean = true) ext
   import S3BackingStore.multihashRef
   private val logger = LoggerFactory.getLogger(classOf[S3Restore])
   private val datastore = new DynamoDatastore(config.dynamo)
-  private val s3 = new AmazonS3Client(config.awscreds)
+  private val s3 = new AmazonS3Client()
   private val s3bucket = config.s3bucket
   private val client = Client.build(config.sslConfig)
   // dynamo background writing
