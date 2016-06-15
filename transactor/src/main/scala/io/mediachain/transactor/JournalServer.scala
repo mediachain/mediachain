@@ -29,7 +29,7 @@ object JournalServer {
         throw new RuntimeException("Expected arguments: [-i] config [cluster-address ...]")
     }
   }
-  
+
   def run(interactive: Boolean, conf: Properties, cluster: List[String]) {
     def getq(key: String): String =
       getopt(key).getOrElse {throw new RuntimeException("Missing configuration property: " + key)}
@@ -62,6 +62,22 @@ object JournalServer {
       serverLoop(server)
     }
     datastore.close()
+  }
+
+  def run(config: Config) {
+    val props = new Properties()
+    props.setProperty("io.mediachain.transactor.server.rootdir",
+      config.transactorDataDir.getAbsolutePath)
+    props.setProperty("io.mediachain.transactor.server.address",
+      config.listenAddress.asString)
+    props.setProperty("io.mediachain.transactor.dynamo.baseTable",
+      config.dynamoConfig.baseTable)
+    config.dynamoConfig.endpoint.foreach { endpoint =>
+      props.setProperty("io.mediachain.transactor.dynamo.endpoint",
+        endpoint)
+    }
+    val cluster = config.clusterAddresses.map(_.asString).toList
+    run(config.interactive, props, cluster)
   }
   
   def serverLoop(server: CopycatServer) {

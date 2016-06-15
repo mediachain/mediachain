@@ -16,10 +16,13 @@ object RpcService {
       println("arguments: rpc-service-port server-address ...")
       sys.exit(1)
     }
-
+    
     val rpcPort = Integer.parseInt(args.head)
     val cluster = args.tail.toList
-    
+    run(rpcPort, cluster)
+  }
+
+  def run(rpcPort: Int, cluster: List[String]) {
     val client = Client.build()
     logger.info(s"Connecting to cluster at $cluster...")
     client.connect(cluster)
@@ -34,6 +37,11 @@ object RpcService {
     )
 
     println(s"started rpc service on port $rpcPort")
+  }
+
+  def run(config: Config): Unit = {
+    val cluster = config.clusterAddresses.map(_.asString).toList
+    run(config.listenAddress.port, cluster)
   }
 }
 
