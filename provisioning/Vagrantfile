@@ -13,14 +13,11 @@ Vagrant.configure(2) do |config|
   # share the parent directory at /mediachain
   config.vm.synced_folder "../", "/mediachain"
 
-  # Forward transactor rpc service port 10001
-  config.vm.network "forwarded_port", guest: 10001, host: 10001
-  
-  # Forward port for local dynamodb (for development)
-  config.vm.network "forwarded_port", guest: 8000, host: 8000
-
-  # Forward jvm debugger port 5005 on the guest to 5006 on the host
-  config.vm.network "forwarded_port", guest: 5005, host: 5006
+  if ENV["MC_VAGRANT_IP"]
+    config.vm.network "private_network", ip: ENV["MC_VAGRANT_IP"]
+  else
+    config.vm.network "private_network", type: "dhcp" 
+  end
 
   # Set ram, etc for vm providers
   config.vm.provider "virtualbox" do |vb|
