@@ -52,7 +52,7 @@ object MediachainBuild extends Build {
         "org.slf4j" % "slf4j-simple" % "1.7.21",
         "org.rocksdb" % "rocksdbjni" % "4.5.1",
         "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.7",
-        "com.amazonaws" % "aws-java-sdk-s3" % "1.11.7"
+        "com.amazonaws" % "aws-java-sdk-s3" % "1.11.7",
         "com.github.scopt" %% "scopt" % "3.4.0"
       ),
       assemblyMergeStrategy in assembly := {
