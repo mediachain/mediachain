@@ -608,6 +608,8 @@ object CborSerialization {
 
   object JournalBlockArchiveDeserializer extends CborDeserializer[JournalBlockArchive]
   {
+    import scala.annotation.tailrec
+
     def fromCMap(cMap: CMap): Xor[DeserializationError, JournalBlockArchive] =
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.JournalBlockArchive)
@@ -624,7 +626,7 @@ object CborSerialization {
         )
     
     def dataFromCbor(records: CArray) = {
-      def loop(rest: List[CValue], map: Map[Reference, Array[Byte]])
+      @tailrec def loop(rest: List[CValue], map: Map[Reference, Array[Byte]])
       : Xor[DeserializationError, Map[Reference, Array[Byte]]] = {
         rest match {
           case CArray(List(refCbor: CMap, data: CBytes)) :: rest =>
