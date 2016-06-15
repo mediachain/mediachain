@@ -1,0 +1,40 @@
+
+- name: install grpc base dependencies
+  apt: name={{item}}
+  become: yes
+  become_user: root
+  with_items:
+      - python-dev
+      - python-pip
+      - libtool
+      - autoconf
+
+- name: clone grpc git repo
+  git: repo=https://github.com/grpc/grpc.git
+       dest={{ grpc_source_dir }}
+       version={{ grpc_version }}
+  become: yes
+  become_user: root
+
+- name: install gprc python dependencies
+  command: pip install -r requirements.txt
+  args:
+    chdir: "{{ grpc_source_dir }}"
+  become: yes
+  become_user: root
+
+- name: install grpc python module
+  command: env GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+  args:
+    chdir: "{{ grpc_source_dir }}"
+    creates: "/usr/local/lib/python2.7/dist-packages/grpcio-{{ grpc_version_number }}.egg-info"
+  become: yes
+  become_user: root
+
+- name: build and install grpc
+  shell: make install && rm -f ./.grpc_version_installed_* && touch ".grpc_version_installed_{{grpc_version}}"
+  args:
+    chdir: "{{ grpc_source_dir }}"
+    creates: "{{grpc_source_dir}}/.grpc_version_installed_{{grpc_version}}"
+  become: yes
+  become_user: root

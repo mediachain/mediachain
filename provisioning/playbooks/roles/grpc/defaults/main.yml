@@ -1,0 +1,4 @@
+---
+grpc_source_dir: /opt/grpc
+grpc_version: release-0_14_0
+grpc_version_number: "0.14.0"

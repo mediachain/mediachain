@@ -3,3 +3,4 @@
   roles:
     - { role: transactor }
     - { role: dynamodb_local, become: yes, become_user: "root" }
+    - { role: grpc }
