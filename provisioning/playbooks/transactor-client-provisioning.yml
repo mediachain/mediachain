@@ -8,7 +8,7 @@
     apt: name=python-pip state=present
 
   - name: update to latest pip
-    shell: pip install --upgrade pip
+    pip: name=pip state=latest
     
   - name: checkout mediachain
     git: repo=https://github.com/mediachain/mediachain.git dest=/home/ubuntu/mediachain
