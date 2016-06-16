@@ -173,6 +173,17 @@ object DataObjectGenerators {
       Gen.oneOf(genCanonicalEntry, genChainEntry)
     )
   } yield JournalBlock(index, chain, entries)
+  
+  val genDataMap = for {
+    ref <- genReference
+    blah <- Gen.alphaStr
+  } yield Map(ref -> blah.getBytes)
+
+  val genJournalBlockArchive = for {
+    ref <- genReference
+    block <- genJournalBlock
+    data <- genDataMap
+  } yield JournalBlockArchive(ref, block, data)
 
   implicit def abEntity: Arbitrary[Entity] = Arbitrary(genEntity)
   implicit def abArtefact: Arbitrary[Artefact] = Arbitrary(genArtefact)
@@ -189,4 +200,5 @@ object DataObjectGenerators {
   implicit def abCanonicalEntry: Arbitrary[CanonicalEntry] = Arbitrary(genCanonicalEntry)
   implicit def abChainEntry: Arbitrary[ChainEntry] = Arbitrary(genChainEntry)
   implicit def abJournalBlock: Arbitrary[JournalBlock] = Arbitrary(genJournalBlock)
+  implicit def abJournalBlockArchive: Arbitrary[JournalBlockArchive] = Arbitrary(genJournalBlockArchive)
 }

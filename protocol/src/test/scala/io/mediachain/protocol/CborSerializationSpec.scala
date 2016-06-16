@@ -34,6 +34,7 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
           - canonical journal entry $roundTripCanonicalEntry
           - chain journal entry $roundTripChainEntry
           - journal block $roundTripJournalBlock
+          - journal block archive $roundTripJournalBlockArchive
 
        - decodes to base chain cell types when using transactorDeserializers $transactorDeserializersDecodesToBaseTypes
       """
@@ -223,7 +224,29 @@ object CborSerializationSpec extends BaseSpec with ScalaCheck {
       }
     }
   }
+  
+  def roundTripJournalBlockArchive = prop { bx: JournalBlockArchive =>
+    def stringify(rbmap: Map[Reference, Array[Byte]]): Map[Reference, String] =
+      rbmap.map { case (key, bytes) => (key -> new String(bytes)) }
 
+    val cbor = bx.toCbor
+    cbor must matchTypeName(MediachainTypes.JournalBlockArchive)
+    
+    fromCbor(cbor) must beRightXor { obj: JournalBlockArchive =>
+      val expected = bx
+      
+      obj must beLike {
+        case archive: JournalBlockArchive => {
+          archive.ref must_== expected.ref
+          archive.block.index must_== expected.block.index
+          archive.block.chain must_== expected.block.chain
+          archive.block.entries.toList must containTheSameElementsAs(expected.block.entries.toList)
+          stringify(archive.data) must havePairs(stringify(expected.data).toList: _*)
+        }
+      }
+    }
+  }
+  
   def transactorDeserializersDecodesToBaseTypes =
     prop { c: ArtefactChainCell =>
       implicit val deserializers = transactorDeserializers

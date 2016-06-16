@@ -44,12 +44,8 @@ object JournalServer {
     val rockspath = rootdir + "/rocks.db"
     val address = getq("io.mediachain.transactor.server.address")
     val sslConfig = Transport.SSLConfig.fromProperties(conf)
-    val dynamoBaseTable = getq("io.mediachain.transactor.dynamo.baseTable")
-    val dynamoEndpoint = getopt("io.mediachain.transactor.dynamo.endpoint")
-    val datastore = new PersistentDatastore(
-      PersistentDatastore.Config(
-        DynamoDatastore.Config(dynamoBaseTable, dynamoEndpoint),
-        rockspath))
+    val dynamoConfig = DynamoDatastore.Config.fromProperties(conf)
+    val datastore = new PersistentDatastore(PersistentDatastore.Config(dynamoConfig, rockspath))
     datastore.start
     val server = Server.build(address, copycatdir, datastore, sslConfig)
     

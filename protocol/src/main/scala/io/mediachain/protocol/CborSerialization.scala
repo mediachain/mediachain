@@ -178,6 +178,7 @@ object CborSerialization {
         case CanonicalEntry.stringValue => Xor.right(CanonicalEntry)
         case ChainEntry.stringValue => Xor.right(ChainEntry)
         case JournalBlock.stringValue => Xor.right(JournalBlock)
+        case JournalBlockArchive.stringValue => Xor.right(JournalBlockArchive)
 
         case _ => Xor.left(UnexpectedObjectType(string))
       }
@@ -234,6 +235,9 @@ object CborSerialization {
     case object JournalBlock extends MediachainType {
       val stringValue = "journalBlock"
     }
+    case object JournalBlockArchive extends MediachainType {
+      val stringValue = "journalBlockArchive"
+    }
 
     val ArtefactChainCellTypes: Set[MediachainType] = Set(
       ArtefactChainCell, ArtefactUpdateCell, ArtefactLinkCell, ArtefactCreationCell,
@@ -268,7 +272,8 @@ object CborSerialization {
 
       MediachainTypes.CanonicalEntry -> CanonicalEntryDeserializer,
       MediachainTypes.ChainEntry -> ChainEntryDeserializer,
-      MediachainTypes.JournalBlock -> JournalBlockDeserializer
+      MediachainTypes.JournalBlock -> JournalBlockDeserializer,
+      MediachainTypes.JournalBlockArchive -> JournalBlockArchiveDeserializer
     )
 
   val datastoreDeserializers: DeserializerMap =
@@ -599,6 +604,47 @@ object CborSerialization {
           chain = getOptionalReference(cMap, "chain"),
           entries = entries
         )
+  }
+
+  object JournalBlockArchiveDeserializer extends CborDeserializer[JournalBlockArchive]
+  {
+    import scala.annotation.tailrec
+
+    def fromCMap(cMap: CMap): Xor[DeserializationError, JournalBlockArchive] =
+      for {
+        _ <- assertRequiredTypeName(cMap, MediachainTypes.JournalBlockArchive)
+        ref <- getRequiredReference(cMap, "ref")
+        xblock <- getRequired[CMap](cMap, "block")
+        block <- JournalBlockDeserializer.fromCMap(xblock)
+        xdata <- getRequired[CArray](cMap, "data")
+        data <- dataFromCbor(xdata)
+      } yield
+        JournalBlockArchive(
+          ref = ref,
+          block = block,
+          data = data
+        )
+    
+    def dataFromCbor(records: CArray) = {
+      @tailrec def loop(rest: List[CValue], map: Map[Reference, Array[Byte]])
+      : Xor[DeserializationError, Map[Reference, Array[Byte]]] = {
+        rest match {
+          case CArray(List(refCbor: CMap, data: CBytes)) :: rest =>
+            ReferenceDeserializer.fromCMap(refCbor) match {
+              case Xor.Right(ref) =>
+                loop(rest, map + (ref -> data.bytes))
+              case err@Xor.Left(_) => err
+            }
+            
+          case hd :: _ =>
+            Xor.Left(UnexpectedObjectType(s"Archive data decoding failed; unexpected object: $hd"))
+            
+          case Nil => Xor.Right(map)
+        }
+      }
+      
+      loop(records.items, Map())
+    }
   }
 
   object CanonicalEntryDeserializer extends CborDeserializer[CanonicalEntry]
