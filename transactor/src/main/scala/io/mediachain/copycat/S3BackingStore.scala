@@ -189,25 +189,14 @@ extends JournalListener with ClientStateListener with AutoCloseable {
   private def fetchData(ref: MultihashReference) = {
     def loop(ref: MultihashReference, retry: Int): Array[Byte] = {
       lazy val ref58 = ref.multihash.base58
-      Try(datastore.getData(ref.multihash)) match {
-        case Success(Some(bytes)) => bytes
-          
-        case Success(None) =>
+      withBackoffRetry(datastore.getData(ref.multihash)) match {
+        case Some(bytes) => bytes
+        case None =>
           // hasn't reached the store yet, backoff and retry
           val backoff = Client.randomBackoff(retry)
           logger.info(s"Missing data for ${ref58}; retrying in ${backoff} ms")
           Thread.sleep(backoff)
           loop(ref, retry + 1)
-          
-        case Failure(err: AmazonClientException) =>
-          logger.error(s"AWS error fetching ${ref58}", err)
-          val backoff = Client.randomBackoff(retry)
-          logger.info(s"Retrying ${ref58} in ${backoff} ms")
-          Thread.sleep(backoff)
-          loop(ref, retry + 1)
-          
-        case Failure(err: Throwable) =>
-          throw err
       }
     }
     
