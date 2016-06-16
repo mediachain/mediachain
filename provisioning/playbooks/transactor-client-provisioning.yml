@@ -1,0 +1,20 @@
+---
+- hosts: transactor-client-provisioning
+  roles:
+    - transactor
+
+  tasks:
+  - name: checkout mediachain
+    git: repo=https://github.com/mediachain/mediachain.git dest=/home/ubuntu/mediachain
+
+  - name: set ownership of mediachain src tree
+    file: path=/home/ubuntu/mediachain owner=ubuntu group=ubuntu recurse=yes
+
+  - name: checkout mediachain-client
+    git: repo=https://github.com/mediachain/mediachain-client.git dest=/home/ubuntu/mediachain-client
+
+  - name: set ownership of mediachain-client src tree
+    file: path=/home/ubuntu/mediachain-client owner=ubuntu group=ubuntu recurse=yes
+
+  - name: prepare /mnt/data
+    file: path=/mnt/data state=directory owner=ubuntu group=ubuntu
