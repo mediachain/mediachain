@@ -106,8 +106,7 @@ extends JournalListener with ClientStateListener with AutoCloseable {
     block.chain.foreach { execWriteBlock(_) }
     // check S3 first to see if we have already archived the block
     // (perhaps in a previous run)
-    // XXX S3 errors
-    val listing = s3.listObjects(s3bucket, ref58)
+    val listing = withBackoffRetry(s3.listObjects(s3bucket, ref58))
     if (listing.getObjectSummaries.isEmpty) {
       writeBlockArchive(mref, block)
     } else {
@@ -128,9 +127,28 @@ extends JournalListener with ClientStateListener with AutoCloseable {
     ostream.close()
     s"gzip ${path}".!
     val gzpath = path + ".gz"
-    // XXX S3 errors
-    s3.putObject(s3bucket, key, new File(gzpath))
+    withBackoffRetry(s3.putObject(s3bucket, key, new File(gzpath)))
     s"rm ${gzpath}".!
+  }
+  
+  private def withBackoffRetry[T](op: => T) = {
+    def loop(retry: Int): T = {
+      Try(op) match {
+        case Success(res) => res
+          
+        case Failure(err: AmazonClientException) =>
+          logger.error("AWS error", err)
+          val backoff = Client.randomBackoff(retry)
+          logger.info(s"Retrying in ${backoff} ms")
+          Thread.sleep(backoff)
+          loop(retry + 1)
+          
+        case Failure(err: Throwable) =>
+          throw err
+      }
+    }
+    
+    loop(0)
   }
   
   private def fetchBlock(ref: MultihashReference) =
