@@ -41,9 +41,6 @@ object JournalServer {
     val rootdir = getq("io.mediachain.transactor.server.rootdir")
     (s"mkdir -p $rootdir").!
     val ctldir = rootdir + "/ctl"
-    (s"mkdir $ctldir").!
-    (s"touch ${ctldir}/shutdown").!
-    (s"touch ${ctldir}/leave").!
     val copycatdir = rootdir + "/copycat"
     (s"mkdir $copycatdir").!
     val rockspath = rootdir + "/rocks.db"
@@ -87,7 +84,7 @@ object JournalServer {
       "shutdown" -> shutdown _,
       "leave" -> leave _
     )
-    val ctl = new ServerControl(ctldir, commands)
+    val ctl = ServerControl.build(ctldir, commands)
     ctl.run
   }
 

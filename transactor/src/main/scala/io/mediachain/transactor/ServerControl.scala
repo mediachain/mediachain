@@ -4,6 +4,7 @@ import java.nio.file.{Files, FileSystems, Path, Paths}
 import java.nio.file.StandardWatchEventKinds._
 import org.slf4j.{Logger, LoggerFactory}
 import scala.collection.JavaConversions._
+import sys.process._
 
 class ServerControl(
   ctlpath: String,
@@ -38,5 +39,13 @@ class ServerControl(
       case Some(fun) => fun(cmd)
       case None => logger.error(s"Unknown command ${cmd}")
     }
+  }
+}
+
+object ServerControl {
+  def build(ctlpath: String, commands: Map[String, (String) => Unit]) = {
+    (s"mkdir -p ${ctlpath}").!
+    commands.keys.foreach { cmd => (s"touch ${ctlpath}/${cmd}").! }
+    new ServerControl(ctlpath, commands)
   }
 }
