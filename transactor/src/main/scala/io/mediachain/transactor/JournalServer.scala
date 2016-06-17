@@ -3,6 +3,7 @@ package io.mediachain.transactor
 import java.util.Properties
 import java.io.FileInputStream
 import com.amazonaws.auth.BasicAWSCredentials
+import org.slf4j.{Logger, LoggerFactory}
 import io.atomix.catalyst.transport.Address
 import io.atomix.copycat.server.CopycatServer
 import io.mediachain.copycat.{Server, Transport}
@@ -12,6 +13,8 @@ import scala.collection.JavaConversions._
 import sys.process._
 
 object JournalServer {
+  val logger = LoggerFactory.getLogger("io.mediachain.transactor.JournalServer")
+
   def main(args: Array[String]) {
     val (interactive, config, cluster) = parseArgs(args)
     val props = new Properties
@@ -39,6 +42,10 @@ object JournalServer {
     
     val rootdir = getq("io.mediachain.transactor.server.rootdir")
     (s"mkdir -p $rootdir").!
+    val ctldir = rootdir + "/ctl"
+    (s"mkdir $ctldir").!
+    (s"touch ${ctldir}/shutdown").!
+    (s"touch ${ctldir}/leave").!
     val copycatdir = rootdir + "/copycat"
     (s"mkdir $copycatdir").!
     val rockspath = rootdir + "/rocks.db"
@@ -46,22 +53,44 @@ object JournalServer {
     val sslConfig = Transport.SSLConfig.fromProperties(conf)
     val dynamoConfig = DynamoDatastore.Config.fromProperties(conf)
     val datastore = new PersistentDatastore(PersistentDatastore.Config(dynamoConfig, rockspath))
-    datastore.start
     val server = Server.build(address, copycatdir, datastore, sslConfig)
-    
+
+    datastore.start    
     if (cluster.isEmpty) {
       server.bootstrap.join()
     } else {
       server.join(cluster.map {addr => new Address(addr)}).join()
     }
     
-    if (interactive) {
-      println("Running with interactive console")
-      interactiveLoop(server)
-    } else {
-      serverLoop(server)
+    serverControlLoop(ctldir, server, datastore)
+  }
+  
+  def serverControlLoop(ctldir: String, 
+                        server: CopycatServer, 
+                        datastore: PersistentDatastore) {
+    def shutdown(what: String) {
+      logger.info("Shutting down server")
+      server.shutdown.join()
+      quit()
     }
-    datastore.close()
+    
+    def leave(what: String) {
+      logger.info("Leaving the cluster")
+      server.leave.join()
+      quit()
+    }
+    
+    def quit() {
+      datastore.close()
+      System.exit(0)
+    }
+    
+    val commands = Map(
+      "shutdown" -> shutdown _,
+      "leave" -> leave _
+    )
+    val ctl = new ServerControl(ctldir, commands)
+    ctl.run
   }
 
   def run(config: Config) {
@@ -78,33 +107,5 @@ object JournalServer {
     }
     val cluster = config.clusterAddresses.map(_.asString).toList
     run(config.interactive, props, cluster)
-  }
-  
-  def serverLoop(server: CopycatServer) {
-    while (server.isRunning) {Thread.sleep(1000)}
-  }
-
-  def interactiveLoop(server: CopycatServer) {
-    print("> ")
-    val next = StdIn.readLine()
-    if (next != null) {
-      val cmd = next.trim
-      cmd match {
-        case "shutdown" =>
-          println("shutting down")
-          server.shutdown.join()
-        case "leave" =>
-          println("leaving cluster")
-          server.leave.join()
-        case "" =>
-          interactiveLoop(server)
-        case what =>
-          println(s"Unknown command ${what}; I only understand shutdown and leave")
-          interactiveLoop(server)
-      }
-    } else {
-      // stdin closed; shutdown
-      server.shutdown.join()
-    }
   }
 }
