@@ -35,11 +35,10 @@ object JournalServer {
     val ctldir = rootdir + "/ctl"
     val copycatdir = rootdir + "/copycat"
     (s"mkdir $copycatdir").!
-    val rockspath = rootdir + "/rocks.db"
     val address = conf.getq("io.mediachain.transactor.server.address")
     val sslConfig = Transport.SSLConfig.fromProperties(conf)
-    val dynamoConfig = DynamoDatastore.Config.fromProperties(conf)
-    val datastore = new PersistentDatastore(PersistentDatastore.Config(dynamoConfig, rockspath))
+    val datastoreConfig = PersistentDatastore.Config.fromProperties(conf)
+    val datastore = new PersistentDatastore(datastoreConfig)
     val server = Server.build(address, copycatdir, datastore, sslConfig)
 
     datastore.start    

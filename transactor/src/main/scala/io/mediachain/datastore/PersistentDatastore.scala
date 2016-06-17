@@ -5,6 +5,7 @@ import java.util.concurrent.LinkedBlockingDeque
 import com.amazonaws.AmazonClientException
 import org.slf4j.{Logger, LoggerFactory}
 import io.mediachain.multihash.MultiHash
+import io.mediachain.util.Properties
 
 class PersistentDatastore(config: PersistentDatastore.Config)
   extends BinaryDatastore with AutoCloseable with Runnable {
@@ -96,6 +97,19 @@ object PersistentDatastore {
   case class Config(
     dynamo: DynamoDatastore.Config,
     rocks: String,
-    threads: Int = Runtime.getRuntime.availableProcessors
+    threads: Int
   )
+  
+  object Config {
+    def fromProperties(conf: Properties) = {
+      val dynamoConfig = DynamoDatastore.Config.fromProperties(conf)
+      val path = conf.getopt("io.mediachain.transactor.datastore.dir")
+        .getOrElse { conf.getq("io.mediachain.transactor.server.rootdir") + "/rocks.db" }
+      val threads = conf.getopt("io.mediachain.transactor.datastore.threads") match {
+        case Some(str) => str.toInt
+        case None => Runtime.getRuntime.availableProcessors
+      }
+      Config(dynamoConfig, path, threads)
+    }
+  }
 }
