@@ -25,7 +25,6 @@ case object FacadeMode extends RunMode
 
 case class Config(
   mode: RunMode = null,
-  interactive: Boolean = false,
   listenAddress: Endpoint = null,
   clusterAddresses: Seq[Endpoint] = Seq(),
   transactorDataDir: File = null,
@@ -99,15 +98,8 @@ object Config {
             c.copy(
               transactorDataDir = dir
             )
-          },
-
-        opt[Unit]('i', "interactive")
-          .text("accept control commands from standard input")
-          .action { (_, c) =>
-            c.copy(interactive = true)
-          }
-      )
-
+        })
+    
     cmd("facade")
       .text("run an RPC facade to the transactor cluster")
       .action { (_, c) =>

@@ -16,24 +16,22 @@ object JournalServer {
   val logger = LoggerFactory.getLogger("io.mediachain.transactor.JournalServer")
 
   def main(args: Array[String]) {
-    val (interactive, config, cluster) = parseArgs(args)
+    val (config, cluster) = parseArgs(args)
     val props = new Properties
     props.load(new FileInputStream(config))
-    run(interactive, props, cluster)
+    run(props, cluster)
   }
   
   def parseArgs(args: Array[String]) = {
     args.toList match {
-      case "-i" :: config :: cluster =>
-        (true, config, cluster.toList)
       case config :: cluster =>
-        (false, config, cluster.toList)
+        (config, cluster.toList)
       case _ =>
-        throw new RuntimeException("Expected arguments: [-i] config [cluster-address ...]")
+        throw new RuntimeException("Expected arguments: config [cluster-address ...]")
     }
   }
 
-  def run(interactive: Boolean, conf: Properties, cluster: List[String]) {
+  def run(conf: Properties, cluster: List[String]) {
     def getq(key: String): String =
       getopt(key).getOrElse {throw new RuntimeException("Missing configuration property: " + key)}
     
@@ -106,6 +104,6 @@ object JournalServer {
         endpoint)
     }
     val cluster = config.clusterAddresses.map(_.asString).toList
-    run(config.interactive, props, cluster)
+    run(props, cluster)
   }
 }
