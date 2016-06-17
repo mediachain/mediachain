@@ -1,7 +1,6 @@
 package io.mediachain.transactor
 
-import java.util.Properties
-import java.io.FileInputStream
+import io.mediachain.util.Properties
 import io.mediachain.copycat.{S3BackingStore, S3Restore}
 
 object S3RestoreClient {
@@ -12,8 +11,7 @@ object S3RestoreClient {
     }
     
     val (conf :: s3key :: cluster) = args.toList
-    val props = new Properties
-    props.load(new FileInputStream(conf))
+    val props = Properties.load(conf)
     val config = S3BackingStore.Config.fromProperties(props)
     val s3r = new S3Restore(config)
     s3r.restore(cluster, s3key)

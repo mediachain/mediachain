@@ -1,8 +1,7 @@
 package io.mediachain.transactor
 
-import java.io.{File, FileInputStream}
-import java.util.Properties
-
+import java.io.File
+import io.mediachain.util.Properties
 import io.mediachain.copycat.Transport.SSLConfig
 import io.mediachain.datastore.DynamoDatastore.{Config => DynamoConfig}
 
@@ -64,11 +63,10 @@ object Config {
         )
       }
 
-    opt[File]('s', "ssl-properties")
+    opt[String]('s', "ssl-properties")
       .text("path to properties file for ssl configuration")
       .action { (propsFile, c) =>
-        val props = new Properties
-        props.load(new FileInputStream(propsFile))
+        val props = Properties.load(propsFile)
         val sslConfig = SSLConfig.fromProperties(props).getOrElse(
           throw new IllegalArgumentException("Unable to parse ssl config file")
         )

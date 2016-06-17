@@ -1,10 +1,9 @@
 package io.mediachain.transactor
 
-import java.util.Properties
-import java.io.FileInputStream
 import scala.concurrent.{Await, Promise}
 import scala.concurrent.duration.Duration
 import io.mediachain.copycat.S3BackingStore
+import io.mediachain.util.Properties
 
 object S3BackingStoreClient {
   def main(args: Array[String]) {
@@ -15,8 +14,7 @@ object S3BackingStoreClient {
     
     val config = args.head
     val cluster = args.toList.tail
-    val props = new Properties
-    props.load(new FileInputStream(config))
+    val props = Properties.load(config)
     run(props, cluster)
   }
   

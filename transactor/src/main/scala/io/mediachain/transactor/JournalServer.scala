@@ -1,13 +1,12 @@
 package io.mediachain.transactor
 
-import java.util.Properties
-import java.io.FileInputStream
 import com.amazonaws.auth.BasicAWSCredentials
 import org.slf4j.{Logger, LoggerFactory}
 import io.atomix.catalyst.transport.Address
 import io.atomix.copycat.server.CopycatServer
 import io.mediachain.copycat.{Server, Transport}
 import io.mediachain.datastore.{PersistentDatastore, DynamoDatastore}
+import io.mediachain.util.Properties
 import scala.io.StdIn
 import scala.collection.JavaConversions._
 import sys.process._
@@ -17,8 +16,7 @@ object JournalServer {
 
   def main(args: Array[String]) {
     val (config, cluster) = parseArgs(args)
-    val props = new Properties
-    props.load(new FileInputStream(config))
+    val props = Properties.load(config)
     run(props, cluster)
   }
   
@@ -32,19 +30,13 @@ object JournalServer {
   }
 
   def run(conf: Properties, cluster: List[String]) {
-    def getq(key: String): String =
-      getopt(key).getOrElse {throw new RuntimeException("Missing configuration property: " + key)}
-    
-    def getopt(key: String): Option[String] =
-      Option(conf.getProperty(key))
-    
-    val rootdir = getq("io.mediachain.transactor.server.rootdir")
+    val rootdir = conf.getq("io.mediachain.transactor.server.rootdir")
     (s"mkdir -p $rootdir").!
     val ctldir = rootdir + "/ctl"
     val copycatdir = rootdir + "/copycat"
     (s"mkdir $copycatdir").!
     val rockspath = rootdir + "/rocks.db"
-    val address = getq("io.mediachain.transactor.server.address")
+    val address = conf.getq("io.mediachain.transactor.server.address")
     val sslConfig = Transport.SSLConfig.fromProperties(conf)
     val dynamoConfig = DynamoDatastore.Config.fromProperties(conf)
     val datastore = new PersistentDatastore(PersistentDatastore.Config(dynamoConfig, rockspath))
@@ -90,14 +82,14 @@ object JournalServer {
 
   def run(config: Config) {
     val props = new Properties()
-    props.setProperty("io.mediachain.transactor.server.rootdir",
+    props.put("io.mediachain.transactor.server.rootdir",
       config.transactorDataDir.getAbsolutePath)
-    props.setProperty("io.mediachain.transactor.server.address",
+    props.put("io.mediachain.transactor.server.address",
       config.listenAddress.asString)
-    props.setProperty("io.mediachain.transactor.dynamo.baseTable",
+    props.put("io.mediachain.transactor.dynamo.baseTable",
       config.dynamoConfig.baseTable)
     config.dynamoConfig.endpoint.foreach { endpoint =>
-      props.setProperty("io.mediachain.transactor.dynamo.endpoint",
+      props.put("io.mediachain.transactor.dynamo.endpoint",
         endpoint)
     }
     val cluster = config.clusterAddresses.map(_.asString).toList

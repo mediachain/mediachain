@@ -1,6 +1,5 @@
 package io.mediachain.copycat
 
-import java.util.Properties
 import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 import java.io.{File, FileOutputStream}
 import com.amazonaws.AmazonClientException
@@ -17,6 +16,7 @@ import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.CborSerialization._
 import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
 import io.mediachain.datastore.DynamoDatastore
+import io.mediachain.util.Properties
 
 class S3BackingStore(config: S3BackingStore.Config)
 extends JournalListener with ClientStateListener with AutoCloseable {
@@ -239,13 +239,7 @@ object S3BackingStore {
 
   object Config {
     def fromProperties(conf: Properties) = {
-      def getq(key: String): String =
-        getopt(key).getOrElse {throw new RuntimeException("Missing configuration property: " + key)}
-      
-      def getopt(key: String) =
-        Option(conf.getProperty(key))
-      
-      val s3bucket = getq("io.mediachain.transactor.s3.bucket")
+      val s3bucket = conf.getq("io.mediachain.transactor.s3.bucket")
       val dynamoConfig = DynamoDatastore.Config.fromProperties(conf)
       val sslConfig = Transport.SSLConfig.fromProperties(conf)
       Config(s3bucket, dynamoConfig, sslConfig)
