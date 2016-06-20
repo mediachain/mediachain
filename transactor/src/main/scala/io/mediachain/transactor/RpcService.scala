@@ -25,7 +25,7 @@ object RpcService {
   
   def run(conf: Properties, cluster: List[String]) {
     val rpcPort = conf.getq("io.mediachain.transactor.rpc.port").toInt
-    val ctldir = conf.getq("io.mediachain.transactor.server.rootdir" + "/ctl")
+    val ctldir = conf.getq("io.mediachain.transactor.rpc.control")
     val client = Client.build()
     logger.info(s"Connecting to cluster at $cluster...")
     client.connect(cluster)
