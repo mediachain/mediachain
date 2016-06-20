@@ -72,14 +72,6 @@ object MediachainBuild extends Build {
 
   updateOptions := updateOptions.value.withCachedResolution(true)
 
-  // TODO: use maven version
-  val orientdb_migrations_commit = "5f345cefda34f5671e6bb9e6c30312299d11f371"
-  lazy val orientdb_migrations = ProjectRef(
-    uri("git://github.com/mediachain/orientdb-migrations.git#" +
-      orientdb_migrations_commit),
-    "orientdb-migrations-root"
-  )
-
   lazy val protocol = Project("protocol", file("protocol"))
     .settings(settings ++ Seq(
       libraryDependencies ++= Seq(
