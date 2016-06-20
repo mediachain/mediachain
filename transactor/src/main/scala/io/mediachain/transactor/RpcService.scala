@@ -3,6 +3,7 @@ package io.mediachain.transactor
 object RpcService {
   import io.mediachain.copycat.{Client, TransactorService}
   import io.mediachain.datastore.DynamoDatastore
+  import io.mediachain.util.Properties
   import com.amazonaws.auth.BasicAWSCredentials
   import scala.concurrent.ExecutionContext
   import java.util.concurrent.Executors
@@ -13,16 +14,18 @@ object RpcService {
 
   def main(args: Array[String]) {
     if (args.length < 2) {
-      println("arguments: rpc-service-port server-address ...")
+      println("arguments: config server-address ...")
       sys.exit(1)
     }
     
-    val rpcPort = Integer.parseInt(args.head)
+    val conf = Properties.load(args.head)
     val cluster = args.tail.toList
-    run(rpcPort, cluster)
+    run(conf, cluster)
   }
-
-  def run(rpcPort: Int, cluster: List[String]) {
+  
+  def run(conf: Properties, cluster: List[String]) {
+    val rpcPort = conf.getq("io.mediachain.transactor.rpc.port").toInt
+    val ctldir = conf.getq("io.mediachain.transactor.rpc.control")
     val client = Client.build()
     logger.info(s"Connecting to cluster at $cluster...")
     client.connect(cluster)
@@ -36,12 +39,24 @@ object RpcService {
       rpcPort
     )
 
-    println(s"started rpc service on port $rpcPort")
+    logger.info(s"started rpc service on port $rpcPort")
+    serverControlLoop(ctldir, client)
+  }
+  
+  def serverControlLoop(ctldir: String, client: Client) {
+    def shutdown(what: String) {
+      logger.info("shutting down")
+      client.close()
+      System.exit(0)
+    }
+    
+    val ctl = ServerControl.build(ctldir, Map("shutdown" -> shutdown _))
+    ctl.run
   }
 
-  def run(config: Config): Unit = {
-    val cluster = config.clusterAddresses.map(_.asString).toList
-    run(config.listenAddress.port, cluster)
+
+  def run(config: Config) {
+    run(config.conf, config.cluster)
   }
 }
 

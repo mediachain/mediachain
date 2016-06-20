@@ -1,13 +1,12 @@
 package io.mediachain.transactor
 
-import java.util.Properties
-import java.io.FileInputStream
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import cats.data.Xor
 import io.mediachain.copycat.{Client, Transport}
 import io.mediachain.protocol.Datastore._
 import io.mediachain.multihash.MultiHash
+import io.mediachain.util.Properties
 
 object JournalLookup {
   def parseArgs(args: Array[String]): (String, MultiHash, Option[Transport.SSLConfig]) = {
@@ -29,8 +28,7 @@ object JournalLookup {
     }
   
   def parseConfig(config: String) = {
-    val props = new Properties
-    props.load(new FileInputStream(config))
+    val props = Properties.load(config)
     Transport.SSLConfig.fromProperties(props)
   }
 

@@ -3,10 +3,10 @@ package io.mediachain.datastore
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.model.AttributeValue
 import java.nio.ByteBuffer
-import java.util.Properties
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.Datastore.DatastoreException
+import io.mediachain.util.Properties
 
 // TODO use batch read/writes for chunked get/puts
 class DynamoDatastore(config: DynamoDatastore.Config)
@@ -166,13 +166,8 @@ object DynamoDatastore {
   
   object Config {
     def fromProperties(conf: Properties) = {
-      def getq(key: String): String =
-        getopt(key).getOrElse {throw new RuntimeException("Missing configuration property: " + key)}
-      def getopt(key: String): Option[String] =
-        Option(conf.getProperty(key))
-      
-      val baseTable = getq("io.mediachain.transactor.dynamo.baseTable")
-      val endpoint = getopt("io.mediachain.transactor.dynamo.endpoint")
+      val baseTable = conf.getq("io.mediachain.transactor.dynamo.baseTable")
+      val endpoint = conf.getopt("io.mediachain.transactor.dynamo.endpoint")
       Config(baseTable, endpoint)
     }
   }
