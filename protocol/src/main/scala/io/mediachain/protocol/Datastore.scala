@@ -1,14 +1,19 @@
 package io.mediachain.protocol
 
-
 object Datastore {
   import io.mediachain.multihash.MultiHash
   import io.mediachain.protocol.CborSerialization._
   import io.mediachain.protocol.Transactor.{ArtefactChainReference, ChainReference, EntityChainReference}
   import io.mediachain.util.cbor.CborAST._
   import scala.util.Try
+  import dogs.Streaming
+  import cats.Eval
 
-  // Datastore interface
+  /** Datastore interface.
+    *
+    * Implementations of this must be thread-safe
+    *
+    */
   trait Datastore {
     def get(ref: Reference): Option[DataObject]
     def put(obj: DataObject): Reference
@@ -374,6 +379,20 @@ object Datastore {
       val defaults = Map("index" -> CInt(index), "entries" -> cborEntries)
       val optionals = Map("chain" -> chain.map(_.toCbor))
       super.toCMapWithDefaults(defaults, optionals)
+    }
+
+    def toStream(datastore: Datastore): Streaming[JournalBlock] = {
+      val next: Eval[Streaming[JournalBlock]] = chain match {
+        case Some(ref) => Eval.always {
+          datastore.get(ref) match {
+            case Some(x: JournalBlock) => x.toStream(datastore)
+            case _ => Streaming.empty
+          }
+        }
+        case _ => Eval.now(Streaming.empty)
+      }
+
+      Streaming.cons[JournalBlock](this, next)
     }
   }
   

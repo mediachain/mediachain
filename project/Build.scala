@@ -19,6 +19,7 @@ object MediachainBuild extends Build {
     // resolvers += Resolver.mavenLocal, // local maven for tip debugging
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats" % "0.4.1",
+      "org.typelevel" %% "dogs-core" % "0.2.2",
       "org.json4s" %% "json4s-jackson" % "3.3.0",
       "org.specs2" %% "specs2-core" % specs2Version % "test",
       "org.specs2" %% "specs2-junit" % specs2Version % "test",
@@ -37,7 +38,7 @@ object MediachainBuild extends Build {
     .settings(settings)
 
   // TODO: replace this with maven-published version
-  val scalaMultihashCommit = "f8ddda5c98ff0d73fdcadfc8a66332cb22f9c23b"
+  val scalaMultihashCommit = "b2999d6c00b3acab6ea3ff5d0965634bed3a3823"
   lazy val scalaMultihash = RootProject(uri(
     s"git://github.com/mediachain/scala-multihash.git#$scalaMultihashCommit"
   ))

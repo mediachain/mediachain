@@ -14,6 +14,24 @@ message UpdateRequest {
     bytes chainCellCbor = 1;
 }
 
+message JournalStreamRequest {
+    MultihashReference lastJournalBlock = 1;
+}
+
+message UpdateChainResult {
+    MultihashReference canonical = 1;
+    MultihashReference chain = 2;
+    MultihashReference chainPrevious = 3;
+}
+
+message JournalEvent {
+    oneof event {
+        MultihashReference canonicalInserted = 2;
+        UpdateChainResult chainUpdated = 3;
+        MultihashReference journalBlockPublished = 4;
+    }
+}
+
 service TransactorService {
     rpc InsertCanonical(InsertRequest) returns
         (MultihashReference);
@@ -23,5 +41,8 @@ service TransactorService {
 
     rpc LookupChain(MultihashReference) returns
         (MultihashReference);
+
+    rpc JournalStream(JournalStreamRequest) returns
+        (stream JournalEvent);
 }
 

@@ -31,8 +31,15 @@ object RpcService {
     client.connect(cluster)
 
     implicit val ec = ExecutionContext.global
+    // todo: dynamic
+    val executor = Executors.newFixedThreadPool(4)
+    val datastoreConfig = DynamoDatastore.Config(
+      "Mediachain",
+      Some("http://localhost:8000")
+    )
+    val datastore = new DynamoDatastore(datastoreConfig)
 
-    val txService = new TransactorService(client)
+    val txService = new TransactorService(client, executor, datastore)
 
     TransactorService.createServerThread(txService,
       Executors.newSingleThreadExecutor(),
