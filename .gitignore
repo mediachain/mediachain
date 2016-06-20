@@ -30,3 +30,6 @@ private
 # ignore test datasets for translation engine
 translation_engine/test-resources/datasets/*
 !translation_engine/test-resources/datasets/README.md
+
+.vagrant
+*.retry

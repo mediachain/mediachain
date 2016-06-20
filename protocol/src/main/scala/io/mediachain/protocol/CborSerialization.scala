@@ -178,6 +178,7 @@ object CborSerialization {
         case CanonicalEntry.stringValue => Xor.right(CanonicalEntry)
         case ChainEntry.stringValue => Xor.right(ChainEntry)
         case JournalBlock.stringValue => Xor.right(JournalBlock)
+        case JournalBlockArchive.stringValue => Xor.right(JournalBlockArchive)
 
         case _ => Xor.left(UnexpectedObjectType(string))
       }
@@ -234,6 +235,9 @@ object CborSerialization {
     case object JournalBlock extends MediachainType {
       val stringValue = "journalBlock"
     }
+    case object JournalBlockArchive extends MediachainType {
+      val stringValue = "journalBlockArchive"
+    }
 
     val ArtefactChainCellTypes: Set[MediachainType] = Set(
       ArtefactChainCell, ArtefactUpdateCell, ArtefactLinkCell, ArtefactCreationCell,
@@ -268,7 +272,8 @@ object CborSerialization {
 
       MediachainTypes.CanonicalEntry -> CanonicalEntryDeserializer,
       MediachainTypes.ChainEntry -> ChainEntryDeserializer,
-      MediachainTypes.JournalBlock -> JournalBlockDeserializer
+      MediachainTypes.JournalBlock -> JournalBlockDeserializer,
+      MediachainTypes.JournalBlockArchive -> JournalBlockArchiveDeserializer
     )
 
   val datastoreDeserializers: DeserializerMap =
@@ -312,10 +317,11 @@ object CborSerialization {
     def toCMapWithMeta(
       defaults: Map[String, CValue],
       optionals: Map[String, Option[CValue]],
-      meta: Map[String, CValue])
+      meta: Map[String, CValue],
+      metaSource: Option[Reference])
     : CMap =
       toCMapWithDefaults(defaults + ("meta" -> CMap.withStringKeys(meta.toList)),
-                         optionals)
+                         optionals + ("metaSource" -> metaSource.map(_.toCbor)))
     
   }
 
@@ -373,7 +379,8 @@ object CborSerialization {
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.Entity)
         meta <- getRequired[CMap](cMap, "meta")
-      } yield Entity(meta.asStringKeyedMap)
+      } yield Entity(meta.asStringKeyedMap, 
+                     getOptionalReference(cMap, "metaSource"))
   }
 
   object ArtefactDeserializer extends CborDeserializer[Artefact]
@@ -382,7 +389,8 @@ object CborSerialization {
       for {
         _ <- assertRequiredTypeName(cMap, MediachainTypes.Artefact)
         meta <- getRequired[CMap](cMap, "meta")
-      } yield Artefact(meta.asStringKeyedMap)
+      } yield Artefact(meta.asStringKeyedMap,
+                       getOptionalReference(cMap, "metaSource"))
   }
 
   object ArtefactChainCellDeserializer extends CborDeserializer[ArtefactChainCell]
@@ -395,7 +403,8 @@ object CborSerialization {
       } yield ArtefactChainCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = meta.asStringKeyedMap
+        meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource")
       )
   }
 
@@ -409,7 +418,8 @@ object CborSerialization {
       } yield ArtefactUpdateCell(
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
-        meta = meta.asStringKeyedMap
+        meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource")
       )
   }
 
@@ -425,6 +435,7 @@ object CborSerialization {
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         artefactLink = artefactLink
       )
   }
@@ -441,6 +452,7 @@ object CborSerialization {
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         entity = entity
       )
   }
@@ -457,6 +469,7 @@ object CborSerialization {
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         artefactLink = artefactLink
       )
   }
@@ -473,6 +486,7 @@ object CborSerialization {
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         entity = entity
       )
   }
@@ -488,6 +502,7 @@ object CborSerialization {
         artefact = artefact,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         entity = getOptionalReference(cMap, "entity")
       )
   }
@@ -502,7 +517,8 @@ object CborSerialization {
       } yield EntityChainCell(
         entity = entity,
         chain = getOptionalReference(cMap, "chain"),
-        meta = meta.asStringKeyedMap
+        meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource")
       )
   }
 
@@ -516,7 +532,8 @@ object CborSerialization {
       } yield EntityUpdateCell(
         entity = entity,
         chain = getOptionalReference(cMap, "chain"),
-        meta = meta.asStringKeyedMap
+        meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource")
       )
   }
 
@@ -532,6 +549,7 @@ object CborSerialization {
         entity = entity,
         chain = getOptionalReference(cMap, "chain"),
         meta = meta.asStringKeyedMap,
+        metaSource = getOptionalReference(cMap, "metaSource"),
         entityLink = entityLink
       )
   }
@@ -586,6 +604,47 @@ object CborSerialization {
           chain = getOptionalReference(cMap, "chain"),
           entries = entries
         )
+  }
+
+  object JournalBlockArchiveDeserializer extends CborDeserializer[JournalBlockArchive]
+  {
+    import scala.annotation.tailrec
+
+    def fromCMap(cMap: CMap): Xor[DeserializationError, JournalBlockArchive] =
+      for {
+        _ <- assertRequiredTypeName(cMap, MediachainTypes.JournalBlockArchive)
+        ref <- getRequiredReference(cMap, "ref")
+        xblock <- getRequired[CMap](cMap, "block")
+        block <- JournalBlockDeserializer.fromCMap(xblock)
+        xdata <- getRequired[CArray](cMap, "data")
+        data <- dataFromCbor(xdata)
+      } yield
+        JournalBlockArchive(
+          ref = ref,
+          block = block,
+          data = data
+        )
+    
+    def dataFromCbor(records: CArray) = {
+      @tailrec def loop(rest: List[CValue], map: Map[Reference, Array[Byte]])
+      : Xor[DeserializationError, Map[Reference, Array[Byte]]] = {
+        rest match {
+          case CArray(List(refCbor: CMap, data: CBytes)) :: rest =>
+            ReferenceDeserializer.fromCMap(refCbor) match {
+              case Xor.Right(ref) =>
+                loop(rest, map + (ref -> data.bytes))
+              case err@Xor.Left(_) => err
+            }
+            
+          case hd :: _ =>
+            Xor.Left(UnexpectedObjectType(s"Archive data decoding failed; unexpected object: $hd"))
+            
+          case Nil => Xor.Right(map)
+        }
+      }
+      
+      loop(records.items, Map())
+    }
   }
 
   object CanonicalEntryDeserializer extends CborDeserializer[CanonicalEntry]

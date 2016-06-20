@@ -5,10 +5,7 @@ jdk:
   - oraclejdk8
 env:
   - SBT_TARGET=transactor
-  - SBT_TARGET=l_space
-  - SBT_TARGET=translation_engine
   - SBT_TARGET=protocol
-  - SBT_TARGET=rpc
 script:
   - sbt $SBT_TARGET/test
 cache:

@@ -1,9 +1,28 @@
-# mediachain-transactor
+Transactors provide read/write access to the Mediachain Journal and syndication.
 
-Consensus/journal cluster server for the mediachain network. To run a test node:
+# How to Run a test transactor node
 
-* `brew install dynamodb-local && brew services start dynamodb-local`
-* Prep DynamoDB tables
+## Compile the transactor code
+```
+sbt transactor/assembly
+```
+This will leave a fat jar in transactor/target/scala-2.11/, which we call
+the `BIGJAR`
+
+## Local DynamoDB setup
+
+The current transactor implementation uses DynamoDB as the datastore in place
+of IPFS (at least until IPLD is rolled out).
+
+For testing you probably want to use the local implementation of DynamoDB.
+See [https://aws.amazon.com/blogs/aws/dynamodb-local-for-desktop-development/](DynamoDB Local)
+
+On a Mac you can install it with homebrew:
+```
+$ brew install dynamodb-local && brew services start dynamodb-local
+```
+
+## Prepare dynamo db tables
 ```scala
 import com.amazonaws.auth.BasicAWSCredentials
 val awscreds = new BasicAWSCredentials($AWSACCESS, $AWSSECRET)
@@ -24,17 +43,35 @@ val chunkTableAttrs = List(new AttributeDefinition("chunkId", "S"))
 val chunkTableSchema = List(new KeySchemaElement("chunkId", KeyType.HASH))
 dynamo.createTable(chunkTableAttrs, "TestChunks", chunkTableSchema, pth)
 ```
-* Create config file
+
+## Run a transactor server
+To run a transactor server:
 ```
-io.mediachain.transactor.server.rootdir: /path/to/transactor-directory
-io.mediachain.transactor.server.address: 127.0.0.1:10000
-io.mediachain.transactor.dynamo.awscreds.access: $AWSACCESS
-io.mediachain.transactor.dynamo.awscreds.secret: $AWSSECRET
-io.mediachain.transactor.dynamo.baseTable: Test
-io.mediachain.transactor.dynamo.endpoint: http://localhost:8000
+java -cp $BIGJAR io.mediachain.transactor.Main transactor -c <config-file> cluster-address ...
 ```
 
-If you want to enable SSL, add the following to the config file:
+To run the RPC facade:
+```
+java -cp $BIGJAR io.mediachain.transactor.Main facade -c <config-file> cluster-address ...
+```
+
+Both servers can be shutdown by signalling a kill file. The control
+directory is set in the configuration file; the transactor control directory
+is at `${io.mediachain.transactor.server.rootdir}/ctl`, while the rpc service
+control directory is `io.mediachain.transactor.rpc.control`.
+
+### transactor configuration
+The configuration is a properties file.
+
+Required properties:
+```
+io.mediachain.transactor.server.rootdir: /path/to/transactor-dir # Server root directory
+io.mediachain.transactor.server.address: 127.0.0.1:10000         # Server bind address
+io.mediachain.transactor.dynamo.baseTable: Test                  # DynamoDB Table
+io.mediachain.transactor.dynamo.endpoint: http://localhost:8000  # Optional
+```
+
+Optionally, if you want to enable SSL, add the following to the config file:
 ```
 io.mediachain.transactor.ssl.enabled: true
 io.mediachain.transactor.ssl.keyStorePath: /path/to/keystore.jks
@@ -42,8 +79,14 @@ io.mediachain.transactor.ssl.keyStorePassword: $KEYSTOREPASS
 io.mediachain.transactor.ssl.keyStoreKeyPassword: $KEYSTOREKEYPASS
 ```
 
-* `sbt transactor/assembly`
-* `scala -cp $BIG_JAR_FROM_ABOVE io.mediachain.transactor.JournalServer path/to/config.conf`
+### RPC facade configuration
+Required properties:
+```
+io.mediachain.transactor.rpc.port: 10001
+io.mediachain.transactor.rpc.control: /path/to/rpc/killfile-dir
+```
+
+With optional SSL support configured the same way as the transactor.
 
 # Keystore - OpenSSL Mini HOWTO
 In order to use SSL with copycat, we need to use java keystores.

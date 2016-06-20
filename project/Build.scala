@@ -52,7 +52,9 @@ object MediachainBuild extends Build {
         "org.slf4j" % "slf4j-api" % "1.7.21",
         "org.slf4j" % "slf4j-simple" % "1.7.21",
         "org.rocksdb" % "rocksdbjni" % "4.5.1",
-        "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.74"
+        "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.7",
+        "com.amazonaws" % "aws-java-sdk-s3" % "1.11.7",
+        "com.github.scopt" %% "scopt" % "3.4.0"
       ),
       assemblyMergeStrategy in assembly := {
         case "META-INF/io.netty.versions.properties" => 
@@ -60,7 +62,8 @@ object MediachainBuild extends Build {
         case x => 
           val oldStrategy = (assemblyMergeStrategy in assembly).value
           oldStrategy(x)
-      }
+      },
+      mainClass := Some("io.mediachain.transactor.Main")
     ))
     .dependsOn(protocol)
     .dependsOn(scalaMultihash)
@@ -100,75 +103,9 @@ object MediachainBuild extends Build {
     )
     .dependsOn(scalaMultihash)
 
-  // schema translator/ingester (candidate to spin out into own project)
-  lazy val translation_engine = Project("translation_engine", file("translation_engine")).settings(settings ++ List(
-    libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-jackson" % "3.3.0"
-    ),
-    unmanagedClasspath in Test += baseDirectory.value / "test-resources"
-  )).dependsOn(l_space)
-    .dependsOn(l_space % "test->test")
-    .dependsOn(core)
-
-  lazy val rpc = Project("rpc", file("rpc")).settings(settings)
-    .dependsOn(l_space)
-    .dependsOn(l_space % "test->test")
-    .dependsOn(protocol)
-    .dependsOn(core)
-
-  // core types, errors, etc (L-SPACE only, FIXME -- remove!!!)
-  lazy val core = Project("core", file("core")).settings(settings ++ List(
-    libraryDependencies ++= Seq(
-      "com.michaelpollmeier" % "gremlin-scala_2.11" % "3.1.1-incubating.1",
-      "org.json4s" %% "json4s-jackson" % "3.3.0"
-    )
-  ))
-
-  lazy val predef =  """
-  import com.orientechnologies.orient.core.Orient
-  import org.apache.tinkerpop.gremlin.orientdb.OrientGraphFactory
-  import gremlin.scala._
-  import io.mediachain.Types._
-  import io.mediachain.Traversals.{GremlinScalaImplicits, VertexImplicits}
-  import io.mediachain.util.orient.MigrationHelper
-
-  lazy val graph = MigrationHelper.newInMemoryGraph()
-                     """.split("\n").mkString("; ")
-  lazy val l_space = Project("l_space", file("l_space")).settings(settings ++ List(
-    mainClass := Some("io.mediachain.LSpace"),
-
-    libraryDependencies ++= Seq(
-      "com.michaelpollmeier" % "gremlin-scala_2.11" % "3.1.1-incubating.1",
-      "com.michaelpollmeier" % "orientdb-gremlin" % "3.1.0-incubating.1",
-      "com.tinkerpop.blueprints" % "blueprints-core" % "2.6.0",
-      "com.chuusai" %% "shapeless" % "2.2.5",
-      "org.json4s" %% "json4s-jackson" % "3.2.11",
-      "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % "2.4.0",
-      "org.bouncycastle" % "bcprov-jdk15on" % "1.54",
-      "org.apache.directory.studio" % "org.apache.commons.codec" % "1.8"
-    ),
-
-    excludeDependencies ++= Seq(
-      SbtExclusionRule("commons-logging", "commons-logging"),
-      SbtExclusionRule("org.codehaus.groovy", "groovy"),
-      SbtExclusionRule("org.codehaus.groovy", "groovy-groovysh"),
-      SbtExclusionRule("org.codehaus.groovy", "groovy-console"),
-      SbtExclusionRule("org.codehaus.groovy", "groovy-templates"),
-      SbtExclusionRule("org.codehaus.groovy", "groovy-xml"),
-      SbtExclusionRule("org.codehaus.groovy", "groovy-swing"),
-      SbtExclusionRule("org.codehaus.groovy", "groovy-json"),
-      SbtExclusionRule("org.codehaus.groovy", "groovy-jsr223")
-    ),
-
-    initialCommands in (Test, console) := "ammonite.repl.Main.run(\"" + predef + "\")"
-  )).dependsOn(orientdb_migrations)
-    .dependsOn(core)
-  
-
   // aggregate means commands will cascade to the subprojects
   // dependsOn means classes will be available
   lazy val mediachain = (project in file("."))
-    .aggregate(core, l_space,
-      translation_engine, rpc, transactor, protocol)
+    .aggregate(transactor, protocol)
 }
 

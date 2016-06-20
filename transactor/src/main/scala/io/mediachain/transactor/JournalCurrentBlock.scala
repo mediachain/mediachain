@@ -1,21 +1,18 @@
 package io.mediachain.transactor
 
-import java.util.Properties
-import java.io.FileInputStream
-
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 import io.mediachain.copycat.{Client, Transport}
 import io.mediachain.protocol.Datastore.JournalBlock
+import io.mediachain.util.Properties
 
 object JournalCurrentBlock {
   def parseArgs(args: Array[String]): (String, Option[Transport.SSLConfig]) = {
     args match {
       case Array(server) => (server, None)
       case Array(server, config) =>
-        val props = new Properties
-        props.load(new FileInputStream(config))
+        val props = Properties.load(config)
         (server, Transport.SSLConfig.fromProperties(props))
       case _ => 
         throw new RuntimeException("Expected arguments: server-address [client-config]")
