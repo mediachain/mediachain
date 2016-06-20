@@ -30,13 +30,11 @@ object RpcService {
     logger.info(s"Connecting to cluster at $cluster...")
     client.connect(cluster)
 
-    implicit val ec = ExecutionContext.global
-    // todo: dynamic
-    val executor = Executors.newFixedThreadPool(4)
-    val datastoreConfig = DynamoDatastore.Config(
-      "Mediachain",
-      Some("http://localhost:8000")
-    )
+    val threads = Math.max(4, Runtime.getRuntime.availableProcessors)
+    implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(threads))
+    val executor = Executors.newFixedThreadPool(threads)
+    
+    val datastoreConfig = DynamoDatastore.Config.fromProperties(conf)
     val datastore = new DynamoDatastore(datastoreConfig)
 
     val txService = new TransactorService(client, executor, datastore)
