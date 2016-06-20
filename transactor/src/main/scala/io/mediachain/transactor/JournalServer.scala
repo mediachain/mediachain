@@ -80,18 +80,6 @@ object JournalServer {
   }
 
   def run(config: Config) {
-    val props = new Properties()
-    props.put("io.mediachain.transactor.server.rootdir",
-      config.transactorDataDir.getAbsolutePath)
-    props.put("io.mediachain.transactor.server.address",
-      config.listenAddress.asString)
-    props.put("io.mediachain.transactor.dynamo.baseTable",
-      config.dynamoConfig.baseTable)
-    config.dynamoConfig.endpoint.foreach { endpoint =>
-      props.put("io.mediachain.transactor.dynamo.endpoint",
-        endpoint)
-    }
-    val cluster = config.clusterAddresses.map(_.asString).toList
-    run(props, cluster)
+    run(config.conf, config.cluster)
   }
 }

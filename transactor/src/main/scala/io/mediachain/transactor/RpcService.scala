@@ -54,8 +54,9 @@ object RpcService {
     ctl.run
   }
 
-  def run(config: Config): Unit = {
-    throw new RuntimeException("FIXME")
+
+  def run(config: Config) {
+    run(config.conf, config.cluster)
   }
 }
 
