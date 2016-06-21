@@ -24,9 +24,9 @@ message UpdateChainResult {
 
 message JournalEvent {
     oneof event {
-        MultihashReference canonicalInserted = 2;
-        UpdateChainResult chainUpdated = 3;
-        MultihashReference journalBlockPublished = 4;
+        MultihashReference insertCanonicalEvent = 1;
+        UpdateChainResult updateChainEvent = 2;
+        MultihashReference journalBlockEvent = 3;
     }
 }
 

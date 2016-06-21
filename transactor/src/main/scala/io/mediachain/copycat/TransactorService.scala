@@ -15,7 +15,6 @@ import io.mediachain.protocol.Transactor.{JournalError, JournalListener}
 import io.mediachain.protocol.transactor.Transactor.{MultihashReference => _, _}
 import io.mediachain.protocol.transactor.Transactor
 import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event
-import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event.JournalBlockPublished
 import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -108,7 +107,7 @@ class TransactorService(client: Client,
   }
 
   override def journalStream(request: JournalStreamRequest,
-    responseObserver: StreamObserver[JournalEvent]): Unit = {
+                             observer: StreamObserver[JournalEvent]) {
     throw new RuntimeException("XXX Implement me")
   }
 
@@ -132,14 +131,18 @@ object TransactorService {
         s"Expected MultihashReference, got type ${r.getClass.getTypeName}"
       )
   }
+  
+  def journalBlockToEvent(ref: Reference) = {
+    Event.JournalBlockEvent(refToRPCMultihashRef(ref))
+  }
 
   def journalEntryToEvent(entry: JournalEntry): JournalEvent = {
     val event = entry match {
       case CanonicalEntry(_, ref) =>
-        Event.CanonicalInserted(refToRPCMultihashRef(ref))
+        Event.InsertCanonicalEvent(refToRPCMultihashRef(ref))
 
       case ChainEntry(_, ref, chain, chainPrevious) =>
-        Event.ChainUpdated(
+        Event.UpdateChainEvent(
           UpdateChainResult(chainPrevious = chainPrevious.map(refToRPCMultihashRef))
             .withCanonical(refToRPCMultihashRef(ref))
             .withChain(refToRPCMultihashRef(chain))
