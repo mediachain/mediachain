@@ -7,6 +7,12 @@
   - name: install pip
     apt: name=python-pip state=present
 
+  - name: install libjpeg-dev
+    apt: name=libjpeg-dev state=present
+
+  - name: install libpng-dev
+    apt: name=libpng-dev state=present
+
   - name: update to latest pip
     pip: name=pip state=latest
     
