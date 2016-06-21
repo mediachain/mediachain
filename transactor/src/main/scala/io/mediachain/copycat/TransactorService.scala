@@ -1,10 +1,8 @@
 package io.mediachain.copycat
 
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.Executors
 
 import cats.data.Xor
-import dogs.Streaming
 import io.grpc.stub.StreamObserver
 import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
 import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
@@ -16,13 +14,136 @@ import io.mediachain.protocol.transactor.Transactor.{MultihashReference => _, _}
 import io.mediachain.protocol.transactor.Transactor
 import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event
 import org.slf4j.LoggerFactory
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.collection.mutable.{ArrayBuffer, Buffer}
+
+class TransactorListenerState {
+  var index: BigInt = -1
+  var block: Buffer[JournalEntry] = new ArrayBuffer
+  var blockchain: Option[Reference] = None
+  
+  def isEmpty = (index == -1)
+}
+
+class TransactorListener(client: Client, datastore: Datastore)
+extends ClientStateListener with JournalListener {
+  private val logger = LoggerFactory.getLogger(classOf[TransactorListener])
+  private val exec = Executors.newSingleThreadExecutor() // serialized state
+  private val state = new TransactorListenerState
+  private var observers: Set[StreamObserver[JournalEvent]] = Set()
+  
+  def start() {
+    client.listen(this)
+    client.addStateListener(this)
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(fetchCurrentBlock())
+      }})
+  }
+  
+  def addObserver(observer: StreamObserver[JournalEvent]) {
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(addStreamObserver(observer))
+      }})
+  }
+  
+  override def onStateChange(state: ClientState) {
+    // XXX Implement me
+  }
+  
+  override def onJournalCommit(entry: JournalEntry) {
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(journalCommitEvent(entry))
+      }})
+  }
+  
+  override def onJournalBlock(ref: Reference) {
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(journalBlockEvent(ref))
+      }})
+  }
+  
+  // serialized execution
+  private def addStreamObserver(observer: StreamObserver[JournalEvent]) {
+    // propagate errors without adding the observer
+    state.blockchain.foreach { ref => 
+      observer.onNext(TransactorService.journalBlockReferenceToEvent(ref))
+    }
+    state.block.foreach { entry =>
+      observer.onNext(TransactorService.journalEntryToEvent(entry))
+    }
+    observers += observer                        
+  }
+  
+  private def journalCommitEvent(entry: JournalEntry) {
+    if (entry.index > state.index) {
+      state.block += entry
+      state.index = entry.index
+      emitEvent(TransactorService.journalEntryToEvent(entry)) 
+    }
+  }
+  
+  private def journalBlockEvent(ref: Reference) {
+    state.blockchain = Some(ref)
+    state.block.clear()
+    emitEvent(TransactorService.journalBlockReferenceToEvent(ref))
+  }
+  
+  private def emitEvent(evt: JournalEvent) {
+    // TODO: parallelize event emission
+    var failed: Set[StreamObserver[JournalEvent]] = Set()
+    observers.foreach { observer =>
+      try {
+        observer.onNext(evt)
+      } catch {
+        case e: Throwable =>
+          logger.error(s"Error dispatching event to ${observer}", e)
+          failed += observer
+      }
+    }
+    observers --= failed
+  }
+  
+  private def fetchCurrentBlock() {
+    val block = Await.result(client.currentBlock, Duration.Inf)
+    if (state.isEmpty) {
+      state.index = block.index
+      state.block.clear()
+      state.block ++= block.entries
+      state.blockchain = block.chain
+      state.blockchain.foreach { ref =>
+        emitEvent(TransactorService.journalBlockReferenceToEvent(ref))
+      }
+      state.block.foreach { entry =>
+        emitEvent(TransactorService.journalEntryToEvent(entry))
+      }
+    } else {
+      // when recovering, we need to replay potentially missed entries
+      // XXX Implement me
+    }
+  }
+  
+  private def withErrorLog(expr: => Unit) {
+    try {
+      expr
+    } catch {
+      case e: Throwable =>
+        logger.error("Unhandled exception in task", e)
+    }
+  }
+}
 
 class TransactorService(client: Client, datastore: Datastore)
                        (implicit val executionContext: ExecutionContext)
   extends TransactorServiceGrpc.TransactorService {
-  private val logger = LoggerFactory.getLogger(classOf[TransactorService])
-  
+  private val logger = LoggerFactory.getLogger(classOf[TransactorService])  
+  private val listener = new TransactorListener(client, datastore)
+  listener.start()
+
   override def lookupChain(request: Transactor.MultihashReference):
   Future[Transactor.MultihashReference] = {
     val ref = MultiHash.fromBase58(request.reference)
@@ -106,7 +227,7 @@ class TransactorService(client: Client, datastore: Datastore)
 
   override def journalStream(request: JournalStreamRequest,
                              observer: StreamObserver[JournalEvent]) {
-    throw new RuntimeException("XXX Implement me")
+    listener.addObserver(observer)
   }
 
 
@@ -130,8 +251,8 @@ object TransactorService {
       )
   }
   
-  def journalBlockToEvent(ref: Reference) = {
-    Event.JournalBlockEvent(refToRPCMultihashRef(ref))
+  def journalBlockReferenceToEvent(ref: Reference): JournalEvent = {
+    JournalEvent().withEvent(Event.JournalBlockEvent(refToRPCMultihashRef(ref)))
   }
 
   def journalEntryToEvent(entry: JournalEntry): JournalEvent = {
