@@ -9,32 +9,40 @@
       - libtool
       - autoconf
 
-- name: clone grpc git repo
-  git: repo=https://github.com/grpc/grpc.git
-       dest={{ grpc_source_dir }}
-       version={{ grpc_version }}
+- name: update pip
+  pip: name=pip state=latest
   become: yes
   become_user: root
 
-- name: install gprc python dependencies
-  command: pip install -r requirements.txt
-  args:
-    chdir: "{{ grpc_source_dir }}"
+- name: clone grpc git repo
+  git: repo={{ grpc_repo }}
+       dest={{ grpc_source_dir }}
+       version={{ grpc_checkout }}
   become: yes
   become_user: root
 
 - name: install grpc python module
-  command: env GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+  shell: >
+    make clean && \
+    pip install -r requirements.txt && \
+    env GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install . && \
+    rm -f {{ grpc_source_dir }}/.grpc_python_version_installed_* && \
+    touch "{{ grpc_source_dir }}/.grpc_python_version_installed_{{ grpc_checkout }}"
   args:
     chdir: "{{ grpc_source_dir }}"
-    creates: "/usr/local/lib/python2.7/dist-packages/grpcio-{{ grpc_version_number }}.egg-info"
+    creates: "{{grpc_source_dir}}/.grpc_python_version_installed_{{ grpc_checkout }}"
   become: yes
   become_user: root
 
 - name: build and install grpc
-  shell: make install && rm -f ./.grpc_version_installed_* && touch ".grpc_version_installed_{{grpc_version}}"
+  shell: > 
+    make clean && \
+    make install && \
+    (cd third_party/protobuf && make install && make clean) && \
+    rm -f {{ grpc_source_dir }}/.grpc_version_installed_* && \
+    touch "{{ grpc_source_dir }}/.grpc_version_installed_{{grpc_checkout}}"
   args:
     chdir: "{{ grpc_source_dir }}"
-    creates: "{{grpc_source_dir}}/.grpc_version_installed_{{grpc_version}}"
+    creates: "{{ grpc_source_dir }}/.grpc_version_installed_{{grpc_checkout}}"
   become: yes
   become_user: root
