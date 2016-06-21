@@ -14,9 +14,7 @@ message UpdateRequest {
     bytes chainCellCbor = 1;
 }
 
-message JournalStreamRequest {
-    MultihashReference lastJournalBlock = 1;
-}
+message JournalStreamRequest {}
 
 message UpdateChainResult {
     MultihashReference canonical = 1;
