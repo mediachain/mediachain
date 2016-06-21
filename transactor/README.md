@@ -82,8 +82,10 @@ io.mediachain.transactor.ssl.keyStoreKeyPassword: $KEYSTOREKEYPASS
 ### RPC facade configuration
 Required properties:
 ```
-io.mediachain.transactor.rpc.port: 10001
-io.mediachain.transactor.rpc.control: /path/to/rpc/killfile-dir
+io.mediachain.transactor.rpc.port: 10001                         # RPC Port
+io.mediachain.transactor.rpc.control: /path/to/rpc/killfile-dir  # Control directory
+io.mediachain.transactor.dynamo.baseTable: Test                  # DynamoDB Table
+io.mediachain.transactor.dynamo.endpoint: http://localhost:8000  # Optional
 ```
 
 With optional SSL support configured the same way as the transactor.
