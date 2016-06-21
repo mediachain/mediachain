@@ -4,7 +4,7 @@ object RpcService {
   import io.mediachain.copycat.{Client, TransactorService}
   import io.mediachain.datastore.DynamoDatastore
   import io.mediachain.util.Properties
-  import com.amazonaws.auth.BasicAWSCredentials
+  import io.grpc.Server
   import scala.concurrent.ExecutionContext
   import java.util.concurrent.Executors
 
@@ -32,26 +32,24 @@ object RpcService {
 
     val threads = Math.max(4, Runtime.getRuntime.availableProcessors)
     implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(threads))
-    val executor = Executors.newFixedThreadPool(threads)
     
     val datastoreConfig = DynamoDatastore.Config.fromProperties(conf)
     val datastore = new DynamoDatastore(datastoreConfig)
 
-    val txService = new TransactorService(client, executor, datastore)
+    val txService = new TransactorService(client, datastore)
 
-    TransactorService.createServerThread(txService,
-      Executors.newSingleThreadExecutor(),
-      rpcPort
-    )
+    val server = TransactorService.createServer(txService, rpcPort)
 
     logger.info(s"started rpc service on port $rpcPort")
-    serverControlLoop(ctldir, client)
+    server.start()
+    serverControlLoop(ctldir, server, client)
   }
   
-  def serverControlLoop(ctldir: String, client: Client) {
+  def serverControlLoop(ctldir: String, server: Server, client: Client) {
     def shutdown(what: String) {
       logger.info("shutting down")
       client.close()
+      server.shutdown()
       System.exit(0)
     }
     

@@ -18,9 +18,7 @@ import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event
 import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, Future}
 
-class TransactorService(client: Client,
-                        executor: ExecutorService,
-                        datastore: Datastore)
+class TransactorService(client: Client, datastore: Datastore)
                        (implicit val executionContext: ExecutionContext)
   extends TransactorServiceGrpc.TransactorService {
   private val logger = LoggerFactory.getLogger(classOf[TransactorService])
@@ -152,22 +150,16 @@ object TransactorService {
   }
 
 
-  def createServerThread(service: TransactorService,
-                         executor: ExecutorService,
-                         port: Int)
-                        (implicit executionContext: ExecutionContext)
-  : Unit = {
+  def createServer(service: TransactorService, port: Int)
+                  (implicit executionContext: ExecutionContext)
+  = {
     import scala.language.existentials
-
+    
     val builder = ServerBuilder.forPort(port)
     val server = builder.addService(
       TransactorServiceGrpc.bindService(service, executionContext)
     ).build
-
-    executor.submit(new Runnable {
-      def run {
-        server.start
-      }})
+    server
   }
 }
 
