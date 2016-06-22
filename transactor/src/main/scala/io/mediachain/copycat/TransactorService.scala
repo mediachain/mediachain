@@ -30,6 +30,7 @@ class TransactorListenerState {
 
 class TransactorListener(client: Client, datastore: Datastore)
 extends ClientStateListener with JournalListener {
+  type Observer = StreamObserver[JournalEvent]
   private val logger = LoggerFactory.getLogger(classOf[TransactorListener])
   // state: a view of the current block
   private val state = new TransactorListenerState
@@ -38,9 +39,11 @@ extends ClientStateListener with JournalListener {
   //  dispatch: multi threaded event dispatch
   private val exec = Executors.newSingleThreadExecutor()
   private val dispatch = Executors.newFixedThreadPool(Math.max(4, Runtime.getRuntime.availableProcessors))
-  // observers: a Map of observer to a queue with pending events for dispatch
-  private var observers: Map[StreamObserver[JournalEvent], BlockingQueue[JournalEvent]] = Map()
-  
+  // observers: a Map of observer to a queue with pending events for in-order dispatch
+  private var observers: Map[Observer, BlockingQueue[JournalEvent]] = Map()
+  // dispatching: set of currently dispatching observers to resolve races
+  private var dispatching: Set[Observer] = Set()
+
   def start() {
     client.listen(this)
     client.addStateListener(this)
@@ -50,14 +53,14 @@ extends ClientStateListener with JournalListener {
       }})
   }
   
-  def addObserver(observer: StreamObserver[JournalEvent]) {
+  def addObserver(observer: Observer) {
     exec.submit(new Runnable {
       def run {
         withErrorLog(addStreamObserver(observer))
       }})
   }
   
-  def removeObserver(observer: StreamObserver[JournalEvent]) {
+  def removeObserver(observer: Observer) {
     exec.submit(new Runnable {
       def run {
         withErrorLog(removeStreamObserver(observer))
@@ -83,7 +86,7 @@ extends ClientStateListener with JournalListener {
   }
   
   // serialized execution
-  private def addStreamObserver(observer: StreamObserver[JournalEvent]) {
+  private def addStreamObserver(observer: Observer) {
     logger.info(s"Adding stream observer ${observer}")
     val queue = new LinkedBlockingQueue[JournalEvent]
     state.blockchain.foreach { ref => 
@@ -93,13 +96,10 @@ extends ClientStateListener with JournalListener {
       queue.add(TransactorService.journalEntryToEvent(entry))
     }
     observers += (observer -> queue)
-    dispatch.submit(new Runnable {
-      def run {
-        dispatchEvents(observer)
-      }})
+    scheduleDispatch(observer)
   }
   
-  private def removeStreamObserver(observer: StreamObserver[JournalEvent]) {
+  private def removeStreamObserver(observer: Observer) {
     logger.info(s"Removing stream observer ${observer}")
     observers -= observer
   }
@@ -124,12 +124,34 @@ extends ClientStateListener with JournalListener {
     observers.foreach {
       case (observer, queue) =>
         queue.add(evt)
-        if (queue.size == 1) {
+        scheduleDispatch(observer)
+    }
+  }
+  
+  private def scheduleDispatch(observer: Observer) {
+    if (!dispatching.contains(observer)) {
+      dispatching += observer
+      dispatch.submit(new Runnable {
+        def run {
+          withErrorLog(dispatchEvents(observer))
+        }})
+    }
+  }
+  
+  private def rescheduleDispatch(observer: Observer) {
+    observers.get(observer) match {
+      case Some(queue) =>
+        if (queue.isEmpty) {
+          dispatching -= observer
+        } else {
           dispatch.submit(new Runnable {
-            def run { 
-              dispatchEvents(observer)
+            def run {
+              withErrorLog(dispatchEvents(observer))
             }})
-        }
+        } 
+        
+      case None =>
+        dispatching -= observer
     }
   }
   
@@ -154,7 +176,7 @@ extends ClientStateListener with JournalListener {
   }
   
   // parallel dispatch
-  private def dispatchEvents(observer: StreamObserver[JournalEvent]) {
+  private def dispatchEvents(observer: Observer) {
     def loop(queue: BlockingQueue[JournalEvent]) {
       val next = queue.poll()
       if (next != null) {
@@ -165,6 +187,10 @@ extends ClientStateListener with JournalListener {
     
     try {
       observers.get(observer).foreach(loop(_))
+      exec.submit(new Runnable {
+        def run {
+          withErrorLog(rescheduleDispatch(observer))
+        }})
     } catch {
       case e: StatusRuntimeException if e.getStatus == Status.CANCELLED =>
         logger.info(s"Observer ${observer} cancelled; scheduling removal")
