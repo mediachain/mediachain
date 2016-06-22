@@ -102,6 +102,7 @@ extends ClientStateListener with JournalListener {
   private def removeStreamObserver(observer: Observer) {
     logger.info(s"Removing stream observer ${observer}")
     observers -= observer
+    dispatching -= observer
   }
   
   private def journalCommitEvent(entry: JournalEntry) {
