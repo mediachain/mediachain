@@ -1,10 +1,9 @@
 package io.mediachain.copycat
 
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.{Executors, BlockingQueue, LinkedBlockingQueue}
 
 import cats.data.Xor
-import dogs.Streaming
+import com.amazonaws.AmazonClientException
 import io.grpc.stub.StreamObserver
 import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
 import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
@@ -15,204 +14,313 @@ import io.mediachain.protocol.Transactor.{JournalError, JournalListener}
 import io.mediachain.protocol.transactor.Transactor.{MultihashReference => _, _}
 import io.mediachain.protocol.transactor.Transactor
 import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event
-import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event.JournalBlockPublished
 import org.slf4j.LoggerFactory
-
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration.{Duration, SECONDS}
-import scala.collection.mutable.{Queue => MQueue, Stack => MStack}
+import scala.concurrent.duration.Duration
+import scala.collection.mutable.{ArrayBuffer, Buffer}
+import scala.util.{Try, Success, Failure}
 
-class BackfillRunner(offset: Reference,
-                     head: Reference,
-                     observer: StreamObserver[JournalEvent],
-                     datastore: Datastore)
-  extends Runnable {
-  private val logger = LoggerFactory.getLogger(classOf[BackfillRunner])
-  private val backfillStack: MStack[JournalEvent] = MStack()
-  private val queue: MQueue[JournalEvent] = MQueue()
-  private var backfilled: AtomicBoolean = new AtomicBoolean(false)
-  @volatile private var queueEmptied = false
+class TransactorListenerState {
+  var index: BigInt = -1
+  var block: Buffer[JournalEntry] = new ArrayBuffer
+  var blockchain: Option[Reference] = None
+  var streaming: Boolean = false
+  
+  def isEmpty = (index == -1)
+}
 
-  /** For the time being, this naively executes in a single thread.
-    * This should eventually become a batched read of a few chain blocks
-    * followed by re-enqueuing this worker in the executor with an
-    * updated offset.
-    */
-  override def run(): Unit = {
-    val chain = datastore.get(head).collect {
-      case x: JournalBlock => x.toStream(datastore)
-    }.getOrElse(Streaming.empty).map(_.chain)
+class TransactorListener(client: Client, datastore: Datastore)
+extends ClientStateListener with JournalListener {
+  type Observer = StreamObserver[JournalEvent]
+  private val logger = LoggerFactory.getLogger(classOf[TransactorListener])
+  // state: a view of the current block
+  private val state = new TransactorListenerState
+  // execution contexts
+  //  exec: single threaded state manipulation
+  //  dispatch: multi threaded event dispatch
+  private val exec = Executors.newSingleThreadExecutor()
+  private val dispatch = Executors.newFixedThreadPool(Math.max(4, Runtime.getRuntime.availableProcessors))
+  // observers: a Map of observer to a queue with pending events for in-order dispatch
+  private var observers: Map[Observer, BlockingQueue[JournalEvent]] = Map()
+  // dispatching: set of currently dispatching observers to resolve races
+  private var dispatching: Set[Observer] = Set()
 
-    logger.debug(s"backfiller started. stream: $chain")
-
-    /*
-    a note: i'd really prefer to do something like
-
-    stream.flatMap(_.map(Streaming.apply).getOrElse(Streaming.empty))
-
-    but i'm not sure if that breaks the original continuation i'd set
-    up. i'll investigate. @bigs
-     */
-    Streaming.cons(Some(head), chain)
-      .takeWhile(x => x.isDefined && !x.contains(offset))
-      .iterator
-      .flatten
-      .foreach(backfillBlock)
-
-    logger.debug("filled backfill stack")
-
-    backfillStack.foreach(e => {
-        logger.debug(s"sending backfilled event: $e")
-        observer.onNext(e)
-      }
-    )
-
-    logger.debug("backfill complete")
-
-    backfilled.set(true)
-    while (queue.nonEmpty) {
-      observer.onNext(queue.dequeue())
+  def start() {
+    client.listen(this)
+    client.addStateListener(this)
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(fetchCurrentBlock())
+      }})
+  }
+  
+  def addObserver(observer: Observer) {
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(addStreamObserver(observer))
+      }})
+  }
+  
+  def removeObserver(observer: Observer) {
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(removeStreamObserver(observer))
+      }})
+  }
+  
+  override def onStateChange(cstate: ClientState) {
+    cstate match {
+      case ClientState.Suspended =>
+        exec.submit(new Runnable {
+            def run {
+              logger.info("Copycat connection suspened; suspending streaming")
+              state.streaming = false
+            }})
+        
+      case ClientState.Connected =>
+        exec.submit(new Runnable {
+          def run {
+            logger.info("Copycat connection recovered; synchronizing current block")
+            withErrorLog(fetchCurrentBlock())
+          }})
+        
+      case ClientState.Disconnected =>
+        exec.submit(new Runnable {
+          def run {
+            logger.info("Copycat connection severed; disconnecting observers")
+            withErrorLog(disconnect())
+          }})
     }
-    logger.debug("event queue empty")
-    queueEmptied = true
+  }
+  
+  override def onJournalCommit(entry: JournalEntry) {
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(journalCommitEvent(entry))
+      }})
+  }
+  
+  override def onJournalBlock(ref: Reference) {
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(journalBlockEvent(ref))
+      }})
+  }
+  
+  // serialized execution
+  private def addStreamObserver(observer: Observer) {
+    logger.info(s"Adding stream observer ${observer}")
+    val queue = new LinkedBlockingQueue[JournalEvent]
+    state.blockchain.foreach { ref => 
+      queue.add(TransactorService.journalBlockReferenceToEvent(ref))
+    }
+    state.block.foreach { entry =>
+      queue.add(TransactorService.journalEntryToEvent(entry))
+    }
+    observers += (observer -> queue)
+    scheduleDispatch(observer)
+  }
+  
+  private def removeStreamObserver(observer: Observer) {
+    logger.info(s"Removing stream observer ${observer}")
+    observers -= observer
+    dispatching -= observer
+  }
+  
+  private def journalCommitEvent(entry: JournalEntry) {
+    if (state.streaming) {
+      state.block += entry
+      state.index = entry.index
+      emitEvent(TransactorService.journalEntryToEvent(entry)) 
+    }
+  }
+  
+  private def journalBlockEvent(ref: Reference) {
+    if (state.streaming) {
+      state.blockchain = Some(ref)
+      state.block.clear()
+      emitEvent(TransactorService.journalBlockReferenceToEvent(ref))
+    }
+  }
+  
+  private def emitEvent(evt: JournalEvent) {
+    observers.foreach {
+      case (observer, queue) =>
+        queue.add(evt)
+        scheduleDispatch(observer)
+    }
+  }
+  
+  private def scheduleDispatch(observer: Observer) {
+    if (!dispatching.contains(observer)) {
+      dispatching += observer
+      dispatch.submit(new Runnable {
+        def run {
+          withErrorLog(dispatchEvents(observer))
+        }})
+    }
+  }
+  
+  private def rescheduleDispatch(observer: Observer) {
+    observers.get(observer) match {
+      case Some(queue) =>
+        if (queue.isEmpty) {
+          dispatching -= observer
+        } else {
+          dispatch.submit(new Runnable {
+            def run {
+              withErrorLog(dispatchEvents(observer))
+            }})
+        } 
+        
+      case None =>
+        dispatching -= observer
+    }
   }
 
-  def backfillBlock(blockRef: Reference): Unit = {
-    import TransactorService.refToRPCMultihashRef
-    val event = JournalEvent(
-      JournalBlockPublished(refToRPCMultihashRef(blockRef))
-    )
-    backfillStack.push(event)
-
-    // TODO: handle failure to retrieve block
-    datastore.getAs[JournalBlock](blockRef).foreach { block =>
-      val events = block.entries.reverse.map(TransactorService.journalEntryToEvent)
-      events.foreach(backfillStack.push)
+  private def disconnect() {
+    state.streaming = false
+    observers.keys.foreach { observer =>
+      Try(observer.onError(
+        new StatusRuntimeException(
+          Status.UNAVAILABLE.withDescription("Transactor network error")
+        )))
     }
+    observers = Map()
+    dispatching = Set()
   }
-
-  def onNext(event: JournalEvent): Unit = {
-    if (backfilled.get) {
-      while (!queueEmptied) {
-        Thread.`yield`()
+  
+  private def fetchCurrentBlock() {
+    def setCurrentBlock(block: JournalBlock) {
+      state.index = block.index
+      state.block.clear()
+      state.block ++= block.entries
+      state.blockchain = block.chain
+      state.blockchain.foreach { ref =>
+        emitEvent(TransactorService.journalBlockReferenceToEvent(ref))
       }
-
-      observer.onNext(event)
+      state.block.foreach { entry =>
+        emitEvent(TransactorService.journalEntryToEvent(entry))
+      }
+    }
+    
+    def extendCurrentBlock(block: JournalBlock) {
+      val newentries = block.entries.drop(state.block.length)
+      state.index = block.index
+      state.block ++= newentries
+      newentries.foreach { entry =>
+        emitEvent(TransactorService.journalEntryToEvent(entry))
+      }
+    }
+    
+    def fetchBlocks(chainHead: Option[Reference]) = {
+      def loop(ref: Reference, blocks: List[JournalBlock])
+      : List[JournalBlock]
+      = {
+        val block = getBlock(ref)
+        if (block.chain == state.blockchain) {
+          block :: blocks
+        } else if (block.chain.isEmpty) {
+          throw new RuntimeException("PANIC: Blockchain divergence detected")
+        } else {
+          loop(block.chain.get, block :: blocks)
+        }
+      }
+      
+      chainHead match {
+        case Some(ref) => loop(ref, Nil)
+        case None => Nil
+      }
+    }
+    
+    def getBlock(ref: Reference) = {
+      def loop(retry: Int): JournalBlock = {
+        Try(datastore.getAs[JournalBlock](ref)) match {
+          case Success(Some(block)) => block
+          case Success(None) =>
+            val backoff = Client.randomBackoff(retry)
+            logger.info(s"Missing block ${ref}; retrying in ${backoff} ms")
+            Thread.sleep(backoff)
+            loop(retry + 1)
+            
+            // be tolerant of dynamo datastore transient failures
+          case Failure(err: AmazonClientException) =>
+            logger.error("AWS error", err)
+            val backoff = Client.randomBackoff(retry)
+            logger.info(s"Retrying ${ref} in ${backoff} ms")
+            Thread.sleep(backoff)
+            loop(retry + 1)
+            
+          case Failure(err: Throwable) =>
+            throw err
+        }
+      }
+      
+      loop(0)
+    }
+    
+    val block = Await.result(client.currentBlock, Duration.Inf)
+    if (state.isEmpty) {
+      setCurrentBlock(block)
+    } else if (block.chain == state.blockchain) {
+      extendCurrentBlock(block)
+    } else if (block.chain.isEmpty) {
+      throw new RuntimeException("PANIC: Blockchain divergence detected")
     } else {
-      queue.enqueue(event)
+      val xblocks = fetchBlocks(block.chain)
+      extendCurrentBlock(xblocks.head)
+      xblocks.tail.foreach(setCurrentBlock(_))
+      setCurrentBlock(block)
+    }
+    
+    state.streaming = true
+  }
+  
+  // parallel dispatch
+  private def dispatchEvents(observer: Observer) {
+    def loop(queue: BlockingQueue[JournalEvent]) {
+      val next = queue.poll()
+      if (next != null) {
+        observer.onNext(next)
+        loop(queue)
+      }
+    }
+    
+    try {
+      observers.get(observer).foreach(loop(_))
+      exec.submit(new Runnable {
+        def run {
+          withErrorLog(rescheduleDispatch(observer))
+        }})
+    } catch {
+      case e: StatusRuntimeException if e.getStatus == Status.CANCELLED =>
+        logger.info(s"Observer ${observer} cancelled; scheduling removal")
+        removeObserver(observer)
+        
+      case e: Exception =>
+        logger.error(s"Error dispatching event to ${observer}", e)
+        Try(observer.onError(e))
+        removeObserver(observer)
+    }
+  }
+
+  // utils
+  private def withErrorLog(expr: => Unit) {
+    try {
+      expr
+    } catch {
+      case e: Throwable =>
+        logger.error("Unhandled exception in task", e)
     }
   }
 }
 
-class TransactorListener(executor: ExecutorService,
-                         datastore: Datastore,
-                         client: Client)
-  extends ClientStateListener with JournalListener {
-
-  import collection.mutable.{Set => MSet, Map => MMap}
-  import TransactorService.refToRPCMultihashRef
-
-  type OnNextFn = JournalEvent => Unit
-  type ObserverMap = MMap[StreamObserver[JournalEvent], OnNextFn]
-
-  private val logger = LoggerFactory.getLogger(classOf[TransactorService])
-  private val observers: ObserverMap = MMap()
-
-  private def makeContinuation(offset: MultihashReference,
-                               streamObserver: StreamObserver[JournalEvent])
-  : OnNextFn = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-
-    Await.result(client.currentBlock, Duration(30, SECONDS)) match {
-      case JournalBlock(_, Some(chain), _) =>
-        val backfiller =
-          new BackfillRunner(offset, chain, streamObserver, datastore)
-        executor.execute(backfiller)
-
-        backfiller.onNext
-      case _ =>
-        // for now, just subscribe them. we can decide on error handling
-        // logic later.
-        streamObserver.onNext
-    }
-
-  }
-
-  def addObserver(streamObserver: StreamObserver[JournalEvent],
-                  offset: Option[MultihashReference]): Unit = {
-    observers.synchronized {
-      val onNext: OnNextFn = offset match {
-        case Some(o) => makeContinuation(o, streamObserver)
-        case _ => streamObserver.onNext
-      }
-
-      observers += (streamObserver -> onNext)
-    }
-  }
-
-  override def onStateChange(state: ClientState): Unit = {
-    logger.info(s"copycat state changed to $state")
-    if (state == ClientState.Disconnected) {
-      observers.synchronized {
-        observers.foreach { case (observer, _) =>
-          observer.onError(
-            new StatusRuntimeException(
-              Status.UNAVAILABLE
-                .withDescription("disconnected from transactor cluster")
-            )
-          )
-        }
-        observers.clear()
-      }
-    }
-  }
-
-  override def onJournalCommit(entry: JournalEntry): Unit = {
-    val event = TransactorService.journalEntryToEvent(entry)
-    publishEvent(event)
-  }
-
-  override def onJournalBlock(ref: Reference): Unit = {
-    import JournalEvent.Event
-    val event = Event.JournalBlockPublished(
-      refToRPCMultihashRef(ref)
-    )
-
-    publishEvent(JournalEvent().withEvent(event))
-  }
-
-
-  private def publishEvent(event: JournalEvent): Unit = {
-    observers.synchronized {
-      val cancelledObservers: MSet[StreamObserver[JournalEvent]] = MSet()
-      observers.foreach { case (observer, onNext) =>
-        try {
-          onNext(event)
-        } catch {
-          case e: StatusRuntimeException if e.getStatus == Status.CANCELLED =>
-            // if the client killed the connection, remove the observer
-            cancelledObservers.add(observer)
-          case t: Throwable =>
-            throw t
-        }
-      }
-
-      observers --= cancelledObservers
-    }
-  }
-}
-
-class TransactorService(client: Client,
-                        executor: ExecutorService,
-                        datastore: Datastore,
-                        timeout: Duration = Duration(120, SECONDS))
+class TransactorService(client: Client, datastore: Datastore)
                        (implicit val executionContext: ExecutionContext)
   extends TransactorServiceGrpc.TransactorService {
-  private val logger = LoggerFactory.getLogger(classOf[TransactorService])
-  private val listener = new TransactorListener(executor, datastore, client)
-
-  client.addStateListener(listener)
-  client.listen(listener)
+  private val logger = LoggerFactory.getLogger(classOf[TransactorService])  
+  private val listener = new TransactorListener(client, datastore)
+  listener.start()
 
   override def lookupChain(request: Transactor.MultihashReference):
   Future[Transactor.MultihashReference] = {
@@ -296,17 +404,8 @@ class TransactorService(client: Client,
   }
 
   override def journalStream(request: JournalStreamRequest,
-    responseObserver: StreamObserver[JournalEvent]): Unit = {
-
-    val offset = for {
-      rpcRef <- request.lastJournalBlock
-      multihash = MultiHash.fromBase58(rpcRef.reference).getOrElse(
-        throw new StatusRuntimeException(
-          Status.INVALID_ARGUMENT.withDescription("Multihash reference is invalid")
-        ))
-    } yield MultihashReference(multihash)
-
-    listener.addObserver(responseObserver, offset)
+                             observer: StreamObserver[JournalEvent]) {
+    listener.addObserver(observer)
   }
 
 
@@ -329,14 +428,18 @@ object TransactorService {
         s"Expected MultihashReference, got type ${r.getClass.getTypeName}"
       )
   }
+  
+  def journalBlockReferenceToEvent(ref: Reference): JournalEvent = {
+    JournalEvent().withEvent(Event.JournalBlockEvent(refToRPCMultihashRef(ref)))
+  }
 
   def journalEntryToEvent(entry: JournalEntry): JournalEvent = {
     val event = entry match {
       case CanonicalEntry(_, ref) =>
-        Event.CanonicalInserted(refToRPCMultihashRef(ref))
+        Event.InsertCanonicalEvent(refToRPCMultihashRef(ref))
 
       case ChainEntry(_, ref, chain, chainPrevious) =>
-        Event.ChainUpdated(
+        Event.UpdateChainEvent(
           UpdateChainResult(chainPrevious = chainPrevious.map(refToRPCMultihashRef))
             .withCanonical(refToRPCMultihashRef(ref))
             .withChain(refToRPCMultihashRef(chain))
@@ -346,22 +449,16 @@ object TransactorService {
   }
 
 
-  def createServerThread(service: TransactorService,
-                         executor: ExecutorService,
-                         port: Int)
-                        (implicit executionContext: ExecutionContext)
-  : Unit = {
+  def createServer(service: TransactorService, port: Int)
+                  (implicit executionContext: ExecutionContext)
+  = {
     import scala.language.existentials
-
+    
     val builder = ServerBuilder.forPort(port)
     val server = builder.addService(
       TransactorServiceGrpc.bindService(service, executionContext)
     ).build
-
-    executor.submit(new Runnable {
-      def run {
-        server.start
-      }})
+    server
   }
 }
 
