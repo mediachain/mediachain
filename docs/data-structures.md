@@ -28,7 +28,8 @@ consistent manner.
 
 ### Artefacts
 
-From our first RFC:
+From our first
+[RFC](https://github.com/mediachain/mediachain/blob/master/rfc/mediachain-rfc-1.md):
 
 ```
 Artefact = {
@@ -51,20 +52,22 @@ signatures, etc. The `meta` field contains a sub-object wherein the actual
 metadata is meant to live, so that our internal schema can grow safely, without
 risk of colliding with attributes required by the system.
 
-We use Protocol Labs' `multihash` self-describing hashing scheme for hashing the
-contents of our objects. IPFS uses an object's `multihash` as its address within
-the system--all objects are retrievable by their hash. IPFS also features a
-built in faculty for linking objects by their content-addresses called IPLD.
-Under IPLD, IPFS users may express traversals over arbitrary graphs of linked
-objects via a pathing markup very similar to that of HTTP. Links are encoded
-using a special property name/sub-object structure:
+We use Protocol Labs' [multihash](https://github.com/jbenet/multihash)
+self-describing hashing scheme for hashing the contents of our objects. IPFS
+uses an object's `multihash` as its address within the system--all objects are
+retrievable by their hash. IPFS also features a built in faculty for linking
+objects by their content-addresses called
+[IPLD](https://github.com/ipfs/specs/tree/master/ipld). Under IPLD, IPFS users
+may express traversals over arbitrary graphs of linked objects via a pathing
+markup very similar to that of HTTP. Links are encoded using a special property
+name/sub-object structure:
 
 ```
 {myLink: {@link: <reference>}}
 ```
 
-If this object had a hash of <foobar>, one could access the object it linkes to
-by looking up the path `/ipfs/<foobar>/myLink`. Following this, all instances of
+If this object had a hash of <hash>, one could access the object it links to by
+looking up the path `/ipfs/<hash>/myLink`. Following this, all instances of
 `<Reference>` in our first RFC correspond to objects of this structure.
 
 ### Entities
