@@ -213,7 +213,7 @@ extends ClientStateListener with JournalListener {
       }
     }
     
-    def fetchBlocks(hd: Option[Reference]) = {
+    def fetchBlocks(chainHead: Option[Reference]) = {
       def loop(ref: Reference, blocks: List[JournalBlock])
       : List[JournalBlock]
       = {
@@ -227,7 +227,7 @@ extends ClientStateListener with JournalListener {
         }
       }
       
-      hd match {
+      chainHead match {
         case Some(ref) => loop(ref, Nil)
         case None => Nil
       }
