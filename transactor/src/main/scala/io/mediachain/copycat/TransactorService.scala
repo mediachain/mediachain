@@ -297,7 +297,7 @@ extends ClientStateListener with JournalListener {
         logger.info(s"Observer ${observer} cancelled; scheduling removal")
         removeObserver(observer)
         
-      case e: Throwable =>
+      case e: Exception =>
         logger.error(s"Error dispatching event to ${observer}", e)
         Try(observer.onError(e))
         removeObserver(observer)
