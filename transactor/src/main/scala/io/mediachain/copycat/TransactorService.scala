@@ -327,7 +327,10 @@ class TransactorService(client: Client, datastore: Datastore)
     val ref = MultiHash.fromBase58(request.reference)
       .map(MultihashReference.apply)
       .getOrElse {
-        throw new StatusRuntimeException(Status.INVALID_ARGUMENT)
+        throw new StatusRuntimeException(
+          Status.INVALID_ARGUMENT.withDescription(
+            "Invalid multihash reference"
+          ))
       }
 
     client
@@ -336,7 +339,11 @@ class TransactorService(client: Client, datastore: Datastore)
         x.map { ref =>
           TransactorService.refToRPCMultihashRef(ref)
         }.getOrElse {
-          throw new StatusRuntimeException(Status.NOT_FOUND)
+          throw new StatusRuntimeException(
+            Status.NOT_FOUND.withDescription(
+              s"Cannot find canonical with ref $ref"
+            )
+          )
         }
       }
   }
