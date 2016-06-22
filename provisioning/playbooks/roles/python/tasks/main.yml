@@ -1,0 +1,17 @@
+---
+
+- block:
+    - name: install pip
+      apt: name=python-pip state=present
+
+    - name: install python-dev
+      apt: name=python-dev state=present
+
+    - name: install virtualenv
+      apt: name=python-virtualenv state=present
+
+    - name: update pip to latest version
+      pip: name=pip state=latest
+  
+  become: yes
+  become_user: "root"

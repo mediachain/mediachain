@@ -1,6 +1,7 @@
 ---
 - hosts: transactor-provisioning
   roles:
+    - apt_upgrade
     - transactor
 
   tasks:

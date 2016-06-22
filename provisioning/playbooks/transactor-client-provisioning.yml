@@ -1,15 +1,19 @@
 ---
 - hosts: transactor-client-provisioning
   roles:
+    - apt_upgrade
     - transactor
+    - python
+    - {role: grpc, grpc_checkout: "be223358795b645416e801727f4d3fcad3d73964" }
 
   tasks:
-  - name: install pip
-    apt: name=python-pip state=present
 
-  - name: update to latest pip
-    pip: name=pip state=latest
-    
+  - name: install libjpeg-dev
+    apt: name=libjpeg-dev state=present
+
+  - name: install libpng-dev
+    apt: name=libpng-dev state=present
+
   - name: checkout mediachain
     git: repo=https://github.com/mediachain/mediachain.git dest=/home/ubuntu/mediachain
 

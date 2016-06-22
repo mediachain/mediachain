@@ -7,7 +7,7 @@
   get_url:
     url="http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_{{dynamodb_version}}.tar.gz"
     sha256sum="{{dynamodb_sha}}"
-    dest=/opt/dynamodb/
+    dest=/opt/dynamodb/dynamodb_local_{{dynamodb_version}}.tar.gz
   notify:
    - Restart DynamoDB
   register: dynamodb_download

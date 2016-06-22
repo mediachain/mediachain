@@ -1,0 +1,4 @@
+---
+grpc_repo: https://github.com/grpc/grpc.git
+grpc_source_dir: /opt/grpc
+grpc_checkout: release-0_14_0
