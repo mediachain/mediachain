@@ -68,7 +68,25 @@ extends ClientStateListener with JournalListener {
   }
   
   override def onStateChange(state: ClientState) {
-    // XXX Implement me
+    state match {
+      case ClientState.Suspended =>
+        exec.submit(new Runnable {
+            def run {
+              TransactorListener.this.state.streaming = false
+            }})
+        
+      case ClientState.Connected =>
+        exec.submit(new Runnable {
+          def run {
+            withErrorLog(fetchCurrentBlock())
+          }})
+        
+      case ClientState.Disconnected =>
+        exec.submit(new Runnable {
+          def run {
+            withErrorLog(disconnect())
+          }})
+    }
   }
   
   override def onJournalCommit(entry: JournalEntry) {
@@ -154,6 +172,19 @@ extends ClientStateListener with JournalListener {
       case None =>
         dispatching -= observer
     }
+  }
+
+  private def disconnect() {
+    logger.info("Disconnecting clients")
+    state.streaming = false
+    observers.keys.foreach { observer =>
+      Try(observer.onError(
+        new StatusRuntimeException(
+          Status.UNAVAILABLE.withDescription("Transactor network error")
+        )))
+    }
+    observers = Map()
+    dispatching = Set()
   }
   
   private def fetchCurrentBlock() {
