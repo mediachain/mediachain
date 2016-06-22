@@ -67,23 +67,26 @@ extends ClientStateListener with JournalListener {
       }})
   }
   
-  override def onStateChange(state: ClientState) {
-    state match {
+  override def onStateChange(cstate: ClientState) {
+    cstate match {
       case ClientState.Suspended =>
         exec.submit(new Runnable {
             def run {
-              TransactorListener.this.state.streaming = false
+              logger.info("Copycat connection suspened; suspending streaming")
+              state.streaming = false
             }})
         
       case ClientState.Connected =>
         exec.submit(new Runnable {
           def run {
+            logger.info("Copycat connection recovered; synchronizing current block")
             withErrorLog(fetchCurrentBlock())
           }})
         
       case ClientState.Disconnected =>
         exec.submit(new Runnable {
           def run {
+            logger.info("Copycat connection severed; disconnecting observers")
             withErrorLog(disconnect())
           }})
     }
@@ -175,7 +178,6 @@ extends ClientStateListener with JournalListener {
   }
 
   private def disconnect() {
-    logger.info("Disconnecting clients")
     state.streaming = false
     observers.keys.foreach { observer =>
       Try(observer.onError(
