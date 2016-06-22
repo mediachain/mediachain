@@ -1,0 +1,6 @@
+---
+
+- name: update system
+  apt: upgrade=yes
+  become: yes
+  become_user: "root"

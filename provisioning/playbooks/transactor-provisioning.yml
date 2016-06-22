@@ -1,14 +1,10 @@
 ---
 - hosts: transactor-provisioning
   roles:
+    - apt_upgrade
     - transactor
 
   tasks:
-  - name: update system
-    apt: upgrade=yes
-    become: yes
-    become_user: "root"
-
   - name: checkout mediachain
     git: repo=https://github.com/mediachain/mediachain.git dest=/home/ubuntu/mediachain
 
