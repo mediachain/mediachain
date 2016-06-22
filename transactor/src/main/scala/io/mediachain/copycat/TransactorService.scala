@@ -3,6 +3,7 @@ package io.mediachain.copycat
 import java.util.concurrent.{Executors, BlockingQueue, LinkedBlockingQueue}
 
 import cats.data.Xor
+import com.amazonaws.AmazonClientException
 import io.grpc.stub.StreamObserver
 import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
 import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
@@ -190,8 +191,7 @@ extends ClientStateListener with JournalListener {
   }
   
   private def fetchCurrentBlock() {
-    val block = Await.result(client.currentBlock, Duration.Inf)
-    if (state.isEmpty) {
+    def setCurrentBlock(block: JournalBlock) {
       state.index = block.index
       state.block.clear()
       state.block ++= block.entries
@@ -202,11 +202,78 @@ extends ClientStateListener with JournalListener {
       state.block.foreach { entry =>
         emitEvent(TransactorService.journalEntryToEvent(entry))
       }
-      state.streaming = true
-    } else {
-      // when recovering, we need to replay potentially missed entries
-      // XXX Implement me
     }
+    
+    def extendCurrentBlock(block: JournalBlock) {
+      val newentries = block.entries.drop(state.block.length)
+      state.index = block.index
+      state.block ++= newentries
+      newentries.foreach { entry =>
+        emitEvent(TransactorService.journalEntryToEvent(entry))
+      }
+    }
+    
+    def fetchBlocks(hd: Option[Reference]) = {
+      def loop(ref: Reference, blocks: List[JournalBlock])
+      : List[JournalBlock]
+      = {
+        val block = getBlock(ref)
+        if (block.chain == state.blockchain) {
+          block :: blocks
+        } else if (block.chain.isEmpty) {
+          throw new RuntimeException("PANIC: Blockchain divergence detected")
+        } else {
+          loop(block.chain.get, block :: blocks)
+        }
+      }
+      
+      hd match {
+        case Some(ref) => loop(ref, Nil)
+        case None => Nil
+      }
+    }
+    
+    def getBlock(ref: Reference) = {
+      def loop(retry: Int): JournalBlock = {
+        Try(datastore.getAs[JournalBlock](ref)) match {
+          case Success(Some(block)) => block
+          case Success(None) =>
+            val backoff = Client.randomBackoff(retry)
+            logger.info(s"Missing block ${ref}; retrying in ${backoff} ms")
+            Thread.sleep(backoff)
+            loop(retry + 1)
+            
+            // be tolerant of dynamo datastore transient failures
+          case Failure(err: AmazonClientException) =>
+            logger.error("AWS error", err)
+            val backoff = Client.randomBackoff(retry)
+            logger.info(s"Retrying ${ref} in ${backoff} ms")
+            Thread.sleep(backoff)
+            loop(retry + 1)
+            
+          case Failure(err: Throwable) =>
+            throw err
+        }
+      }
+      
+      loop(0)
+    }
+    
+    val block = Await.result(client.currentBlock, Duration.Inf)
+    if (state.isEmpty) {
+      setCurrentBlock(block)
+    } else if (block.chain == state.blockchain) {
+      extendCurrentBlock(block)
+    } else if (block.chain.isEmpty) {
+      throw new RuntimeException("PANIC: Blockchain divergence detected")
+    } else {
+      val xblocks = fetchBlocks(block.chain)
+      extendCurrentBlock(xblocks.head)
+      xblocks.tail.foreach(setCurrentBlock(_))
+      setCurrentBlock(block)
+    }
+    
+    state.streaming = true
   }
   
   // parallel dispatch
