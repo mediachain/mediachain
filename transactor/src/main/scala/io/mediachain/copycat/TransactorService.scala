@@ -23,6 +23,7 @@ class TransactorListenerState {
   var index: BigInt = -1
   var block: Buffer[JournalEntry] = new ArrayBuffer
   var blockchain: Option[Reference] = None
+  var streaming: Boolean = false
   
   def isEmpty = (index == -1)
 }
@@ -104,7 +105,7 @@ extends ClientStateListener with JournalListener {
   }
   
   private def journalCommitEvent(entry: JournalEntry) {
-    if (entry.index > state.index) {
+    if (state.streaming) {
       state.block += entry
       state.index = entry.index
       emitEvent(TransactorService.journalEntryToEvent(entry)) 
@@ -112,9 +113,11 @@ extends ClientStateListener with JournalListener {
   }
   
   private def journalBlockEvent(ref: Reference) {
-    state.blockchain = Some(ref)
-    state.block.clear()
-    emitEvent(TransactorService.journalBlockReferenceToEvent(ref))
+    if (state.streaming) {
+      state.blockchain = Some(ref)
+      state.block.clear()
+      emitEvent(TransactorService.journalBlockReferenceToEvent(ref))
+    }
   }
   
   private def emitEvent(evt: JournalEvent) {
@@ -143,6 +146,7 @@ extends ClientStateListener with JournalListener {
       state.block.foreach { entry =>
         emitEvent(TransactorService.journalEntryToEvent(entry))
       }
+      state.streaming = true
     } else {
       // when recovering, we need to replay potentially missed entries
       // XXX Implement me
