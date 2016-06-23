@@ -10,12 +10,9 @@ allowing us to separate and reuse pieces of the project. There are six
 sub-projects in our multi-project:
 
 - `core`: Provides shared error types.
-- `l_space` (deprecated): A graph-based representation of revision history for
-  metadata objects.
 - `translation_engine`: Provides schema-translation capabilities enabling
   Mediachain to interact seamlessly with data in disparate schemas. Currently in
   its infancy.
-- `rpc` (deprecated): The gRPC-backed facade for `l_space`.
 - `transactor`: The beating heart of the project! The transactor provides a
   [copycat](https://github.com/atomix/copycat)-backed replicated state machine,
   allowing Mediachain to operate with global consensus. This project also
