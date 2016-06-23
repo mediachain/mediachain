@@ -11,8 +11,9 @@ Mediachain.
 Before diving into details regarding Mediachain's data model, we must address
 the considerations made during the design process.
 
-Mediachain was designed to be built over [IPFS](https://ipfs.io). As a result,
-all objects in Mediachain are content-addressed. This imposes a few constraints:
+Mediachain was designed to be built on top of [IPFS](https://ipfs.io). As a
+result, all objects in Mediachain are content-addressed. This imposes a few
+constraints:
 
 - All objects are immutable
 - All chains must be implemented as reverse-linked lists, as is the case with
@@ -92,10 +93,10 @@ The only discrepancy between the two would be the expected `meta` fields,
 
 ## Chain Structures
 
-Mediachain is comprised of an unbounded number of chains--reverse linked
-lists--that represent the complete history of revisions of entities and
-artefacts managed by the Mediachain. There are are two classes of chains, the
-system-wide blockchain and the individual entity/artefact revision chains.
+Mediachain is comprised of an unbounded number of chains--linked lists--that
+represent the complete history of revisions of entities and artefacts managed by
+the Mediachain. There are are two classes of chains, the system-wide blockchain
+and the individual entity/artefact revision chains.
 
 ### Entity/Artefact Chains
 
@@ -118,9 +119,15 @@ journal later!
 Whereas the individual chains in Mediachain are somewhat unique to its design,
 Mediachain also features a blockchain that stores batches of updates in blocks
 as one would expect. The purpose of this blockchain is to facilitate a simpler,
-more efficient "catch-up" for new nodes joining the system. By adjusting the
-block size to include multiple updates per block, applications wishing to ingest
-the Mediachain history can do so with fewer queries.
+more efficient "catch-up" for new nodes joining the system as well as to--most
+importantly--track the insertion of new objects. Inserts can't be tracked in the
+per-object chains because the per-object chains are, themselves, keyed off of
+multihash address of the corresponding object's contents--it's a chicken and the
+egg situation!
+
+Furthermore, by adjusting the block size to include multiple updates per block,
+applications wishing to ingest the Mediachain history can do so with fewer
+queries.
 
 ## The Journal
 

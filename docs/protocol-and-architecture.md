@@ -4,11 +4,12 @@ In this document, we'll review the distributed architecture of Mediachain and
 describe the protocols and interfaces that connect the various pieces.
 
 Conceptually, Mediachain is broken into three core pieces: the **transactors**,
-responsible for maintaining global consensus regarding the journal (to be
-described); the **clients** that stream all operations (writes, updates, etc.)
-from the transactor quorum in order to process them and/or provide unique
-projections of the dataset; and the **storage layer** (at present DynamoDB, soon
-IPFS) responsible for housing the blockchains in a publicly accessible manner.
+responsible for maintaining global consensus regarding the
+[journal](data-structures.md#the-journal) (to be described); the **clients**
+that stream all operations (writes, updates, etc.) from the transactor quorum in
+order to process them and/or provide unique projections of the dataset; and the
+**storage layer** (at present DynamoDB, soon IPFS) responsible for housing the
+blockchains in a publicly accessible manner.
 
 ## Transactors
 
@@ -65,7 +66,8 @@ join at any time.
 The clients form the most interesting tier of Mediachain. Clients are
 third-party and services that stay tightly synchronized with the Mediachain
 blockchains, but process the dataset in unique and interesting ways. A great
-example of a Client in the Mediachain ecosystem is our **indexer**. Our indexer
+example of a Client in the Mediachain ecosystem is our
+[indexer](https://github.com/mediachain/mediachain-indexer). Our indexer
 monitors all insertions and updates to the Mediachain, indexing all canonical
 entries based on their text-based metadata fields as well as the media itself
 (if accessible.) This empowers compelling application-level APIs such as
