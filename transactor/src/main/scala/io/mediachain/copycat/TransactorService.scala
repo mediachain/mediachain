@@ -323,7 +323,7 @@ class TransactorService(client: Client, datastore: Datastore)
   listener.start()
 
   override def lookupChain(request: Transactor.MultihashReference):
-  Future[Transactor.MultihashReference] = {
+  Future[Transactor.ChainReference] = {
     val ref = MultiHash.fromBase58(request.reference)
       .map(MultihashReference.apply)
       .getOrElse {
@@ -333,19 +333,14 @@ class TransactorService(client: Client, datastore: Datastore)
           ))
       }
 
-    client
-      .lookup(ref)
-      .map { (x: Option[Reference]) =>
-        x.map { ref =>
-          TransactorService.refToRPCMultihashRef(ref)
-        }.getOrElse {
-          throw new StatusRuntimeException(
-            Status.NOT_FOUND.withDescription(
-              s"Cannot find canonical with ref $ref"
-            )
-          )
-        }
-      }
+    client.lookup(ref).map { 
+      case Xor.Right(ref) =>
+        TransactorService.refOptToChainRef(ref)
+      case Xor.Left(err) =>
+        throw new StatusRuntimeException(
+          Status.NOT_FOUND.withDescription(err.toString)
+        )
+    }
   }
 
   override def insertCanonical(request: InsertRequest)
@@ -434,6 +429,14 @@ object TransactorService {
       throw new ClassCastException(
         s"Expected MultihashReference, got type ${r.getClass.getTypeName}"
       )
+  }
+  
+  def refOptToChainRef(opt: Option[Reference])
+  : ChainReference = opt match {
+    case Some(ref) =>
+      ChainReference(ChainReference.Reference.Chain(refToRPCMultihashRef(ref)))
+    case None =>
+      ChainReference(ChainReference.Reference.Nil(NullReference()))
   }
   
   def journalBlockReferenceToEvent(ref: Reference): JournalEvent = {
