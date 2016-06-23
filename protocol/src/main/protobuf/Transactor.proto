@@ -16,12 +16,12 @@ message UpdateRequest {
 
 message JournalStreamRequest {}
 
-message Nil {}
+message NullReference {}
 
 message ChainReference {
     oneof reference {
         MultihashReference chain = 1;
-        Nil nil = 2;
+        NullReference nil = 2;
     }
 }
 
