@@ -190,7 +190,7 @@ class Client(client: CopycatClient) extends JournalClient {
   def update(ref: Reference, cell: ChainCell): Future[Xor[JournalError, ChainEntry]] =
     submit(JournalUpdate(ref, cell))
   
-  def lookup(ref: Reference): Future[Option[Reference]] = 
+  def lookup(ref: Reference): Future[Xor[JournalError, Option[Reference]]] = 
     submit(JournalLookup(ref))
   
   def currentBlock: Future[JournalBlock] =

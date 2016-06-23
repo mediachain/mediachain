@@ -29,7 +29,7 @@ object StateMachine {
   
   case class JournalLookup(
     ref: Reference
-  ) extends Query[Option[Reference]]
+  ) extends Query[Xor[JournalError, Option[Reference]]]
 
   case class JournalCurrentBlock() extends Query[JournalBlock]
   
@@ -124,9 +124,15 @@ object StateMachine {
       }
     }
     
-    def lookup(commit: Commit[JournalLookup]): Option[Reference] = {
+    def lookup(commit: Commit[JournalLookup]): Xor[JournalError, Option[Reference]] = {
       try {
-        state.index.get(commit.operation.ref).flatMap(_.chain)
+        val ref = commit.operation.ref
+        state.index.get(ref) match {
+          case Some(cref) => 
+            Xor.Right(cref.chain)
+          case None => 
+            Xor.Left(JournalReferenceError(ref))
+        }
       } finally {
         commit.release()
       }

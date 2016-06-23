@@ -31,7 +31,7 @@ object Transactor {
   trait Journal {
     def insert(rec: CanonicalRecord): Future[Xor[JournalError, CanonicalEntry]]
     def update(ref: Reference, cell: ChainCell): Future[Xor[JournalError, ChainEntry]]
-    def lookup(ref: Reference): Future[Option[Reference]]
+    def lookup(ref: Reference): Future[Xor[JournalError, Option[Reference]]]
     def currentBlock: Future[JournalBlock]
   }
 
@@ -55,5 +55,9 @@ object Transactor {
   
   case class JournalDuplicateError(ref: Reference) extends JournalError {
     override def toString = "Duplicate Journal Insert: " + ref
+  }
+  
+  case class JournalReferenceError(ref: Reference) extends JournalError {
+    override def toString = "Bad reference: " + ref
   }
 }

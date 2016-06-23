@@ -71,7 +71,7 @@ object JournalClusterSpec extends io.mediachain.BaseSpec
         }
     }
     val expected = context.refs.map {
-      case (_, chainRef) => context.cluster.dummies.map {_ => Some(chainRef)}
+      case (_, chainRef) => context.cluster.dummies.map {_ => Xor.Right(Some(chainRef))}
     }
     views must_== expected
   }
