@@ -53,7 +53,9 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
     val ref = context.entityRef
     val op = context.dummy.client.lookup(ref)
     val res = Await.result(op, timeout)
-    res must beNone
+    res must beRightXor { (ref: Option[Reference]) =>
+      ref must beNone
+    }
   }
   
   def extendEntityChain = {
@@ -74,8 +76,10 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
     val chainRef = context.entityChainRef
     val op = context.dummy.client.lookup(ref)
     val res = Await.result(op, timeout)
-    (res must beSome) and 
-    (res.get must_== chainRef)
+    res must beRightXor { (ref: Option[Reference]) =>
+      (ref must beSome) and 
+      (ref.get must_== chainRef)
+    }
   }
   
   def extendEntityChainFurther = {
@@ -105,7 +109,9 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
     val ref = context.artefactRef
     val op = context.dummy.client.lookup(ref)
     val res = Await.result(op, timeout)
-    res must beNone
+    res must beRightXor { (ref: Option[Reference]) =>
+      ref must beNone
+    }
   }
   
   def extendArtefactChain = {
@@ -126,8 +132,10 @@ object JournalIndexSpec extends io.mediachain.BaseSpec
     val chainRef = context.artefactChainRef
     val op = context.dummy.client.lookup(ref)
     val res = Await.result(op, timeout)
-    (res must beSome) and 
-    (res.get must_== chainRef)
+    res must beRightXor { (ref: Option[Reference]) =>
+      (ref must beSome) and 
+      (ref.get must_== chainRef)
+    }
   }
 
   def extendArtefactChainFurther = {
