@@ -78,3 +78,17 @@ class DatastoreService(datastore: DynamoDatastore)
     }
   }
 }
+
+object DatastoreService {
+  def createServer(service: DatastoreService, port: Int)
+                  (implicit executionContext: ExecutionContext)
+  = {
+    import scala.language.existentials
+    
+    val builder = ServerBuilder.forPort(port)
+    val server = builder.addService(
+      DatastoreServiceGrpc.bindService(service, executionContext)
+    ).build
+    server
+  }
+}
