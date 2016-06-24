@@ -13,7 +13,7 @@ import io.mediachain.protocol.datastore.Datastore._
 import io.mediachain.protocol.types.Types
 
 class DatastoreService(datastore: DynamoDatastore,
-                       maxObjectSize: Int = 65536)
+                       maxObjectSize: Int = DatastoreService.defaultMaxObjectSize)
                       (implicit val executionContext: ExecutionContext)
   extends DatastoreServiceGrpc.DatastoreService {
   private val logger = LoggerFactory.getLogger(classOf[DatastoreService])
@@ -90,6 +90,7 @@ class DatastoreService(datastore: DynamoDatastore,
 }
 
 object DatastoreService {
+  val defaultMaxObjectSize = 65536
   def createServer(service: DatastoreService, port: Int)
                   (implicit executionContext: ExecutionContext)
   = {

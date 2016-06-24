@@ -26,7 +26,7 @@ object DatastoreRpcService {
     val ctldir = conf.getq("io.mediachain.datastore.rpc.control")
     val maxObjectSize = conf.getopt("io.mediachain.datastore.maxObjectSize") match {
       case Some(str) => str.toInt
-      case None => 65536
+      case None => DatastoreService.defaultMaxObjectSize
     }
       
     val datastoreConfig = DynamoDatastore.Config.fromProperties(conf)
