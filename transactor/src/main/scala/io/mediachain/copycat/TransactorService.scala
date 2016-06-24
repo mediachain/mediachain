@@ -11,9 +11,10 @@ import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.Transactor.{JournalError, JournalListener}
-import io.mediachain.protocol.transactor.Transactor.{MultihashReference => _, _}
 import io.mediachain.protocol.transactor.Transactor
-import io.mediachain.protocol.transactor.Transactor.JournalEvent.Event
+import io.mediachain.protocol.transactor.Transactor._
+import io.mediachain.protocol.types.Types
+import io.mediachain.protocol.types.Types.{ChainReference, NullReference}
 import org.slf4j.LoggerFactory
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
@@ -322,8 +323,8 @@ class TransactorService(client: Client, datastore: Datastore)
   private val listener = new TransactorListener(client, datastore)
   listener.start()
 
-  override def lookupChain(request: Transactor.MultihashReference):
-  Future[Transactor.ChainReference] = {
+  override def lookupChain(request: Types.MultihashReference):
+  Future[Types.ChainReference] = {
     val ref = MultiHash.fromBase58(request.reference)
       .map(MultihashReference.apply)
       .getOrElse {
@@ -344,7 +345,7 @@ class TransactorService(client: Client, datastore: Datastore)
   }
 
   override def insertCanonical(request: InsertRequest)
-  : Future[Transactor.MultihashReference] = {
+  : Future[Types.MultihashReference] = {
     val bytes = request.canonicalCbor.toByteArray
     checkRecordSize(bytes)
     
@@ -375,7 +376,7 @@ class TransactorService(client: Client, datastore: Datastore)
   }
   
   override def updateChain(request: UpdateRequest)
-  : Future[Transactor.MultihashReference] = {
+  : Future[Types.MultihashReference] = {
     val bytes = request.chainCellCbor.toByteArray
     checkRecordSize(bytes)
 
@@ -422,9 +423,9 @@ class TransactorService(client: Client, datastore: Datastore)
 
 object TransactorService {
   def refToRPCMultihashRef(ref: Reference)
-  : Transactor.MultihashReference = ref match {
+  : Types.MultihashReference = ref match {
     case MultihashReference(multihash) =>
-      Transactor.MultihashReference(multihash.base58)
+      Types.MultihashReference(multihash.base58)
     case r =>
       throw new ClassCastException(
         s"Expected MultihashReference, got type ${r.getClass.getTypeName}"
@@ -440,22 +441,22 @@ object TransactorService {
   }
   
   def journalBlockReferenceToEvent(ref: Reference): JournalEvent = {
-    JournalEvent().withEvent(Event.JournalBlockEvent(refToRPCMultihashRef(ref)))
+    JournalEvent(JournalEvent.Event.JournalBlockEvent(refToRPCMultihashRef(ref)))
   }
 
   def journalEntryToEvent(entry: JournalEntry): JournalEvent = {
     val event = entry match {
       case CanonicalEntry(_, ref) =>
-        Event.InsertCanonicalEvent(refToRPCMultihashRef(ref))
+        JournalEvent.Event.InsertCanonicalEvent(refToRPCMultihashRef(ref))
 
       case ChainEntry(_, ref, chain, chainPrevious) =>
-        Event.UpdateChainEvent(
+        JournalEvent.Event.UpdateChainEvent(
           UpdateChainResult(chainPrevious = chainPrevious.map(refToRPCMultihashRef))
             .withCanonical(refToRPCMultihashRef(ref))
             .withChain(refToRPCMultihashRef(chain))
         )
     }
-    JournalEvent().withEvent(event)
+    JournalEvent(event)
   }
 
 
