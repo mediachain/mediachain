@@ -31,6 +31,7 @@ class DatastoreService(datastore: DynamoDatastore)
   private def putData(key: MultiHash, data: Array[Byte]) {
     try {
       logger.info(s"putData ${key.base58} ${data.length}")
+      checkObjectSize(data)
       datastore.putData(key, data)
     } catch {
       case e: AmazonClientException => 
@@ -40,6 +41,15 @@ class DatastoreService(datastore: DynamoDatastore)
         )
     }
   }
+  
+  val maxObjectSize = 64 * 1024 // 64k ought to be enough for everyone
+  private def checkObjectSize(bytes: Array[Byte]) {
+    if (bytes.length > maxObjectSize) {
+      throw new StatusRuntimeException(
+        Status.INVALID_ARGUMENT.withDescription("Maximum object size exceeded"))
+    }
+  }
+
   
   override def get(ref: Types.MultihashReference): Future[DataObject] = {
     val key = MultiHash.fromBase58(ref.reference) match {
