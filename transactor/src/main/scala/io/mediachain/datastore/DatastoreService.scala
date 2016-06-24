@@ -12,7 +12,8 @@ import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.datastore.Datastore._
 import io.mediachain.protocol.types.Types
 
-class DatastoreService(datastore: DynamoDatastore)
+class DatastoreService(datastore: DynamoDatastore,
+                       maxObjectSize: Int = 65536)
                       (implicit val executionContext: ExecutionContext)
   extends DatastoreServiceGrpc.DatastoreService {
   private val logger = LoggerFactory.getLogger(classOf[DatastoreService])
@@ -42,7 +43,6 @@ class DatastoreService(datastore: DynamoDatastore)
     }
   }
   
-  val maxObjectSize = 64 * 1024 // 64k ought to be enough for everyone
   private def checkObjectSize(bytes: Array[Byte]) {
     if (bytes.length > maxObjectSize) {
       throw new StatusRuntimeException(

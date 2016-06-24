@@ -24,6 +24,11 @@ object DatastoreRpcService {
   def run(conf: Properties) {
     val rpcPort = conf.getq("io.mediachain.datastore.rpc.port").toInt
     val ctldir = conf.getq("io.mediachain.datastore.rpc.control")
+    val maxObjectSize = conf.getopt("io.mediachain.datastore.maxObjectSize") match {
+      case Some(str) => str.toInt
+      case None => 65536
+    }
+      
     val datastoreConfig = DynamoDatastore.Config.fromProperties(conf)
     val datastore = new DynamoDatastore(datastoreConfig)
     
@@ -32,7 +37,7 @@ object DatastoreRpcService {
       Executors.newCachedThreadPool(),
       (e: Throwable) => logger.error("Error in asynchronous task", e)
     )
-    val dsService = new DatastoreService(datastore)
+    val dsService = new DatastoreService(datastore, maxObjectSize)
     val server = DatastoreService.createServer(dsService, rpcPort)
     
     logger.info(s"started rpc service on port $rpcPort")
