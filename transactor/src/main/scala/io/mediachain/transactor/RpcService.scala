@@ -31,7 +31,10 @@ object RpcService {
     client.connect(cluster)
 
     val threads = Math.max(4, Runtime.getRuntime.availableProcessors)
-    implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(threads))
+    implicit val ec = ExecutionContext.fromExecutor(
+      Executors.newFixedThreadPool(threads),
+      (e: Throwable) => logger.error("Error in asynchronous task", e)
+    )
     
     val datastoreConfig = DynamoDatastore.Config.fromProperties(conf)
     val datastore = new DynamoDatastore(datastoreConfig)

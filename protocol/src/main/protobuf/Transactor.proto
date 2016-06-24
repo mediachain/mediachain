@@ -2,9 +2,7 @@ syntax = "proto3";
 package protocol;
 option java_package = "io.mediachain.protocol.transactor";
 
-message MultihashReference {
-    string reference = 1;
-}
+import "Types.proto";
 
 message InsertRequest {
     bytes canonicalCbor = 1;
@@ -15,15 +13,6 @@ message UpdateRequest {
 }
 
 message JournalStreamRequest {}
-
-message NullReference {}
-
-message ChainReference {
-    oneof reference {
-        MultihashReference chain = 1;
-        NullReference nil = 2;
-    }
-}
 
 message UpdateChainResult {
     MultihashReference canonical = 1;
