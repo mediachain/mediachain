@@ -1,0 +1,17 @@
+syntax = "proto3";
+package protocol;
+option java_package = "io.mediachain.protocol.datastore";
+
+import "Types.proto";
+
+message DataObject {
+   bytes data = 1;
+}
+
+service DatastoreService {
+   rpc put(DataObject) returns
+       (MultihashReference);
+
+   rpc get(MultihashReference) returns
+       (DataObject);
+}
