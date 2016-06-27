@@ -9,12 +9,12 @@
   - transactor-server-3
   tasks:
   - name: start JournalServer
-    shell: /home/ubuntu/transactor-svc start JournalServer {{ cluster_boot }}
+    shell: /home/ubuntu/transactor-svc start JournalServer {{ hostvars['transactor-server-1']['ansible_eth0']['ipv4']['address'] }}:10000
 
 - hosts: testnet-transactor-rpc
   tasks:
   - name: start RpcService
-    shell: /home/ubuntu/transactor-svc start RpcService {{ cluster }}
+    shell: /home/ubuntu/transactor-svc start RpcService {{ hostvars['transactor-server-1']['ansible_eth0']['ipv4']['address'] }}:10000 {{ hostvars['transactor-server-2']['ansible_eth0']['ipv4']['address'] }}:10000 {{ hostvars['transactor-server-3']['ansible_eth0']['ipv4']['address'] }}:10000
 
   - name: start DatastoreRpcService
     shell: /home/ubuntu/transactor-svc start DatastoreRpcService
