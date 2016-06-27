@@ -38,6 +38,14 @@
     owner=ubuntu
     group=ubuntu
 
+- name: Generate $HOME/transactor/awscreds.sh
+  template: >
+    src=awscreds.sh.j2
+    dest=/home/ubuntu/transactor/awscreds.sh
+    mode=0400
+    owner=ubuntu
+    group=ubuntu
+
 - name: Copy transactor-svc to $HOME/transactor
   copy: >
     src=transactor-svc
