@@ -2,7 +2,7 @@
 - hosts: transactor-provisioning
   roles:
     - apt_upgrade
-    - transactor
+    - transactor_deps
 
   tasks:
   - name: checkout mediachain
