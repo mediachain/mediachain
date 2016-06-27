@@ -30,7 +30,7 @@
     owner=ubuntu
     group=ubuntu
 
-- name: Gerate $HOME/transactor/S3BackingStoreClient.conf
+- name: Generate $HOME/transactor/S3BackingStoreClient.conf
   template: >
     src=S3BackingStoreClient.conf.j2
     dest=/home/ubuntu/transactor/S3BackingStoreClient.conf
