@@ -1,0 +1,102 @@
+#!/bin/bash
+
+usage_error() {
+    echo "Usage: $0 <start|stop|status> <service> arg ..."
+    exit 1
+}
+
+check_running() {
+    [ -f $pidfile ] && kill -0 $(cat $pidfile) 2>/dev/null
+}
+
+svc_start() {
+    if check_running; then
+        echo "$service is already running"
+        exit 0
+    fi
+
+    if [ -f "$config" ]; then
+        if [ ! -f "$bigjar" ]; then
+            echo "The BIGJAR is missing; did you run assembly?"
+            exit 1
+        fi
+        if [ -f "$awscreds" ]; then
+            echo "Sourcing AWS creds"
+            source $awscreds
+        fi
+        local klass=io.mediachain.transactor.$service
+        local logit="-Dorg.slf4j.simpleLogger.logFile=${logfile}"
+        echo "Starting $klass"
+        daemon -F $pidfile -i -- java -cp $bigjar $logit $klass $config $svc_args
+        exit $?
+    else
+        echo "Missing configuration file: $config"
+        exit 1
+    fi
+}
+
+svc_stop() {
+    if check_running; then
+        echo "Shutting down $service"
+        touch $ctlfile
+        svc_wait
+        exit 0
+    else
+        echo "$service is not running"
+        exit 0
+    fi
+}
+
+svc_wait() {
+    local pid=$(cat $pidfile)
+    echo -n "Waiting for $pid to shutdown"
+    while kill -0 $pid 2>/dev/null; do
+        echo -n "."
+        sleep 1
+    done
+    echo " done"
+}
+
+svc_status() {
+    if check_running; then
+        local pid=$(cat $pidfile)
+        echo "$service is running; PID: $pid"
+        exit 0
+    else
+        echo "$service is not running"
+        exit 1
+    fi
+}
+
+if [ $# -lt 2 ]; then
+    usage_error
+fi
+
+version=0.0.1
+mediachain_home=${MEDIACHAIN_HOME:-$HOME/mediachain}
+transactor_home=${TRANSACTOR_HOME:-$HOME/transactor}
+transactor_data=${TRANSACTOR_DATADIR:-/mnt/transactor}
+
+action=$1; shift
+service=$1; shift
+svc_args="$*"
+config=${transactor_home}/${service}.conf
+awscreds=${transactor_home}/awscreds.sh
+pidfile=${transactor_data}/${service}.pid
+logfile=${transactor_data}/${service}.log
+ctlfile=${transactor_data}/ctl/${service}/shutdown
+bigjar=${mediachain_home}/transactor/target/scala-2.11/transactor-assembly-${version}.jar 
+
+case $action in
+    start)
+        svc_start
+        ;;
+    stop)
+        svc_stop
+        ;;
+    status)
+        svc_status
+        ;;
+    *)
+        usage
+esac

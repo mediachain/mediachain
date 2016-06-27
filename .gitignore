@@ -26,6 +26,8 @@ project/plugins/project/
 # mediachain specific
 private
 .env
+/provisioning/testnet
+/provisioning/creds/*
 
 # ignore test datasets for translation engine
 translation_engine/test-resources/datasets/*

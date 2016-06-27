@@ -1,0 +1,11 @@
+galaxy_info:
+  author: Mediachain Labs Team
+  description: > 
+    Prepares an instance to run as a transactor service
+  company: Mediachain Labs
+  license: MIT
+  min_ansible_version: 1.8.1
+  platforms:
+    - name: Ubuntu
+      versions:
+        - trusty
