@@ -1,0 +1,16 @@
+syntax = "proto3";
+package protocol;
+option java_package = "io.mediachain.protocol.types";
+
+message MultihashReference {
+    string reference = 1;
+}
+
+message NullReference {}
+
+message ChainReference {
+    oneof reference {
+        MultihashReference chain = 1;
+        NullReference nil = 2;
+    }
+}
