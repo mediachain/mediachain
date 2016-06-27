@@ -37,3 +37,11 @@
     mode=0644
     owner=ubuntu
     group=ubuntu
+
+- name: Copy transactor-svc to $HOME/transactor
+  copy: >
+    src=transactor-svc
+    dest=/home/ubuntu/transactor-svc
+    mode=0755
+    owner=ubuntu
+    group=ubuntu
