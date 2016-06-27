@@ -32,7 +32,7 @@ object JournalServer {
   def run(conf: Properties, cluster: List[String]) {
     val rootdir = conf.getq("io.mediachain.transactor.server.rootdir")
     (s"mkdir -p $rootdir").!
-    val ctldir = rootdir + "/ctl"
+    val ctldir = rootdir + "/ctl/JournalServer"
     val copycatdir = rootdir + "/copycat"
     (s"mkdir $copycatdir").!
     val address = conf.getq("io.mediachain.transactor.server.address")
