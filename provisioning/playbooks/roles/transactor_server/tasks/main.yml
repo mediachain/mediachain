@@ -1,0 +1,39 @@
+---
+- name: prepare /mnt/transactor
+  file: path=/mnt/transactor state=directory owner=ubuntu group=ubuntu
+  become: yes
+  
+- name: prepare $HOME/transactor
+  file: path=/home/ubuntu/transactor state=directory owner=ubuntu group=ubuntu
+
+- name: Generate $HOME/transactor/JournalServer.conf
+  template: >
+    src=JournalServer.conf.j2
+    dest=/home/ubuntu/transactor/JournalServer.conf
+    mode=0644
+    owner=ubuntu
+    group=ubuntu
+
+- name: Generate $HOME/transactor/RpcService.conf
+  template: >
+    src=RpcService.conf.j2
+    dest=/home/ubuntu/transactor/RpcService.conf
+    mode=0644
+    owner=ubuntu
+    group=ubuntu
+
+- name: Generate $HOME/transactor/DatastoreRpcService.conf
+  template: >
+    src=DatastoreRpcService.conf.j2
+    dest=/home/ubuntu/transactor/DatastoreRpcService.conf
+    mode=0644
+    owner=ubuntu
+    group=ubuntu
+
+- name: Gerate $HOME/transactor/S3BackingStoreClient.conf
+  template: >
+    src=S3BackingStoreClient.conf.j2
+    dest=/home/ubuntu/transactor/S3BackingStoreClient.conf
+    mode=0644
+    owner=ubuntu
+    group=ubuntu

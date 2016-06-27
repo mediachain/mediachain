@@ -3,6 +3,7 @@
   roles:
     - apt_upgrade
     - transactor_deps
+    - transactor_server
 
   tasks:
   - name: checkout mediachain
@@ -10,6 +11,3 @@
 
   - name: set ownership of mediachain src tree
     file: path=/home/ubuntu/mediachain owner=ubuntu group=ubuntu recurse=yes
-
-  - name: prepare /mnt/transactor
-    file: path=/mnt/transactor state=directory owner=ubuntu group=ubuntu
