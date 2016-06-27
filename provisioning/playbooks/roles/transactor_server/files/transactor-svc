@@ -27,7 +27,7 @@ svc_start() {
         local klass=io.mediachain.transactor.$service
         local logit="-Dorg.slf4j.simpleLogger.logFile=${logfile}"
         echo "Starting $klass"
-        (java -cp $bigjar $logit $klass $config $svc_args & echo $! > $pidfile)
+        daemon -F $pidfile -i -- java -cp $bigjar $logit $klass $config $svc_args
         exit $?
     else
         echo "Missing configuration file: $config"
@@ -40,7 +40,6 @@ svc_stop() {
         echo "Shutting down $service"
         touch $ctlfile
         svc_wait
-        rm $pidfile
         exit 0
     else
         echo "$service is not running"
