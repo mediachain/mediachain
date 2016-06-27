@@ -1,0 +1,16 @@
+---
+- hosts: testnet-transactor-rpc
+  tasks:
+  - name: shutdown RpcService
+    shell: /home/ubuntu/transactor-svc stop RpcService
+  - name: shutdown DatastoreRpcService
+    shell: /home/ubuntu/transactor-svc stop DatastoreRpcService
+  - name: wipe /mnt/transactor
+    shell: rm -rf /mnt/transactor/*
+  
+- hosts: testnet-transactor-server
+  tasks:
+  - name: shutdown JournalServer
+    shell: /home/ubuntu/transactor-svc stop JournalServer
+  - name: wipe /mnt/transactor
+    shell: rm -rf /mnt/transactor/*
