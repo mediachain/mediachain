@@ -9,7 +9,7 @@ object DatastoreRpcService {
   import java.util.concurrent.Executors
   import org.slf4j.LoggerFactory
   
-  val logger = LoggerFactory.getLogger(RpcService.getClass)
+  val logger = LoggerFactory.getLogger(DatastoreRpcService.getClass)
   
   def main(args: Array[String]) {
     if (args.length != 1) {
