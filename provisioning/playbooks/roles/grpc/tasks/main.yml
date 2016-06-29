@@ -4,6 +4,7 @@
     with_items:
         - libtool
         - autoconf
+        - unzip
 
   - name: clone grpc git repo
     git: repo={{ grpc_repo }}
@@ -25,7 +26,7 @@
     shell: > 
       make clean && \
       make install && \
-      (cd third_party/protobuf && make install && make clean) && \
+      (cd third_party/protobuf && ./autogen.sh && ./configure && make install && make clean) && \
       rm -f {{ grpc_source_dir }}/.grpc_version_installed_* && \
       touch "{{ grpc_source_dir }}/.grpc_version_installed_{{grpc_checkout}}"
     args:
