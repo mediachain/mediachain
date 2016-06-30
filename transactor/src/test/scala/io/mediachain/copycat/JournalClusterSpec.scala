@@ -149,7 +149,7 @@ object JournalClusterSpecContext {
         def onJournalCommit(entry: JournalEntry) {
           commits.offer(entry)
         }
-        def onJournalBlock(ref: Reference) {
+        def onJournalBlock(ref: Reference, index: BigInt) {
           blocks.offer(ref)
         }
       })

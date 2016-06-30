@@ -35,7 +35,7 @@ object StateMachine {
   
   sealed abstract class JournalEvent extends Serializable
   case class JournalCommitEvent(entry: JournalEntry) extends JournalEvent
-  case class JournalBlockEvent(ref: Reference) extends JournalEvent
+  case class JournalBlockEvent(ref: Reference, index: BigInt) extends JournalEvent
   
   class JournalState extends Serializable {
     var seqno: BigInt = 0                                     // next entry index
@@ -155,7 +155,7 @@ object StateMachine {
         val blockref = datastore.put(newblock)
         state.blockchain = Some(blockref)
         state.block.clear()
-        publishBlock(blockref)
+        publishBlock(blockref, newblock.index)
         logger.info(s"Generated block ${newblock.index} -> ${blockref}")
       }
     }
@@ -172,8 +172,8 @@ object StateMachine {
       clients.foreach(_.publish("journal-commit", event))
     }
     
-    private def publishBlock(blockref: Reference) {
-      val event = JournalBlockEvent(blockref)
+    private def publishBlock(blockref: Reference, seqno: BigInt) {
+      val event = JournalBlockEvent(blockref, seqno)
       clients.foreach(_.publish("journal-block", event))
     }
     

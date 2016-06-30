@@ -101,10 +101,10 @@ extends ClientStateListener with JournalListener {
       }})
   }
   
-  override def onJournalBlock(ref: Reference) {
+  override def onJournalBlock(ref: Reference, index: BigInt) {
     exec.submit(new Runnable {
       def run {
-        withErrorLog(journalBlockEvent(ref))
+        withErrorLog(journalBlockEvent(ref, index))
       }})
   }
   
@@ -129,17 +129,24 @@ extends ClientStateListener with JournalListener {
   }
   
   private def journalCommitEvent(entry: JournalEntry) {
-    if (state.streaming) {
+    if (state.streaming && entry.index >= state.index) {
+      if (entry.index != state.index) {
+        logger.warn(s"Commit skipped entries ${state.index} -> ${entry.index}")
+      }
       state.block += entry
-      state.index = entry.index
+      state.index = entry.index + 1
       emitEvent(TransactorService.journalEntryToEvent(entry)) 
     }
   }
   
-  private def journalBlockEvent(ref: Reference) {
-    if (state.streaming) {
+  private def journalBlockEvent(ref: Reference, index: BigInt) {
+    if (state.streaming && index >= state.index) {
+      if (index != state.index) {
+        logger.warn(s"Block skipped entries ${state.index} -> ${index}")
+      }
       state.blockchain = Some(ref)
       state.block.clear()
+      state.index = index
       emitEvent(TransactorService.journalBlockReferenceToEvent(ref))
     }
   }

@@ -125,7 +125,7 @@ object JournalBlockchainSpecContext {
     val dummy = DummyContext.setup("127.0.0.1:10002", BlockSize)
     val queue = new LinkedBlockingQueue[Reference]
     dummy.client.listen(new JournalListener {
-      def onJournalBlock(ref: Reference) {
+      def onJournalBlock(ref: Reference, index: BigInt) {
           queue.offer(ref)
       }
       def onJournalCommit(entry: JournalEntry) {}

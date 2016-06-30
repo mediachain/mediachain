@@ -106,7 +106,7 @@ object JournalCommitSpecContext {
       def onJournalCommit(entry: JournalEntry) {
         queue.offer(entry)
       }
-      def onJournalBlock(ref: Reference) {}
+      def onJournalBlock(ref: Reference, index: BigInt) {}
     })
     instance = new JournalCommitSpecContext(dummy, qclient, queue)
   }
