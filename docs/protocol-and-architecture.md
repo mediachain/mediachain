@@ -25,11 +25,12 @@ The facade, written in Scala, communicates to the `copycat` quorum via
 `copycat`'s (JVM-only) API so end-users don't have to. Furthermore, the facade
 can interact with the **storage layer** to facilitate common requests:
 
-- **Replay/stream the blockchain from a given offset**: Clients that have either
-  disconnected from the **transactor quorum** or are connecting for the first
-  time can catch up to the current state of the blockchain. Once subscribed to
-  the facade, an application will receive a stream of all
-  blocks--chronologically ordered--including new blocks as they are published.
+- **Stream blockchain updates**: Clients that have either disconnected from the
+  **transactor quorum** or are connecting for the first time can catch up to the
+  current state of the blockchain. Once subscribed to the facade, an application
+  will receive a stream of all new blocks as they are generated. If a client
+  needs to catch up on older entries, they can traverse the blockchain backwards
+  until they reach the last block they had read.
 - **Insert new artefacts/entities**: For convenience, applications can submit
   artefacts and entities through the facade. The facade will handle basic tasks:
   - Searching an index to ensure there isn't already a canonical entry for this
