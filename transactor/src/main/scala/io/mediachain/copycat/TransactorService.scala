@@ -131,7 +131,7 @@ extends ClientStateListener with JournalListener {
   private def journalCommitEvent(entry: JournalEntry) {
     if (state.streaming) {
       state.block += entry
-      state.index = entry.index
+      state.index = entry.index + 1
       emitEvent(TransactorService.journalEntryToEvent(entry)) 
     }
   }
