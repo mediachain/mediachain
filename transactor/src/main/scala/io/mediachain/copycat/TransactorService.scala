@@ -131,7 +131,7 @@ extends ClientStateListener with JournalListener {
   private def journalCommitEvent(entry: JournalEntry) {
     if (state.streaming && entry.index >= state.index) {
       if (entry.index != state.index) {
-        logger.warn(s"Commit skipped entries ${state.index} -> ${entry.index}")
+        logger.warn(s"Commit skipped entries; expected ${state.index} but got ${entry.index}")
       }
       state.block += entry
       state.index = entry.index + 1
@@ -142,7 +142,7 @@ extends ClientStateListener with JournalListener {
   private def journalBlockEvent(ref: Reference, index: BigInt) {
     if (state.streaming && index >= state.index) {
       if (index != state.index) {
-        logger.warn(s"Block skipped entries ${state.index} -> ${index}")
+        logger.warn(s"Block skipped entries; expected ${state.index} but got ${index}")
       }
       state.blockchain = Some(ref)
       state.block.clear()
