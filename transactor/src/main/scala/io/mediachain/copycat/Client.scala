@@ -227,7 +227,7 @@ class Client(client: CopycatClient) extends JournalClient {
       client.onEvent("journal-block", 
                      new Consumer[JournalBlockEvent] { 
         def accept(evt: JournalBlockEvent) { 
-          listeners.foreach(_.onJournalBlock(evt.ref))
+          listeners.foreach(_.onJournalBlock(evt.ref, evt.index))
         }
       })
     } else {

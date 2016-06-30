@@ -26,7 +26,6 @@ class TransactorListenerState {
   var block: Buffer[JournalEntry] = new ArrayBuffer
   var blockchain: Option[Reference] = None
   var streaming: Boolean = false
-  var recovery: Set[Reference] = Set()
   
   def isEmpty = (index == -1)
 }
@@ -102,10 +101,10 @@ extends ClientStateListener with JournalListener {
       }})
   }
   
-  override def onJournalBlock(ref: Reference) {
+  override def onJournalBlock(ref: Reference, index: BigInt) {
     exec.submit(new Runnable {
       def run {
-        withErrorLog(journalBlockEvent(ref))
+        withErrorLog(journalBlockEvent(ref, index))
       }})
   }
   
@@ -140,10 +139,14 @@ extends ClientStateListener with JournalListener {
     }
   }
   
-  private def journalBlockEvent(ref: Reference) {
-    if (state.streaming && !state.recovery.contains(ref)) {
+  private def journalBlockEvent(ref: Reference, index: BigInt) {
+    if (state.streaming && index >= state.index) {
+      if (index != state.index) {
+        logger.warn(s"Block skipped entries ${state.index} -> ${index}")
+      }
       state.blockchain = Some(ref)
       state.block.clear()
+      state.index = index
       emitEvent(TransactorService.journalBlockReferenceToEvent(ref))
     }
   }
@@ -222,7 +225,6 @@ extends ClientStateListener with JournalListener {
       def loop(ref: Reference, blocks: List[JournalBlock])
       : List[JournalBlock]
       = {
-        state.recovery += ref
         val block = getBlock(ref)
         if (block.chain == state.blockchain) {
           block :: blocks
@@ -280,10 +282,6 @@ extends ClientStateListener with JournalListener {
     }
     
     state.streaming = true
-    exec.submit(new Runnable {
-      def run {
-        state.recovery = Set()
-      }})
   }
   
   // parallel dispatch

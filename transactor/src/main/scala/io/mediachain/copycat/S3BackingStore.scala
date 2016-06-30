@@ -65,8 +65,8 @@ extends JournalListener with ClientStateListener with AutoCloseable {
   // JournalListener
   def onJournalCommit(entry: JournalEntry) {}
 
-  def onJournalBlock(ref: Reference) {
-    logger.info(s"New block ${ref}")
+  def onJournalBlock(ref: Reference, index: BigInt) {
+    logger.info(s"New block ${ref} (${index})")
     execWriteBlock(ref)
   }
   

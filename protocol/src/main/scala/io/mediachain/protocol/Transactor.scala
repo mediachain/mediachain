@@ -44,7 +44,7 @@ object Transactor {
 
   trait JournalListener {
     def onJournalCommit(entry: JournalEntry): Unit
-    def onJournalBlock(ref: Reference): Unit
+    def onJournalBlock(ref: Reference, index: BigInt): Unit
   }
 
   sealed abstract class JournalError extends Serializable
