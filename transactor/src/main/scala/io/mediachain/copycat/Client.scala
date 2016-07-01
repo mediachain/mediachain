@@ -33,7 +33,7 @@ class Client(client: CopycatClient) extends JournalClient {
   private var stateListeners: Set[ClientStateListener] = Set()
   private val logger = LoggerFactory.getLogger(classOf[Client])
   private val timer = new Timer(true) // runAsDaemon
-  private val maxRetries = 5
+  private val maxRetries = 10
   
   client.onStateChange(new Consumer[CopycatClient.State] {
     def accept(state: CopycatClient.State) {
@@ -51,10 +51,15 @@ class Client(client: CopycatClient) extends JournalClient {
         Future.failed {new ClientException("Copycat client is disconnected")}
 
       case (Suspended, _) =>
-        logger.info("Copycat client is suspended; delaying "+ op)
-        backoff(1).flatMap { _ =>
-          logger.info("Retrying operation " + op)
-          submit(op, retry)
+        if (retry < maxRetries) {
+          logger.info("Copycat client is suspended; delaying "+ op)
+          backoff(retry).flatMap { retry =>
+            logger.info("Retrying operation " + op)
+            submit(op, retry)
+          }
+        } else {
+          logger.warn("Copycat client is unavailable; aborting " + op)
+          Future.failed {new ClientException("Copycat client unavailable; giving up")}
         }
         
       case (Connected, _) =>
