@@ -33,7 +33,7 @@ class Client(client: CopycatClient) extends JournalClient {
   private var stateListeners: Set[ClientStateListener] = Set()
   private val logger = LoggerFactory.getLogger(classOf[Client])
   private val timer = new Timer(true) // runAsDaemon
-  private val maxRetries = 10
+  private val maxRetries = 5
   
   client.onStateChange(new Consumer[CopycatClient.State] {
     def accept(state: CopycatClient.State) {
