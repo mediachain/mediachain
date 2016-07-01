@@ -28,7 +28,7 @@ class Client(client: CopycatClient) extends JournalClient {
   @volatile private var shutdown = false
   @volatile private var state: ClientState = Disconnected
   private var cluster: Option[List[Address]] = None
-  private var recoveryExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+  private var exec: ExecutorService = Executors.newSingleThreadExecutor()
   private var listeners: Set[JournalListener] = Set()
   private var stateListeners: Set[ClientStateListener] = Set()
   private val logger = LoggerFactory.getLogger(classOf[Client])
@@ -51,10 +51,15 @@ class Client(client: CopycatClient) extends JournalClient {
         Future.failed {new ClientException("Copycat client is disconnected")}
 
       case (Suspended, _) =>
-        logger.info("Copycat client is suspended; delaying "+ op)
-        backoff(1).flatMap { _ =>
-          logger.info("Retrying operation " + op)
-          submit(op, retry)
+        if (retry < maxRetries) {
+          logger.info("Copycat client is suspended; delaying "+ op)
+          backoff(retry).flatMap { retry =>
+            logger.info("Retrying operation " + op)
+            submit(op, retry + 1)
+          }
+        } else {
+          logger.warn("Copycat client is unavailable; aborting " + op)
+          Future.failed {new ClientException("Copycat client unavailable; giving up")}
         }
         
       case (Connected, _) =>
@@ -92,13 +97,13 @@ class Client(client: CopycatClient) extends JournalClient {
       case CopycatClient.State.CONNECTED => 
         state = Connected
         logger.info("Copycat session connected")
-        stateListeners.foreach(_.onStateChange(Connected))
+        emitStateChange(Connected)
         
       case CopycatClient.State.SUSPENDED =>
         state = Suspended
         if (!shutdown) {
           logger.info("Copycat session suspended; attempting to recover")
-          stateListeners.foreach(_.onStateChange(Suspended))
+          emitStateChange(Suspended)
           recover()
         }
         
@@ -108,7 +113,7 @@ class Client(client: CopycatClient) extends JournalClient {
           state = Suspended
           logger.info("Copycat session closed; attempting to reconnect")
           if (ostate != state) {
-            stateListeners.foreach(_.onStateChange(Suspended))
+            emitStateChange(Suspended)
           }
           reconnect()
         } else {
@@ -117,15 +122,27 @@ class Client(client: CopycatClient) extends JournalClient {
     }
   }
   
+  private def emitStateChange(stateChange: ClientState) {
+    exec.submit(new Runnable {
+      def run {
+        try {
+          stateListeners.foreach(_.onStateChange(stateChange))
+        } catch {
+          case e: Throwable =>
+            logger.error("Error dispatching state change", e)
+        }
+      }})
+  }
+  
   private def disconnect(what: String) {
     state = Disconnected
     logger.info(what)
-    stateListeners.foreach(_.onStateChange(Disconnected))
+    emitStateChange(Disconnected)
   }
   
   private def recover() {
     val cf = client.recover()
-    recoveryExecutor.submit(new Runnable {
+    exec.submit(new Runnable {
       def run {
         try {
           cf.join()
@@ -165,7 +182,7 @@ class Client(client: CopycatClient) extends JournalClient {
       }
     }
     
-    recoveryExecutor.submit(new Runnable {
+    exec.submit(new Runnable {
       def run { 
         try {
           cluster.foreach { addresses => loop(addresses, 0) }
@@ -210,8 +227,8 @@ class Client(client: CopycatClient) extends JournalClient {
   def close() {
     if (!shutdown) {
       shutdown = true
-      recoveryExecutor.shutdownNow()
-      client.close().join()
+      exec.shutdownNow()
+      client.close.join()
     }
   }
   

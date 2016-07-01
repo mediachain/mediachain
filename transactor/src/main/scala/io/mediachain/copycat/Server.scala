@@ -2,6 +2,7 @@ package io.mediachain.copycat
 
 import java.io.File
 import java.util.function.Supplier
+import java.time.Duration 
 import io.atomix.copycat.server.{CopycatServer, StateMachine => CopycatStateMachine}
 import io.atomix.copycat.server.storage.{Storage, StorageLevel}
 import io.atomix.catalyst.transport.Address
@@ -29,6 +30,9 @@ object Server {
         .withStorageLevel(StorageLevel.DISK)
         .build())
       .withTransport(Transport.build(4, sslConfig))
+      .withElectionTimeout(Duration.ofSeconds(3))
+      .withHeartbeatInterval(Duration.ofSeconds(1))
+      .withSessionTimeout(Duration.ofSeconds(5))
       .build()
     Serializers.register(server.serializer)
     server

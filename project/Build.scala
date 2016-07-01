@@ -46,8 +46,8 @@ object MediachainBuild extends Build {
   lazy val transactor = Project("transactor", file("transactor"))
     .settings(settings ++ Seq(
       libraryDependencies ++= Seq(
-        "io.atomix.copycat" % "copycat-server" % "1.1.0",
-        "io.atomix.copycat" % "copycat-client" % "1.1.0",
+        "io.atomix.copycat" % "copycat-server" % "1.1.4",
+        "io.atomix.copycat" % "copycat-client" % "1.1.4",
         "io.atomix.catalyst" % "catalyst-netty" % "1.1.1",
         "org.slf4j" % "slf4j-api" % "1.7.21",
         "org.slf4j" % "slf4j-simple" % "1.7.21",
