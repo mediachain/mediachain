@@ -55,7 +55,7 @@ class Client(client: CopycatClient) extends JournalClient {
           logger.info("Copycat client is suspended; delaying "+ op)
           backoff(retry).flatMap { retry =>
             logger.info("Retrying operation " + op)
-            submit(op, retry)
+            submit(op, retry + 1)
           }
         } else {
           logger.warn("Copycat client is unavailable; aborting " + op)
