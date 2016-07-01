@@ -6,13 +6,14 @@ import io.atomix.catalyst.transport.Address
 import io.atomix.copycat.server.CopycatServer
 import io.mediachain.copycat.{Server, Transport}
 import io.mediachain.datastore.{PersistentDatastore, DynamoDatastore}
-import io.mediachain.util.Properties
+import io.mediachain.util.{Properties, Logging}
 import scala.io.StdIn
 import scala.collection.JavaConversions._
 import sys.process._
 
 object JournalServer {
   val logger = LoggerFactory.getLogger("io.mediachain.transactor.JournalServer")
+  val withErrorLog = Logging.withErrorLog(logger) _
 
   def main(args: Array[String]) {
     val (config, cluster) = parseArgs(args)
@@ -56,13 +57,13 @@ object JournalServer {
                         datastore: PersistentDatastore) {
     def shutdown(what: String) {
       logger.info("Shutting down server")
-      server.shutdown.join()
+      withErrorLog(server.shutdown.join())
       quit()
     }
     
     def leave(what: String) {
       logger.info("Leaving the cluster")
-      server.leave.join()
+      withErrorLog(server.leave.join())
       quit()
     }
     

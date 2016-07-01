@@ -3,7 +3,7 @@ package io.mediachain.transactor
 object RpcService {
   import io.mediachain.copycat.{Client, TransactorService}
   import io.mediachain.datastore.DynamoDatastore
-  import io.mediachain.util.Properties
+  import io.mediachain.util.{Properties, Logging}
   import io.grpc.Server
   import scala.concurrent.ExecutionContext
   import java.util.concurrent.Executors
@@ -11,6 +11,7 @@ object RpcService {
   import org.slf4j.LoggerFactory
 
   val logger = LoggerFactory.getLogger(RpcService.getClass)
+  val withErrorLog = Logging.withErrorLog(logger) _
 
   def main(args: Array[String]) {
     if (args.length < 2) {
@@ -51,8 +52,8 @@ object RpcService {
   def serverControlLoop(ctldir: String, server: Server, client: Client) {
     def shutdown(what: String) {
       logger.info("shutting down")
-      client.close()
-      server.shutdown()
+      withErrorLog(client.close())
+      withErrorLog(server.shutdown())
       System.exit(0)
     }
     

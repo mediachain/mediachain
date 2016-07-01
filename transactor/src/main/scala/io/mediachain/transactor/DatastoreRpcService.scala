@@ -3,13 +3,14 @@ package io.mediachain.transactor
 // this is placed in io.mediachain.transactor to accompany the rest of the programs
 object DatastoreRpcService {
   import io.mediachain.datastore.{DynamoDatastore, DatastoreService}
-  import io.mediachain.util.Properties
+  import io.mediachain.util.{Properties, Logging}
   import io.grpc.Server
   import scala.concurrent.ExecutionContext
   import java.util.concurrent.Executors
   import org.slf4j.LoggerFactory
   
   val logger = LoggerFactory.getLogger(DatastoreRpcService.getClass)
+  val withErrorLog = Logging.withErrorLog(logger) _
   
   def main(args: Array[String]) {
     if (args.length != 1) {
@@ -48,7 +49,7 @@ object DatastoreRpcService {
   def serverControlLoop(ctldir: String, server: Server) {
     def shutdown(what: String) {
       logger.info("shutting down")
-      server.shutdown()
+      withErrorLog(server.shutdown())
       System.exit(0)
     }
     
