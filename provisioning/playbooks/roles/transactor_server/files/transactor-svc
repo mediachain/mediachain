@@ -39,7 +39,7 @@ svc_stop() {
     if check_running; then
         echo "Shutting down $service"
         touch $ctlfile
-        svc_wait
+        svc_wait || svc_kill
         return 0
     else
         echo "$service is not running"
@@ -49,14 +49,42 @@ svc_stop() {
 
 svc_wait() {
     local pid=$(cat $pidfile)
+    local try=0
     echo -n "Waiting for $pid to shutdown"
     while kill -0 $pid 2>/dev/null; do
-        echo -n "."
-        sleep 1
+        if (( $try < 10 )); then
+            echo -n "."
+            sleep 1
+            (( try++ ))
+        else
+            echo " timeout"
+            return 1
+        fi
     done
     echo " done"
+    return 0
 }
 
+svc_kill() {
+    local pid=$(cat $pidfile)
+    local try=0
+    echo -n "Terminating $pid"
+    kill -TERM $pid
+    while kill -0 $pid 2>/dev/null; do
+        if (( $try < 5 )); then
+            echo -n "."
+            sleep 1
+            (( try++ ))
+        else
+            echo " timeout; killing $pid"
+            kill -KILL $pid
+            return 0
+        fi
+    done
+    echo "  done"
+    return 0
+}
+    
 svc_status() {
     if check_running; then
         local pid=$(cat $pidfile)
