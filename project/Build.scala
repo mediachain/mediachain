@@ -10,9 +10,51 @@ object MediachainBuild extends Build {
   val specs2Version = "3.7.3"
   val scalaCheckVersion = "1.13.1"
 
+  lazy val publishSettings = Seq(
+    publishMavenStyle := true,
+    publishArtifact in Test := false,
+    publishTo := {
+      val nexus = "https://oss.sonatype.org/"
+      if (isSnapshot.value)
+        Some("snapshots" at nexus + "content/repositories/snapshots")
+      else
+        Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+    },
+    pomIncludeRepository := { _ => false },
+    licenses := Seq("MIT" -> url("https://raw.githubusercontent.com/mediachain/mediachain/master/LICENSE")),
+    homepage := Some(url("https://mediachain.io")),
+    pomExtra :=
+      <scm>
+        <url>git@github.com/mediachain/mediachain.git</url>
+        <connection>scm:git:git@github.com/mediachain/mediachain.git</connection>
+      </scm>
+        <developers>
+          <developer>
+            <id>yusefnapora</id>
+            <name>Yusef Napora</name>
+            <url>https://github.com/yusefnapora</url>
+          </developer>
+          <developer>
+            <id>parkan</id>
+            <name>Arkadiy Kukarkin</name>
+            <url>https://github.com/parkan</url>
+          </developer>
+          <developer>
+            <id>bigs</id>
+            <name>Cole Brown</name>
+            <url>https://github.com/bigs</url>
+          </developer>
+          <developer>
+            <id>vyzo</id>
+            <name>Dimitris Vyzovitis</name>
+            <url>https://github.com/vyzo</url>
+          </developer>
+        </developers>
+  )
+
   override lazy val settings = super.settings ++ Seq(
     organization := "io.mediachain",
-    version := "0.0.1",
+    version := "0.1.0-SNAPSHOT",
     scalaVersion := "2.11.7",
     scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings",
       "-feature", "-language:higherKinds"),
@@ -36,12 +78,9 @@ object MediachainBuild extends Build {
     test in assembly := {}
   )
 
-  lazy val utils = Project("utils", file("utils"))
-    .settings(settings)
-
 
   lazy val transactor = Project("transactor", file("transactor"))
-    .settings(settings ++ Seq(
+    .settings(settings ++ publishSettings ++ Seq(
       libraryDependencies ++= Seq(
         "io.mediachain" %% "multihash" % "0.1.0",
         "io.atomix.copycat" % "copycat-server" % "1.1.4",
@@ -66,8 +105,9 @@ object MediachainBuild extends Build {
     .dependsOn(protocol)
 
   lazy val protocol = Project("protocol", file("protocol"))
-    .settings(settings ++ Seq(
+    .settings(settings ++ publishSettings ++ Seq(
       libraryDependencies ++= Seq(
+        "io.mediachain" %% "multihash" % "0.1.0",
         "co.nstant.in" % "cbor" % "0.7"
       )) ++
       PB.protobufSettings ++
@@ -80,7 +120,6 @@ object MediachainBuild extends Build {
         version in PB.protobufConfig := "3.0.0-beta-2",
 
         libraryDependencies ++= Seq(
-          "io.mediachain" %% "multihash" % "0.1.0",
           "io.grpc" % "grpc-all" % "0.14.0",
           "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" %
             (PB.scalapbVersion in PB.protobufConfig).value
@@ -92,5 +131,12 @@ object MediachainBuild extends Build {
   // dependsOn means classes will be available
   lazy val mediachain = (project in file("."))
     .aggregate(transactor, protocol)
+    .settings(Seq(
+      // Don't publish an artifact for the root project
+      publishArtifact := false,
+      // sbt-pgp will choke if there's no repo, even tho it's unsed
+      publishTo := Some(Resolver.file("Fake repo to make sbt-pgp happy",
+        file("target/fake-repo")))
+    ))
 }
 
