@@ -43,7 +43,7 @@ object MediachainBuild extends Build {
   lazy val transactor = Project("transactor", file("transactor"))
     .settings(settings ++ Seq(
       libraryDependencies ++= Seq(
-        "io.mediachain" %% "multihash" % "0.1-SNAPSHOT",
+        "io.mediachain" %% "multihash" % "0.1.0",
         "io.atomix.copycat" % "copycat-server" % "1.1.4",
         "io.atomix.copycat" % "copycat-client" % "1.1.4",
         "io.atomix.catalyst" % "catalyst-netty" % "1.1.1",
@@ -80,7 +80,7 @@ object MediachainBuild extends Build {
         version in PB.protobufConfig := "3.0.0-beta-2",
 
         libraryDependencies ++= Seq(
-          "io.mediachain" %% "multihash" % "0.1-SNAPSHOT",
+          "io.mediachain" %% "multihash" % "0.1.0",
           "io.grpc" % "grpc-all" % "0.14.0",
           "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" %
             (PB.scalapbVersion in PB.protobufConfig).value
