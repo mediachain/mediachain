@@ -1,8 +1,10 @@
 import sbt._
 import Keys._
 import sbtassembly.AssemblyKeys._
-import sbtassembly.{MergeStrategy,PathList}
+import sbtassembly.{MergeStrategy, PathList}
 import com.trueaccord.scalapb.{ScalaPbPlugin => PB}
+import sbtbuildinfo.BuildInfoPlugin, BuildInfoPlugin._
+import sbtbuildinfo.BuildInfoKeys._
 
 object MediachainBuild extends Build {
   updateOptions := updateOptions.value.withCachedResolution(true)
@@ -131,7 +133,10 @@ object MediachainBuild extends Build {
   // dependsOn means classes will be available
   lazy val mediachain = (project in file("."))
     .aggregate(transactor, protocol)
+    .enablePlugins(BuildInfoPlugin)
     .settings(Seq(
+      buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+      buildInfoPackage := "io.mediachain.build",
       // Don't publish an artifact for the root project
       publishArtifact := false,
       // sbt-pgp will choke if there's no repo, even tho it's unsed
