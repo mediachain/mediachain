@@ -3,7 +3,9 @@ import Keys._
 import sbtassembly.AssemblyKeys._
 import sbtassembly.{MergeStrategy, PathList}
 import com.trueaccord.scalapb.{ScalaPbPlugin => PB}
-import sbtbuildinfo.BuildInfoPlugin, BuildInfoPlugin._
+import com.typesafe.sbt.GitVersioning
+import com.typesafe.sbt.SbtGit.git
+import sbtbuildinfo.{BuildInfoKey, BuildInfoOption, BuildInfoPlugin}
 import sbtbuildinfo.BuildInfoKeys._
 
 object MediachainBuild extends Build {
@@ -56,7 +58,6 @@ object MediachainBuild extends Build {
 
   override lazy val settings = super.settings ++ Seq(
     organization := "io.mediachain",
-    version := "0.1.0-SNAPSHOT",
     scalaVersion := "2.11.7",
     scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings",
       "-feature", "-language:higherKinds"),
@@ -77,12 +78,20 @@ object MediachainBuild extends Build {
       "com.lihaoyi" % "ammonite-repl" % "0.5.7" % "test" cross CrossVersion.full
     ),
     scalacOptions in Test ++= Seq("-Yrangepos"),
-    test in assembly := {}
+    test in assembly := {},
+
+    // sbt-buildinfo configuration
+    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, sbtVersion,
+      BuildInfoKey.map(name) { case (k, v) => k -> s"io.mediachain.$v" }
+    ),
+    buildInfoOptions := Seq(BuildInfoOption.ToMap, BuildInfoOption.ToJson)
   )
 
 
   lazy val transactor = Project("transactor", file("transactor"))
+    .enablePlugins(BuildInfoPlugin)
     .settings(settings ++ publishSettings ++ Seq(
+      buildInfoPackage := "io.mediachain.transactor",
       libraryDependencies ++= Seq(
         "io.mediachain" %% "multihash" % "0.1.0",
         "io.atomix.copycat" % "copycat-server" % "1.1.4",
@@ -107,7 +116,9 @@ object MediachainBuild extends Build {
     .dependsOn(protocol)
 
   lazy val protocol = Project("protocol", file("protocol"))
+    .enablePlugins(BuildInfoPlugin)
     .settings(settings ++ publishSettings ++ Seq(
+      buildInfoPackage := "io.mediachain.protocol",
       libraryDependencies ++= Seq(
         "io.mediachain" %% "multihash" % "0.1.0",
         "co.nstant.in" % "cbor" % "0.7"
@@ -133,15 +144,52 @@ object MediachainBuild extends Build {
   // dependsOn means classes will be available
   lazy val mediachain = (project in file("."))
     .aggregate(transactor, protocol)
-    .enablePlugins(BuildInfoPlugin)
+    .enablePlugins(GitVersioning)
     .settings(Seq(
-      buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-      buildInfoPackage := "io.mediachain.build",
       // Don't publish an artifact for the root project
       publishArtifact := false,
-      // sbt-pgp will choke if there's no repo, even tho it's unsed
+      // sbt-pgp will choke if there's no repo, even tho it's unused
       publishTo := Some(Resolver.file("Fake repo to make sbt-pgp happy",
-        file("target/fake-repo")))
+        file("target/fake-repo"))),
+
+      // git versioning configuration
+      git.useGitDescribe := true,
+
+      // by default sbt-git will append -SNAPSHOT if your working dir has
+      // uncommitted changes.  We want to disable that and add -SNAPSHOT
+      // to indicate a build that's "in-between" releases
+      git.uncommittedSignifier := None,
+
+      // If there are no tags prior to the head commit, set the version
+      // number to 0.1.0-${sha}-SNAPSHOT where ${sha} is the first 8 chars
+      // of the head sha-1 hash.
+      git.formattedShaVersion := git.gitHeadCommit.value.map { sha =>
+        s"0.1.0-${sha.take(8)}-SNAPSHOT"
+      },
+
+      // If there are tags prior to the head commit with the format
+      // "vX.X.X", use that as the base version.
+      // If we're on a tag, use the value of the tag directly.
+      //
+      git.gitTagToVersionNumber := { tag =>
+        println(s"git tag info: $tag")
+        tag match {
+          case VersionRegex(v, info) => info match {
+            case "" =>
+              Some(v)
+            case "SNAPSHOT" =>
+              Some(s"$v-SNAPSHOT")
+            case ShaRegex(_, sha) =>
+              Some(s"$v-$sha-SNAPSHOT")
+            case _ =>
+              None
+          }
+          case _ => None
+        }
+      }
     ))
+
+  lazy val VersionRegex = "v([0-9]+.[0-9]+.[0-9]+)-?(.*)?".r
+  lazy val ShaRegex = "(?:SNAPSHOT-)?([0-9]+)-(.*)".r
 }
 
