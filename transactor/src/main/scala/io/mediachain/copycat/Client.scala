@@ -186,7 +186,7 @@ class Client(client: CopycatClient) extends JournalClient {
       }
     }
     
-    recovery.foreach(_.cancel(true))
+    recovery.foreach(_.cancel(false))
     exec.submit(new Runnable {
       def run { 
         try {
