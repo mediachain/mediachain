@@ -35,36 +35,33 @@ initial kinks within the system.
 
 ## Installing the Mediachain Services
 
-### DynamoDB
-
-We've provided a set of AWS credentials for general use amongst TestNet
-developers. The credentials (which only have read access to our DynamoDB
-instance) can be found [here](#).
-
 ### Transactor
-
-We don't yet offer public write access to the TestNet's DynamoDB table in order
-to maintain data integrity. If you'd like to run your own TestNet using either
-the DynamoDB local service or a paid DynamoDB instance of your own, clone the
-Mediachain main codebase:
+If you'd like to run your own TestNet using either
+the DynamoDB local service or a paid DynamoDB instance of your own:
 
 ```bash
-$ git clone https://github.com/mediachain/mediachain
+$ # TODO: jar install
 ```
 
-With the transactor cloned, you can run it with:
+and run it with:
 
 ```bash
-$ #something
+$ # TODO
+```
+
+the server can be controlled using killfiles:
+
+```bash
+$ # TODO: killfiles
 ```
 
 ### Indexer
 
 The indexer is a client that must connect to a transactor quorum in order to
-function. First, clone the indexer:
+function. You can download it from PyPI:
 
 ```bash
-$ git clone https://github.com/mediachain/mediachain-indexer
+$ pip install mediachain-indexer
 ```
 
 Then, from the indexer directory, run it with:
@@ -78,7 +75,7 @@ $ #something
 The CLI is pip installable. Install it with this command:
 
 ```bash
-$ pip install #something
+$ pip install mediachain-client
 ```
 
 ## Interacting With The TestNet
@@ -87,7 +84,7 @@ With those services installed, you're ready to start working with the TestNet.
 
 ### CLI
 
-<Some basic information about ingesting Getty images>
+<Some basic information about ingesting images>
 
 ### Clients
 
