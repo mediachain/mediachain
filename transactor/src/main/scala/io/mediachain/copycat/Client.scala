@@ -2,7 +2,7 @@ package io.mediachain.copycat
 
 import java.util.function.Consumer
 import java.util.{Random, Timer, TimerTask}
-import java.util.concurrent.{ExecutorService, Executors}
+import java.util.concurrent.{ExecutorService, Executors, CompletableFuture}
 import java.time.Duration
 import io.atomix.copycat.Operation
 import io.atomix.copycat.client.{CopycatClient, ConnectionStrategy}
@@ -29,6 +29,7 @@ class Client(client: CopycatClient) extends JournalClient {
   @volatile private var state: ClientState = Disconnected
   private var cluster: Option[List[Address]] = None
   private var exec: ExecutorService = Executors.newSingleThreadExecutor()
+  private var recovery: Option[CompletableFuture[CopycatClient]] = None
   private var listeners: Set[JournalListener] = Set()
   private var stateListeners: Set[ClientStateListener] = Set()
   private val logger = LoggerFactory.getLogger(classOf[Client])
@@ -142,6 +143,7 @@ class Client(client: CopycatClient) extends JournalClient {
   
   private def recover() {
     val cf = client.recover()
+    recovery = Some(cf)
     exec.submit(new Runnable {
       def run {
         try {
@@ -150,6 +152,8 @@ class Client(client: CopycatClient) extends JournalClient {
         } catch {
           case e: Throwable =>
             logger.error("Copycat session recovery failed", e)
+        } finally {
+          recovery = None
         }
       }})
   }
@@ -182,6 +186,7 @@ class Client(client: CopycatClient) extends JournalClient {
       }
     }
     
+    recovery.foreach(_.cancel(true))
     exec.submit(new Runnable {
       def run { 
         try {
