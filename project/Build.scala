@@ -16,7 +16,9 @@ object MediachainBuild extends Build {
     scalaVersion := "2.11.7",
     scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings",
       "-feature", "-language:higherKinds"),
-    // resolvers += Resolver.mavenLocal, // local maven for tip debugging
+    resolvers ++= Seq(
+      Resolver.sonatypeRepo("public")
+    ),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats" % "0.4.1",
       "org.typelevel" %% "dogs-core" % "0.2.2",
@@ -37,15 +39,11 @@ object MediachainBuild extends Build {
   lazy val utils = Project("utils", file("utils"))
     .settings(settings)
 
-  // TODO: replace this with maven-published version
-  val scalaMultihashCommit = "b2999d6c00b3acab6ea3ff5d0965634bed3a3823"
-  lazy val scalaMultihash = RootProject(uri(
-    s"git://github.com/mediachain/scala-multihash.git#$scalaMultihashCommit"
-  ))
 
   lazy val transactor = Project("transactor", file("transactor"))
     .settings(settings ++ Seq(
       libraryDependencies ++= Seq(
+        "io.mediachain" %% "multihash" % "0.1-SNAPSHOT",
         "io.atomix.copycat" % "copycat-server" % "1.1.4",
         "io.atomix.copycat" % "copycat-client" % "1.1.4",
         "io.atomix.catalyst" % "catalyst-netty" % "1.1.1",
@@ -66,11 +64,6 @@ object MediachainBuild extends Build {
       mainClass := Some("io.mediachain.transactor.Main")
     ))
     .dependsOn(protocol)
-    .dependsOn(scalaMultihash)
-
-  Resolver.sonatypeRepo("public")
-
-  updateOptions := updateOptions.value.withCachedResolution(true)
 
   lazy val protocol = Project("protocol", file("protocol"))
     .settings(settings ++ Seq(
@@ -87,13 +80,13 @@ object MediachainBuild extends Build {
         version in PB.protobufConfig := "3.0.0-beta-2",
 
         libraryDependencies ++= Seq(
+          "io.mediachain" %% "multihash" % "0.1-SNAPSHOT",
           "io.grpc" % "grpc-all" % "0.14.0",
           "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" %
             (PB.scalapbVersion in PB.protobufConfig).value
         )
       )
     )
-    .dependsOn(scalaMultihash)
 
   // aggregate means commands will cascade to the subprojects
   // dependsOn means classes will be available
