@@ -158,8 +158,9 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
           logger.info("Reconnecting to cluster")
           // Copycat client state is already closed if we are reconnecting, 
           // but also close it to shutdown its internal context
-          client.close() 
+          val klient = client
           client = newCopycatClient()
+          klient.close()
           Try(doConnect()) match {
             case Success(_) => 
               logger.info(s"Successfully reconnected to cluster")
