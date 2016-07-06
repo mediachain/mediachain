@@ -167,7 +167,7 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
           client = newCopycatClient()
           Try(doConnect()) match {
             case Success(_) => 
-              logger.info(s"Successfully reconnected; Client state is ${client.state}")
+              logger.info(s"Successfully reconnected to cluster")
               if (shutdown) {
                 // lost race with user calling #close
                 // make sure the client is closed
