@@ -28,7 +28,7 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
   
   @volatile private var shutdown = false
   @volatile private var state: ClientState = Disconnected
-  private var client = newCopycatClient()
+  @volatile private var client = newCopycatClient()
   private var cluster: Option[List[Address]] = None
   private var exec: ExecutorService = Executors.newSingleThreadExecutor()
   private var recovery: Option[CompletableFuture[CopycatClient]] = None
@@ -198,11 +198,13 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
       }})
   }
   
-  private def newCopycatClient() = {
+  private def newCopycatClient(): CopycatClient = {
     val klient = Client.buildCopycatClient(sslConfig)
     klient.onStateChange(new Consumer[CopycatClient.State] {
       def accept(state: CopycatClient.State) {
-        onStateChange(state)
+        if (klient eq client) {
+          onStateChange(state)
+        } 
       }})
     klient
   }
@@ -236,15 +238,20 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
   }
   
   private def doConnect() {
-    cluster.foreach { addrs => client.connect(addrs).join() }
-    client.onEvent("journal-commit", new Consumer[JournalCommitEvent] { 
+    val klient = client
+    cluster.foreach { addrs => klient.connect(addrs).join() }
+    klient.onEvent("journal-commit", new Consumer[JournalCommitEvent] { 
       def accept(evt: JournalCommitEvent) {
-        onJournalCommitEvent(evt)
+        if (klient eq client) {
+          onJournalCommitEvent(evt)
+        }
       }})
     
-    client.onEvent("journal-block", new Consumer[JournalBlockEvent] { 
+    klient.onEvent("journal-block", new Consumer[JournalBlockEvent] { 
       def accept(evt: JournalBlockEvent) { 
-        onJournalBlockEvent(evt)
+        if (klient eq client) {
+          onJournalBlockEvent(evt)
+        }
       }})
   }
   
