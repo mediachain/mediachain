@@ -19,14 +19,16 @@ import cats.data.Xor
 import io.mediachain.copycat.StateMachine._
 import io.mediachain.protocol.Datastore._
 import io.mediachain.protocol.Transactor._
+import io.mediachain.util.Logging
 
-class Client(client: CopycatClient) extends JournalClient {
+class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
   import scala.concurrent.ExecutionContext.Implicits.global
   import Client._
   import ClientState._
   
   @volatile private var shutdown = false
   @volatile private var state: ClientState = Disconnected
+  private var client = newCopycatClient()
   private var cluster: Option[List[Address]] = None
   private var exec: ExecutorService = Executors.newSingleThreadExecutor()
   private var recovery: Option[CompletableFuture[CopycatClient]] = None
@@ -35,11 +37,7 @@ class Client(client: CopycatClient) extends JournalClient {
   private val logger = LoggerFactory.getLogger(classOf[Client])
   private val timer = new Timer(true) // runAsDaemon
   private val maxRetries = 5
-  
-  client.onStateChange(new Consumer[CopycatClient.State] {
-    def accept(state: CopycatClient.State) {
-      onStateChange(state)
-    }})
+  private val withErrorLog = Logging.withErrorLog(logger) _
   
   // submit a state machine operation with retry logic to account
   // for potentially transient client connectivity errors
@@ -159,11 +157,15 @@ class Client(client: CopycatClient) extends JournalClient {
   }
   
   private def reconnect() {
-    def loop(addresses: List[Address], retry: Int) {
+    def loop(retry: Int) {
       if (!shutdown) {
         if (retry < maxRetries) {
-          logger.info("Reconnecting to " + addresses)
-          Try(client.connect(addresses).join()) match {
+          logger.info("Reconnecting to cluster")
+          // Copycat client state is already closed if we are reconnecting, 
+          // but also close it to shutdown its internal context
+          client.close() 
+          client = newCopycatClient()
+          Try(doConnect()) match {
             case Success(_) => 
               logger.info(s"Successfully reconnected; Client state is ${client.state}")
               if (shutdown) {
@@ -176,7 +178,7 @@ class Client(client: CopycatClient) extends JournalClient {
               val sleep = Client.randomBackoff(retry)
               logger.info("Backing off reconnect for " + sleep + " ms")
               Thread.sleep(sleep)
-              loop(addresses, retry + 1) 
+              loop(retry + 1) 
           }
         } else {
           disconnect("Failed to reconnect; giving up.")
@@ -189,8 +191,8 @@ class Client(client: CopycatClient) extends JournalClient {
     recovery.foreach(_.cancel(false))
     exec.submit(new Runnable {
       def run { 
-        try {
-          cluster.foreach { addresses => loop(addresses, 0) }
+        try { 
+          loop(0)
         } catch {
           case e: InterruptedException => 
             disconnect("Client reconnect interrupted")
@@ -199,6 +201,15 @@ class Client(client: CopycatClient) extends JournalClient {
             disconnect("Client reconnect failed")
         }
       }})
+  }
+  
+  private def newCopycatClient() = {
+    val klient = Client.buildCopycatClient(sslConfig)
+    klient.onStateChange(new Consumer[CopycatClient.State] {
+      def accept(state: CopycatClient.State) {
+        onStateChange(state)
+      }})
+    klient
   }
   
   def addStateListener(listener: ClientStateListener) {
@@ -223,12 +234,39 @@ class Client(client: CopycatClient) extends JournalClient {
     if (!shutdown) {
       val clusterAddresses = addresses.map {a => new Address(a)}
       cluster = Some(clusterAddresses)
-      client.connect(clusterAddresses).join()
+      doConnect()
     } else {
       throw new IllegalStateException("client has been shutdown")
     }
   }
   
+  private def doConnect() {
+    cluster.foreach { addrs => client.connect(addrs).join() }
+    client.onEvent("journal-commit", new Consumer[JournalCommitEvent] { 
+      def accept(evt: JournalCommitEvent) {
+        onJournalCommitEvent(evt)
+      }})
+    
+    client.onEvent("journal-block", new Consumer[JournalBlockEvent] { 
+      def accept(evt: JournalBlockEvent) { 
+        onJournalBlockEvent(evt)
+      }})
+  }
+  
+  private def onJournalCommitEvent(evt: JournalCommitEvent) {
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(listeners.foreach(_.onJournalCommit(evt.entry)))
+      }})
+  }
+  
+  private def onJournalBlockEvent(evt: JournalBlockEvent) {
+    exec.submit(new Runnable {
+      def run {
+        withErrorLog(listeners.foreach(_.onJournalBlock(evt.ref, evt.index)))
+      }})
+  }
+
   def close() {
     if (!shutdown) {
       shutdown = true
@@ -238,23 +276,7 @@ class Client(client: CopycatClient) extends JournalClient {
   }
   
   def listen(listener: JournalListener) {
-    if (listeners.isEmpty) {
-      listeners = Set(listener)
-      client.onEvent("journal-commit", 
-                     new Consumer[JournalCommitEvent] { 
-        def accept(evt: JournalCommitEvent) {
-          listeners.foreach(_.onJournalCommit(evt.entry))
-        }
-      })
-      client.onEvent("journal-block", 
-                     new Consumer[JournalBlockEvent] { 
-        def accept(evt: JournalBlockEvent) { 
-          listeners.foreach(_.onJournalBlock(evt.ref, evt.index))
-        }
-      })
-    } else {
-      listeners += listener
-    }
+    listeners += listener
   }
 }
 
@@ -294,13 +316,17 @@ object Client {
   val random = new Random  
   def randomBackoff(retry: Int, max: Int = 60) = 
     random.nextInt(Math.min(max, Math.pow(2, retry).toInt) * 1000)
-  
-  def build(sslConfig: Option[Transport.SSLConfig] = None): Client = {
+
+  def buildCopycatClient(sslConfig: Option[Transport.SSLConfig]): CopycatClient = {
     val client = CopycatClient.builder()
       .withTransport(Transport.build(2, sslConfig))
       .withConnectionStrategy(new ClientConnectionStrategy)
       .build()
     Serializers.register(client.serializer)
-    new Client(client)
+    client
+  }
+  
+  def build(sslConfig: Option[Transport.SSLConfig] = None): Client = {
+    new Client(sslConfig)
   }
 }
