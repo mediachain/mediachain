@@ -107,7 +107,7 @@ object PersistentDatastore {
         .getOrElse { conf.getq("io.mediachain.transactor.server.rootdir") + "/rocks.db" }
       val threads = conf.getopt("io.mediachain.transactor.datastore.threads") match {
         case Some(str) => str.toInt
-        case None => Runtime.getRuntime.availableProcessors
+        case None => 4 * Runtime.getRuntime.availableProcessors
       }
       Config(dynamoConfig, path, threads)
     }
