@@ -160,7 +160,7 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
           // but also close it to shutdown its internal context
           val klient = client
           client = newCopycatClient()
-          klient.close()
+          withErrorLog(klient.close())
           Try(doConnect()) match {
             case Success(_) => 
               logger.info(s"Successfully reconnected to cluster")
