@@ -124,12 +124,7 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
   private def emitStateChange(stateChange: ClientState) {
     exec.submit(new Runnable {
       def run {
-        try {
-          stateListeners.foreach(_.onStateChange(stateChange))
-        } catch {
-          case e: Throwable =>
-            logger.error("Error dispatching state change", e)
-        }
+        withErrorLog(stateListeners.foreach(_.onStateChange(stateChange)))
       }})
   }
   
