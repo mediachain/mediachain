@@ -160,36 +160,34 @@ object MediachainBuild extends Build {
       // to indicate a build that's "in-between" releases
       git.uncommittedSignifier := None,
 
-      // If there are no tags prior to the head commit, set the version
-      // number to 0.1.0-${sha}-SNAPSHOT where ${sha} is the first 8 chars
-      // of the head sha-1 hash.
+      // If there are no matching tags prior to the head commit, set the version
+      // number to 0.1.0-${sha}-SNAPSHOT where ${sha} is the first 7 chars
+      // of the head sha1 hash.
       git.formattedShaVersion := git.gitHeadCommit.value.map { sha =>
-        s"0.1.0-${sha.take(8)}-SNAPSHOT"
+        s"0.1.0-${sha.take(7)}-SNAPSHOT"
       },
 
-      // If there are tags prior to the head commit with the format
-      // "vX.X.X", use that as the base version.
-      // If we're on a tag, use the value of the tag directly.
-      //
-      git.gitTagToVersionNumber := { tag =>
-        println(s"git tag info: $tag")
-        tag match {
-          case VersionRegex(v, info) => info match {
-            case "" =>
-              Some(v)
-            case "SNAPSHOT" =>
-              Some(s"$v-SNAPSHOT")
-            case ShaRegex(_, sha) =>
-              Some(s"$v-$sha-SNAPSHOT")
-            case _ =>
-              None
-          }
-          case _ => None
-        }
+      // Convert git tags to version numbers
+      // Matches tags beginning with the pattern "vX.X.X", where X is an
+      // integer.
+      // If we're on a tagged commit, this function will receive just the
+      // tag itself, which is used as the version number directly.
+      // If we're not on a tagged commit, the function gets the output of
+      // `git describe --tags`, and we return the most recent tag + the
+      // sha of the current commit, e.g. `0.42.0-fe432ab-SNAPSHOT`
+      git.gitTagToVersionNumber := {
+        case GitDescribeRegex(taggedVersion, commitsSinceTag, sha) =>
+          Some(s"$taggedVersion-$sha-SNAPSHOT")
+
+        case TagOnlyRegex(taggedVersion) =>
+          Some(taggedVersion)
+
+        case _ => None
       }
+
     ))
 
-  lazy val VersionRegex = "v([0-9]+.[0-9]+.[0-9]+)-?(.*)?".r
-  lazy val ShaRegex = "(?:SNAPSHOT-)?([0-9]+)-(.*)".r
+  lazy val GitDescribeRegex = "v([0-9]+\\.[0-9]+\\.[0-9]+.*)-([0-9]+)-g([0-9a-fA-F]+)".r
+  lazy val TagOnlyRegex = "v([0-9]+\\.[0-9]+\\.[0-9]+.*)".r
 }
 
