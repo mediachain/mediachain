@@ -165,7 +165,7 @@ class Client(client: CopycatClient) extends JournalClient {
           logger.info("Reconnecting to " + addresses)
           Try(client.connect(addresses).join()) match {
             case Success(_) => 
-              logger.info("Successfully reconnected")
+              logger.info(s"Successfully reconnected; Client state is ${client.state}")
               if (shutdown) {
                 // lost race with user calling #close
                 // make sure the client is closed
