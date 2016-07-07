@@ -6,7 +6,11 @@
 
 The primary Mediachain repo. Contains interface definitions and the Transactor implementation. Please see [the RFC](rfc/mediachain-rfc-2.md) for the system design.
 
+## Mediachain System Layout
 ![Mediachain System Diagram](rfc/images/mediachain-system.png)
+
+## Blockhain Extension
+![Mediachain Blockchain Animation](rfc/images/blockchain.gif)
 
 [Mediachain Blog](https://blog.mediachain.io/)
 
