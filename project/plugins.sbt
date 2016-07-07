@@ -19,3 +19,7 @@ addSbtPlugin("com.trueaccord.scalapb" % "sbt-scalapb" % "0.5.21")
 libraryDependencies ++= Seq(
   "com.github.os72" % "protoc-jar" % "3.0.0-b2"
 )
+
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.6.1")
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.5")

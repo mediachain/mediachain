@@ -1,8 +1,12 @@
 import sbt._
 import Keys._
 import sbtassembly.AssemblyKeys._
-import sbtassembly.{MergeStrategy,PathList}
+import sbtassembly.{MergeStrategy, PathList}
 import com.trueaccord.scalapb.{ScalaPbPlugin => PB}
+import com.typesafe.sbt.GitVersioning
+import com.typesafe.sbt.SbtGit.git
+import sbtbuildinfo.{BuildInfoKey, BuildInfoOption, BuildInfoPlugin}
+import sbtbuildinfo.BuildInfoKeys._
 
 object MediachainBuild extends Build {
   updateOptions := updateOptions.value.withCachedResolution(true)
@@ -10,13 +14,56 @@ object MediachainBuild extends Build {
   val specs2Version = "3.7.3"
   val scalaCheckVersion = "1.13.1"
 
+  lazy val publishSettings = Seq(
+    publishMavenStyle := true,
+    publishArtifact in Test := false,
+    publishTo := {
+      val nexus = "https://oss.sonatype.org/"
+      if (isSnapshot.value)
+        Some("snapshots" at nexus + "content/repositories/snapshots")
+      else
+        Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+    },
+    pomIncludeRepository := { _ => false },
+    licenses := Seq("MIT" -> url("https://raw.githubusercontent.com/mediachain/mediachain/master/LICENSE")),
+    homepage := Some(url("https://mediachain.io")),
+    pomExtra :=
+      <scm>
+        <url>git@github.com/mediachain/mediachain.git</url>
+        <connection>scm:git:git@github.com/mediachain/mediachain.git</connection>
+      </scm>
+        <developers>
+          <developer>
+            <id>yusefnapora</id>
+            <name>Yusef Napora</name>
+            <url>https://github.com/yusefnapora</url>
+          </developer>
+          <developer>
+            <id>parkan</id>
+            <name>Arkadiy Kukarkin</name>
+            <url>https://github.com/parkan</url>
+          </developer>
+          <developer>
+            <id>bigs</id>
+            <name>Cole Brown</name>
+            <url>https://github.com/bigs</url>
+          </developer>
+          <developer>
+            <id>vyzo</id>
+            <name>Dimitris Vyzovitis</name>
+            <url>https://github.com/vyzo</url>
+          </developer>
+        </developers>
+  )
+
   override lazy val settings = super.settings ++ Seq(
     organization := "io.mediachain",
-    version := "0.0.1",
     scalaVersion := "2.11.7",
     scalacOptions ++= Seq("-Xlint", "-deprecation", "-Xfatal-warnings",
       "-feature", "-language:higherKinds"),
-    // resolvers += Resolver.mavenLocal, // local maven for tip debugging
+    resolvers ++= Seq(
+      Resolver.sonatypeRepo("public")
+    ),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats" % "0.4.1",
       "org.typelevel" %% "dogs-core" % "0.2.2",
@@ -31,21 +78,22 @@ object MediachainBuild extends Build {
       "com.lihaoyi" % "ammonite-repl" % "0.5.7" % "test" cross CrossVersion.full
     ),
     scalacOptions in Test ++= Seq("-Yrangepos"),
-    test in assembly := {}
+    test in assembly := {},
+
+    // sbt-buildinfo configuration
+    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, sbtVersion,
+      BuildInfoKey.map(name) { case (k, v) => k -> s"io.mediachain.$v" }
+    ),
+    buildInfoOptions := Seq(BuildInfoOption.ToMap, BuildInfoOption.ToJson)
   )
 
-  lazy val utils = Project("utils", file("utils"))
-    .settings(settings)
-
-  // TODO: replace this with maven-published version
-  val scalaMultihashCommit = "b2999d6c00b3acab6ea3ff5d0965634bed3a3823"
-  lazy val scalaMultihash = RootProject(uri(
-    s"git://github.com/mediachain/scala-multihash.git#$scalaMultihashCommit"
-  ))
 
   lazy val transactor = Project("transactor", file("transactor"))
-    .settings(settings ++ Seq(
+    .enablePlugins(BuildInfoPlugin)
+    .settings(settings ++ publishSettings ++ Seq(
+      buildInfoPackage := "io.mediachain.transactor",
       libraryDependencies ++= Seq(
+        "io.mediachain" %% "multihash" % "0.1.0",
         "io.atomix.copycat" % "copycat-server" % "1.1.4",
         "io.atomix.copycat" % "copycat-client" % "1.1.4",
         "io.atomix.catalyst" % "catalyst-netty" % "1.1.1",
@@ -63,18 +111,17 @@ object MediachainBuild extends Build {
           val oldStrategy = (assemblyMergeStrategy in assembly).value
           oldStrategy(x)
       },
+      assemblyJarName in assembly := "transactor-assembly.jar",
       mainClass := Some("io.mediachain.transactor.Main")
     ))
     .dependsOn(protocol)
-    .dependsOn(scalaMultihash)
-
-  Resolver.sonatypeRepo("public")
-
-  updateOptions := updateOptions.value.withCachedResolution(true)
 
   lazy val protocol = Project("protocol", file("protocol"))
-    .settings(settings ++ Seq(
+    .enablePlugins(BuildInfoPlugin)
+    .settings(settings ++ publishSettings ++ Seq(
+      buildInfoPackage := "io.mediachain.protocol",
       libraryDependencies ++= Seq(
+        "io.mediachain" %% "multihash" % "0.1.0",
         "co.nstant.in" % "cbor" % "0.7"
       )) ++
       PB.protobufSettings ++
@@ -93,11 +140,55 @@ object MediachainBuild extends Build {
         )
       )
     )
-    .dependsOn(scalaMultihash)
 
   // aggregate means commands will cascade to the subprojects
   // dependsOn means classes will be available
   lazy val mediachain = (project in file("."))
     .aggregate(transactor, protocol)
+    .enablePlugins(GitVersioning)
+    .settings(Seq(
+      // Don't publish an artifact for the root project
+      publishArtifact := false,
+      // sbt-pgp will choke if there's no repo, even tho it's unused
+      publishTo := Some(Resolver.file("Fake repo to make sbt-pgp happy",
+        file("target/fake-repo"))),
+
+      // git versioning configuration
+      git.useGitDescribe := true,
+
+      // by default sbt-git will append -SNAPSHOT if your working dir has
+      // uncommitted changes.  We want to disable that and add -SNAPSHOT
+      // to indicate a build that's "in-between" releases
+      git.uncommittedSignifier := None,
+
+      // If there are no matching tags prior to the head commit, set the version
+      // number to 0.1.0-${sha}-SNAPSHOT where ${sha} is the first 7 chars
+      // of the head sha1 hash.
+      git.formattedShaVersion := git.gitHeadCommit.value.map { sha =>
+        s"0.1.0-${sha.take(7)}-SNAPSHOT"
+      },
+
+      // Convert git tags to version numbers
+      // Matches tags beginning with the pattern "vX.X.X", where X is an
+      // integer.
+      // If we're on a tagged commit, this function will receive just the
+      // tag itself, which is used as the version number directly.
+      // If we're not on a tagged commit, the function gets the output of
+      // `git describe --tags`, and we return the most recent tag + the
+      // sha of the current commit, e.g. `0.42.0-fe432ab-SNAPSHOT`
+      git.gitTagToVersionNumber := {
+        case GitDescribeRegex(taggedVersion, commitsSinceTag, sha) =>
+          Some(s"$taggedVersion-$sha-SNAPSHOT")
+
+        case TagOnlyRegex(taggedVersion) =>
+          Some(taggedVersion)
+
+        case _ => None
+      }
+
+    ))
+
+  lazy val GitDescribeRegex = "v([0-9]+\\.[0-9]+\\.[0-9]+.*)-([0-9]+)-g([0-9a-fA-F]+)".r
+  lazy val TagOnlyRegex = "v([0-9]+\\.[0-9]+\\.[0-9]+.*)".r
 }
 
