@@ -1,3 +1,4 @@
 io.mediachain.transactor.server.rootdir: /mnt/transactor
 io.mediachain.transactor.server.address: {{ ansible_eth0.ipv4.address }}:10000
 io.mediachain.transactor.dynamo.baseTable: {{ dynamo_table }}
+io.mediachain.transactor.datastore.threads: {{ datastore_threads }}
