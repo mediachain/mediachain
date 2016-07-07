@@ -164,6 +164,7 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
       if (!shutdown) {
         if (retry < maxRetries) {
           logger.info("Reconnecting to cluster")
+          newClient()
           Try(doConnect()) match {
             case Success(_) => 
               logger.info(s"Successfully reconnected to cluster")
@@ -191,7 +192,6 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
       }
     }
 
-    newClient()
     recovery.foreach(_.cancel(false))
     exec.submit(new Runnable {
       def run { 
