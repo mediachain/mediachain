@@ -5,7 +5,7 @@ import java.util.{Random, Timer, TimerTask}
 import java.util.concurrent.{ExecutorService, Executors, CompletableFuture}
 import java.time.Duration
 import io.atomix.copycat.Operation
-import io.atomix.copycat.client.{CopycatClient, ConnectionStrategy}
+import io.atomix.copycat.client.{CopycatClient, DefaultCopycatClient, ConnectionStrategy}
 import io.atomix.catalyst.transport.Address
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -135,36 +135,40 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
   }
   
   private def recover() {
-    val cf = client.recover()
-    recovery = Some(cf)
-    exec.submit(new Runnable {
-      def run {
-        try {
-          cf.join()
-          logger.info("Copycat session recovered")
-        } catch {
-          case e: Throwable =>
-            logger.error("Copycat session recovery failed", e)
-        } finally {
-          recovery = None
-        }
-      }})
+    // val cf = client.recover()
+    // recovery = Some(cf)
+    // exec.submit(new Runnable {
+    //   def run {
+    //     try {
+    //       cf.join()
+    //       logger.info("Copycat session recovered")
+    //     } catch {
+    //       case e: Throwable =>
+    //         logger.error("Copycat session recovery failed", e)
+    //     } finally {
+    //       recovery = None
+    //     }
+    //   }})
+
+    // recovery seems to be currently completely broken, and there is no
+    // way to cleanly close a client once it has transitioned to CLOSED state
+    // so go directly for reconnect
+    logger.warn("Bypassing broken recovery; opting for reconnect")
+    reconnect()
   }
   
   private def reconnect() {
     def newClient() {
-      // Copycat client state is already closed if we are reconnecting, 
-      // but also close it to shutdown its internal context
       val klient = client
       client = newCopycatClient()
-      withErrorLog(klient.close())
+      // violently kill the client; we are here because of a botched recovery.
+      withErrorLog(klient.asInstanceOf[DefaultCopycatClient].kill.join())
     }
     
     def loop(retry: Int) {
       if (!shutdown) {
         if (retry < maxRetries) {
           logger.info("Reconnecting to cluster")
-          newClient()
           Try(doConnect()) match {
             case Success(_) => 
               logger.info(s"Successfully reconnected to cluster")
@@ -196,6 +200,7 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
     exec.submit(new Runnable {
       def run { 
         try { 
+          newClient()
           loop(0)
         } catch {
           case e: InterruptedException => 
