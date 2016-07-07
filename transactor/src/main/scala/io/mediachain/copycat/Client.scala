@@ -152,15 +152,18 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
   }
   
   private def reconnect() {
+    def newClient() {
+      // Copycat client state is already closed if we are reconnecting, 
+      // but also close it to shutdown its internal context
+      val klient = client
+      client = newCopycatClient()
+      withErrorLog(klient.close())
+    }
+    
     def loop(retry: Int) {
       if (!shutdown) {
         if (retry < maxRetries) {
           logger.info("Reconnecting to cluster")
-          // Copycat client state is already closed if we are reconnecting, 
-          // but also close it to shutdown its internal context
-          val klient = client
-          client = newCopycatClient()
-          withErrorLog(klient.close())
           Try(doConnect()) match {
             case Success(_) => 
               logger.info(s"Successfully reconnected to cluster")
@@ -169,12 +172,16 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
                 // make sure the client is closed
                 client.close()
               }
-            case Failure(e) =>
+              
+            case Failure(e: Exception) =>
               logger.error("Connection error", e)
               val sleep = Client.randomBackoff(retry)
               logger.info("Backing off reconnect for " + sleep + " ms")
               Thread.sleep(sleep)
               loop(retry + 1) 
+              
+            case Failure(e: Throwable) =>
+              throw e
           }
         } else {
           disconnect("Failed to reconnect; giving up.")
@@ -183,7 +190,8 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
         disconnect("Client has shutdown")
       }
     }
-    
+
+    newClient()
     recovery.foreach(_.cancel(false))
     exec.submit(new Runnable {
       def run { 
@@ -247,7 +255,6 @@ class Client(sslConfig: Option[Transport.SSLConfig]) extends JournalClient {
           onJournalCommitEvent(evt)
         }
       }})
-    
     klient.onEvent("journal-block", new Consumer[JournalBlockEvent] { 
       def accept(evt: JournalBlockEvent) { 
         if (klient eq client) {
