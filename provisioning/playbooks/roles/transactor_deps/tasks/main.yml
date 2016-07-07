@@ -1,4 +1,12 @@
 ---
+- name: install ntp
+  apt: name=ntp state=present
+  become: yes
+
+- name: start ntp service
+  service: name=ntp enabled=true state=started
+  become: yes
+  
 - name: setup git ppa repo
   apt_repository: repo=ppa:git-core/ppa
   become: yes
