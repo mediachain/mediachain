@@ -1,3 +1,4 @@
 ---
 dynamo_table: Test
 s3_bucket: mediachain-test
+datastore_threads: 20
