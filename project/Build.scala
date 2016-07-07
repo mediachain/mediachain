@@ -111,6 +111,7 @@ object MediachainBuild extends Build {
           val oldStrategy = (assemblyMergeStrategy in assembly).value
           oldStrategy(x)
       },
+      assemblyJarName in assembly := "transactor-assembly.jar",
       mainClass := Some("io.mediachain.transactor.Main")
     ))
     .dependsOn(protocol)

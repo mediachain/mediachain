@@ -104,7 +104,6 @@ if [ $# -lt 2 ]; then
     usage_error
 fi
 
-version=0.0.1
 mediachain_home=${MEDIACHAIN_HOME:-$HOME/mediachain}
 transactor_home=${TRANSACTOR_HOME:-$HOME/transactor}
 transactor_data=${TRANSACTOR_DATADIR:-/mnt/transactor}
@@ -117,7 +116,7 @@ awscreds=${transactor_home}/awscreds.sh
 pidfile=${transactor_data}/${service}.pid
 logfile=${transactor_data}/${service}.log
 ctlfile=${transactor_data}/ctl/${service}/shutdown
-bigjar=${mediachain_home}/transactor/target/scala-2.11/transactor-assembly-${version}.jar 
+bigjar=${mediachain_home}/transactor/target/scala-2.11/transactor-assembly.jar
 
 case $action in
     start)
