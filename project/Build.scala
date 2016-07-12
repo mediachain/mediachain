@@ -102,7 +102,8 @@ object MediachainBuild extends Build {
         "org.rocksdb" % "rocksdbjni" % "4.5.1",
         "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.7",
         "com.amazonaws" % "aws-java-sdk-s3" % "1.11.7",
-        "com.github.scopt" %% "scopt" % "3.4.0"
+        "com.github.scopt" %% "scopt" % "3.4.0",
+        "org.influxdb" % "influxdb-java" % "2.2"
       ),
       assemblyMergeStrategy in assembly := {
         case "META-INF/io.netty.versions.properties" => 
