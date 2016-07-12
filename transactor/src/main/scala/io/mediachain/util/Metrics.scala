@@ -19,7 +19,7 @@ class Metrics(influx: InfluxDB, db: String) {
 object Metrics {
   def connect(url: String, user: String, pass: String, db: String): Metrics = {
     val influx = InfluxDBFactory.connect(url, user, pass)
-    influx.enableBatch(1000, 100, TimeUnit.MILLISECONDS)
+    influx.enableBatch(1000, 1, TimeUnit.SECONDS)
     new Metrics(influx, db)
   }
   
