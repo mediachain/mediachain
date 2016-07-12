@@ -23,7 +23,7 @@ object Metrics {
     new Metrics(influx, db)
   }
   
-  def fromPropeties(conf: Properties): Option[Metrics] = {
+  def fromProperties(conf: Properties): Option[Metrics] = {
     conf.getopt("io.mediachain.transactor.metrics.enabled").flatMap { enabled =>
       if (enabled == "true") {
         val url = conf.getq("io.mediachain.transactor.metrics.url")
