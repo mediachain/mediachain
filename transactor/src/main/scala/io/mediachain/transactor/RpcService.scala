@@ -3,7 +3,7 @@ package io.mediachain.transactor
 object RpcService {
   import io.mediachain.copycat.{Client, TransactorService}
   import io.mediachain.datastore.DynamoDatastore
-  import io.mediachain.util.{Properties, Logging}
+  import io.mediachain.util.{Properties, Logging, Metrics}
   import io.grpc.Server
   import scala.concurrent.ExecutionContext
   import java.util.concurrent.Executors
@@ -40,7 +40,8 @@ object RpcService {
     val datastoreConfig = DynamoDatastore.Config.fromProperties(conf)
     val datastore = new DynamoDatastore(datastoreConfig)
 
-    val txService = new TransactorService(client, datastore)
+    val metrics = Metrics.fromProperties(conf)
+    val txService = new TransactorService(client, datastore, metrics)
 
     val server = TransactorService.createServer(txService, rpcPort)
 

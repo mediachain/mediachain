@@ -7,6 +7,7 @@ import com.amazonaws.AmazonClientException
 import io.grpc.stub.StreamObserver
 import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
 import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
+import io.mediachain.util.Metrics
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.protocol.Datastore._
@@ -323,28 +324,57 @@ extends ClientStateListener with JournalListener {
   }
 }
 
-class TransactorService(client: Client, datastore: Datastore)
+class TransactorService(client: Client, datastore: Datastore, metrics: Option[Metrics])
                        (implicit val executionContext: ExecutionContext)
   extends TransactorServiceGrpc.TransactorService {
   private val logger = LoggerFactory.getLogger(classOf[TransactorService])  
   private val listener = new TransactorListener(client, datastore)
   listener.start()
 
+  private def rpcMetrics(rpc: String) {
+    metrics.foreach { m =>
+      m.counter("transactor_rpc", Map("rpc" -> rpc))
+    }
+  }
+  
+  private def rpcErrorMetrics(rpc: String, what: String) {
+    metrics.foreach { m =>
+      m.counter("transactor_error", Map("rpc" -> rpc, "error" -> what))
+    }
+  }
+
+  private def internalError[U](rpc: String)
+  : PartialFunction[Throwable, Future[U]] = {
+    case err: Throwable =>
+      rpcErrorMetrics(rpc, "INTERNAL")
+      Future.failed { 
+        new StatusRuntimeException(
+          Status.INTERNAL.withDescription(err.toString)
+        )
+      }
+  }
+  
   override def lookupChain(request: Types.MultihashReference):
   Future[Types.ChainReference] = {
+    rpcMetrics("lookupChain")
+    
     val ref = MultiHash.fromBase58(request.reference)
       .map(MultihashReference.apply)
       .getOrElse {
+        rpcErrorMetrics("lookupChain", "INVALID_ARGUMENT")
         throw new StatusRuntimeException(
           Status.INVALID_ARGUMENT.withDescription(
             "Invalid multihash reference"
           ))
       }
 
-    client.lookup(ref).map { 
+    client.lookup(ref)
+      .recoverWith(internalError("lookupChain"))
+      .map { 
       case Xor.Right(ref) =>
         TransactorService.refOptToChainRef(ref)
       case Xor.Left(err) =>
+        rpcErrorMetrics("lookupChain", "NOT_FOUND")
         throw new StatusRuntimeException(
           Status.NOT_FOUND.withDescription(err.toString)
         )
@@ -353,22 +383,27 @@ class TransactorService(client: Client, datastore: Datastore)
 
   override def insertCanonical(request: InsertRequest)
   : Future[Types.MultihashReference] = {
+    rpcMetrics("insertCanonical")
+    
     val bytes = request.canonicalCbor.toByteArray
-    checkRecordSize(bytes)
+    checkRecordSize(bytes, "insertCanonical")
     
     val recXor = CborSerialization.fromCborBytes[CanonicalRecord](bytes)
 
     val insertF = recXor match {
-      case Xor.Left(err) => throw new StatusRuntimeException(
-        Status.INVALID_ARGUMENT.withDescription(
-          s"Object deserialization error: ${err.message}"
+      case Xor.Left(err) => 
+        rpcErrorMetrics("insertCanonical", "INVALID_ARGUMENT")
+        throw new StatusRuntimeException(
+          Status.INVALID_ARGUMENT.withDescription(
+            s"Object deserialization error: ${err.message}"
+          )
         )
-      )
       case Xor.Right(obj) =>
         client.insert(obj)
     }
 
-    insertF.map { entryXor: Xor[JournalError, CanonicalEntry] =>
+    insertF.recoverWith(internalError("insertCanonical"))
+      .map { entryXor: Xor[JournalError, CanonicalEntry] =>
       entryXor match {
         case Xor.Left(err) =>
           throw new StatusRuntimeException(
@@ -384,24 +419,30 @@ class TransactorService(client: Client, datastore: Datastore)
   
   override def updateChain(request: UpdateRequest)
   : Future[Types.MultihashReference] = {
+    rpcMetrics("updateChain")
+    
     val bytes = request.chainCellCbor.toByteArray
-    checkRecordSize(bytes)
+    checkRecordSize(bytes, "updateChain")
 
     val cellXor = CborSerialization.fromCborBytes[ChainCell](bytes)
 
     val updateF = cellXor match {
-      case Xor.Left(err) => throw new StatusRuntimeException(
-        Status.INVALID_ARGUMENT.withDescription(
-          s"Object deserialization error: ${err.message}"
+      case Xor.Left(err) => 
+        rpcErrorMetrics("updateChain", "INVALID_ARGUMENT")
+        throw new StatusRuntimeException(
+          Status.INVALID_ARGUMENT.withDescription(
+            s"Object deserialization error: ${err.message}"
+          )
         )
-      )
       case Xor.Right(cell) =>
         client.update(cell.ref, cell)
     }
 
-    updateF.map { entryXor: Xor[JournalError, ChainEntry] =>
+    updateF.recoverWith(internalError("updateChain"))
+      .map { entryXor: Xor[JournalError, ChainEntry] =>
       entryXor match {
         case Xor.Left(err) =>
+          rpcErrorMetrics("updateChain", "FAILED_PRECONDITION")
           throw new StatusRuntimeException(
             Status.FAILED_PRECONDITION.withDescription(
               s"Journal Error: $err"
@@ -415,13 +456,15 @@ class TransactorService(client: Client, datastore: Datastore)
 
   override def journalStream(request: JournalStreamRequest,
                              observer: StreamObserver[JournalEvent]) {
+    rpcMetrics("journalStream")
     listener.addObserver(observer)
   }
 
 
   val maxRecordSize = 64 * 1024 // 64k ought to be enough for everyone
-  private def checkRecordSize(bytes: Array[Byte]) {
+  private def checkRecordSize(bytes: Array[Byte], rpc: String) {
     if (bytes.length > maxRecordSize) {
+      rpcErrorMetrics(rpc, "INVALID_ARGUMENT")
       throw new StatusRuntimeException(
         Status.INVALID_ARGUMENT.withDescription("Maximum record size exceeded"))
     }
