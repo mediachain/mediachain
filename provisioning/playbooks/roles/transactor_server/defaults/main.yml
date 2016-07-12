@@ -2,3 +2,8 @@
 dynamo_table: Test
 s3_bucket: mediachain-test
 datastore_threads: 20
+metrics_enable: false
+metrics_url: undefined
+metrics_user: undefined
+metrics_pass: undefined
+metrics_db: undefined

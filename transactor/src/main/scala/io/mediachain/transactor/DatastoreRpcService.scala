@@ -3,7 +3,7 @@ package io.mediachain.transactor
 // this is placed in io.mediachain.transactor to accompany the rest of the programs
 object DatastoreRpcService {
   import io.mediachain.datastore.{DynamoDatastore, DatastoreService}
-  import io.mediachain.util.{Properties, Logging}
+  import io.mediachain.util.{Properties, Logging, Metrics}
   import io.grpc.Server
   import scala.concurrent.ExecutionContext
   import java.util.concurrent.Executors
@@ -29,16 +29,18 @@ object DatastoreRpcService {
       case Some(str) => str.toInt
       case None => DatastoreService.defaultMaxObjectSize
     }
-      
+    
     val datastoreConfig = DynamoDatastore.Config.fromProperties(conf)
     val datastore = new DynamoDatastore(datastoreConfig)
+    
+    val metrics = Metrics.fromProperties(conf)
     
     // use a cached thread pool since all the threads do blocking ops
     implicit val ec = ExecutionContext.fromExecutor(
       Executors.newCachedThreadPool(),
       (e: Throwable) => logger.error("Error in asynchronous task", e)
     )
-    val dsService = new DatastoreService(datastore, maxObjectSize)
+    val dsService = new DatastoreService(datastore, metrics, maxObjectSize)
     val server = DatastoreService.createServer(dsService, rpcPort)
     
     logger.info(s"started rpc service on port $rpcPort")
