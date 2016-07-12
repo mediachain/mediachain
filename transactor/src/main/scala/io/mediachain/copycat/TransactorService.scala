@@ -406,6 +406,7 @@ class TransactorService(client: Client, datastore: Datastore, metrics: Option[Me
       .map { entryXor: Xor[JournalError, CanonicalEntry] =>
       entryXor match {
         case Xor.Left(err) =>
+          rpcErrorMetrics("insertCanonical", "FAILED_PRECONDITION")
           throw new StatusRuntimeException(
             Status.FAILED_PRECONDITION.withDescription(
               s"Journal Error: $err"
