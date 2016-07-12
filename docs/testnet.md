@@ -1,4 +1,4 @@
-# The Mediachain TestNet
+# The Mediachain testnet
 
 Mediachain Labs has deployed a publicly accessible test network for use by the
 general public.
