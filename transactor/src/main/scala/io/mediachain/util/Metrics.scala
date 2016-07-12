@@ -12,7 +12,7 @@ class Metrics(influx: InfluxDB, db: String) {
       .tag(tags)
       .addField("count", count)
       .build()
-    influx.write(db, "DEFAULT", pt)
+    influx.write(db, "default", pt)
   }
 }
 
