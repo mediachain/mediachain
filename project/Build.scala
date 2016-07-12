@@ -141,6 +141,11 @@ object MediachainBuild extends Build {
       )
     )
 
+  val includeGitShaInVersion =
+    Option(System.getProperty("io.mediachain.build.versionIncludesGitSha"))
+      .exists(_ => true)
+
+
   // aggregate means commands will cascade to the subprojects
   // dependsOn means classes will be available
   lazy val mediachain = (project in file("."))
@@ -165,7 +170,10 @@ object MediachainBuild extends Build {
       // number to 0.1.0-${sha}-SNAPSHOT where ${sha} is the first 7 chars
       // of the head sha1 hash.
       git.formattedShaVersion := git.gitHeadCommit.value.map { sha =>
-        s"0.1.0-${sha.take(7)}-SNAPSHOT"
+        if (includeGitShaInVersion)
+          s"0.1.0-${sha.take(7)}-SNAPSHOT"
+        else
+          "0.1.0-SNAPSHOT"
       },
 
       // Convert git tags to version numbers
@@ -178,7 +186,10 @@ object MediachainBuild extends Build {
       // sha of the current commit, e.g. `0.42.0-fe432ab-SNAPSHOT`
       git.gitTagToVersionNumber := {
         case GitDescribeRegex(taggedVersion, commitsSinceTag, sha) =>
-          Some(s"$taggedVersion-$sha-SNAPSHOT")
+          if (includeGitShaInVersion)
+            Some(s"$taggedVersion-$sha-SNAPSHOT")
+          else
+            Some(s"$taggedVersion-SNAPSHOT")
 
         case TagOnlyRegex(taggedVersion) =>
           Some(taggedVersion)
