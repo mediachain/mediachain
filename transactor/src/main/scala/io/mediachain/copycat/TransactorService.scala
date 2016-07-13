@@ -343,6 +343,19 @@ class TransactorService(client: Client, datastore: Datastore, metrics: Option[Me
     }
   }
 
+  private def rpcRecordMetrics(entry: JournalEntry) {
+    metrics.foreach { m =>
+      val ctags = entry match {
+        case e: CanonicalEntry => 
+          Map("metric" -> "record", "record" -> "canonical")
+        case e: ChainEntry =>
+          Map("metric" -> "record", "record" -> "chain")
+      }
+      m.counter("transactor_object", ctags)
+      m.gauge("transactor_object", Map("metric" -> "index"), entry.index.toLong)
+    }
+  }
+
   private def internalError[U](rpc: String)
   : PartialFunction[Throwable, Future[U]] = {
     case err: Throwable =>
@@ -413,6 +426,7 @@ class TransactorService(client: Client, datastore: Datastore, metrics: Option[Me
             )
           )
         case Xor.Right(entry) =>
+          rpcRecordMetrics(entry)
           TransactorService.refToRPCMultihashRef(entry.ref)
       }
     }
@@ -450,6 +464,7 @@ class TransactorService(client: Client, datastore: Datastore, metrics: Option[Me
             )
           )
         case Xor.Right(entry) =>
+          rpcRecordMetrics(entry)
           TransactorService.refToRPCMultihashRef(entry.chain)
       }
     }

@@ -14,6 +14,14 @@ class Metrics(influx: InfluxDB, db: String) {
       .build()
     influx.write(db, "default", pt)
   }
+  
+  def gauge(measure: String, tags: Map[String, String], value: Long) {
+    val pt = Point.measurement(measure)
+      .tag(tags)
+      .addField("value", value)
+      .build()
+    influx.write(db, "default", pt)
+  }
 }
 
 object Metrics {
