@@ -135,7 +135,7 @@ object MediachainBuild extends Build {
         version in PB.protobufConfig := "3.0.0-beta-2",
 
         libraryDependencies ++= Seq(
-          "io.grpc" % "grpc-all" % "0.14.0",
+          "io.grpc" % "grpc-all" % "0.15.0",
           "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" %
             (PB.scalapbVersion in PB.protobufConfig).value
         )
