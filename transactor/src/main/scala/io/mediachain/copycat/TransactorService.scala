@@ -273,6 +273,8 @@ extends ClientStateListener with JournalListener {
       setCurrentBlock(block)
     } else if (block.chain == state.blockchain) {
       extendCurrentBlock(block)
+    } else if (block.index < state.index) {
+      logger.warn(s"Cluster replayed STALE BLOCK ${block.index}; current index is ${state.index}")
     } else if (block.chain.isEmpty) {
       throw new RuntimeException("PANIC: Blockchain divergence detected")
     } else {
