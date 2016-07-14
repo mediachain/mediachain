@@ -5,6 +5,7 @@
     - transactor_deps
     - python
     - rocksdb
+    - { role: insanity54.ipfs, become: yes, become_user: "root", ipfsurl: "https://dist.ipfs.io/go-ipfs/v0.4.2/go-ipfs_v0.4.2_linux-amd64.tar.gz", ipfssrc: "ipfs-0.4.2" }
 
   become: yes
 
