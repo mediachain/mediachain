@@ -4,7 +4,6 @@
     - apt_upgrade
     - transactor_deps
     - python
-    - {role: grpc, grpc_checkout: "be223358795b645416e801727f4d3fcad3d73964" }
 
   become: yes
 
