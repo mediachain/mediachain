@@ -1,0 +1,6 @@
+---
+
+rocksdb_version: 4.8
+rocksdb_download_dir: /opt/src
+rocksdb_extract_dir: /opt/src
+rocksdb_install_path: /usr

@@ -1,0 +1,35 @@
+- block:
+
+  - name: install rocksdb build dependencies
+    apt: name={{item}} state=installed
+    with_items:
+      - build-essential
+      - libsnappy-dev
+      - zlib1g-dev
+      - libbz2-dev
+      - libgflags-dev
+
+  - file: path={{rocksdb_download_dir}} state=directory mode=0755
+  - file: path={{rocksdb_extract_dir}} state=directory mode=0755
+
+  - name: download rocksdb tarball
+    get_url:
+    args:
+      url: "https://github.com/facebook/rocksdb/archive/rocksdb-{{rocksdb_version}}.tar.gz"
+      dest: "{{rocksdb_download_dir}}/rocksdb-{{rocksdb_version}}.tar.gz"
+
+  - name: extract rocksdb tarball
+    unarchive:
+    args:
+      copy: no
+      src: "{{rocksdb_download_dir}}/rocksdb-{{rocksdb_version}}.tar.gz"
+      dest: "{{rocksdb_extract_dir}}"
+
+  - name: install rocksdb
+    shell: make shared_lib && env INSTALL_PATH={{rocksdb_install_path}} make install-shared
+    args:
+      chdir: "{{rocksdb_extract_dir}}/rocksdb-rocksdb-{{rocksdb_version}}"
+      creates: "{{rocksdb_install_path}}/lib/librocksdb.so.{{rocksdb_version}}"
+
+  become: yes
+  become_user: root
