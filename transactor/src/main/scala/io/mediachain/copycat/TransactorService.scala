@@ -230,7 +230,7 @@ extends ClientStateListener with JournalListener {
         logger.info(s"Fetched block ${ref} -> ${block.index} ${block.chain}")
         if (block.chain == state.blockchain) {
           block :: blocks
-        } else if (block.chain.isEmpty) {
+        } else if (block.chain.isEmpty || block.index < state.index) {
           throw new RuntimeException("PANIC: Blockchain divergence detected")
         } else {
           loop(block.chain.get, block :: blocks)
