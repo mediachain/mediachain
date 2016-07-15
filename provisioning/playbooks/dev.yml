@@ -3,3 +3,11 @@
   roles:
     - { role: transactor_deps }
     - { role: dynamodb_local, become: yes, become_user: "root" }
+    - rocksdb
+    - python
+
+  tasks:
+    - name: install pyrocksdb python module
+      pip: name=pyrocksdb version=0.4
+      become: yes
+      become_user: root
