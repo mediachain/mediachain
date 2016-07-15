@@ -32,7 +32,7 @@ object Server {
       .withTransport(Transport.build(4, sslConfig))
       .withElectionTimeout(Duration.ofSeconds(10))
       .withHeartbeatInterval(Duration.ofSeconds(1))
-      .withSessionTimeout(Duration.ofSeconds(10))
+      .withSessionTimeout(Duration.ofSeconds(15))
       .build()
     Serializers.register(server.serializer)
     server
