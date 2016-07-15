@@ -5,6 +5,7 @@
     - { role: dynamodb_local, become: yes, become_user: "root" }
     - rocksdb
     - python
+    - {role: ipfs, become: yes, become_user: "root", ipfs_user: "vagrant" }
 
   tasks:
     - name: install pyrocksdb python module

@@ -1,0 +1,18 @@
+---
+
+# If Debian
+- name: ensure ansible and ipfs dependencies are installed from apt
+  apt: pkg={{ item }} state=present
+  with_items:
+    - python-pip
+    - git
+  when: ansible_os_family == 'Debian'
+    
+
+# If RedHat
+- name: install python-pip
+  yum: name={{ item }} state=present
+  with_items:
+    - python-pip
+    - git
+  when: ansible_os_family == 'RedHat'

@@ -1,0 +1,89 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+Vagrant.configure(2) do |config|
+
+  ## I'm really clueless on Centos so I'm disabling it.
+  #
+  #
+  # config.vm.define "centos6" do |centos6|
+  #   centos6.vm.box = "geerlingguy/centos6"
+  #
+  #   centos6.vm.provision "shell", inline: <<-SHELL
+  #     sudo yum -y update
+  #     sudo yum clean all
+  #     sudo yum -y install epel-release
+  #     sudo yum -y install git ansible sudo
+  #     sudo yum clean all
+  #     sudo echo -e '[local]\nlocalhost ansible_connection=local' > /etc/ansible/hosts
+  #   SHELL
+  #   centos6.vm.synced_folder "../", "/etc/ansible/roles/ansible-ipfs", :mount_options => ["ro"]
+  #   centos6.vm.network "forwarded_port", guest: 5001, host: 5011
+  #   centos6.vm.network "forwarded_port", guest: 4001, host: 4011
+  #   centos6.vm.network "forwarded_port", guest: 8080, host: 8091
+  # end
+  #
+  # config.vm.define "centos7" do |centos7|
+  #   centos7.vm.box = "geerlingguy/centos7"
+  #
+  #   centos7.vm.provision "shell", inline: <<-SHELL
+  #     sudo yum -y update
+  #     sudo yum clean all
+  #     sudo yum -y install epel-release
+  #     sudo yum -y install git ansible sudo
+  #     sudo yum clean all
+  #     sudo echo -e '[local]\nlocalhost ansible_connection=local' > /etc/ansible/hosts
+  #   SHELL
+  #   centos7.vm.synced_folder "../", "/etc/ansible/roles/ansible-ipfs", :mount_options => ["ro"]
+  # end
+
+  config.vm.define "debian8" do |debian8|
+    debian8.vm.box = "debian/jessie64"
+
+    debian8.vm.provision "shell", inline: <<-SHELL
+      sudo apt-get update
+      sudo apt-get install -y software-properties-common git
+      sudo apt-add-repository -y ppa:ansible/ansible
+      sudo apt-get update
+      sudo apt-get install -y ansible
+      sudo echo "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
+    SHELL
+    debian8.vm.synced_folder "../", "/etc/ansible/roles/ansible-ipfs-nagios", :mount_options => ["ro"]
+  end
+
+  config.vm.define "ubuntu12" do |ubuntu12|
+    ubuntu12.vm.box = "hashicorp/precise64"
+
+    ubuntu12.vm.provision "shell", inline: <<-SHELL
+      sudo apt-get update
+      sudo apt-get install -y software-properties-common python-software-properties git
+      sudo apt-add-repository -y ppa:ansible/ansible
+      sudo apt-get update
+      sudo apt-get install -y ansible
+      sudo echo "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
+    SHELL
+    ubuntu12.vm.synced_folder "../", "/etc/ansible/roles/ansible-ipfs", :mount_options => ["ro"]
+    ubuntu12.vm.network "forwarded_port", guest: 5001, host: 5012
+    ubuntu12.vm.network "forwarded_port", guest: 4001, host: 4012
+    ubuntu12.vm.network "forwarded_port", guest: 8080, host: 8092
+  end
+
+  config.vm.define "ubuntu14" do |ubuntu14|
+    ubuntu14.vm.box = "ubuntu/trusty64"
+
+    ubuntu14.vm.provision "shell", inline: <<-SHELL
+      sudo apt-get update
+      sudo apt-get install -y software-properties-common
+      sudo apt-add-repository -y ppa:ansible/ansible
+      sudo apt-get update
+      sudo apt-get install -y ansible
+      sudo echo "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
+    SHELL
+    ubuntu14.vm.synced_folder "../", "/etc/ansible/roles/ansible-ipfs", :mount_options => ["ro"]
+    ubuntu14.vm.network "forwarded_port", guest: 5001, host: 5013
+    ubuntu14.vm.network "forwarded_port", guest: 4001, host: 4013
+    ubuntu14.vm.network "forwarded_port", guest: 8080, host: 8093
+  end
+
+end

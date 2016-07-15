@@ -1,0 +1,4 @@
+---
+
+- name: copy systemd script to system
+  template: src={{role_path}}/templates/ipfs.service.j2 dest=/lib/systemd/system/ipfs.service owner=root group=root mode=0755

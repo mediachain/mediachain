@@ -5,7 +5,8 @@
     - transactor_deps
     - python
     - rocksdb
-
+    - {role: ipfs, become: yes, become_user: "root", ipfs_user: "ubuntu" }
+    
   become: yes
 
   tasks:

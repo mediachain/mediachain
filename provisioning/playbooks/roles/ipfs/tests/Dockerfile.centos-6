@@ -1,0 +1,10 @@
+FROM centos:6
+
+# Install Ansible
+RUN yum -y update; yum clean all;
+RUN yum -y install epel-release
+RUN yum -y install git ansible sudo
+RUN yum clean all
+
+# Install Ansible inventory file
+RUN echo -e '[local]\nlocalhost ansible_connection=local' > /etc/ansible/hosts

@@ -1,0 +1,53 @@
+---
+
+- name: Ensure dependencies are installed
+  include: dependencies.yml
+
+- name: Ensure download directory is present
+  file: path={{ download_dir }} state=directory
+
+- name: Ensure source directory is present
+  file: path={{ download_dir }}/{{ ipfssrc }} state=directory
+
+- include: redhat-deps.yml
+  when: ansible_os_family == 'RedHat'
+
+- include: debian-deps.yml
+  when: ansible_os_family == 'Debian'
+
+- name: Create ipfs group
+  group: name={{ ipfs_group }} state=present
+
+- name: Create ipfs user
+  user: name={{ ipfs_user }} state=present groups={{ ipfs_group }}
+
+- include: install-ipfs.yml
+
+- name: initialize ipfs
+  shell: creates="/home/{{ ipfs_user }}/.ipfs/version" script --return -c "/usr/local/bin/ipfs init" /dev/null
+  become: yes
+  become_user: "{{ ipfs_user }}"
+  register: init
+
+#- debug: var=init
+
+# - name: register log for debug purpose
+#   command: cat /var/log/ipfs.log
+#   register: result
+#
+# - debug: var=result
+
+- name: Ensure ipfs is started
+  service: name=ipfs state=started enabled=yes
+
+
+#- name: debug ipfs log
+#  command: cat /var/log/ipfs.log
+#  register: baby
+#
+#- name: debug ipfs log
+#  command: cat /var/log/ipfs.err
+#  register: boomer
+#
+#- debug: var=baby
+#- debug: var=boomer

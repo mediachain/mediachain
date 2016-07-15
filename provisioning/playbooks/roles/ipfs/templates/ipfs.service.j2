@@ -1,0 +1,12 @@
+[Unit]
+Description=IPFS Daemon
+
+
+[Service]
+User="{{ipfs_user}}"
+Group="{{ipfs_group}}"
+ExecStart=/usr/local/bin/ipfs daemon
+
+
+[Install]
+WantedBy=multi-user.target
