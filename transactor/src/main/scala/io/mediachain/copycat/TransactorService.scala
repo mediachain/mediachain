@@ -1,11 +1,13 @@
 package io.mediachain.copycat
 
-import java.util.concurrent.{Executors, BlockingQueue, LinkedBlockingQueue}
+import java.net.SocketAddress
+import java.util.concurrent.{BlockingQueue, Executors, LinkedBlockingQueue}
 
 import cats.data.Xor
 import com.amazonaws.AmazonClientException
+import io.grpc.ServerCall.Listener
 import io.grpc.stub.StreamObserver
-import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
+import io.grpc._
 import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
 import io.mediachain.util.Metrics
 import io.mediachain.multihash.MultiHash
@@ -17,6 +19,7 @@ import io.mediachain.protocol.transactor.Transactor._
 import io.mediachain.protocol.types.Types
 import io.mediachain.protocol.types.Types.{ChainReference, NullReference}
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.collection.mutable.{ArrayBuffer, Buffer}
@@ -525,6 +528,21 @@ object TransactorService {
     JournalEvent(event)
   }
 
+  def loggingInterceptor: ServerInterceptor = new ServerInterceptor {
+    override def interceptCall[ReqT, RespT](
+      call: ServerCall[ReqT, RespT],
+      headers: Metadata,
+      next: ServerCallHandler[ReqT, RespT]): Listener[ReqT] = {
+
+      val addr: SocketAddress = call.attributes()
+        .get(ServerCall.REMOTE_ADDR_KEY)
+
+      // TODO: record with rpcMetrics
+      println(s"server call from: $addr.toString")
+
+      next.startCall(call, headers)
+    }
+  }
 
   def createServer(service: TransactorService, port: Int)
                   (implicit executionContext: ExecutionContext)
@@ -533,7 +551,10 @@ object TransactorService {
     
     val builder = ServerBuilder.forPort(port)
     val server = builder.addService(
-      TransactorServiceGrpc.bindService(service, executionContext)
+      ServerInterceptors.intercept(
+        TransactorServiceGrpc.bindService(service, executionContext),
+        loggingInterceptor
+      )
     ).build
     server
   }
