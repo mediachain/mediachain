@@ -30,9 +30,9 @@ object Server {
         .withStorageLevel(StorageLevel.DISK)
         .build())
       .withTransport(Transport.build(4, sslConfig))
-      .withElectionTimeout(Duration.ofSeconds(10))
+      .withElectionTimeout(Duration.ofSeconds(15))
       .withHeartbeatInterval(Duration.ofSeconds(1))
-      .withSessionTimeout(Duration.ofSeconds(15))
+      .withSessionTimeout(Duration.ofSeconds(30))
       .build()
     Serializers.register(server.serializer)
     server
