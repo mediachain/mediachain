@@ -30,8 +30,8 @@ their own.
 
 * Because [IPLD](https://github.com/ipfs/go-ipld) isn't quite production ready yet,
   we're using Amazon DynamoDB (with multiaddress, forward-compatible content-addressed keys)
-  as a stand-in. Unstructured data (raw metadata and thumbnails) is still published to IPFS if CLI is
-  passed the `--use-ipfs` flag)
+  as a stand-in. Unstructured data (raw metadata and thumbnails) is still published to IPFS,
+   unless the CLI is passed the `--disable-ipfs` flag.
 
 * Maximum write rate for the network is currently limited to ~20 concurrent writers
   (approx 150 artefact insertions/sec)
@@ -54,14 +54,14 @@ $ pip install mediachain-client
 ```
 
 Make sure you have a recent pip, at least 8.x. You also probably want to [install IPFS](https://ipfs.io/docs/install/) and
-run `ipfs daemon`
+run `ipfs daemon`.  If ipfs is not running on your machine, be sure to add the `--disable-ipfs` flag when running the `mediachain` command.
 
 ### Reading
 
 You should then be able to immediately pull down the statement chain for an artefact:
 
 ```bash
-$ mediachain --use-ipfs get <some-id>
+$ mediachain get <some-id>
 ```
 
 This resolves the chain head pointer, retrieves the parent cells and folds over them to give a complete
