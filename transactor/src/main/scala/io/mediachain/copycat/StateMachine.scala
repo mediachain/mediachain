@@ -184,17 +184,13 @@ object StateMachine {
         
     // Snapshottable
     override def install(reader: SnapshotReader) {
-      //state = reader.readObject()
-      val ser = new Serializers.JournalStateSerializer
-      state = ser.read(reader)
+      state = reader.readObject()
     }
     
     override def snapshot(writer: SnapshotWriter) {
       logger.info(s"Taking JournalState snapshot at ${state.seqno}")
       val begin = System.currentTimeMillis
-      // writer.writeObject(state)
-      val ser = new Serializers.JournalStateSerializer
-      ser.write(writer, state)
+      writer.writeObject(state)
       val end = System.currentTimeMillis
       val delta = (end - begin) / 1000.0
       logger.info(s"JournalState snapshot took ${delta}s")

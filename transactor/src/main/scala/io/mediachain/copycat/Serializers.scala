@@ -21,7 +21,6 @@ object Serializers {
     serializer.register(classOf[JournalInsert], classOf[JournalInsertSerializer])
     serializer.register(classOf[JournalUpdate], classOf[JournalUpdateSerializer])
     serializer.register(classOf[JournalLookup], classOf[JournalLookupSerializer])
-    serializer.register(classOf[JournalState], classOf[JournalStateSerializer])
   }
   
   def readBytes(buf: BufferInput[_ <: BufferInput[_]]): Array[Byte] = {
@@ -113,6 +112,9 @@ object Serializers {
   
   // JournalState serialization: serialization is required to be as fast as possible
   // because it dominates snapshot times, so we pardon all crimes and go straight to bytes
+  // unfortunately it falls short and ends up being slower than POJO serialization.
+  // only obvious way to make it faster is to avoid the copying from MultiHash.bytes
+  // (requires change in scala-multihash)
   class JournalStateSerializer extends TypeSerializer[JournalState] {
 
     def write(state: JournalState, buf: BufferOutput[_ <: BufferOutput[_]], ser: Serializer) {
