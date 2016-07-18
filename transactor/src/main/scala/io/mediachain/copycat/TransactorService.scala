@@ -546,9 +546,8 @@ object TransactorService {
         call.attributes().get(ServerCall.REMOTE_ADDR_KEY) match {
           case inet: InetSocketAddress =>
             val address = inet.getAddress
-            if (!uniqueClientAddresses.contains(address)) {
+            if (uniqueClientAddresses.add(address)) {
               logger.info(address.toString)
-              uniqueClientAddresses.add(address)
             }
           case nonInet =>
             // should only be hit during in-process transport (unit tests, etc)
