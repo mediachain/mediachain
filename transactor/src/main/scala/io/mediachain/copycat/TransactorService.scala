@@ -1,6 +1,6 @@
 package io.mediachain.copycat
 
-import java.net.SocketAddress
+import java.net.{InetAddress, InetSocketAddress, SocketAddress}
 import java.util.concurrent.{BlockingQueue, Executors, LinkedBlockingQueue}
 
 import cats.data.Xor
@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.collection.mutable.{ArrayBuffer, Buffer}
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 class TransactorListenerState {
   var index: BigInt = -1
@@ -528,19 +528,32 @@ object TransactorService {
     JournalEvent(event)
   }
 
-  def loggingInterceptor: ServerInterceptor = new ServerInterceptor {
-    override def interceptCall[ReqT, RespT](
-      call: ServerCall[ReqT, RespT],
-      headers: Metadata,
-      next: ServerCallHandler[ReqT, RespT]): Listener[ReqT] = {
+  def loggingInterceptor: ServerInterceptor = {
+    new ServerInterceptor {
+      // to save memory, just store the hashCode of the addresses to track uniques
+      val uniqueAddresses = new collection.mutable.HashSet[Int]()
+      val logger = LoggerFactory.getLogger("UniqueClientIP")
 
-      val addr: SocketAddress = call.attributes()
-        .get(ServerCall.REMOTE_ADDR_KEY)
+      override def interceptCall[ReqT, RespT](
+        call: ServerCall[ReqT, RespT],
+        headers: Metadata,
+        next: ServerCallHandler[ReqT, RespT]): Listener[ReqT] = {
 
-      // TODO: record with rpcMetrics
-      println(s"server call from: $addr.toString")
+        call.attributes().get(ServerCall.REMOTE_ADDR_KEY) match {
+          case inet: InetSocketAddress =>
+            val address = inet.getAddress
+            val addressHash = address.hashCode
+            if (!uniqueAddresses.contains(addressHash)) {
+              logger.info(address.toString)
+              uniqueAddresses.add(addressHash)
+            }
+          case nonInet =>
+            // should only be hit during in-process transport (unit tests, etc)
+            logger.debug(s"Connection from non-inet socket: $nonInet")
+        }
 
-      next.startCall(call, headers)
+        next.startCall(call, headers)
+      }
     }
   }
 
