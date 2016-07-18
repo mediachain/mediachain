@@ -1,11 +1,13 @@
 package io.mediachain.copycat
 
-import java.util.concurrent.{Executors, BlockingQueue, LinkedBlockingQueue}
+import java.net.{InetAddress, InetSocketAddress, SocketAddress}
+import java.util.concurrent.{BlockingQueue, Executors, LinkedBlockingQueue}
 
 import cats.data.Xor
 import com.amazonaws.AmazonClientException
+import io.grpc.ServerCall.Listener
 import io.grpc.stub.StreamObserver
-import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
+import io.grpc._
 import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
 import io.mediachain.util.Metrics
 import io.mediachain.multihash.MultiHash
@@ -17,10 +19,11 @@ import io.mediachain.protocol.transactor.Transactor._
 import io.mediachain.protocol.types.Types
 import io.mediachain.protocol.types.Types.{ChainReference, NullReference}
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.collection.mutable.{ArrayBuffer, Buffer}
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 
 class TransactorListenerState {
   var index: BigInt = -1
@@ -488,6 +491,8 @@ class TransactorService(client: Client, datastore: Datastore, metrics: Option[Me
 }
 
 object TransactorService {
+  val uniqueClientAddresses = new collection.mutable.HashSet[InetAddress]
+
   def refToRPCMultihashRef(ref: Reference)
   : Types.MultihashReference = ref match {
     case MultihashReference(multihash) =>
@@ -525,6 +530,31 @@ object TransactorService {
     JournalEvent(event)
   }
 
+  def loggingInterceptor: ServerInterceptor = {
+    new ServerInterceptor {
+      val logger = LoggerFactory.getLogger("UniqueClientIP")
+
+      override def interceptCall[ReqT, RespT](
+        call: ServerCall[ReqT, RespT],
+        headers: Metadata,
+        next: ServerCallHandler[ReqT, RespT]): Listener[ReqT] = {
+
+        call.attributes().get(ServerCall.REMOTE_ADDR_KEY) match {
+          case inet: InetSocketAddress =>
+            val address = inet.getAddress
+            if (!uniqueClientAddresses.contains(address)) {
+              logger.info(address.toString)
+              uniqueClientAddresses.add(address)
+            }
+          case nonInet =>
+            // should only be hit during in-process transport (unit tests, etc)
+            logger.debug(s"Connection from non-inet socket: $nonInet")
+        }
+
+        next.startCall(call, headers)
+      }
+    }
+  }
 
   def createServer(service: TransactorService, port: Int)
                   (implicit executionContext: ExecutionContext)
@@ -533,7 +563,10 @@ object TransactorService {
     
     val builder = ServerBuilder.forPort(port)
     val server = builder.addService(
-      TransactorServiceGrpc.bindService(service, executionContext)
+      ServerInterceptors.intercept(
+        TransactorServiceGrpc.bindService(service, executionContext),
+        loggingInterceptor
+      )
     ).build
     server
   }
