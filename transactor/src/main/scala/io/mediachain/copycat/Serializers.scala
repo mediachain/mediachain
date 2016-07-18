@@ -128,6 +128,19 @@ object Serializers {
       state
     }
     
+    // direct access implementation
+    def write(buf: BufferOutput[_ <: BufferOutput[_]], state: JournalState) {
+      writeBlock(buf, state)
+      writeIndex(buf, state)
+    }
+
+    def read(buf: BufferInput[_ <: BufferInput[_]]): JournalState = {
+      val state = new JournalState
+      readBlock(buf, state)
+      readIndex(buf, state)
+      state
+    }
+    
     // implementation
     private def writeBlock(buf: BufferOutput[_ <: BufferOutput[_]], state: JournalState) {
       buf.writeLong(state.seqno.toLong) // it will be a cold day in hell if this overflows
