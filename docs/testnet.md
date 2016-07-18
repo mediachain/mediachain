@@ -3,7 +3,7 @@
 Mediachain Labs has deployed a publicly accessible test network for use by the
 general public.
 
-The primary purpose of the TestNet is to give developers an opportunity to
+The primary purpose of the testnet is to give developers an opportunity to
 get a feel for the broader architecture of Mediachain as a network and begin
 experimenting with a shared metadata set.
 
@@ -30,8 +30,8 @@ their own.
 
 * Because [IPLD](https://github.com/ipfs/go-ipld) isn't quite production ready yet,
   we're using Amazon DynamoDB (with multiaddress, forward-compatible content-addressed keys)
-  as a stand-in. Unstructured data (raw metadata and thumbnails) is still published to IPFS if CLI is
-  passed the `--use-ipfs` flag)
+  as a stand-in. Unstructured data (raw metadata and thumbnails) is still published to IPFS,
+   unless the CLI is passed the `--disable-ipfs` flag.
 
 * Maximum write rate for the network is currently limited to ~20 concurrent writers
   (approx 150 artefact insertions/sec)
@@ -54,14 +54,14 @@ $ pip install mediachain-client
 ```
 
 Make sure you have a recent pip, at least 8.x. You also probably want to [install IPFS](https://ipfs.io/docs/install/) and
-run `ipfs daemon`
+run `ipfs daemon`.  If ipfs is not running on your machine, be sure to add the `--disable-ipfs` flag when running the `mediachain` command.
 
 ### Reading
 
 You should then be able to immediately pull down the statement chain for an artefact:
 
 ```bash
-$ mediachain --use-ipfs get <some-id>
+$ mediachain get <some-id>
 ```
 
 This resolves the chain head pointer, retrieves the parent cells and folds over them to give a complete
@@ -113,7 +113,9 @@ $ curl ...
 ## Transactor
 
 The truly adventurous can start their own testnet. This requires spinning up at least 3 transactors,
-a facade server (copycat pojo -> gRPC translation) and a datastore. Take a look at the [provisioning](https://github.com/mediachain/mediachain/tree/release-0.1.0/provisioning/playbooks)
-scripts and come to _#tech_ in [our Slack](//slack.mediachain.io) if you want to try
+a facade server (copycat pojo -> gRPC translation) and a datastore. Check out the [overview](selfhosting.md)
+for compilation and launch instructions.  You can also get a good feel for the process by
+taking a look at the [provisioning](https://github.com/mediachain/mediachain/tree/release-0.1.0/provisioning/playbooks)
+scripts.  Come to _#tech_ in [our Slack](//slack.mediachain.io) if you want to try, and we'll be happy to help!
 
 
