@@ -3,7 +3,7 @@
 Mediachain Labs has deployed a publicly accessible test network for use by the
 general public.
 
-The primary purpose of the TestNet is to give developers an opportunity to
+The primary purpose of the testnet is to give developers an opportunity to
 get a feel for the broader architecture of Mediachain as a network and begin
 experimenting with a shared metadata set.
 
@@ -113,7 +113,9 @@ $ curl ...
 ## Transactor
 
 The truly adventurous can start their own testnet. This requires spinning up at least 3 transactors,
-a facade server (copycat pojo -> gRPC translation) and a datastore. Take a look at the [provisioning](https://github.com/mediachain/mediachain/tree/release-0.1.0/provisioning/playbooks)
-scripts and come to _#tech_ in [our Slack](//slack.mediachain.io) if you want to try
+a facade server (copycat pojo -> gRPC translation) and a datastore. Check out the [overview](selfhosting.md)
+for compilation and launch instructions.  You can also get a good feel for the process by
+taking a look at the [provisioning](https://github.com/mediachain/mediachain/tree/release-0.1.0/provisioning/playbooks)
+scripts.  Come to _#tech_ in [our Slack](//slack.mediachain.io) if you want to try, and we'll be happy to help!
 
 
