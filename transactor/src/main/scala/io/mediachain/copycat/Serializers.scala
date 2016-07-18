@@ -113,8 +113,6 @@ object Serializers {
   // JournalState serialization: serialization is required to be as fast as possible
   // because it dominates snapshot times, so we pardon all crimes and go straight to bytes
   // unfortunately it falls short and ends up being slower than POJO serialization.
-  // only obvious way to make it faster is to avoid the copying from MultiHash.bytes
-  // (requires change in scala-multihash)
   class JournalStateSerializer extends TypeSerializer[JournalState] {
 
     def write(state: JournalState, buf: BufferOutput[_ <: BufferOutput[_]], ser: Serializer) {
@@ -241,10 +239,10 @@ object Serializers {
 
     private def writeRef(buf: BufferOutput[_ <: BufferOutput[_]], ref: Reference) {
       ref match {
-        case MultihashReference(multihash) =>
+        case MultihashReference(MultiHash(hashType, hash)) =>
           buf.writeByte(0)
-          // MultiHash.bytes is inefficient; allocates new array every time it's called
-          writeBytes(buf, multihash.bytes)
+          buf.writeByte(hashType.index)
+          writeBytes(buf, hash)
           
         case DummyReference(index) =>
           buf.writeByte(1)
@@ -255,13 +253,18 @@ object Serializers {
     private def readRef(buf: BufferInput[_ <: BufferInput[_]]): Reference = {
       buf.readByte match {
         case 0 =>
-          val bytes = readBytes(buf)
-          MultiHash.fromBytes(bytes) match {
-            case Xor.Right(ref) =>
-              MultihashReference(ref)
-
-            case Xor.Left(err) =>
-              throw new SerializationException("Failed to deserialize Reference: " + err.toString)
+          val hashKey = buf.readByte.toByte
+          val hash = readBytes(buf)
+          MultiHash.lookup.get(hashKey) match {
+            case Some(hashType) =>
+              MultiHash.fromHash(hashType, hash) match {
+                case Xor.Right(multihash) =>
+                  MultihashReference(multihash)
+                case Xor.Left(err) =>
+                  throw new SerializationException("Failed to deserialize Reference: " + err.toString)
+              }
+            case None =>
+              throw new SerializationException("Failed to deserialize Option[Reference]; bogus head " + hashKey)
           }
           
         case 1 =>
