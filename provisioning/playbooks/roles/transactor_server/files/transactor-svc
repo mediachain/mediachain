@@ -133,5 +133,5 @@ case $action in
         svc_restart
         ;;
     *)
-        usage
+        usage_error
 esac

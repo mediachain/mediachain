@@ -230,9 +230,10 @@ extends ClientStateListener with JournalListener {
       : List[JournalBlock]
       = {
         val block = getBlock(ref)
+        logger.info(s"Fetched block ${ref} -> ${block.index} ${block.chain}")
         if (block.chain == state.blockchain) {
           block :: blocks
-        } else if (block.chain.isEmpty) {
+        } else if (block.chain.isEmpty || block.index < state.index) {
           throw new RuntimeException("PANIC: Blockchain divergence detected")
         } else {
           loop(block.chain.get, block :: blocks)
@@ -274,11 +275,14 @@ extends ClientStateListener with JournalListener {
     val block = Await.result(client.currentBlock, Duration.Inf)
     if (state.isEmpty) {
       setCurrentBlock(block)
+    } else if (block.index < state.index) {
+      logger.warn(s"Cluster replayed STALE BLOCK ${block.index}; current index is ${state.index}")
     } else if (block.chain == state.blockchain) {
       extendCurrentBlock(block)
     } else if (block.chain.isEmpty) {
       throw new RuntimeException("PANIC: Blockchain divergence detected")
     } else {
+      logger.info(s"Resyncing blockchain ${state.index} ${state.blockchain} -> ${block.index} ${block.chain}")
       val xblocks = fetchBlocks(block.chain)
       extendCurrentBlock(xblocks.head)
       xblocks.tail.foreach(setCurrentBlock(_))
