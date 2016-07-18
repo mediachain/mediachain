@@ -491,6 +491,8 @@ class TransactorService(client: Client, datastore: Datastore, metrics: Option[Me
 }
 
 object TransactorService {
+  val uniqueClientAddresses = new collection.mutable.HashSet[InetAddress]
+
   def refToRPCMultihashRef(ref: Reference)
   : Types.MultihashReference = ref match {
     case MultihashReference(multihash) =>
@@ -530,8 +532,6 @@ object TransactorService {
 
   def loggingInterceptor: ServerInterceptor = {
     new ServerInterceptor {
-      // to save memory, just store the hashCode of the addresses to track uniques
-      val uniqueAddresses = new collection.mutable.HashSet[Int]()
       val logger = LoggerFactory.getLogger("UniqueClientIP")
 
       override def interceptCall[ReqT, RespT](
@@ -542,10 +542,9 @@ object TransactorService {
         call.attributes().get(ServerCall.REMOTE_ADDR_KEY) match {
           case inet: InetSocketAddress =>
             val address = inet.getAddress
-            val addressHash = address.hashCode
-            if (!uniqueAddresses.contains(addressHash)) {
+            if (!uniqueClientAddresses.contains(address)) {
               logger.info(address.toString)
-              uniqueAddresses.add(addressHash)
+              uniqueClientAddresses.add(address)
             }
           case nonInet =>
             // should only be hit during in-process transport (unit tests, etc)
