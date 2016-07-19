@@ -2,13 +2,13 @@ package io.mediachain.datastore
 
 import com.amazonaws.AmazonClientException
 import com.google.protobuf.ByteString 
-import io.grpc.{ServerBuilder, Status, StatusRuntimeException}
+import io.grpc._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future, blocking}
 import cats.data.Xor
 
-import io.mediachain.util.Metrics
+import io.mediachain.util.{Metrics, Grpc}
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.datastore.Datastore._
 import io.mediachain.protocol.types.Types
@@ -120,7 +120,10 @@ object DatastoreService {
     
     val builder = ServerBuilder.forPort(port)
     val server = builder.addService(
-      DatastoreServiceGrpc.bindService(service, executionContext)
+      ServerInterceptors.intercept(
+        DatastoreServiceGrpc.bindService(service, executionContext),
+        Grpc.loggingInterceptor("DatastoreService")
+      )
     ).build
     server
   }
