@@ -70,19 +70,20 @@ metadata representation as some nice JSON. Straightforward.
 ### Writing
 
 A core concept in Mediachain is the notion of versioned, lightweight, nondestructive schema translators
-(see [this blog post](https://blog.mediachain.io/mediachain-developer-update-supplemental-translators-6abe3707030a#.260jpzr5c) for a somewhat outdated treatment). This means that you can import data in arbitrary formats right away
+(see [this blog post](https://blog.mediachain.io/mediachain-developer-update-supplemental-translators-6abe3707030a#.260jpzr5c) for a somewhat outdated background treatment). This means that you can import data in arbitrary formats right away
 without extensive markup or transformation, and then re-process it later with a new version of the translator that
 "knows" more about the underlying data.
 
-We're experimenting with asking users to contribute a minimal translator when importing data; this could be something
-as simple as extracting just the external id (though for a more full-fledged example, see the [getty translator](...))
+The translators are versioned by the IPFS multihash of the working tree, similar to git trees. This means translators can also be published and retrieved through IPFS.
 
-To make the translator module visible to the client tool, open a PR against https://github.com/mediachain/schema-translators
-and specify `some-repository/schema-translators.git@sha_or_branch` as the translator id:
+**WARNING** right now, translators are simply python code that's imported and executed directly in the main process, without sandboxing. Never execute translators you don't trust! The long-term vision for translators is a [data-oriented DSL](https://github.com/mediachain/mediachain-client/issues/70) that can be safely executed as untrusted code, but we're not quite there yet.
 
 ```bash
-$ mediachain ingest some-repository/schema-translators.git@sha_or_branch target_directory
+$ mediachain ingest translator_name@Qm... target_directory
 ```
+
+We're experimenting with asking users to contribute a minimal translator when importing data; this could be something
+as simple as extracting just the external id (though for a more full-fledged example, see the [getty translator](...))
 
 ## Indexer
 
