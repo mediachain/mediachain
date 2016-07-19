@@ -1,15 +1,13 @@
 package io.mediachain.copycat
 
-import java.net.{InetAddress, InetSocketAddress, SocketAddress}
 import java.util.concurrent.{BlockingQueue, Executors, LinkedBlockingQueue}
 
 import cats.data.Xor
 import com.amazonaws.AmazonClientException
-import io.grpc.ServerCall.Listener
 import io.grpc.stub.StreamObserver
 import io.grpc._
 import io.mediachain.copycat.Client.{ClientState, ClientStateListener}
-import io.mediachain.util.Metrics
+import io.mediachain.util.{Metrics, Grpc}
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.protocol.Datastore._
@@ -495,8 +493,6 @@ class TransactorService(client: Client, datastore: Datastore, metrics: Option[Me
 }
 
 object TransactorService {
-  val uniqueClientAddresses = new collection.mutable.HashSet[InetAddress]
-
   def refToRPCMultihashRef(ref: Reference)
   : Types.MultihashReference = ref match {
     case MultihashReference(multihash) =>
@@ -534,31 +530,6 @@ object TransactorService {
     JournalEvent(event)
   }
 
-  def loggingInterceptor: ServerInterceptor = {
-    new ServerInterceptor {
-      val logger = LoggerFactory.getLogger("UniqueClientIP")
-
-      override def interceptCall[ReqT, RespT](
-        call: ServerCall[ReqT, RespT],
-        headers: Metadata,
-        next: ServerCallHandler[ReqT, RespT]): Listener[ReqT] = {
-
-        call.attributes().get(ServerCall.REMOTE_ADDR_KEY) match {
-          case inet: InetSocketAddress =>
-            val address = inet.getAddress
-            if (uniqueClientAddresses.add(address)) {
-              logger.info(address.toString)
-            }
-          case nonInet =>
-            // should only be hit during in-process transport (unit tests, etc)
-            logger.debug(s"Connection from non-inet socket: $nonInet")
-        }
-
-        next.startCall(call, headers)
-      }
-    }
-  }
-
   def createServer(service: TransactorService, port: Int)
                   (implicit executionContext: ExecutionContext)
   = {
@@ -568,7 +539,7 @@ object TransactorService {
     val server = builder.addService(
       ServerInterceptors.intercept(
         TransactorServiceGrpc.bindService(service, executionContext),
-        loggingInterceptor
+        Grpc.loggingInterceptor("TransactorService")
       )
     ).build
     server
