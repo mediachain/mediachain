@@ -1,0 +1,23 @@
+---
+driver:
+    name: vagrant
+
+provisioner:
+  name: ansible_playbook
+  roles_path: roles
+  hosts: tomcat-servers
+  require_ansible_repo: true
+  ansible_verbose: true
+  ansible_version: latest
+  extra_vars:
+    a: b
+
+platforms:
+  - name: nocm_centos-6.5
+    driver_plugin: vagrant
+    driver_config:
+      box: nocm_centos-6.5
+      box_url: http://puppet-vagrant-boxes.puppetlabs.com/centos-65-x64-virtualbox-nocm.box
+      network:
+      - ['forwarded_port', {guest: 8080, host: 8080}]
+      - [ 'private_network', { ip: '192.168.33.11' } ]

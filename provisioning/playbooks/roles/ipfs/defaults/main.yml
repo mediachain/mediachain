@@ -1,0 +1,30 @@
+---
+# defaults variables file for ipfs.
+#   this is not meant to be edited (unless you're contributing to ansible-ipfs development)
+#   instead, edit the file vars/public, overriding the below variables.
+
+
+# Directory that will be used as the location for the downloads§
+download_dir: "{{ ansible_env.HOME }}/ipfs"
+
+
+# Define the download url for the ipfs files and the version you want to use.
+#ipfsurl: http://dist.ipfs.io/go-ipfs/v0.3.11/go-ipfs_v0.3.11_linux-386.tar.gz ## 64-bit v0.3.11
+#ipfsurl: http://dist.ipfs.io/go-ipfs/v0.3.11/go-ipfs_v0.3.11_linux-amd64.tar.gz ## 64-bit v0.3.11
+#ipfsurl: http://dist.ipfs.io/go-ipfs/v0.4.0/go-ipfs_v0.4.0_linux-386.tar.gz ## 32-bit v0.4.0
+#ipfsurl: http://dist.ipfs.io/go-ipfs/v0.4.0/go-ipfs_v0.4.0_linux-amd64.tar.gz ## 64-bit v0.4.0
+
+ipfsurl: https://dist.ipfs.io/go-ipfs/v0.4.2/go-ipfs_v0.4.2_linux-amd64.tar.gz # 64-bit v0.4.2
+
+# This is the directory where the ipfs source files will be placed, this should be
+# the directory which is created when the download file is unpacked when runnint
+# tar -xzvf ipfs-0.3.11.tar.gz
+ipfssrc: ipfs-0.4.2
+
+ipfs_user: ipfs
+ipfs_group: ipfs
+
+
+
+install_fuse: false  # Does nothing at the moment. It's just an example of how one would have the playbook install fuse.
+                     # One would override the install_fuse variable with 'true' in their own playbook which includes this role.

@@ -13,6 +13,12 @@ Vagrant.configure(2) do |config|
   # share the parent directory at /mediachain
   config.vm.synced_folder "../", "/mediachain"
 
+  # If the python client is a sibling of the project root, share it
+  # at /mediachain-client
+  if File.exist? "../../mediachain-client"
+    config.vm.synced_folder "../../mediachain-client", "/mediachain-client"
+  end
+
   if ENV["MC_VAGRANT_IP"]
     config.vm.network "private_network", ip: ENV["MC_VAGRANT_IP"]
   else

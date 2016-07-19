@@ -1,0 +1,38 @@
+---
+
+- name: download ipfs
+  get_url: url={{ ipfsurl }} dest={{ download_dir }}/{{ ipfssrc }}.tar.gz
+
+- name: unpack ipfs
+  unarchive: copy=no src={{ download_dir }}/{{ ipfssrc }}.tar.gz dest={{ download_dir }}/{{ ipfssrc }} creates={{ download_dir }}/{{ ipfssrc }}/go-ipfs
+
+- name: move ipfs to bin dir
+  copy: remote_src=true src={{ download_dir }}/{{ ipfssrc }}/go-ipfs/ipfs dest=/usr/local/bin/ipfs owner=root group=root mode=0755
+
+
+# log files
+
+- name: check if ipfs log file exists
+  stat: path=/var/log/ipfs.log
+  register: log
+
+- name: create ipfs log file if none exists
+  file: path=/var/log/ipfs.log state=touch owner={{ ipfs_user }} group={{ ipfs_group }} mode=0644
+  when: not log.stat.exists
+
+- name: check if ipfs err file exists
+  stat: path=/var/log/ipfs.err
+  register: errlog
+
+- name: create ipfs err file if none exists
+  file: path=/var/log/ipfs.err state=touch owner={{ ipfs_user }} group={{ ipfs_group }} mode=0644
+  when: not errlog.stat.exists
+
+
+# init scripts
+
+- include: debian-init.yml
+  when: ansible_os_family == 'Debian'
+
+- include: redhat-init.yml
+  when: ansible_os_family == 'RedHat'

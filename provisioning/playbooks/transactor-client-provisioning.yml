@@ -4,8 +4,9 @@
     - apt_upgrade
     - transactor_deps
     - python
-    - {role: grpc, grpc_checkout: "be223358795b645416e801727f4d3fcad3d73964" }
-
+    - rocksdb
+    - {role: ipfs, become: yes, become_user: "root", ipfs_user: "ubuntu" }
+    
   become: yes
 
   tasks:
@@ -14,6 +15,9 @@
 
   - name: install libpng-dev
     apt: name=libpng-dev state=present
+
+  - name: install rocksdb python module
+    pip: name=pyrocksdb version=0.4
 
   - name: checkout mediachain
     git: repo=https://github.com/mediachain/mediachain.git dest=/home/ubuntu/mediachain

@@ -3,4 +3,12 @@
   roles:
     - { role: transactor_deps }
     - { role: dynamodb_local, become: yes, become_user: "root" }
-    - { role: grpc, grpc_checkout: "be223358795b645416e801727f4d3fcad3d73964" }
+    - rocksdb
+    - python
+    - {role: ipfs, become: yes, become_user: "root", ipfs_user: "vagrant" }
+
+  tasks:
+    - name: install pyrocksdb python module
+      pip: name=pyrocksdb version=0.4
+      become: yes
+      become_user: root
