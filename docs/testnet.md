@@ -37,7 +37,7 @@ their own.
   (approx 150 artefact insertions/sec)
 
 * Because Raft is not byzantine-tolerant, we're not accepting 3rd party transactors
-  into the qorum at this time (blog post about this soon)
+  into the quorum at this time (blog post about this soon)
 
 * Only creation and reference cells are supported in the client, so you can create new entities but can't update
   existing (this will be addressed very soon)
@@ -132,18 +132,33 @@ Depending on your OS, you may need to manually install development dependencies 
 
 You will also need to install and start [Elasticsearch](https://www.elastic.co/downloads/elasticsearch)
 
+It's also a good idea to install the [optional dependencies](https://github.com/mediachain/mediachain-client/blob/master/README.md#optional-dependencies)
+for the mediachain-client project, which will enable more efficient updates from the blockchain.
+
 The indexer is a kind of special client that receives streaming updates from the blockchain and generates
 indexes stored in elasticsearch. You can start it with:
 
 ```bash
-$ mediachain-indexer... ingest...
+$ mediachain-indexer-ingest receive_blockchain_into_indexer
 ```
 
-This ingestion will catch up on the current block, then receive newly published objects. The index is
-accessible via REST interface at
+This will pull from the public testnet blockchain by default.  If you're running your own testnet,
+you'll want to set the `MC_TRANSACTOR_HOST` and `MC_DATASTORE_HOST` environment variables
+ to point to your rpc services.
+
+This ingestion will catch up on the current block, then receive newly published objects.
+
+To run queries, you'll also need to run the API server:
 
 ```bash
-$ curl ...
+$ mediachain-indexer-web web
+```
+
+The index is then accessible via a REST interface.  Keyword searches can be
+issued by sending a json payload to the `/search` endpoint:
+
+```bash
+$ curl localhost:23456/search -d '{"q": "film"}'
 ```
 
 ## Transactor
