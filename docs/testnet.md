@@ -7,6 +7,13 @@ The primary purpose of the testnet is to give developers an opportunity to
 get a feel for the broader architecture of Mediachain as a network and begin
 experimenting with a shared metadata set.
 
+We encourage all contributions, especially questions!  As the components of the
+mediachain network are under constant development, it can be hard to know where
+to begin.  Please [reach out to us on Slack](//slack.mediachain.io) if you
+have questions about how the pieces fit together, or if you have trouble
+interacting with the testnet.
+
+
 ## Component Breakdown
 
 As was detailed in RFCs
@@ -21,10 +28,12 @@ broken into a few core services:
   and media-based search
 - **CLI**: Used to ingest and retrieve data
 
-Each piece can be installed and used separately, as is detailed below.
-Mediachain Labs will also be administrating its own instances of the Transactor
+Mediachain Labs will be administrating its own instances of the Transactor
 and Indexer for public use, so developers needn't worry about running them on
 their own.
+
+For those interested in running their own testnet, please see the [self-hosting documentation](selfhosting.md).
+
 
 ## Known Limitations
 
@@ -37,7 +46,7 @@ their own.
   (approx 150 artefact insertions/sec)
 
 * Because Raft is not byzantine-tolerant, we're not accepting 3rd party transactors
-  into the qorum at this time (blog post about this soon)
+  into the quorum at this time (blog post about this soon)
 
 * Only creation and reference cells are supported in the client, so you can create new entities but can't update
   existing (this will be addressed very soon)
@@ -47,14 +56,17 @@ their own.
 
 ## Client
 
-You probably want to start here! The client is pip installable:
+You probably want to start here! The client is installable with [pip](https://pip.pypa.io/en/stable/):
 
 ```bash
 $ pip install mediachain-client
 ```
 
-Make sure you have a recent pip, at least 8.x. You also probably want to [install IPFS](https://ipfs.io/docs/install/) and
-run `ipfs daemon`.  If ipfs is not running on your machine, be sure to add the `--disable-ipfs` flag when running the `mediachain` command.
+Make sure you have a recent pip, at least 8.x. If `pip --version` reports a lower version,
+you can update pip with itself: `pip install -U pip`.
+
+You will also need to [install IPFS](https://ipfs.io/docs/install/) and
+run `ipfs daemon`.
 
 ### Reading
 
@@ -103,6 +115,14 @@ $ mediachain get QmbSMhk4EBH7SN2W4EMXuytUVYarZd2gbLdDobeJRhbU6X
 This resolves the chain head pointer, retrieves the parent cells and folds over them to give a complete
 metadata representation as some nice JSON. Straightforward (note that this object uses an older translator version format).
 
+A set of sample ids to query is available on ipfs, and can be retrieved with `ipfs get QmYw3BGZhmhYtR7iUNeuUXEiAdGGrL4c91WsHoCzEo2jyU`,
+or via the http gateway at [https://ipfs.io/ipfs/QmYw3BGZhmhYtR7iUNeuUXEiAdGGrL4c91WsHoCzEo2jyU](https://ipfs.io/ipfs/QmYw3BGZhmhYtR7iUNeuUXEiAdGGrL4c91WsHoCzEo2jyU)
+
+For a much larger set, use `ipfs get QmRBnvwUosXssWPUMYw9Syqt6hZUA5ZVokJAiWAdwkGRV6` - this contains roughly 1 million
+record ids, and due to its size it's much more efficient to retrieve it with the ipfs tool than via the gateway.
+
+Both files contain one id per-line, resolvable with the `mediachain get <id>` command.
+
 ### Writing
 
 A core concept in Mediachain is the notion of versioned, lightweight, nondestructive schema translators
@@ -122,29 +142,21 @@ Please see [this page](...) for more on writing and using a translator.
 
 ## Indexer
 
-The indexer is also on PyPI:
+The testnet includes a special client known as the Indexer, which ingests mediachain
+records as they're written to the blockchain and creates a query index that's
+accessible via a web API.  A web-based UI is in progress, but in the meantime,
+you can issue queries directly by sending json data to `http://indexer.mediachain.io/search`:
 
 ```bash
-$ pip install mediachain-indexer
+$ curl indexer.mediachain.io/search -d '{"q": "film"}'
 ```
 
-Depending on your OS, you may need to manually install development dependencies for numpy/scipy, see [here](https://www.scipy.org/install.html)
+As you write new records, they should appear in the search results when you search
+for keywords contained in their metadata.
 
-You will also need to install and start [Elasticsearch](https://www.elastic.co/downloads/elasticsearch)
-
-The indexer is a kind of special client that receives streaming updates from the blockchain and generates
-indexes stored in elasticsearch. You can start it with:
-
-```bash
-$ mediachain-indexer... ingest...
-```
-
-This ingestion will catch up on the current block, then receive newly published objects. The index is
-accessible via REST interface at
-
-```bash
-$ curl ...
-```
+If you're interested in running the indexer locally, please see the [self-hosting instructions](selfhosting.md#indexer).
+Note that you don't have to run your own testnet to have a local indexer.  The default configuration
+will connect to the public testnet and create a local index that you can query.
 
 ## Transactor
 
