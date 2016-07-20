@@ -61,11 +61,47 @@ run `ipfs daemon`.  If ipfs is not running on your machine, be sure to add the `
 You should then be able to immediately pull down the statement chain for an artefact:
 
 ```bash
-$ mediachain get <some-id>
+$ mediachain get QmbSMhk4EBH7SN2W4EMXuytUVYarZd2gbLdDobeJRhbU6X
+
+{
+  "metaSource": {
+    "@link": "Qmcbo67Ycv6rCREhQYoYeGJzgAJiCZDfyEdtHqdbmTsv6T"
+  },
+  "meta": {
+    "translator": "GettyTranslator/0.1",
+    "raw_ref": {
+      "@link": "Qmcbo67Ycv6rCREhQYoYeGJzgAJiCZDfyEdtHqdbmTsv6T"
+    },
+    "data": {
+      "artist": "Michael Ochs Archives",
+      "collection_name": "Moviepix",
+      "title": "Alfred Hitchcock",
+      "caption": "LOS ANGELES -  MAY 22, 1956: Director Alfred Hitchcock with actor Jimmy Stewart and actress Doris Day at the premier of 'The Man Who Knew Too Much' in Los Angeles, California. (Photo by Earl Leaf/Michael Ochs Archives/Getty Images)",
+      "editorial_source": "Moviepix",
+      "keywords": [
+        "Vertical",
+        "Black And White",
+        ...
+      ],
+      "date_created": "1956-05-22T00:00:00-07:00",
+      "_id": "getty_451356503"
+    }
+  },
+  "type": "artefact",
+  "entity": {
+    "meta": {
+      "translator": "GettyTranslator/0.1",
+      "data": {
+        "name": "Michael Ochs Archives"
+      }
+    },
+    "type": "entity"
+  }
+}
 ```
 
 This resolves the chain head pointer, retrieves the parent cells and folds over them to give a complete
-metadata representation as some nice JSON. Straightforward.
+metadata representation as some nice JSON. Straightforward (note that this object uses an older translator version format).
 
 ### Writing
 
@@ -82,8 +118,7 @@ The translators are versioned by the IPFS multihash of the working tree, similar
 $ mediachain ingest translator_name@Qm... target_directory
 ```
 
-We're experimenting with asking users to contribute a minimal translator when importing data; this could be something
-as simple as extracting just the external id (though for a more full-fledged example, see the [getty translator](...))
+Please see [this page](...) for more on writing and using a translator.
 
 ## Indexer
 
