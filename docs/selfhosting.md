@@ -164,3 +164,46 @@ $ touch /var/run/mediachain/ctl/RpcService/shutdown
 The `JournalServer` also has a `leave` command, in addition to `shutdown`.
 By `touch`ing the `leave` file, you will cause the server to leave the cluster
 without shutting down completely.
+
+
+### Indexer
+The indexer is a kind of special client that receives streaming updates from the blockchain and generates
+indexes stored in elasticsearch.
+
+It's written in python, and you can install it with pip:
+
+```bash
+$ pip install mediachain-indexer
+```
+
+Depending on your OS, you may need to manually install development dependencies for numpy/scipy, see [here](https://www.scipy.org/install.html)
+
+You will also need to install and start [Elasticsearch](https://www.elastic.co/downloads/elasticsearch)
+
+It's also a good idea to install the [optional dependencies](https://github.com/mediachain/mediachain-client/blob/master/README.md#optional-dependencies)
+for the mediachain-client project, which will enable more efficient updates from the blockchain.
+
+ You can connect the indexer to the transactor blockchain with:
+
+```bash
+$ mediachain-indexer-ingest receive_blockchain_into_indexer
+```
+
+This will catch up on the current block and ingest all historical records, then receive newly published objects.
+
+This will pull from the public testnet blockchain by default.  If you're running your own transactor network,
+you'll want to set the `MC_TRANSACTOR_HOST` and `MC_DATASTORE_HOST` environment variables
+ to point to your rpc services.
+
+To run queries, you'll also need to run the API server:
+
+```bash
+$ mediachain-indexer-web web
+```
+
+The index is then accessible via a REST interface.  Keyword searches can be
+issued by sending a json payload to the `/search` endpoint:
+
+```bash
+$ curl localhost:23456/search -d '{"q": "film"}'
+```
