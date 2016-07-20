@@ -138,7 +138,7 @@ The translators are versioned by the IPFS multihash of the working tree, similar
 $ mediachain ingest translator_name@Qm... target_directory
 ```
 
-Please see [this page](...) for more on writing and using a translator.
+Please see [this page](translators.md) for more on writing and using a translator.
 
 ## Indexer
 
