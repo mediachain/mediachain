@@ -56,14 +56,17 @@ For those interested in running their own testnet, please see the [self-hosting 
 
 ## Client
 
-You probably want to start here! The client is installable with [pip](https://pip.pypa.io/en/stable/):
+You probably want to start here! The client is installable with [pip](https://pip.pypa.io/en/stable/),
+preferably into a [virtualenv](https://virtualenv.pypa.io/en/stable/userguide/)
 
 ```bash
-$ pip install mediachain-client
+$ virtualenv venv
+$ source venv/bin/activate
+(venv) $ pip install mediachain-client
 ```
 
 Make sure you have a recent pip, at least 8.x. If `pip --version` reports a lower version,
-you can update pip with itself: `pip install -U pip`. You should also use a [virtualenv](https://virtualenv.pypa.io/en/stable/userguide/)
+you can update pip with itself: `pip install -U pip`.
 
 You will also need to [install IPFS](https://ipfs.io/docs/install/) and
 run `ipfs daemon`.
