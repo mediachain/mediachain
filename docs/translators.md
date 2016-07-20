@@ -110,7 +110,7 @@ mediachain/translation/getty
 ### Translator lifecycle
 We're experimenting with using IPFS to version and distribute translators. In order to make one available to the system:
 
-* clone https://github.com/mediachain/schema-translators
+* clone https://github.com/mediachain/schema-translators.git
 * add your translator (following "sub-package structure above") and the respective sample file(s)
 * run the tests with `python setup.py test`: this will make sure the output from your translators, based on the test files, is valid
 * if the tests pass, run `python setup.py publish_translators`:
