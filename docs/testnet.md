@@ -71,6 +71,25 @@ you can update pip with itself: `pip install -U pip`.
 You will also need to [install IPFS](https://ipfs.io/docs/install/) and
 run `ipfs daemon`.
 
+```bash
+# OS X
+$ wget https://dist.ipfs.io/go-ipfs/v0.4.2/go-ipfs_v0.4.2_darwin-amd64.tar.gz
+# Linux
+$ wget https://dist.ipfs.io/go-ipfs/v0.4.2/go-ipfs_v0.4.2_linux-amd64.tar.gz
+
+$ tar xvfz go-ipfs.tar.gz
+$ mv go-ipfs/ipfs /usr/local/bin/ipfs
+$ ipfs daemon
+Initializing daemon...
+Swarm listening on /ip4/127.0.0.1/tcp/4001
+Swarm listening on /ip4/192.168.0.2/tcp/38463
+Swarm listening on /ip4/192.168.1.248/tcp/4001
+Swarm listening on /ip6/::1/tcp/4001
+API server listening on /ip4/127.0.0.1/tcp/5001
+Gateway (readonly) server listening on /ip4/127.0.0.1/tcp/8080
+Daemon is ready
+```
+
 ### Reading
 
 You should then be able to immediately pull down the statement chain for an artefact:
