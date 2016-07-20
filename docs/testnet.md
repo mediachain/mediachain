@@ -122,44 +122,21 @@ Please see [this page](...) for more on writing and using a translator.
 
 ## Indexer
 
-The indexer is also on PyPI:
+The testnet includes a special client known as the Indexer, which ingests mediachain
+records as they're written to the blockchain and creates a query index that's
+accessible via a web API.  A web-based UI is in progress, but in the meantime,
+you can issue queries directly by sending json data to `http://indexer.mediachain.io/search`:
 
 ```bash
-$ pip install mediachain-indexer
+$ curl indexer.mediachain.io/search -d '{"q": "film"}'
 ```
 
-Depending on your OS, you may need to manually install development dependencies for numpy/scipy, see [here](https://www.scipy.org/install.html)
+As you write new records, they should appear in the search results when you search
+for keywords contained in their metadata.
 
-You will also need to install and start [Elasticsearch](https://www.elastic.co/downloads/elasticsearch)
-
-It's also a good idea to install the [optional dependencies](https://github.com/mediachain/mediachain-client/blob/master/README.md#optional-dependencies)
-for the mediachain-client project, which will enable more efficient updates from the blockchain.
-
-The indexer is a kind of special client that receives streaming updates from the blockchain and generates
-indexes stored in elasticsearch. You can start it with:
-
-```bash
-$ mediachain-indexer-ingest receive_blockchain_into_indexer
-```
-
-This will pull from the public testnet blockchain by default.  If you're running your own testnet,
-you'll want to set the `MC_TRANSACTOR_HOST` and `MC_DATASTORE_HOST` environment variables
- to point to your rpc services.
-
-This ingestion will catch up on the current block, then receive newly published objects.
-
-To run queries, you'll also need to run the API server:
-
-```bash
-$ mediachain-indexer-web web
-```
-
-The index is then accessible via a REST interface.  Keyword searches can be
-issued by sending a json payload to the `/search` endpoint:
-
-```bash
-$ curl localhost:23456/search -d '{"q": "film"}'
-```
+If you're interested in running the indexer locally, please see the [self-hosting instructions](selfhosting.md#indexer).
+Note that you don't have to run your own testnet to have a local indexer.  The default configuration
+will connect to the public testnet and create a local index that you can query.
 
 ## Transactor
 
