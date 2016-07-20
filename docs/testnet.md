@@ -7,6 +7,13 @@ The primary purpose of the testnet is to give developers an opportunity to
 get a feel for the broader architecture of Mediachain as a network and begin
 experimenting with a shared metadata set.
 
+We encourage all contributions, especially questions!  As the components of the
+mediachain network are under constant development, it can be hard to know where
+to begin.  Please [reach out to us on Slack](//slack.mediachain.io) if you
+have questions about how the pieces fit together, or if you have trouble
+interacting with the testnet.
+
+
 ## Component Breakdown
 
 As was detailed in RFCs
@@ -21,10 +28,12 @@ broken into a few core services:
   and media-based search
 - **CLI**: Used to ingest and retrieve data
 
-Each piece can be installed and used separately, as is detailed below.
-Mediachain Labs will also be administrating its own instances of the Transactor
+Mediachain Labs will be administrating its own instances of the Transactor
 and Indexer for public use, so developers needn't worry about running them on
 their own.
+
+For those interested in running their own testnet, please see the [self-hosting documentation](selfhosting.md).
+
 
 ## Known Limitations
 
@@ -102,6 +111,14 @@ $ mediachain get QmbSMhk4EBH7SN2W4EMXuytUVYarZd2gbLdDobeJRhbU6X
 
 This resolves the chain head pointer, retrieves the parent cells and folds over them to give a complete
 metadata representation as some nice JSON. Straightforward (note that this object uses an older translator version format).
+
+A set of sample ids to query is available on ipfs, and can be retrieved with `ipfs get QmYw3BGZhmhYtR7iUNeuUXEiAdGGrL4c91WsHoCzEo2jyU`,
+or via the http gateway at [https://ipfs.io/ipfs/QmYw3BGZhmhYtR7iUNeuUXEiAdGGrL4c91WsHoCzEo2jyU](https://ipfs.io/ipfs/QmYw3BGZhmhYtR7iUNeuUXEiAdGGrL4c91WsHoCzEo2jyU)
+
+For a much larger set, use `ipfs get QmRBnvwUosXssWPUMYw9Syqt6hZUA5ZVokJAiWAdwkGRV6` - this contains roughly 1 million
+record ids, and due to its size it's much more efficient to retrieve it with the ipfs tool than via the gateway.
+
+Both files contain one id per-line, resolvable with the `mediachain get <id>` command.
 
 ### Writing
 
