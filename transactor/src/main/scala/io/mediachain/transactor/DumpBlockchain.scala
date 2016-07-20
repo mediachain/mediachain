@@ -72,7 +72,7 @@ object DumpBlockchain {
         case _ => ""
       }
       
-      println(s"${aref} ${obj.mediachainType} ${bref}")
+      println(s"${aref} ${obj.mediachainType.get} ${bref}")
     }
     
     def fetchBlock(ref: Reference) = {
