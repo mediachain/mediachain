@@ -27,6 +27,7 @@ object DumpBlockchain {
   
   def run(conf: Properties, cluster: List[String]) {
     val client = Client.build(Transport.SSLConfig.fromProperties(conf))
+    client.connect(cluster)
     val datastore = new DynamoDatastore(DynamoDatastore.Config.fromProperties(conf))
     try {
       val block = Await.result(client.currentBlock, Duration.Inf)
