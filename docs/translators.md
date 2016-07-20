@@ -28,7 +28,7 @@ A translator extracts information of interest from a source document like [this]
             'meta': {},
             'entity': {
                 "meta": {
-                    "translator": "GettyTranslator/0.1",
+                    "translator": "GettyTranslator/@Qm...",
                     "data": {
                         "name": "Michael Ochs Archives"
                     }
@@ -108,5 +108,29 @@ mediachain/translation/getty
 * `README.md`: readme (optional)
 
 ### Translator lifecycle
+We're experimenting with using IPFS to version and distribute translators. In order to make one available to the system:
 
-### Extending a translator
+* clone https://github.com/mediachain/schema-translators
+* add your translator (following "sub-package structure above") and the respective sample file(s)
+* run the tests with `python setup.py test`: this will make sure the output from your translators, based on the test files, is valid
+* if the tests pass, run `python setup.py publish_translators`:
+
+```js
+Publishing to IPFS!
+{'example': 'QmV5okrrLhEqBBhh13TESZABQNa9Hvg5mhxK7fg4QSRvm3',
+ 'getty': 'QmWsU4MrF28SrYz5Kwdd2i1d1fUozakdUUuHaSUHjNrBcT',
+ 'simple': 'QmUcs18y8c7bGTRMRVsZNuk62QcJV4Qdj9r7qRTRE6Hibx'}
+ ```
+ 
+ * this publishes the translator code to IPFS (any that you haven't changed are basically no-ops)
+ * you can now access the translator during ingestion by the IPFS multihash:
+ 
+```bash
+ $ mediachain ingest getty@QmWsU4MrF28SrYz5Kwdd2i1d1fUozakdUUuHaSUHjNrBcT $some_dir
+ ```
+ 
+ * please open a PR against the parent repo so we can see your work! (in the future, we plan to automatically IPFS publish through a PR/CI process)
+
+
+### Want to write a translator?
+Please come by #tech in the [Mediachain Slack](http://slack.mediachain.io/) and we'll gladly give you a hand!
