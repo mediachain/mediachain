@@ -63,7 +63,7 @@ $ pip install mediachain-client
 ```
 
 Make sure you have a recent pip, at least 8.x. If `pip --version` reports a lower version,
-you can update pip with itself: `pip install -U pip`.
+you can update pip with itself: `pip install -U pip`. You should also use a [virtualenv](https://virtualenv.pypa.io/en/stable/userguide/)
 
 You will also need to [install IPFS](https://ipfs.io/docs/install/) and
 run `ipfs daemon`.
