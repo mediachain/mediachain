@@ -141,4 +141,4 @@ Publishing to IPFS!
 
 
 ### Want to write a translator?
-Please come by #tech in the [Mediachain Slack](http://slack.mediachain.io/) and we'll gladly give you a hand!
+Submit a pull request to [mediachain/schema-translators](https://github.com/mediachain/schema-translators). See [example](https://github.com/mediachain/schema-translators/pull/7/files). If you have questions, come by #tech in the [Mediachain Slack](http://slack.mediachain.io/) and we'll gladly give you a hand!
