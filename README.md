@@ -6,6 +6,8 @@
 
 The primary Mediachain repo. Contains interface definitions and the Transactor implementation. Please see [the RFC](rfc/mediachain-rfc-2.md) for the system design.
 
+The testnet is operational! See [the testnet docs](docs/testnet.md) for details.
+
 ## Mediachain System Layout
 ![Mediachain System Diagram](rfc/images/mediachain-system.png)
 
