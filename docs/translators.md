@@ -39,11 +39,11 @@ A translator extracts information of interest from a source document like [this]
     ]
 }
 ```
-This particular example has extracted the `_id` and `title` fields, as well as the author organization.
+This particular example has extracted the `_id` and `title` fields, as well as the author organization. Take a look at the [actual getty translator](https://github.com/mediachain/schema-translators/blob/master/mediachain/translation/getty/translator.py) for a fuller example. See also [the docs on the mediachain-client repo](https://github.com/mediachain/mediachain-client/blob/master/docs/translation.md) for a more in-depth technical exploration.
 
 ### Writing a translator 
 
-Here's a minimal translator:
+Here's an absolutely minimal translator:
 
 
 ```python
