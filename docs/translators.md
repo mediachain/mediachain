@@ -112,7 +112,14 @@ We're experimenting with using IPFS to version and distribute translators. In or
 
 * `git clone https://github.com/mediachain/schema-translators.git`
 * add your translator (following "sub-package structure above") and the respective sample file(s)
+* install the updated files into an active venv
+```bash
+$ virtualenv venv
+$ source venv/bin/activate
+$ pip install -U -I --no-deps --no-cache-dir .
+```
 * run the tests with `python setup.py test`: this will make sure the output from your translators, based on the test files, is valid
+(if you see `E   ImportError: cannot import name Types_pb2`, try `pip install mediachain-client` directly)
 * if the tests pass, run `python setup.py publish_translators`:
 
 ```js
@@ -121,6 +128,7 @@ Publishing to IPFS!
  'getty': 'QmWsU4MrF28SrYz5Kwdd2i1d1fUozakdUUuHaSUHjNrBcT',
  'simple': 'QmUcs18y8c7bGTRMRVsZNuk62QcJV4Qdj9r7qRTRE6Hibx'}
  ```
+
  
  * this publishes the translator code to IPFS (any that you haven't changed are basically no-ops)
  * you can now access the translator during ingestion by the IPFS multihash:
