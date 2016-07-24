@@ -11,7 +11,7 @@ The testnet is operational! See [the testnet docs](docs/testnet.md) for details.
 ## Mediachain System Layout
 ![Mediachain System Diagram](rfc/images/mediachain-system.png)
 
-## Blockhain Extension
+## Blockchain Extension
 ![Mediachain Blockchain Animation](rfc/images/blockchain.gif)
 
 [Mediachain Blog](https://blog.mediachain.io/)
