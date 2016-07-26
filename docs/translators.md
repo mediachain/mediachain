@@ -5,7 +5,7 @@ A key concept in Mediachain is _translators_: rather than imposing the use of a 
 The long-term vision for this is a pure, declarative DSL, but [at the time of this writing](https://github.com/mediachain/mediachain-client/issues/70) we are using python a "black box" standin, to work out the mechanics of versioning, distributing and loading the translators.
 
 ---
-**WARNING:** This means that translators are currently arbitrary code that runs in the main process. Never execute translators you don't trust! (We are currently considering jailing the execution with `pysandbox`)
+**WARNING:** This means that translators are currently arbitrary code that runs in the main process. Never execute translators you don't trust! (We are currently considering jailing the execution with ~~`pysandbox`~~ `asteval`, `seccomp`, or similar)
 ---
 
 ### The translator's job
