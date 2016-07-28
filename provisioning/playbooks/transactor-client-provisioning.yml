@@ -6,6 +6,7 @@
     - python
     - rocksdb
     - {role: ipfs, become: yes, become_user: "root", ipfs_user: "ubuntu" }
+    - {role: joshualund.golang, become: yes}
     
   become: yes
 
