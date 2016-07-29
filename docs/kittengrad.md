@@ -50,7 +50,7 @@ When the transactor has built a backlog of transactions, it may
 reject an operation as temporarily unavailable. The client is expected to
 backoff and retry with a randomized exponential backoff or similar mechanism.
 
-The transactor will see through the completion of accepted transaction at a best
+The transactor will see through the completion of accepted transactions on a best
 effort basis, which in the absence of transactor failure should result in the eventual
 commit of an accepted transaction.
 The client may wait to confirm a transaction through a streamed block,
@@ -101,11 +101,11 @@ as are updates for unknown canonicals. It also checks its worklog backlog,
 against some safety threshold.
 
 The transactor then generates a transaction id and adds the data to the
-datastore and the transaction to the its worklog. It then brodcasts the
+datastore and the transaction to the worklog. It then brodcasts the
 transaction to the network, and returns the transaction id to the client.
 
 If the transaction is the first one in the worklog, the transactor sets
-a timer that ensures that a block confirming the transaction will eventually
+a timer that ensures a block confirming the transaction will eventually
 be commited with the Block Commit Protocol.
 If the worklog size exceeds the maximum block size, and there is no
 commit in progress, the transactor initiates the Block Commit Protocol
