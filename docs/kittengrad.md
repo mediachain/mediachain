@@ -210,8 +210,41 @@ this time in the background.
 
 ### Steady State Operation
 
-TBD
+When the system is operating at steady state, it is constantly under
+some write load.  While the system is commiting a block with the block
+commit protocol, it is also accumulating newer transactions that will
+need to be commited in a subsequent block.
 
+Once a block has been commited, transactors examine their resulting
+worklog, which is the queue built up while the block was being
+commited.  Depending on the load, this may be less a full block, in
+which case the next block commit execution follows the timer of the
+first pending transaction.
+
+Under higher write load however, this will exceed the block size,
+necessitating an immediate re-execution of the block commit
+protocol. In order to minimze contention in block proposal, which
+consumes bandwidth for block propagation, we want to utilize a
+randomized wait period before a transactor initiates block commit by
+proposing a new block. On the same time we want to minimize the time
+it takes for the first proposed block, which initiates protocol
+action.  We can modulate the delay by determining the wait period with
+a distribution dependent on transactor stake. In this way, transactors
+with many pending transactions are more likely to propose a block
+quickly. If a transactor has a dominant stake, a viable strategy would
+also have it initiate protocol without waiting at all.
+
+Ultimately, if the write load is too heavy for the block commit
+pipeline to keep up, transactors will hit their backlog limit. When
+this occurs, transactors will start to reject transactions as
+temporarily unavailable and initiate client back off retries.
+
+The scaling envelope for the performance of the system in the absence
+of failures is dominated by the block commit time. We observed peak
+performance of 1 block of 512 write ops per second with the copycat
+prototype with an m3.large cluster.  It is not an unreasonable design
+goal to expect similar or better performance with the baseline block
+commit protocol.
 
 ### Delayed Writes
 
