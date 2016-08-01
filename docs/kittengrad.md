@@ -87,7 +87,7 @@ to the mediachain.
 
 In addition to transactions commited in the blockchain, each transactor
 maintains a worklog of pending transactions. The blockchain index together with
-the worklog transactions compute an aggregate index, the working index.
+the worklog compute an aggregate index, the working index.
 
 Read requests are serviced by the working index, while write operations are
 initiated on the working index and completed through the transaction protocol.
@@ -139,13 +139,81 @@ of duplicate inserts without a replay. Updates however are dependent
 on the previous chain pointer, which requires a new datastore write
 and replay of the transaction.
 
+### Block Commit Protocol
+
+The objective of the block commit protocol is to establish consensus
+among transactors for the next block. In the long term, we want to
+utilize a PoW or PoS system that is robust to byzantine failures
+(eg tendermint). At this stage of development however, there is nothing
+at stake; we simply want a simple and robust protocol that can scale to some
+100MM artefacts. 
+
+So we treat the Block Commit Protocol as a pluggable module and we call
+the baseline implementation BCP0.
+
+The BCP0 protocol operates in rounds, with each round having three phases:
+1. A Proposal phase, where one or more new blocks are proposed, validated and propagated by transactors
+2. A voting phase, where transactors vote for the next block
+3. A commit phase, where a block is commited.
+
+#### Block Proposal
+
+During the block proposal phase, one or more transactors with stake in the
+form of pending transactios,  generate a block and brodcast a signed block proposal
+together with the block data.
+
+Upon receiving a block proposal, a transactor that has not
+yet proposed a block can validate and endorse the block by broadcasting
+a signed endorsement message.
+
+The proposal phase ends for a transactor once it has received proposals or
+endorsements by all other transactors. Transactors that have failed to propose
+or endorse within a reasonable timeout, are considered failed and ignored
+for the rest of the round. This is a local decision that is made independently
+by each transactor.
+
+#### Voting
+
+Once the proposal phase has finished, each node chooses a valid block and votes
+for it.
+
+The choice should be deterministic, so that all correct transactors should
+make the same decision in the absence of network failures:
+- If there is only one block proposed, the choice is obvious.
+- If there are more, then the transactor votes for the block with the higest index.
+- If two blocks have the same height, then the transactor chooses by comparing block hashes.
+
+The transactor then broadcasts a Vote message, indicating the chosen block and awaits
+to hear from other live transactors. Once again, transactors that are not heard
+of within a time limit are considered failed for the rest of the round.
+
+#### Block Commit
+
+Each transactor tallies the votes, and if the majority of transactors that were part
+of the round have voted for the same block, the transactor goes forward and commits
+the block to disk.
+The transactor then broadcasts a commit message and waits to hear
+from the live majority before ending the protocol once enough commit
+messages are received. 
+
+If there are not enough votes for a block, then there must be some failed nodes.
+The transactor broadcasts an abort message and enters a reconfiguration
+phase where transactors are probed for liveness. Once the network membership
+has been re-established, the transactors start another protocol round from
+the proposal phase.
+
+The protocol ends when enough commit messages have been received.
+If there is no majority commit at the end, the protocol again re-establishes
+network membership are starts another round. Partial failures that don't
+affect block commit are also handled by network reconfiguration, but
+this time in the background.
+
 ### Steady State Operation
 
 TBD
 
-### Block Commit Protocol
+
+### Delayed Writes
 
 TBD
-
-
 
