@@ -248,5 +248,29 @@ commit protocol.
 
 ### Delayed Writes
 
-TBD
+So far we have developed the protocol using strict writes: transactors
+immediately write to the datastore and propagate transactions that
+refer to objects by references. This is an optimistic approach to
+concurrency, as it assumes little contention from concurrent writes,
+which are resolved by transaction invalidation.
 
+An alternative approach is to treat updates as writes into partially
+ordered sets. There is no total order for updates, but each transactor's
+natural order is preserved. In effect, we treat the working index as
+a CRDT data structure mapping canonicals to posets of updates. The updates
+commute as long as each transactor's order of transaction is preserved.
+
+To utilize the CRDT approach, transactors delay writes to the
+datastore until block proposal, and hence don't include
+chain pointers in transaction data. This allows the protocol to absorb
+arbitrary concurrent transaction contention in a block, without
+invalidating any.
+
+The downside is that transaction object data must be propagated in
+the network, increasing bandwidth cost and protocol latency. It also
+whitens and complicates the block commit protocol interface, as it
+must know handle data writes.
+
+### Failure Recovery and Blockchain Merging
+
+TBD
