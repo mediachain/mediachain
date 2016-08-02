@@ -11,7 +11,7 @@ import io.mediachain.util.{Metrics, Grpc}
 import io.mediachain.multihash.MultiHash
 import io.mediachain.protocol.CborSerialization
 import io.mediachain.protocol.Datastore._
-import io.mediachain.protocol.Transactor.{JournalError, JournalListener}
+import io.mediachain.protocol.Transactor.{JournalError, JournalDuplicateError, JournalListener}
 import io.mediachain.protocol.transactor.Transactor
 import io.mediachain.protocol.transactor.Transactor._
 import io.mediachain.protocol.types.Types
@@ -425,11 +425,21 @@ class TransactorService(client: Client, datastore: Datastore, metrics: Option[Me
       entryXor match {
         case Xor.Left(err) =>
           rpcErrorMetrics("insertCanonical", "FAILED_PRECONDITION")
+          
+          val meta = err match {
+            case JournalDuplicateError(MultihashReference(multihash)) =>
+              val meta = new Metadata
+              meta.put(Metadata.Key.of("Reference", Metadata.ASCII_STRING_MARSHALLER),
+                       multihash.base58)
+              meta
+            case _ => null
+          }
+          
           throw new StatusRuntimeException(
-            Status.FAILED_PRECONDITION.withDescription(
-              s"Journal Error: $err"
-            )
+            Status.FAILED_PRECONDITION.withDescription(s"Journal Error: $err"),
+            meta            
           )
+          
         case Xor.Right(entry) =>
           rpcRecordMetrics(entry)
           TransactorService.refToRPCMultihashRef(entry.ref)
