@@ -159,8 +159,8 @@ The BCP0 protocol operates in rounds, with each round having three phases:
 #### Block Proposal
 
 During the block proposal phase, one or more transactors with stake in the
-form of pending transactios,  generate a block and brodcast a signed block proposal
-together with the block data.
+form of ownership of pending transactios,  generate a block and brodcast a
+signed block proposal together with the block data.
 
 Upon receiving a block proposal, a transactor that has not
 yet proposed a block can validate and endorse the block by broadcasting
@@ -180,7 +180,7 @@ for it.
 The choice should be deterministic, so that all correct transactors should
 make the same decision in the absence of network failures:
 - If there is only one block proposed, the choice is obvious.
-- If there are more, then the transactor votes for the block with the higest index.
+- If there are more, then the transactor votes for the block with the highest index (most transactions).
 - If two blocks have the same height, then the transactor chooses by comparing block hashes.
 
 The transactor then broadcasts a Vote message, indicating the chosen block and awaits
@@ -252,7 +252,7 @@ So far we have developed the protocol using strict writes: transactors
 immediately write to the datastore and propagate transactions that
 refer to objects by references. This is an optimistic approach to
 concurrency, as it assumes little contention from concurrent writes,
-which are resolved by transaction invalidation.
+which are then resolved by transaction invalidation.
 
 An alternative approach is to treat updates as writes into partially
 ordered sets. There is no total order for updates, but each transactor's
