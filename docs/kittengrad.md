@@ -211,7 +211,7 @@ this time in the background.
 As an optimization, it may be possible to elide synchronous commit
 confirmation and immediately commit the block. Commit messages can
 then be collected in the background for failure detection purposes.
-However, this may open the possibility of blockchain divergence
+However, this may widen the possibility of blockchain divergence
 between transactors in the presence of partial failures, which must
 be reconciled with the blockchain merging approaches discussed later.
 
