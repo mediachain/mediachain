@@ -208,6 +208,13 @@ network membership are starts another round. Partial failures that don't
 affect block commit are also handled by network reconfiguration, but
 this time in the background.
 
+As an optimization, it may be possible to elide synchronous commit
+confirmation and immediately commit the block. Commit messages can
+then be collected in the background for failure detection purposes.
+However, this may open the possibility of blockchain divergence
+between transactors in the presence of partial failures, which must
+be reconciled with the blockchain merging approaches discussed later.
+
 ### Steady State Operation
 
 When the system is operating at steady state, it is constantly under
