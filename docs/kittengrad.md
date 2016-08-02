@@ -280,4 +280,27 @@ must know handle data writes.
 
 ### Failure Recovery and Blockchain Merging
 
-TBD
+At this phase we are concerned with common failure scenarios:
+- transactor crash and recovery, where a transactor fails and later recovers to rejoin the network.
+- transient network failures, where a transactor becomes temporarily unreachable.
+- network parititions, where the transactor network splits into two or more components that independently process transactions for a time.
+
+The common characteristic of failures that last for non-trivial
+amounts of time, is that the blockchain diverges among
+transactors. When transactors recover and rejoin the network, they
+must synchronize their blockchain with the network.
+
+In the more common failure of a node crash or transient network
+issues, the failed transactors will simply fall behind in the
+blockchain. On recovery they can synchronize by fast-forwarding the
+missing blocks.
+
+In the case of a network partition, the blockchains of the various
+components will diverge from some common ancestor. On recovery, the
+network will merge the blockchains by selecting the higher blockchain
+and replaying the shorter ones from the point of divergence, resolving
+ties by hash comparison. Transaction playback can follow through the
+block commit protocol pipeline by queueing all the transactions of the
+shorter blockchains into the worklog.
+
+[TBD: More detail in merge protocol]
