@@ -290,7 +290,7 @@ amounts of time, is that the blockchain diverges among
 transactors. When transactors recover and rejoin the network, they
 must synchronize their blockchain with the network.
 
-In the more common failure of a node crash or transient network
+In the more common case of a node crash or transient network
 issues, the failed transactors will simply fall behind in the
 blockchain. On recovery they can synchronize by fast-forwarding the
 missing blocks.
