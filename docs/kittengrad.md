@@ -152,6 +152,7 @@ So we treat the Block Commit Protocol as a pluggable module and we call
 the baseline implementation BCP0.
 
 The BCP0 protocol operates in rounds, with each round having three phases:
+
 1. A Proposal phase, where one or more new blocks are proposed, validated and propagated by transactors
 2. A voting phase, where transactors vote for the next block
 3. A commit phase, where a block is commited.
