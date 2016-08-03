@@ -175,7 +175,7 @@ by each transactor.
 
 #### Voting
 
-Once the proposal phase has finished, each node chooses a valid block and votes
+Once the proposal phase has finished, each transactor chooses a valid block and votes
 for it.
 
 The choice should be deterministic, so that all correct transactors should
