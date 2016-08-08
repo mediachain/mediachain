@@ -18,6 +18,7 @@ class DynamoDatastore(config: DynamoDatastore.Config)
   val chunkSize = 1024 * 384 // 384 KB; DynamoDB has 400KB limit for item size.
                              // this item size includes field names as well as
                              // values.
+  val consistentReads = config.consistentReads
 
   val db = new AmazonDynamoDBClient()
   config.endpoint.foreach(ep => db.setEndpoint(ep))
@@ -112,7 +113,7 @@ class DynamoDatastore(config: DynamoDatastore.Config)
     val item = Map(
       "multihash" -> keyAttr
     )
-    val res = db.getItem(table, item).getItem  // yes, really.
+    val res = db.getItem(table, item, consistentReads).getItem  // yes, really.
     
     Option(res).map { item =>
       val data = item.get("data")
@@ -138,7 +139,7 @@ class DynamoDatastore(config: DynamoDatastore.Config)
       val item = Map(
         "chunkId" -> keyAttr
       )
-      val res = db.getItem(chunkTable, item).getItem // yes, please.
+      val res = db.getItem(chunkTable, item, consistentReads).getItem // yes, please.
       if (res != null) {
         val data = res.get("data")
         if (data != null) {
@@ -161,14 +162,18 @@ class DynamoDatastore(config: DynamoDatastore.Config)
 object DynamoDatastore {
   case class Config(
     baseTable: String,
-    endpoint: Option[String] = None
+    endpoint: Option[String] = None,
+    consistentReads: Boolean = true
   )
   
   object Config {
     def fromProperties(conf: Properties) = {
       val baseTable = conf.getq("io.mediachain.transactor.dynamo.baseTable")
       val endpoint = conf.getopt("io.mediachain.transactor.dynamo.endpoint")
-      Config(baseTable, endpoint)
+      val consistentReads = conf.getopt("io.mediachain.transactor.dynamo.consistentReads")
+        .forall(_.toLowerCase != "false")
+
+      Config(baseTable, endpoint, consistentReads)
     }
   }
 }
