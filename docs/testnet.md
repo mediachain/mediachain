@@ -152,7 +152,7 @@ $ mediachain get QmVwwiMVDH7umVSd3vdbwGS3WmFX2axhJCTpbfU4LMPcE8
 ```
 
 This resolves the chain head pointer, retrieves the parent cells and folds over them to give a complete
-metadata representation as some nice JSON. Straightforward (note that this object uses an older translator version format).
+metadata representation as some nice JSON. Straightforward.
 
 A set of sample ids to query is available on ipfs, and can be retrieved with `ipfs get QmXPdt9wmy8ZvpxqgTXoHXcWd7KpxvWGhag8ZunxkRPzEL`,
 or via the http gateway at [https://ipfs.io/ipfs/QmXPdt9wmy8ZvpxqgTXoHXcWd7KpxvWGhag8ZunxkRPzEL](https://ipfs.io/ipfs/QmXPdt9wmy8ZvpxqgTXoHXcWd7KpxvWGhag8ZunxkRPzEL)
