@@ -95,16 +95,21 @@ Daemon is ready
 You should then be able to immediately pull down the statement chain for an artefact:
 
 ```bash
-$ mediachain get QmbSMhk4EBH7SN2W4EMXuytUVYarZd2gbLdDobeJRhbU6X
+$ mediachain get QmVwwiMVDH7umVSd3vdbwGS3WmFX2axhJCTpbfU4LMPcE8
 
 {
   "metaSource": {
     "@link": "Qmcbo67Ycv6rCREhQYoYeGJzgAJiCZDfyEdtHqdbmTsv6T"
   },
   "meta": {
-    "translator": "GettyTranslator/0.1",
+    "translator": {
+      "link": {
+        "@link": "QmbDLhgDTYUM88e34P8PgycwwrtSdeZewkv2gLCME3o3mT"
+      },
+      "id": "getty@QmbDLhgDTYUM88e34P8PgycwwrtSdeZewkv2gLCME3o3mT"
+    },
     "raw_ref": {
-      "@link": "Qmcbo67Ycv6rCREhQYoYeGJzgAJiCZDfyEdtHqdbmTsv6T"
+      "@link": "QmPbhJZazM6vLiNHhjfDGUZnUQ6TzxuYydg8F2mrQHcvxE"
     },
     "data": {
       "artist": "Michael Ochs Archives",
@@ -118,13 +123,25 @@ $ mediachain get QmbSMhk4EBH7SN2W4EMXuytUVYarZd2gbLdDobeJRhbU6X
         ...
       ],
       "date_created": "1956-05-22T00:00:00-07:00",
-      "_id": "getty_451356503"
+      "_id": "getty_451356503",
+      "thumbnail": {
+        "binary_asset": true,
+        "link": {
+          "@link": "QmRWxQ7aHGZX8396ARGwt4GXtNaZyyKR6CziwWBSLryiBy"
+        },
+        "uri": "http://cache1.asset-cache.net/gc/451356503-director-alfred-hitchcock-with-actor-jimmy-gettyimages.jpg?v=1&c=IWSAsset&k=2&d=GkZZ8bf5zL1ZiijUmxa7QUFN5yfBDADlXbpJ1E1eyY2Njoqu%2f2BqqxBjwB509RuIt8%2b8q1YrWpXJ7oa5%2fEsS%2bA%3d%3d&b=Ng=="
+      }
     }
   },
   "type": "artefact",
   "entity": {
     "meta": {
-      "translator": "GettyTranslator/0.1",
+      "translator": {
+        "link": {
+          "@link": "QmbDLhgDTYUM88e34P8PgycwwrtSdeZewkv2gLCME3o3mT"
+        },
+        "id": "getty@QmbDLhgDTYUM88e34P8PgycwwrtSdeZewkv2gLCME3o3mT"
+      },
       "data": {
         "name": "Michael Ochs Archives"
       }
@@ -137,10 +154,10 @@ $ mediachain get QmbSMhk4EBH7SN2W4EMXuytUVYarZd2gbLdDobeJRhbU6X
 This resolves the chain head pointer, retrieves the parent cells and folds over them to give a complete
 metadata representation as some nice JSON. Straightforward (note that this object uses an older translator version format).
 
-A set of sample ids to query is available on ipfs, and can be retrieved with `ipfs get QmYw3BGZhmhYtR7iUNeuUXEiAdGGrL4c91WsHoCzEo2jyU`,
-or via the http gateway at [https://ipfs.io/ipfs/QmYw3BGZhmhYtR7iUNeuUXEiAdGGrL4c91WsHoCzEo2jyU](https://ipfs.io/ipfs/QmYw3BGZhmhYtR7iUNeuUXEiAdGGrL4c91WsHoCzEo2jyU)
+A set of sample ids to query is available on ipfs, and can be retrieved with `ipfs get QmXPdt9wmy8ZvpxqgTXoHXcWd7KpxvWGhag8ZunxkRPzEL`,
+or via the http gateway at [https://ipfs.io/ipfs/QmXPdt9wmy8ZvpxqgTXoHXcWd7KpxvWGhag8ZunxkRPzEL](https://ipfs.io/ipfs/QmXPdt9wmy8ZvpxqgTXoHXcWd7KpxvWGhag8ZunxkRPzEL)
 
-For a much larger set, use `ipfs get QmRBnvwUosXssWPUMYw9Syqt6hZUA5ZVokJAiWAdwkGRV6` - this contains roughly 1 million
+For a much larger set, use `ipfs get QmWusc71Q4M4dB1UJBzLoRFyFikQ46JkA1xbMX3SxDUibh` - this contains roughly 1 million
 record ids, and due to its size it's much more efficient to retrieve it with the ipfs tool than via the gateway.
 
 Both files contain one id per-line, resolvable with the `mediachain get <id>` command.
