@@ -61,7 +61,7 @@ of write operations. Previously, the operations returned a commit receipt in the
 form of a `JournalEntry` immediately.
 Now they return a transaction id, which will be included in some `JournalEntry` in
 a future block streamed through the `journalStream` interface.
-The stream interface itself changes to only emit commited block events instead
+The stream interface itself changes to only emit committed block events instead
 of individual entries.
 
 ## Transactor Implementation
@@ -80,12 +80,12 @@ a p2p gossip protocol.
 ### Transactor State
 
 Each transactor maintains a local copy of the blockchain on disk, and a pointer
-to the last commited block. The transactor also maintains on disk the mediachain
+to the last committed block. The transactor also maintains on disk the mediachain
 index which corresponds to the blockchain, mapping canonical to chain references.
 The index is used for creating update transactions and providing read access
 to the mediachain.
 
-In addition to transactions commited in the blockchain, each transactor
+In addition to transactions committed in the blockchain, each transactor
 maintains a worklog of pending transactions. The blockchain index together with
 the worklog compute an aggregate index, the working index.
 
@@ -106,7 +106,7 @@ transaction to the network, and returns the transaction id to the client.
 
 If the transaction is the first one in the worklog, the transactor sets
 a timer that ensures a block confirming the transaction will eventually
-be commited with the Block Commit Protocol.
+be committed with the Block Commit Protocol.
 If the worklog size exceeds the maximum block size, and there is no
 commit in progress, the transactor initiates the Block Commit Protocol
 in order to commit some transactions off its worklog.
@@ -155,12 +155,12 @@ The BCP0 protocol operates in rounds, with each round having three phases:
 
 1. A Proposal phase, where one or more new blocks are proposed, validated and propagated by transactors
 2. A voting phase, where transactors vote for the next block
-3. A commit phase, where a block is commited.
+3. A commit phase, where a block is committed.
 
 #### Block Proposal
 
 During the block proposal phase, one or more transactors with stake in the
-form of ownership of pending transactios,  generate a block and brodcast a
+form of ownership of pending transactions,  generate a block and brodcast a
 signed block proposal together with the block data.
 
 Upon receiving a block proposal, a transactor that has not
@@ -205,7 +205,7 @@ the proposal phase.
 
 The protocol ends when enough commit messages have been received.
 If there is no majority commit at the end, the protocol again re-establishes
-network membership are starts another round. Partial failures that don't
+network membership and starts another round. Partial failures that don't
 affect block commit are also handled by network reconfiguration, but
 this time in the background.
 
@@ -221,20 +221,20 @@ be reconciled with the blockchain merging approaches discussed later.
 When the system is operating at steady state, it is constantly under
 some write load.  While the system is commiting a block with the block
 commit protocol, it is also accumulating newer transactions that will
-need to be commited in a subsequent block.
+need to be committed in a subsequent block.
 
-Once a block has been commited, transactors examine their resulting
+Once a block has been committed, transactors examine their resulting
 worklog, which is the queue built up while the block was being
-commited.  Depending on the load, this may be less a full block, in
+committed.  Depending on the load, this may be less a full block, in
 which case the next block commit execution follows the timer of the
 first pending transaction.
 
 Under higher write load however, this will exceed the block size,
 necessitating an immediate re-execution of the block commit
-protocol. In order to minimze contention in block proposal, which
+protocol. In order to minimize contention in block proposal, which
 consumes bandwidth for block propagation, we want to utilize a
 randomized wait period before a transactor initiates block commit by
-proposing a new block. On the same time we want to minimize the time
+proposing a new block. At the same time we want to minimize the time
 it takes for the first proposed block, which initiates protocol
 action.  We can modulate the delay by determining the wait period with
 a distribution dependent on transactor stake. In this way, transactors
