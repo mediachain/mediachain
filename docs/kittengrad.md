@@ -169,9 +169,9 @@ a signed endorsement message.
 
 The proposal phase ends for a transactor once it has received proposals or
 endorsements by all other transactors. Transactors that have failed to propose
-or endorse within a reasonable timeout, are considered failed and ignored
-for the rest of the round. This is a local decision that is made independently
-by each transactor.
+or endorse within a reasonable timeout, are considered failed. When there
+are perceived failures, the transactor aborts the commit early and triggers
+failure recovery to re-ascertain network membership.
 
 #### Voting
 
@@ -184,18 +184,19 @@ make the same decision in the absence of network failures:
 - If there are more, then the transactor votes for the block with the highest index (most transactions).
 - If two blocks have the same height, then the transactor chooses by comparing block hashes.
 
-The transactor then broadcasts a Vote message, indicating the chosen block and awaits
-to hear from other live transactors. Once again, transactors that are not heard
-of within a time limit are considered failed for the rest of the round.
+The transactor then broadcasts a Vote message, indicating the chosen
+block and awaits to hear from other live transactors. The transactor
+proceeds when it has received a majority of votes for some block,
+it has heard from all transactors or a timeout occurs.
 
 #### Block Commit
 
-Each transactor tallies the votes, and if the majority of transactors that were part
-of the round have voted for the same block, the transactor goes forward and commits
-the block to disk.
-The transactor then broadcasts a commit message and waits to hear
-from the live majority before ending the protocol once enough commit
-messages are received. 
+Each transactor tallies the votes, and if the majority of transactors
+that were part of the round have voted for the same block, the
+transactor goes forward and commits the block to disk.  The transactor
+then broadcasts a commit message and waits to hear from the live
+majority before ending the protocol once enough commit messages are
+received.
 
 If there are not enough votes for a block, then there must be some failed nodes.
 The transactor broadcasts an abort message and enters a reconfiguration
@@ -211,10 +212,8 @@ this time in the background.
 
 As an optimization, it may be possible to elide synchronous commit
 confirmation and immediately commit the block. Commit messages can
-then be collected in the background for failure detection purposes.
-However, this may widen the possibility of blockchain divergence
-between transactors in the presence of partial failures, which must
-be reconciled with the blockchain merging approaches discussed later.
+then be collected in the background for failure detection purposes
+or omitted altogether.
 
 ### Steady State Operation
 
