@@ -88,39 +88,44 @@ Peers in the Key space. The Peer then proceeds to build its slice of
 the Mediachain, by retrieving its share of the data by its adjacent
 Peers.
 
-In order for a Peer to leave the overlay, we perform the inverse operation.
-The canonical space corresponding to the departing is now split between its
-two adjacent Peers. The Peers already have the data due to replication, but
-they need to start replicating their new share of the canonical space further
-to their adjacent Peers.
+In order for a Peer to leave the overlay, we perform the inverse
+operation.  The canonical space corresponding to the departing is now
+split between its two adjacent Peers. The Peers already have the data
+due to replication, but they need to start replicating their new share
+of the canonical space further to their adjacent Peers.
 
-Each Peer maintains a Journal (oplog) containing all the operations it has applied
-or replicated. The Journal is structured in blocks linked together through hashing,
-and timestamped with ntp-synchronized clocks. This Journal structure as a blockchain
-allows individual Peers to externalize its share of the mediachain.
+Each Peer maintains a Journal (oplog) containing all the operations it
+has applied or replicated. The Journal is structured in blocks linked
+together through hashing, and timestamped with ntp-synchronized
+clocks. This Journal structure as a blockchain allows individual Peers
+to externalize its share of the mediachain.
 
-The Journal allows individual Peers to synchronize their state and recover from
-transient failures or restarts. A Peer can temporarily go offline, and when it rejoins
-the network it need only receive new journal blocks from its adjacent Peers.
+The Journal is useful for Peers to synchronize their state and recover
+from transient failures or restarts. A Peer can temporarily go
+offline, and when it rejoins the network it need only receive new
+journal blocks from its adjacent Peers.
 
 ## Streaming, Aggregation and Online Indexing
 
-The Journal also allows Peers to stream their operations to interested clients.
-We distinguish two classes of clients that are particularly important for the
-system interface: Aggregators and Indexers.
+The Journal also allows Peers to stream their operations to interested
+clients.  We distinguish two classes of clients that are particularly
+important for the system interface: Aggregators and Indexers.
 
-Aggregators subscribe to journal streams from multiple Peers, and aggregate them
-together to emit a composite view of the mediachain. In order to obtain a complete
-view, an aggregator needs to subscribe to streams from ceil(N/R) Peers, where r
-is the replication factor (3 by default).
+Aggregators subscribe to journal streams from multiple Peers, and
+aggregate them together to emit a composite view of the mediachain. In
+order to obtain a complete view, an aggregator needs to subscribe to
+streams from ceil(N/r) Peers, where r is the replication factor (3 by
+default).
 
-Indexers receive streams of Journal updates and retrieve associated data from IPFS for
-ingestion. Indexer implementation may poll Peers, act as aggregators or utilize the
-services of an aggregator for online operation.
+Indexers receive streams of Journal updates and retrieve associated
+data from IPFS for ingestion. Indexer implementation may poll Peers,
+act as aggregators or utilize the services of an aggregator for online
+operation.
 
 ## Namespaces
 
-This so far pertains to a flat namespace, but the design allows us to trivially
-implement multiple namespaces. Each namespace has its own key space, implemented
-as a separate overlay and served by a different set of Peers. Note that individual
-Peers may participate in multiple overlays serving different namespaces.
+This so far pertains to a flat namespace, but the design allows us to
+trivially implement multiple namespaces. Each namespace has its own
+key space, implemented as a separate overlay and served by a different
+set of Peers. Note that individual Peers may participate in multiple
+overlays serving different namespaces.
