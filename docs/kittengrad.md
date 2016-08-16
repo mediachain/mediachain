@@ -1,6 +1,6 @@
 # The Kittengrad Transactor Network
 
-WIP DRAFT
+WIP DRAFT; Suspended -- cf [Radical Kittengrad](radical-kittengrad.md)
 
 ## Introduction
 
