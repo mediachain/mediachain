@@ -1,6 +1,6 @@
 # Radical Kittengrad: Beyond Consensus
 
-DRAFT
+WIP DRAFT; Suspended - cf 'New Directions in Mediachain' memo
 
 ## The Mediachain as a Blockchain
 
