@@ -15,6 +15,7 @@ But it comes with significant costs:
 * Inefficient querying, requires the entire blockchain for read operations
 * Difficult to scale to large datasets with bulk and firehose
  ingestion, the blockchain becomes the bottleneck
+* Fundamentally trying to solve problem we don't have (double spend)
 
 In reality, we don't need a singular linearly ordered view of the world.
 And we want to allow the system to grow to very large datasets (billions
@@ -51,7 +52,7 @@ Public namespaces to support permissionless participation.
 ## A Heterogeneous Network of Cooperative Peers
 
 The datastructure is maintained by heterogeneous peers; they are operated by
-different rganizations, and contribute different resources to the network.
+different organizations, and contribute different resources to the network.
 Each peer maintains some parts of the dataset and has a limited view of the
 mediachain. Peers can synchronize state with peer-to-peer interactions,
 converging their view of the data structure.
@@ -108,7 +109,7 @@ Need signatures (single member, majority, labs decree) to publish --
 makes identities for highly curated namespaces expensive to obtain.
 certificate revocation: provides spam deterrent.
 
-Ref: The Social Cost of Cheap Identities
+Ref: [The Social Cost of Cheap Identities](http://www.haas.berkeley.edu/Courses/Spring2000/BA269D/FriedmanResnick99.pdf)
 
 scaling up: governance issue -- we'll be happy to have this problem.
 
@@ -147,6 +148,7 @@ peers answer queries locally -- provide a subset view of the mediachain
 query by time range --> [some] blocks since last update
 query by peer id
 query by id
+query by id + set of namespaces
 
 queries not necessary supported by all peers, index requirements.
 
