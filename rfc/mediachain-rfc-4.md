@@ -4,18 +4,17 @@ Status: WIP WIP WIP WIP
 
 Author: vyzo
 
-## It's not a Blockchain
+## Lessons from Phase I: It's not a Blockchain
 
-Lesson from phase I: the blockchain is not the right approach for our domain
+The blockchain is and attractive solution: public ledger promotes open data
+and discovery, simplifies streaming for online processing.
+But it comes with significant costs:
 
-Attraction of the blockchain: public ledger promotes open data and discovery,
-simplifies streaming for online processing.
-It comes at a significant cost: complexities of maintaining consensus
-in a peer to peer network.
-PoS/PoW economics don't quite work in our domain.
-Inefficient querying, requires the entire blockchain for read operations.
-Difficult to scale to large datasets with bulk and firehose
-ingestion, the blockchain becomes the bottleneck.
+* complexities of maintaining consensus in a peer to peer network
+* PoS/PoW economics that don't quite work in our domain
+* Inefficient querying, requires the entire blockchain for read operations
+* Difficult to scale to large datasets with bulk and firehose
+ ingestion, the blockchain becomes the bottleneck
 
 In reality, we don't need a singular linearly ordered view of the world.
 And we want to allow the system to grow to very large datasets (billions
@@ -26,23 +25,27 @@ of statements that allows us to track and relate media objects.
 This has the hallmarks of a CRDT data structure, which allows a system to
 achieve eventually consistent state without the need for consensus. 
 
-So what we want to build is a distributed database that supports upserts
+So what we want to build is a distributed database that supports upserts,
 connecting statements to one or more domain specific identifiers.
 Low level plumbing data structure, as dumb as possible; rich relations
 between objects can be expressed with merkle DAGs in object content (userland)
 
-Domain-specific identifiers instead of opaque pointers
- allow sources to maintain their own internal schema
- meaningful to humans
-operations: upsert, no distinction between insert and update
 
-We also want to partition the space: semantic namespaces and separation of
-concern for participating peers.
+### Domain-specific identifiers instead of opaque pointers
+Allows sources to maintain their own internal schema meaningful to humans.
+Avoids asserting authority over names and identifiers.
+ 
+### Operations
+Upsert, no distinction between insert and update.
+
+### Namespace partitioning
+Semantic namespaces and separation of concerns for participating peers.
 Peers may be interested in only a subset of the mediachain, so they can
-only participate in topics they are interested in.
-Moderation and different publishing models for namespaces: control spam,
-support authoritative sources who maintain control of their own data.
-Public namespaces to support permission-less participation.
+only participate in topics they are interested in. Natural mapping.
+
+### Moderation and publishing models
+Control spam, support authoritative sources who maintain control of their own data.
+Public namespaces to support permissionless participation.
 
 
 ## A Heterogeneous Network of Cooperative Peers
