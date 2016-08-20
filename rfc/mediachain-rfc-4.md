@@ -48,6 +48,8 @@ only participate in topics they are interested in. Natural mapping.
 Control spam, support authoritative sources who maintain control of their own data.
 Public namespaces to support permissionless participation.
 
+administrative control: distributed governance model
+grant control of namespaces to stake holders and organizations
 
 ## A Heterogeneous Network of Cooperative Peers
 
@@ -101,14 +103,30 @@ namespace creation and discovery -- directory servers
 group membership, moderation, permission model
 /u -- unmoderated, free for all
 
-peer participation model: reader -vs- publisher
+### Permissions
 
-trust model: namespaces are owned by their stake holders, initial peers
-participating.
-Need signatures (single member, majority, labs decree) to publish -- 
-makes identities for highly curated namespaces expensive to obtain.
-certificate revocation: provides spam deterrent.
+public space:
+ /u anyone can create sub namespaces and publish, permissionless model
 
+moderated namespaces:
+peer participation role: reader, publisher, moderator
+ reader: has no publish permissions, reads within the namespace
+  default public role for moderated namespaces
+ publisher: has publish permissions
+  can manage its own end users, ultimately signs statement blocks
+  propagating in the network, but cannot grant direct publishing
+  permissions
+ moderator: can grant publish permissions
+ granting moderator rights:
+  a number of moderators signing (could be some majority)
+  or the owner of the namespace
+  
+Namepsace hierarchy:
+ namespace ownership: can create subnamespaces and grant moderator rights
+ permission: grant create namespace
+
+makes identities for curated namespaces expensive to obtain;
+certificate revocation mechanisms
 Ref: [The Social Cost of Cheap Identities](http://www.haas.berkeley.edu/Courses/Spring2000/BA269D/FriedmanResnick99.pdf)
 
 scaling up: governance issue -- we'll be happy to have this problem.
@@ -119,13 +137,19 @@ statement structure
  ns, src, signature, ids, timestamp, ipld object reference
  it's the header for the object
 
-publishing statements: namespace permissions, authentication by a publishing
+publishing statements: namespace permissions, authentication by the publishing
 peer mediating the target namespace(s)
 
 ### Updates
 
 publish statements
 blocks and archives
+
+block envelope: group together statements signed by users,
+ altogether signed by publishing peer:
+it allows light-weight certificate infrastructure, end user certificates are
+ managed at the leaves.
+
 update propagation:
  pubsub for online processors
  poll option for disconnected clients:
@@ -134,6 +158,8 @@ update propagation:
 resilient overlay multicast
 backbone (long lived, connected peers) maintaining overlay network for streaming
 namespace updates
+
+republishing with extended identifier sets or expanded namespace scope
 
 ### Aggregation and Indexing
 
