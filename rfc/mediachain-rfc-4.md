@@ -51,9 +51,10 @@ Public namespaces to support permissionless participation.
 administrative control: distributed governance model
 grant control of namespaces to stake holders and organizations
 
+
 ## A Heterogeneous Network of Cooperative Peers
 
-The datastructure is maintained by heterogeneous peers; they are operated by
+The database is maintained by heterogeneous peers; they are operated by
 different organizations, and contribute different resources to the network.
 Each peer maintains some parts of the dataset and has a limited view of the
 mediachain. Peers can synchronize state with peer-to-peer interactions,
@@ -76,6 +77,8 @@ Roles:
    support querying the database
   archivers:
    collect statements and associated metadata and archive them for persistence
+  directory servers:
+   provide registration and discovery services for namespaces
  clients:
    web frontends for human users
    advanced users with CLI or bespoke program access
@@ -94,19 +97,21 @@ Public Key identities for peers and clients
 Key signing -- p2p certificates
 Identities are intended to be long lived with reputation attached
 
-P2P PKI -- DHT overlay for key publication and sharing
+P2P PKI -- DHT overlay for key publication and sharing;
+ all peers participate in the DHT
 
 ### Namespaces
 
 hierarchical namespace structure
-namespace creation and discovery -- directory servers
+namespace creation and discovery:  directory servers
 group membership, moderation, permission model
+
+some bootstrap namespaces: /u, /contrib, /glam
 /u -- unmoderated, free for all
+/contrib -- individual contributor space in /contrib/user: personal publication space,
+/glam -- curated namespace for organizational data sources: museums, art galleries, etc
 
 ### Permissions
-
-public space:
- /u anyone can create sub namespaces and publish, permissionless model
 
 moderated namespaces:
 peer participation role: reader, publisher, moderator
@@ -116,14 +121,22 @@ peer participation role: reader, publisher, moderator
   can manage its own end users, ultimately signs statement blocks
   propagating in the network, but cannot grant direct publishing
   permissions
- moderator: can grant publish permissions
- granting moderator rights:
-  a number of moderators signing (could be some majority)
-  or the owner of the namespace
-  
+ moderator:
+  can grant publish permissions
+  can revoke publish permissions it can granted
+ ownership:
+  namespace owners can grant modrerator rights
+  group initially owned by creator
+  co-ownership by granting ownership
+  in co-owned namespaces, moderation rights can be granted by any owner
+  or some majority of them, depending on policy
+  moderation revocation by similar policy
+
 Namepsace hierarchy:
- namespace ownership: can create subnamespaces and grant moderator rights
- permission: grant create namespace
+ namespace ownership:
+  can create subnamespaces, and grant ownership
+ permission:
+  grant create namespace
 
 makes identities for curated namespaces expensive to obtain;
 certificate revocation mechanisms
@@ -147,6 +160,7 @@ blocks and archives
 
 block envelope: group together statements signed by users,
  altogether signed by publishing peer:
+ multi-statement message
 it allows light-weight certificate infrastructure, end user certificates are
  managed at the leaves.
 
@@ -189,3 +203,7 @@ specialized seeding clusters as service or courtesy to partners
 archival peers: sinks that receive streaming updates of interested namespaces
 and construct archives of the content; S3 backups.
 
+
+## Examples
+
+TBD
