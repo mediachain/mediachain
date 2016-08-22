@@ -110,7 +110,7 @@ are intended to be long-lived and eventually have an attached reputation
 score.
 
 All statements published in the system are signed with the key of the
-source of the statement. In order to publish in a moderate namespace,
+source of the statement. In order to publish in a moderated namespace,
 the originating peer must present a certificate which allows it to
 publish there. Alternatively, it can convince a peer with the right
 certificate to publish on its behalf. Certificates can be obtained by
@@ -126,41 +126,77 @@ their own authentication for their clients.
 
 ## A Heterogeneous Network of Cooperative Peers
 
-The database is maintained by heterogeneous peers; they are operated by
-different organizations, and contribute different resources to the network.
-Each peer maintains some parts of the dataset and has a limited view of the
-mediachain. Peers can synchronize state with peer-to-peer interactions,
-converging their view of the data structure.
+The distributed database is maintained by a heterogeneous peer-to-peer
+network. Peers are operated by different organizations and
+individuals, and contribute different resources to the network.
 
-Roles:
- sources:
-   authoritative sources of datasets
-   metadata dumps and firehoses
-  publishers:
-   nodes participating in the overly with permissions to publish statements
-   on behalf of users in some namespaces
-  caches:
-   readers who seed data objects and support basic queries
-  aggregators:
-   readers who aggregate and stream multiple namespaces for their clients
-  indexers:
-   collect statements and create indexes mapping ids to statements
-   parse metadata objects, built higher order models
-   support querying the database
-  archivers:
-   collect statements and associated metadata and archive them for persistence
-  directory servers:
-   provide registration and discovery services for namespaces
- clients:
-   web frontends for human users
-   advanced users with CLI or bespoke program access
+Each peer maintains some parts of the dataset and has a limited view
+of the mediachain. Peers synchronize their state with peer-to-peer
+interactions, and converge their view of the data structure by
+exchanging published statements.
 
-Peers can have multiple roles in each namespace they participate.
+Statements can be propagated in the network via push, either with
+direct messages or through streaming. For stream propagation, stable
+peers form pubsub overlays for their namespaces and emit published
+statements to their subscribers. Equally well, peers can poll their
+peers for recent updates, allowing them to operate in a disconnected
+fashion.
 
-data distribution model: push -vs- pull
-ingestion model: bulk, firehose, casual contrib
+The metadata associated with statements is stored in IPLD, with the
+seeding initially supplied by sources. As statements propagate in the
+network, peers may opportunistically reseed metadata in order to aid
+availability and distribution. More specialized peers can provide
+persistent seeding and achiving services for some namespaces, perhaps
+even for a fee.
 
-operational semantics of data ingestion:
+### Peer Roles
+
+Peers can play several roles in the network, accordinging to their
+capabilities and resources they are willing to contribute. They can
+play multiple roles simultaneously, and assume different rolesets for
+each namespace they are following.
+
+#### Sources
+
+authoritative sources of datasets
+metadata dumps and firehoses
+individual contributors
+
+#### Publishers
+
+nodes participating in the overlay with permissions to publish statements
+on behalf of users in some namespaces
+
+#### Caches
+
+readers who transiently store statements, seed metadata and support basic queries
+
+#### Aggregators
+
+readers who aggregate and stream multiple namespaces for their clients
+
+#### Indexers
+
+collect statements and create indexes mapping ids to statements
+parse metadata objects, built higher order models
+support querying the database
+
+#### Archivers
+
+collect statements and associated metadata and archive them for persistence
+
+#### Directory Servers
+
+provide registration and discovery services for namespaces
+
+#### User Agents
+
+web frontends for human users, advanced users with CLI or bespoke program access
+
+### Metadata Ingestion Model
+
+bulk, firehose, casual contrib
+
 single update:
  client insert statement metadata to IPLD -> object pointer
  create and sign statement linking the object to one or more identifiers
@@ -168,16 +204,26 @@ single update:
  push statement to a publisher; publisher verifies permissions, adds the
  statement to its local spool and asynchronously broadcasts it to the namespace
 
+
 ## The Mediachain Protocol
+
+WIP WIP WIP WIP WIP
 
 ### Identities
 
 Public Key identities for peers and clients
-Key signing -- p2p certificates
+uses:
+ statement signing -- statement attribution
+ Key signing -- p2p certificates
 
 P2P PKI -- DHT overlay for key publication and sharing;
  all peers participate in the DHT
 
+publish pub keys in DHT (key = identity), together with certificate pointers
+in a signed structure; include user name in the record.
+
+DHT interface
+ 
 ### Namespaces
 
 hierarchical namespace structure
@@ -220,6 +266,11 @@ makes identities for curated namespaces expensive to obtain;
 certificate revocation mechanisms
 
 scaling up: governance issue -- we'll be happy to have this problem.
+
+### Certificates
+
+certificate structure and rules for permissions.
+revocation.
 
 ### Statements
 
@@ -264,6 +315,8 @@ statement-part = {
 publishing statements: namespace permissions, authentication by the publishing
 peer mediating the target namespace(s)
 
+protocol for publisher: present certificate for namespace together with statement.
+
 blocks and archives
 
 block envelope: group together statements signed by users,
@@ -299,7 +352,7 @@ query by id + set of namespaces
 
 queries not necessary supported by all peers, index requirements.
 
-### Data Persistence
+### Metadata Persistence
 
 caches: opportunistic replication, keep buffers of recent updates to
 aid redistribution
