@@ -101,7 +101,7 @@ Namespaces allow us fine grained control on publishing and
 participation level. At one end of the spectrum, we want to
 encourage public namespaces which allow lightweight permissionless
 participation. At the other end, we want to support curated namespaces
-to control spam and allow authoritative sources and commercial media
+to combat spam and allow authoritative sources and commercial media
 providers to maintain control of their own data.
 
 In order to implement this model, each participating peer has an
@@ -224,20 +224,50 @@ scaling up: governance issue -- we'll be happy to have this problem.
 ### Statements
 
 statement structure
- ns, src, signature, ids, timestamp, ipld object reference
+ statment-id, ns, src, signature, id refss, , ipld object reference
  it's the header for the object
+
+```
+statement = {
+ statement-id: <statement-id> ; timestamp
+ source: <peer-id>
+ namespace: <namespace>
+ signature: <signature>
+ refs: [<domain-id> ...]
+ object: <IPLD-reference>
+}
+
+statement-id: <peer-id:timestamp:counter>
+```
+
+multi-statements: composite statements signed together, allow simple batching
+(signatures can be computationally expernsive operations)
+
+```
+multi-statement = {
+  statement-id: <statement-id>
+  source:  <peer-id>
+  namespace: <namespace>
+  signature: <signature>
+  statements: [<statement-part> ...]
+}
+
+statement-part = {
+ statement-id: <statement-id>
+ refs: [<Id> ...]
+ object: <IPLD-Reference>
+}
+```
+
+### Statement Publication
 
 publishing statements: namespace permissions, authentication by the publishing
 peer mediating the target namespace(s)
 
-### Updates
-
-publish statements
 blocks and archives
 
 block envelope: group together statements signed by users,
  altogether signed by publishing peer:
- multi-statement message
 it allows light-weight certificate infrastructure, end user certificates are
  managed at the leaves.
 
