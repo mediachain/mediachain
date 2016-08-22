@@ -173,7 +173,7 @@ make available by publishing in the mediachain.  This oftentimes takes
 the form of a large metadata dump, which they push in the network when
 they first come online.
 
-Firehoses provide constant stream of updates to the system. Typically
+Firehoses provide a constant stream of updates to the system. Typically
 this is the byproduct of an external system which generates media
 objects with a high rate, such as a social media platform. Firehoses
 are probably not interested in receiving updates from the system at
