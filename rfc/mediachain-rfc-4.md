@@ -156,20 +156,45 @@ capabilities and resources they are willing to contribute. They can
 play multiple roles simultaneously, and assume different rolesets for
 each namespace they are following.
 
-#### Sources
+#### Metadata Sources
 
-authoritative sources of datasets
-metadata dumps and firehoses
-individual contributors
+Sources are the primary actors that ingest metadata into the system:
+they range from casual contributors to authoritative sources of large
+datasets. Sources have publishing rights for one or more namespaces,
+and can push updates casually, in bulk or in firehose fashion.
+
+Casual sources typically connect irregularly to the network in order
+to publish new statements and synchronize their local state for their
+namespaces. They can represent individual contributors or sources with
+small but evolving datasets.
+
+Authoritative sources already own large swaths of metadata, which they
+make available by publishing in the mediachain.  This oftentimes takes
+the form of a large metadata dump, which they push in the network when
+they first come online.
+
+Firehoses provide constant stream of updates to the system. Typically
+this is the byproduct of an external system which generates media
+objects with a high rate, such as a social media platform. Firehoses
+are probably not interested in receiving updates from the system at
+all, so they can be classified as pure writers.
 
 #### Publishers
 
-nodes participating in the overlay with permissions to publish statements
-on behalf of users in some namespaces
+Publishers are stable, connected peers who have publishing rights for
+some namespaces. As such, they can accept and publish statements on behalf
+of other peers and clients, according to their own standards of valid
+behavior.
+
+Because of their stability, they also typically enroll in pubsub
+overlays for their namespaces. Thus they provide entry points for
+other peers with publishing rights to quickly propagate statements in
+the network.
 
 #### Caches
 
 readers who transiently store statements, seed metadata and support basic queries
+pubsub without publishing rights; they serve as read endpoints for clients
 
 #### Aggregators
 
@@ -178,7 +203,7 @@ readers who aggregate and stream multiple namespaces for their clients
 #### Indexers
 
 collect statements and create indexes mapping ids to statements
-parse metadata objects, built higher order models
+may parse metadata objects, build higher order models
 support querying the database
 
 #### Archivers
@@ -189,11 +214,13 @@ collect statements and associated metadata and archive them for persistence
 
 provide registration and discovery services for namespaces
 
-#### User Agents
+#### Clients
 
-web frontends for human users, advanced users with CLI or bespoke program access
+User Agents: web frontends for human users, advanced users with CLI or bespoke program access
+most of the time disconnected from the p2p network, only connect to push/poll.
 
-### Metadata Ingestion Model
+
+### Metadata Ingestion
 
 bulk, firehose, casual contrib
 
