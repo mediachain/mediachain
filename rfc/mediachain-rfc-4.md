@@ -85,23 +85,9 @@ identifier.
 
 ### Namespace Partitioning
 
-The Phase I namespace was flat: all objects were part of the same
-space. This may be suitable for a small scale prototype, but it does
-not fit well with a vision of a decentralized system at scale.
+In order to reflect the natural organization of data according to institution, industry, topic, etc, we introduce the concept of namespaces, which immediately give us several advantages. In terms of scaling, the partitioning must be semantic so as to allow peers to commit resources only in topics they are interested in. In terms of administrative control, the partitioning must be hierarchical so that we can easily delegate management and moderation to organizational stake holders, see "Moderation and Publishing Model" below.
 
-At large scale, the namespace must be partitioned for scaling
-purposes, but also for reasons of administrative control. In terms of
-scaling, the partitioning must be semantic so as to allow peers to
-commit resources only in topics they are interested in. In terms of
-administrative control, the partitioning must be hierarchical so that
-we can easily delegate management and moderation to organizational
-stake holders. 
-
-We thus adopt a hierarchical structure similar to unix paths. Leaves
-in the hierarchy map to specific datasets and provide the primary
-entry points for writes. Namespaces higher in the hierarchy aggregate
-namespaces below and provide a progressively expanded read view of the
-data structure.
+To satisfy these requirements, we've chosen to adopt a hierarchical structure similar to unix paths. Leaves in the hierarchy map to specific datasets and provide the primary entry points for writes, and namespaces higher in the hierarchy aggregate namespaces below and provide a progressively expanded read view of the data structure. Much like symlinks with unix paths, alternate views of the hierarchy are possible, namespaces may have multiple parents, and so on. This creates a semantically rich and expressive framework for querying and composition, see "Namespace-based Queries and Aggregation" below.
 
 ### Moderation and Publishing Model
 
@@ -130,6 +116,10 @@ revoked. This encourages cooperative behavior by individual peers,
 thus avoiding the social cost of cheap identities [1]. At the same
 time, individual peers with publishing rights are free to implement
 their own authentication for their clients.
+
+## Namespace-based Queries and Aggregation
+
+TK
 
 
 ## A Heterogeneous Network of Cooperative Peers
