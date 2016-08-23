@@ -253,8 +253,18 @@ some out of bands protocol (Bittorrent, HTTP, etc).
 
 #### Directory Servers
 
----
-provide registration and discovery services for peers and namespaces
+In order to function effectively, peers require the means for discovering
+other peers and pubsub overlays for their namespaces. This is the function
+of directory servers, which provide a registration and lookup interface
+that maps namespaces to sets of live peers.
+
+Using well known public directory servers, perhaps hardcoded into the
+software, any peer can bootstrap and join the network. Sources use
+the directory to discover publishers that can propagate their
+statements into the network. Publishers and aggregators use the
+directory to announce their presence and discover other publishers to
+coordinate their pubsub overlays. Caches, indexers and archivers use the
+directory to discover pubsub overlays and register their services.
 
 #### Clients
 
