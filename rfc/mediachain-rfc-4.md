@@ -119,7 +119,15 @@ their own authentication for their clients.
 
 ## Namespace-based Queries and Aggregation
 
-TK
+Namespaces provide a convenient way to request information about the same object from several different strata. For example, a query for an image from the NYPL collection and the corresponding OldNYC geocoding data can look like
+
+```
+{nypl:510d47e2-ef28-a3d9-e040-e00a18064a99@nypl,oldnyc}
+```
+
+which would mean "return results for WKI nypl:510d47e2-ef28-a3d9-e040-e00a18064a99 from [nypl](http://digitalcollections.nypl.org/items/510d47e2-ef28-a3d9-e040-e00a18064a99) and [oldnyc](https://www.oldnyc.org/#1557929) namespaces". NYPL can also choose to transclude the statment from the `oldnyc` namespace into `nypl` itself,  "blessing" it.
+
+Other possibilities include filtered aggregation (a `lithographs` namespace that aggregates some objects from `getty`, some from `nypl`, etc), lazy aggregation (logical aggregates that do not publish a stream until requested), etc. Exact semantics TBD.
 
 
 ## A Heterogeneous Network of Cooperative Peers
@@ -144,8 +152,8 @@ The metadata associated with statements is stored in IPLD, with the
 seeding initially supplied by sources. As statements propagate in the
 network, peers may opportunistically reseed metadata in order to aid
 availability and distribution. More specialized peers can provide
-persistent seeding and achiving services for some namespaces, perhaps
-even for a fee.
+persistent seeding and achiving services for some namespaces, potentially
+incentivized through something like Filecoin.
 
 ### Peer Roles
 
