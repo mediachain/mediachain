@@ -159,6 +159,8 @@ incentivized through something like Filecoin.
 
 Peers can take on a variety of roles like intermittent sources, firehose publishers, archivers, indexers, etc. See the Peer Roles supplement for specific examples and case studies.
 
+The basic possible role actions are read/receive, write/publish and aggregate/republish.
+
 ### Metadata Ingestion
 
 ---
