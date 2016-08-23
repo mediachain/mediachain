@@ -28,7 +28,9 @@ This has the hallmarks of a CRDT data structure, which allows a system to
 achieve eventually consistent state without the need for consensus. 
 
 So what we want to build is a distributed database that supports
-upserts, connecting statements to one or more domain specific identifiers.
+upserts (idempotent insert/update operations that do not require knowledge
+of the current state of the system), connecting statements to one or more
+ domain specific identifiers (see below).
 It is intended to provide a low level plumbing data structure, as dumb
 as possible.  Rich relations between objects can be expressed with
 merkle DAGs in object content, allowing the application layer to
@@ -36,18 +38,24 @@ evolve according to user needs.
 
 ### Domain-Specific Identifiers Instead of Opaque Pointers
 
-In the Phase I data model, objects were assigned a unique identifier
-based on their content hash upon ingestion. This is an opaque pointer
-which conveys no information about the object. 
+We are choosing to move from opaque/mediachain-issued identifiers
+(hash of the initial statement) to well-known/domain-specific identifiers
+(let's call them WKIs here) (e.g. moma:190935) with the following motivations:
 
-The majority of artefacts ingested by the mediachain will already
-exist in some database or Digital Asset Management system. Thus, it
-makes sense to externalize the preexisting identifiers, with some
-per-organization prefix. This allows metadata sources to maintain
-their own internal schema, simplifying integration of the mediachain
-in their systems, while also conveying meaningful information to
-humans. It is also an unobtrusive policy, as it avoids asserting
-authority over names and identifiers.
+* it reduces burden of authoritative ID issuance (e.g. DOI) as well as
+ authoritatively asserting canonical-instance relationships
+* most works we are dealing with at this stage will already have an ID established
+ by previous use
+* mapping from a set of WKIs to a set of statements is an elegant way of
+ granularly and nondestructively expressing sameness/merges, with potentially
+ different "sameness" perspectives represented through namespace relationships
+ (e.g. Clarifai can publish a namespace containing only merges based on visual similarity)
+* WKI-based provider records can be reasonably implemented as distributed,
+ freeing orgs from relying on indexers for simple mappings
+
+Works that are mediachain-first and require an identifier will receive one
+from a ticket server/blockchain implementation (TBD). This ID will be
+treated the same way as any other.
 
 ### Data Structure Operations
 
