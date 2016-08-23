@@ -268,10 +268,18 @@ directory to discover pubsub overlays and register their services.
 
 #### Clients
 
----
-User Agents: web frontends for human users, advanced users with CLI or bespoke program access
-most of the time disconnected from the p2p network, only connect to push/poll.
+All peer roles described so far expect peers to be online and publicly
+accessible. Clients on the other hand represent the users of the
+system and operate in a mostly disconnected fashion. Nonetheless, they
+are still proper peers, with their own identities and certificates
+that allow them to publish in moderated namespaces.
 
+The basic user interface for a client should support the two basic
+mediachain operations: query and upsert. This can be easily
+implemented with a command line program and provided from day
+one. Over time clients will expand their functionality to express rich
+object relationships and eventually provide a more accessible
+interface (ie a fancy webapp) for broader adoption.
 
 ### Metadata Ingestion
 
