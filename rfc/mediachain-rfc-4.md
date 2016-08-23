@@ -433,17 +433,6 @@ query by id + set of namespaces
 
 queries not necessary supported by all peers, index requirements.
 
-### Metadata Persistence
-
-caches: opportunistic replication, keep buffers of recent updates to
-aid redistribution
-commit some finite disk space for storage and seeding reference IPLD objects
-
-specialized seeding clusters as service or courtesy to partners
-
-archival peers: sinks that receive streaming updates of interested namespaces
-and construct archives of the content; S3 backups.
-
 ## Examples
 
 TBD
