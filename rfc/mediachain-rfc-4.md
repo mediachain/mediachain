@@ -181,47 +181,67 @@ all, so they can be classified as pure writers.
 
 #### Publishers
 
-Publishers are stable, connected peers who have publishing rights for
-some namespaces. As such, they can accept and publish statements on behalf
-of other peers and clients, according to their own standards of valid
-behavior.
+Publishers are stable, connected peers who have publishing permissions
+for some namespaces. As such, they can accept and publish statements
+on behalf of other peers and clients, according to their own standards
+of valid behavior.
 
-Because of their stability, they also typically enroll in pubsub
-overlays for their namespaces. Thus they provide entry points for
-other peers with publishing rights to quickly propagate statements in
-the network.
+Because of their stability, they enroll and relay in pubsub overlays
+for their namespaces. Thus they provide write anchors for sources to
+quickly propagate statements in the network.
 
 #### Caches
 
-readers who transiently store statements, seed metadata and support basic queries
-pubsub without publishing rights; they serve as read endpoints for clients
+Caches are stable peers who provide read anchors into the mediachain.
+They follow some namespaces by enrolling as leaves in the relevant
+pubsub overlays, keep local copies of published statements, and seed
+associated metadata.
+
+They have finite storage capacity, but for low volume namespaces it
+should be sufficient to store and seed a complete copy of all
+published statements. For higher volume namespaces, they can only
+store and seed the most recent updates.
+
+Caches are intended to help clients and other peers bootstrap and
+synchronize state. They also provide a direct read interface for the
+database by supporting basic queries on their local store. They don't
+need publishing permissions, so they can be classified as pure
+readers.
 
 #### Aggregators
 
+---
 readers who aggregate and stream multiple namespaces for their clients
+pubsub relays -> provide bandwidth
+
 
 #### Indexers
 
+---
 collect statements and create indexes mapping ids to statements
 may parse metadata objects, build higher order models
 support querying the database
 
 #### Archivers
 
+---
 collect statements and associated metadata and archive them for persistence
 
 #### Directory Servers
 
-provide registration and discovery services for namespaces
+---
+provide registration and discovery services for peers and namespaces
 
 #### Clients
 
+---
 User Agents: web frontends for human users, advanced users with CLI or bespoke program access
 most of the time disconnected from the p2p network, only connect to push/poll.
 
 
 ### Metadata Ingestion
 
+---
 bulk, firehose, casual contrib
 
 single update:
