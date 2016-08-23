@@ -210,10 +210,21 @@ readers.
 
 #### Aggregators
 
----
-readers who aggregate and stream multiple namespaces for their clients
-pubsub relays -> provide bandwidth
+Aggregators are peers who occupy interior points in the namespace
+hierarchy and aggregate together child namespaces.  Their primary
+purpose is to provide bandwidth and relay services for pubsub
+overlays. As such, they enroll in child namespace overlays and relay
+published statements in an aggregate overlay. Per course of operation,
+they also cache recent statements in the aggregate for polling
+clients.
 
+The services of aggregators are essential for implementing processors
+(indexers, archivers, etc) who require an expanded view of the
+mediachain. By using aggregators, these peers don't have to track
+every leaf namespce in the parts of the hierarchy they are following.
+This allows the hierarchy to evolve without affecting existing
+processors, who only need to track the aggregate namespace, while also
+reducing load in leaf overlays.
 
 #### Indexers
 
