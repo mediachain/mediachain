@@ -228,15 +228,28 @@ reducing load in leaf overlays.
 
 #### Indexers
 
----
-collect statements and create indexes mapping ids to statements
-may parse metadata objects, build higher order models
-support querying the database
+Indexers are peers who collect statements as they propagate in the
+network and reconstruct the mapping of media identifiers to metadata
+objects. This enables them to provide the query interface for clients
+of the database.
+
+At the most basic level, the query language can be limited to
+searching for metadata objects by id and namespace parameters. More
+advanced indexers will parse the metadata objects and provide a richer
+interface which can resolve semantic associations expressed at the
+application layer.
 
 #### Archivers
 
----
-collect statements and associated metadata and archive them for persistence
+Archivers provide metadata persistence for the mediachain. As such,
+they subscribe as leaves to relevant namespace overlays and collect
+statements as they propagate in the network, together with associated
+metadata.
+
+Periodically, they dump statements and metadata into an archive file,
+which they can back up in a persistent volume (eg S3). Archive files are
+subsequently published for efficient distribution with IPFS Bitswap or
+some out of bands protocol (Bittorrent, HTTP, etc).
 
 #### Directory Servers
 
