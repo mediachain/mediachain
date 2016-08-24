@@ -188,10 +188,18 @@ incentivized through something like Filecoin.
 ### Peer Roles
 
 Peers can take on a variety of roles like intermittent sources,
-firehose publishers, archivers, indexers, etc. See the Peer Roles
-supplement for specific examples and case studies.
+firehose publishers, aggregators, indexers, archivers, etc. See the
+[Peer Roles](mediachain-rfc-4-roles.md) supplement for specific examples
+and case studies.
 
-The basic possible role actions are read/receive, write/publish and aggregate/republish.
+From an operational perspective, the basic possible role actions are
+read/receive, write/publish and aggregate/republish. A peer acts as a
+reader when it receives new statements from the network and adds it to
+its local store. A peer acts as a writer when it publishes new
+statements to the network, which eventually get distributed to
+interested readers. Finally, a peer acts as an aggregator when it
+reads from multiple namespaces and republishes them into an aggregate
+namespace.
 
 ### Metadata Ingestion
 
