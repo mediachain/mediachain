@@ -246,7 +246,49 @@ readers (or relays). This is a safe operation, as each statement
 carries the signature of a publisher and peers can verify that
 signature and associated certificates independently.
 
-### Metadata Ingestion and Persistence
+### Metadata Ingestion
+
+A fundamental use case for the system is the ability to ingest
+pre-existing datasets from authoritative sources in bulk.
+
+The ingestion process first requires a translation step, where
+metadata records from the existing dataset are translated to
+structured metadata objects for the mediachain. The next step is to
+publish the objects in IPLD and obtain their pointers, so that they
+can related to media identifiers with statements. Finally, for each
+object in the original dataset a statement msut be generated, which
+binds the pre-existing object identifier to the metadata object with a
+cryptographic signature.
+
+This process follows a straightforward path from existing record to
+mediachain statement and may very well work with small datasets.
+However, this process is extremely inefficient for large datasets
+with millions of artefacts. Firstly, the metadata need to published to
+IPLD, a process which may be lengthy and resource hungry. Secondly, a
+cryptographic signature needs to be generated for each statement, a
+process which is also computationally expensive. And then there is the
+traffic required for propagating statements in the network, which can
+overload caches and online processors.
+
+In order to address the cost of signatures, the protocol allows for
+binding multiple statements together with a single signature. And in
+order to address the load issues, the protocol allows for publishing
+archives to the network. These archives are tarballs that contain
+statements and their associated metadata as separate files named by
+their IPLD hashes. A bulk ingesting source can thus avoid the IPLD
+publication step and bundle the statements directly with their
+metadata objects.  Furthermore, the archive can be distributed
+directly to interested readers by using a protocol optimized for bulk
+transfer, such as IPFS Bitswap or Bittorrent.
+
+Similar dynamics arise for the use case of firehose sources, which
+generate a constant load of new statements, eg by following social
+media feeds.  Firehoses don't have to publish every statement in real
+time. Instead, they can buffer statements and periodically publish
+them together with their metadata as archives. This allows the system
+to push high volumes of data without overloading the network.
+
+### Metadata Persistence
 
 ### Indexes and Queries
 
