@@ -2,7 +2,7 @@
 
 Status: WIP WIP WIP WIP
 
-Author: vyzo
+Authors: vyzo, parkan
 
 ## Lessons from Phase I: It's not a Blockchain
 
@@ -15,7 +15,8 @@ But it comes with significant costs:
 * Complexities of maintaining consensus in a peer to peer network.
 * PoS/PoW economics that don't quite work in our domain.
 * Inefficient querying, requires the entire blockchain for read operations.
-* Difficult to scale to large datasets with bulk and firehose ingestion, the blockchain becomes the bottleneck.
+* Difficult to scale to large datasets with bulk and firehose ingestion,
+  the blockchain becomes the bottleneck.
 * Ultimately trying to solve a problem we don't have: double spending.
 
 In reality, we don't need a singular linearly ordered view of the world.
@@ -85,9 +86,24 @@ identifier.
 
 ### Namespace Partitioning
 
-In order to reflect the natural organization of data according to institution, industry, topic, etc, we introduce the concept of namespaces, which immediately give us several advantages. In terms of scaling, the partitioning must be semantic so as to allow peers to commit resources only in topics they are interested in. In terms of administrative control, the partitioning must be hierarchical so that we can easily delegate management and moderation to organizational stake holders, see "Moderation and Publishing Model" below.
+In order to reflect the natural organization of data according to
+institution, industry, topic, etc, we introduce the concept of
+namespaces, which immediately give us several advantages. In terms of
+scaling, the partitioning must be semantic so as to allow peers to
+commit resources only in topics they are interested in. In terms of
+administrative control, the partitioning must be hierarchical so that
+we can easily delegate management and moderation to organizational
+stake holders, see "Moderation and Publishing Model" below.
 
-To satisfy these requirements, we've chosen to adopt a hierarchical structure similar to unix paths. Leaves in the hierarchy map to specific datasets and provide the primary entry points for writes, and namespaces higher in the hierarchy aggregate namespaces below and provide a progressively expanded read view of the data structure. Much like symlinks with unix paths, alternate views of the hierarchy are possible, namespaces may have multiple parents, and so on. This creates a semantically rich and expressive framework for querying and composition, see "Namespace-based Queries and Aggregation" below.
+To satisfy these requirements, we've chosen to adopt a hierarchical
+structure similar to unix paths. Leaves in the hierarchy map to
+specific datasets and provide the primary entry points for writes, and
+namespaces higher in the hierarchy aggregate namespaces below and
+provide a progressively expanded read view of the data structure. Much
+like symlinks with unix paths, alternate views of the hierarchy are
+possible, namespaces may have multiple parents, and so on. This
+creates a semantically rich and expressive framework for querying and
+composition, see "Namespace-based Queries and Aggregation" below.
 
 ### Moderation and Publishing Model
 
@@ -117,17 +133,27 @@ thus avoiding the social cost of cheap identities [1]. At the same
 time, individual peers with publishing rights are free to implement
 their own authentication for their clients.
 
-## Namespace-based Queries and Aggregation
+### Namespace-based Queries and Aggregation
 
-Namespaces provide a convenient way to request information about the same object from several different strata. For example, a query for an image from the NYPL collection and the corresponding OldNYC geocoding data can look like
+Namespaces provide a convenient way to request information about the
+same object from several different strata. For example, a query for an
+image from the NYPL collection and the corresponding OldNYC geocoding
+data can look like
 
 ```
 {nypl:510d47e2-ef28-a3d9-e040-e00a18064a99@nypl,oldnyc}
 ```
 
-which would mean "return results for WKI nypl:510d47e2-ef28-a3d9-e040-e00a18064a99 from [nypl](http://digitalcollections.nypl.org/items/510d47e2-ef28-a3d9-e040-e00a18064a99) and [oldnyc](https://www.oldnyc.org/#1557929) namespaces". NYPL can also choose to transclude the statment from the `oldnyc` namespace into `nypl` itself,  "blessing" it.
+which would mean "return results for WKI nypl:510d47e2-ef28-a3d9-e040-e00a18064a99 from
+[nypl](http://digitalcollections.nypl.org/items/510d47e2-ef28-a3d9-e040-e00a18064a99)
+and [oldnyc](https://www.oldnyc.org/#1557929) namespaces". NYPL can
+also choose to transclude the statment from the `oldnyc` namespace
+into `nypl` itself, "blessing" it.
 
-Other possibilities include filtered aggregation (a `lithographs` namespace that aggregates some objects from `getty`, some from `nypl`, etc), lazy aggregation (logical aggregates that do not publish a stream until requested), etc. Exact semantics TBD.
+Other possibilities include filtered aggregation (a `lithographs`
+namespace that aggregates some objects from `getty`, some from `nypl`,
+etc), lazy aggregation (logical aggregates that do not publish a
+stream until requested), etc. Exact semantics TBD.
 
 
 ## A Heterogeneous Network of Cooperative Peers
@@ -157,7 +183,9 @@ incentivized through something like Filecoin.
 
 ### Peer Roles
 
-Peers can take on a variety of roles like intermittent sources, firehose publishers, archivers, indexers, etc. See the Peer Roles supplement for specific examples and case studies.
+Peers can take on a variety of roles like intermittent sources,
+firehose publishers, archivers, indexers, etc. See the Peer Roles
+supplement for specific examples and case studies.
 
 The basic possible role actions are read/receive, write/publish and aggregate/republish.
 
