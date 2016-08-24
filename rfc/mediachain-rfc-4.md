@@ -290,6 +290,28 @@ to push high volumes of data without overloading the network.
 
 ### Metadata Persistence
 
+The flow of metadata in the system follows the path from sources to
+readers through IPLD. When a reader receives a statement and adds it
+to its local store, it also fetches the associated metadata. Client
+readers are not expected to reseed the object in IPLD, especially if
+they operate in a disconnected fashion.
+
+In order to avoid overloading the source with IPLD requests and
+provide availability even when the source is offline, the metadata is
+reseeded by caches who follow the relevant namespaces. Longer term
+metadata persistence in the form of archive files is provided by
+archivers. These basic services will be supported by organizations
+using the mediachain per normal course of operation.
+
+The issue of persistent seeding in IPLD is a little more complicated.
+Firstly, a seeder must consume memory, storage, and egress bandwidth
+in order to serve the objects. Secondly, IPLD publishing creates
+system traffic in the form of DHT provider announcements. Thus, a form
+of incentives needs to be devised to encourage and justify persistent
+IPLD seeding for high value namespace. This can be achieved with an
+application-specific coin like filecoin or through a well established
+blockchain.
+
 ### Indexes and Queries
 
 ### Database Semantics
