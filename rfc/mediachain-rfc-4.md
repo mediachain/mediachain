@@ -198,22 +198,63 @@ reader when it receives new statements from the network and adds it to
 its local store. A peer acts as a writer when it publishes new
 statements to the network, which eventually get distributed to
 interested readers. Finally, a peer acts as an aggregator when it
-reads from multiple namespaces and republishes them into an aggregate
+reads from multiple namespaces and republishes into an aggregate
 namespace.
 
-### Metadata Ingestion
+### The Local Store
+
+Each peer has a local store which serves as a spool for all statements
+it has created or received by other peers. Using the local store, the
+peer can compute the index that maps identifiers to metadata
+statements and answer basic queries.
+
+Peers can operate disconnected and simply manipulate their local view
+of the mediachain by adding new statements to the store. Their updates
+are buffered in the spool until they connect to the network and
+publish them to other peers.
+
+### Statement Publication
+
+In order to propagate statements in the network and synchronize its
+local store, a peer needs to discover other peers with publishing
+permissions in relevant namespaces. Directory servers facilitate this
+interaction: every peer who stays online registers with a directory
+server for its namespaces. Thus, a peer just coming online can obtain
+a list of peers who are interested in its buffered statements and
+can be polled to provide new statements.
+
+A publishing peer who intends to stay online can further proceed to
+register with the directory. This makes it discoverable by other peers
+who want to publish or read statements in its namespaces.
+
+At this level, the system can already simply work asynchronously, by
+having readers periodcally poll publishers for new statements and
+writers push new statements to other publishers. It is sufficient to
+have a stable population of online publishers, who ensure the eventual
+publication of new statements to all readers.
+
+In order to streamline online publication and indexing, stable
+publishers can organize into pubsub overlays. The overlay for a
+namespace can be constructed by connecting to a subset of other
+publishers in a way that maintains connectivity with some redundancy
+factor. Readers and aggregators can then connect as downstream clients
+from publishers.
+
+Deeper overlay topologies can be constructed by allowing stable
+readers to serve as intermediate nodes who relay statements to other
+readers (or relays). This is a safe operation, as each statement
+carries the signature of a publisher and peers can verify that
+signature and associated certificates independently.
+
+### Metadata Ingestion and Persistence
+
+### Indexes and Queries
+
+### Database Semantics
+
+### Governance and Public Namespaces
 
 ---
-bulk, firehose, casual contrib
-
-single update:
- client insert statement metadata to IPLD -> object pointer
- create and sign statement linking the object to one or more identifiers
-  within some namespace
- push statement to a publisher; publisher verifies permissions, adds the
- statement to its local spool and asynchronously broadcasts it to the namespace
-
-
 ## The Mediachain Protocol
 
 WIP WIP WIP WIP WIP
