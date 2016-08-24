@@ -55,7 +55,7 @@ identifiers (WKI; e.g. moma:190935) with the following motivations:
   granularly and nondestructively expressing sameness/merges, with potentially
   different "sameness" perspectives represented through namespace relationships.
   For instance, a service like Clarifai can publish a namespace containing only
-  merges based on visual similarity)
+  merges based on visual similarity
 * WKI-based provider records can be reasonably implemented as distributed,
   freeing organizationss from relying on indexers for simple mappings
 
