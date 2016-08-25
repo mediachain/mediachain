@@ -350,6 +350,21 @@ semantic relations expressed in the application layer.
 
 ### Database Semantics
 
+At this point, it is also worth considering the consistency,
+availability, and partition tolerance properties of our database.  The
+ability of the system to handle disconnected operation with irregular
+synchronization gives it obvious partition tolerance, and the local
+store makes the system always available. What we can't have though, is
+global consistency.
+
+Nonetheless, the core data structure is commutative and monotonic
+which gives it excellent convergence properties. This allows peers to
+efficiently synchronize their local state through peer-to-peer
+interactions. The overall consistency model of the database is
+eventual consistency, even if radically so: in the absence of new
+updates, all live peers will eventually converge to the same state with
+a finite number of messages.
+
 ### Governance and Public Namespaces
 
 An important aspect of the system is the governance of the namespace.
