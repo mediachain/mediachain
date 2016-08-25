@@ -396,152 +396,37 @@ community's input.
 
 
 ---
+WIP WIP WIP WIP
+
 ## The Mediachain Protocol
 
-WIP WIP WIP WIP WIP
+### Identity and Namespaces
 
-### Identities
+#### Identities
 
-Public Key identities for peers and clients
-uses:
- statement signing -- statement attribution
- Key signing -- p2p certificates
+#### Namespaces
 
-P2P PKI -- DHT overlay for key publication and sharing;
- all peers participate in the DHT
+#### Permission Model
 
-publish pub keys in DHT (key = identity), together with certificate pointers
-in a signed structure; include user name in the record.
+#### Certificates
 
-DHT interface
- 
-### Namespaces
-
-hierarchical namespace structure
-namespace creation and discovery:  directory servers
-group membership, moderation, permission model
-
-some bootstrap namespaces: /u, /contrib, /glam
-/u -- unmoderated, free for all
-/contrib -- individual contributor space in /contrib/user: personal publication space,
-/glam -- curated namespace for organizational data sources: museums, art galleries, etc
-
-### Permissions
-
-moderated namespaces:
-peer participation role: reader, publisher, moderator
- reader: has no publish permissions, reads within the namespace
-  default public role for moderated namespaces
- publisher: has publish permissions
-  can manage its own end users, ultimately signs statement blocks
-  propagating in the network, but cannot grant direct publishing
-  permissions
- moderator:
-  can grant publish permissions
-  can revoke publish permissions it can granted
- ownership:
-  namespace owners can grant modrerator rights
-  group initially owned by creator
-  co-ownership by granting ownership
-  in co-owned namespaces, moderation rights can be granted by any owner
-  or some majority of them, depending on policy
-  moderation revocation by similar policy
-
-Namepsace hierarchy:
- namespace ownership:
-  can create subnamespaces, and grant ownership
- permission:
-  grant create namespace
-
-makes identities for curated namespaces expensive to obtain;
-certificate revocation mechanisms
-
-scaling up: governance issue -- we'll be happy to have this problem.
-
-### Certificates
-
-certificate structure and rules for permissions.
-revocation.
-
-### Statements
-
-statement structure
- statment-id, ns, src, signature, id refss, , ipld object reference
- it's the header for the object
-
-```
-statement = {
- statement-id: <statement-id> ; timestamp
- source: <peer-id>
- namespace: <namespace>
- signature: <signature>
- refs: [<domain-id> ...]
- object: <IPLD-reference>
-}
-
-statement-id: <peer-id:timestamp:counter>
-```
-
-multi-statements: composite statements signed together, allow simple batching
-(signatures can be computationally expernsive operations)
-
-```
-multi-statement = {
-  statement-id: <statement-id>
-  source:  <peer-id>
-  namespace: <namespace>
-  signature: <signature>
-  statements: [<statement-part> ...]
-}
-
-statement-part = {
- statement-id: <statement-id>
- refs: [<Id> ...]
- object: <IPLD-Reference>
-}
-```
 
 ### Statement Publication
 
-publishing statements: namespace permissions, authentication by the publishing
-peer mediating the target namespace(s)
+#### Statements
 
-protocol for publisher: present certificate for namespace together with statement.
+#### Archives
 
-blocks and archives
+#### Publication Protocol
 
-block envelope: group together statements signed by users,
- altogether signed by publishing peer:
-it allows light-weight certificate infrastructure, end user certificates are
- managed at the leaves.
+#### State Synchronization
 
-update propagation:
- pubsub for online processors
- poll option for disconnected clients:
-  queries by timestamp
-
-resilient overlay multicast
-backbone (long lived, connected peers) maintaining overlay network for streaming
-namespace updates
-
-republishing with extended identifier sets or expanded namespace scope
-
-### Aggregation and Indexing
-
-aggregate pubsub streams of multiple namespaces, clients subscribe to receive
-update streams.
-indexing: IDs -> statement mapping
-republishing: adding ids, posting to multiple namespaces
 
 ### Queries
 
-peers answer queries locally -- provide a subset view of the mediachain
-query by time range --> [some] blocks since last update
-query by peer id
-query by id
-query by id + set of namespaces
 
-queries not necessary supported by all peers, index requirements.
+### Peer Discovery
+
 
 ## Examples
 
