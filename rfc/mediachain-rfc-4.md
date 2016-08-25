@@ -324,7 +324,7 @@ A basic indexing scheme, which performs only statement envelope processing
 and doesn't parse the metadata, allows retrieval with the following
 criteria:
 
-- Query by statement id, object id or publisher id
+- Query by WKI, publisher or peer id, statement id, object id
 - Query by namespace(s)
 - Query by timestamp
 
