@@ -319,6 +319,34 @@ blockchain.
 
 ### Governance and Public Namespaces
 
+An important aspect of the system is the governance of the namespace.
+Moderated namespaces can be effectively governed initially be decree,
+and delegated administrative control is a reasonable model that
+can work with multiple independent stakeholders at large.
+
+The governance of public namespace is a different problem. The intention
+is to have an open system that encourages lightweight participation
+and can grow a community of independent contributors. As the system
+grows in popularity however, spam will inevitably appear and it can
+quickly escalate to large volumes. This has the potential to damage the
+community and diminish the utility of the system for its users.
+
+There is a number of approaches to the problem of spam:
+
+* Adopt a reactive stance and develop spam filters as the spam appears.
+* Create a reputation-based system where users are vetted by other users.
+* Establish an economy around publishing by utilizing a system like Filecoin
+  to provide fuel for publishers.
+
+Ultimately, it is too early to decide on the most effective approach.
+For the Phase II development plan we can start with a completely
+unmoderated public space, and create personal and community moderated
+namespaces for active contributors. In the meantime we can study the
+nature of metadata spam to see whether we can develop effective
+filters, and develop the governance of public space with the
+community's input.
+
+
 ---
 ## The Mediachain Protocol
 
