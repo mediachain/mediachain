@@ -315,6 +315,36 @@ blockchain.
 
 ### Indexes and Queries
 
+In order to query the database, a peer can construct a local index by
+processing statements in the local store. This index provides the
+local view of the mediachain, and allows retrieval of statements and
+metadata objects based on multiple criteria.
+
+A basic indexing scheme, which performs only statement envelope processing
+and doesn't parse the metadata, allows retrieval with the following
+criteria:
+
+- Query by statement id, object id or publisher id
+- Query by namespace(s)
+- Query by timestamp
+
+This index, which can be easily implemented using an embedded db like
+sqlite, is the simplest way to implement polling for state
+synchronization.  It also provides a low level interface for advanced
+users to interact with the system.
+
+Queries do not have to be limited to one's local view however. For instance,
+a user may want to query joining on namespaces it is not currently following.
+This could be because the user is exploring the namespace or because the
+particular namespace has a larger index that aggregates multiple namespaces.
+
+In order to support this use case, specialized indexer peers will be
+deployed per normal course of operation. These indexers will be
+discoverable through directory servers and do not have to be limited to
+envelope processing. They can parse the metadata and offer a more
+generalized query language that searches object content and can take
+advantage of semantic relations expressed in the application layer.
+
 ### Database Semantics
 
 ### Governance and Public Namespaces
