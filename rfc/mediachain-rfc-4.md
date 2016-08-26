@@ -362,8 +362,8 @@ which gives it excellent convergence properties. This allows peers to
 efficiently synchronize their local state through peer-to-peer
 interactions. The overall consistency model of the database is
 eventual consistency, even if radically so: in the absence of new
-updates, all live peers will eventually converge to the same state with
-a finite number of messages.
+updates, all live peers in a namespace will eventually converge to the
+same state with a finite number of messages.
 
 ### Governance and Public Namespaces
 
