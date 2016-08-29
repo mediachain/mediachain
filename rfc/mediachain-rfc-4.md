@@ -496,8 +496,61 @@ them further in the network.
 
 #### Certificates
 
+Certificates are first class objects stored in IPFS and referenced by their
+IPLD hash, with the following structure:
+```
+Certificate = {
+ timestamp: <timestamp>
+ issuer:    <ID>             ; peer issuing the certificate
+ peer:      <peer>           ; ID of the authorized peer or '*' wildcard for everyone
+ auth:      <CertificateID>  ; certificate chain authorizing the issuer
+                             ;  nil for root certs bundled with the software
+ role:      <peer-role>      ; role permitted by the certificate
+ namespace: <namespace-id>   ; namespace where the role is permitted,
+                             ;  may specify wildcard as leaf
+ sig:       <signature>
+}
+
+peer-role = oneof {
+ 'publisher'
+ 'moderator'
+ 'owner'
+}
+```
+
+Similarly to public keys, certificates are initially seeded by their
+owners and persisted by the network as statements propagate.
+
 #### Certificate Revocation
 
+In order to revoke a certificate, the issuing peer or another authorized peer
+creates a revocation statement with the following structure:
+```
+CertificateRevocation = {
+ timestamp: <timestamp>
+ issuer:    <ID>             ; peer revoking the certificate
+ cert:      <CertificateID>  ; id of the certificate being revoked
+ auth:      <CertificateID>  ; certificate authorizing the revocation
+ reason:    <string>         ; reason explaining the revocation
+}
+```
+
+In order to be effective, revocation statements must be distributed to
+peers in the network. This may be accomplished either through
+directory servers and/or through pure peer-to-peer distribution. In
+the latter approach, peers periodically exchange revocation list
+deltas, which allows revocation statements to propagate in the network
+at state synchronization points.
+
+It should be noted that revoking a certificate effectively revokes all
+dependent certificates as well by breaking the statement validation
+chain. Thus, revoking a moderator certificate will also revoke all
+publisher certificates it has issued. Statements signed with
+invalidated certificates may still be dispersed in local stores in the
+network, but they will not be able to propagate further once the
+revocation has taken effect. Peers can also periodically run garbage
+collection processes that purge invalidated statements, subject to
+peer policy.
 
 ### Statement Publication
 
