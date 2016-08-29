@@ -475,6 +475,25 @@ to the various stakeholders.
 
 #### Permissions
 
+There are four roles a peer can assume in a namespace:
+
+* Reader; any peer reading the namespace, which requires no explicit permission.
+* Publisher; the peer can publish statements to a namespace, which will
+  by accepted by other peers. Requires a publisher certificate for the
+  namespace.
+* Moderator; the peer manages publishing permissions and can issue
+  and revoke publisher certificates.
+* Owner; the peer owns the namespace and can issue and revoke moderator
+  certificates. The peer can create sub-namespaces by assinging ownership
+  to them and can also issue co-owenership certificates to other peers.
+
+The permissions are enforced at the statement level by each peer
+independently. Whenever a peer receives a new statement, it validates
+the attached certificate chain pointer, which must grant permission to
+publish in the namespace. Statements that fail validation are rejected
+by the peer, who does not add them to the local store or propagate
+them further in the network.
+
 #### Certificates
 
 #### Certificate Revocation
