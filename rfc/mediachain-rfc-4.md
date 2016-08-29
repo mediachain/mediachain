@@ -400,15 +400,56 @@ WIP WIP WIP WIP
 
 ## The Mediachain Protocol
 
-### Identity and Namespaces
+### Identities, Namespaces, and Certificates
 
 #### Identities
 
+Every peer participating in the system generates a public-private key
+pair, which is expected to stay stable throughout the lifetime of the
+peer. The keys are used for idenifying the peer in the network,
+signing statements, and issuing certificates. End users operating
+though publisher services also have their own keys, which allows them
+to sign their statements for attribution purposes and so on.
+
+The identity of a peer (or user) is the IPLD multihash of a public key structure:
+
+```
+PublicKey = {
+ t:   <int>    ; key type; 1 = RSA
+ pub: <bytes>  ; public key data
+}
+```
+
+The keys are published in IPFS and persisted by the network. They are initially
+seeded by their owners, but they are reseeded by readers as part of signature
+and certificate validation for published statements.
+
+Identities can be associated with human meaningful information through CBOR-encoded
+identity records:
+
+```
+IdentityRecord = {
+ id:    <ID>
+ sig:   <signature>
+ name:  <name>
+ email: <email>
+ ...
+}
+
+ID = Qm... ; base58 of peer or user identity
+```
+
+Identity records can be associated with peer ids by publishing them to
+directory servers. They are intended to provide metadata about peers
+for human users and are not otherwise essential to the protocol.
+
 #### Namespaces
 
-#### Permission Model
+#### Permissions
 
 #### Certificates
+
+#### Certificate Revocation
 
 
 ### Statement Publication
