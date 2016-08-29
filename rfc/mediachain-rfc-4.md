@@ -435,8 +435,6 @@ IdentityRecord = {
  email: <email>
  ...
 }
-
-ID = Qm... ; base58 of peer or user identity
 ```
 
 Identity records can be associated with peer ids by publishing them to
