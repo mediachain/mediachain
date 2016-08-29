@@ -598,9 +598,44 @@ statement-id = <ID>:<timestamp>:<nonce>
 
 #### Archives
 
+Archives are gzipped tarballs with the following structure:
+```
+archive-id/
+ stmt/
+  <statement-id>
+  ...
+ ipld/
+  ...
+```
+
+Archives have an id which is derived as a statement identifier from
+the source of the archive. The `stmt` directory contains all the
+statements pertaining to objects in the archive, in files named after
+the statement id they contain. The `ipld` directory is structured as a
+hash tree and contains all metadata objects, public keys, and
+certificates relating to the archive. The objects are serialized in
+cbor into files named after their IPLD hashes.
+
+In order publish an archive, sources first add the arvchive tarball
+to ipfs and then publish an archive descriptor:
+```
+ArchiveDescriptor = {
+ archive-id: <statement-id>
+ ns:         <namespace-id>
+ source:     <ID>
+ data:       <IPFSReference>
+ size:       <int>            ; size of the archive in bytes
+ count:      <int>            ; count of unique metadata objects contained in the archive
+ auth:       <CertificateID>
+ sig:        <signature>
+}
+```
+
 #### Publication Protocol
 
 #### State Synchronization
+
+#### Pubsub Overlays
 
 
 ### Queries
