@@ -531,7 +531,7 @@ CertificateRevocation = {
  issuer:    <ID>             ; peer revoking the certificate
  cert:      <CertificateID>  ; id of the certificate being revoked
  auth:      <CertificateID>  ; certificate authorizing the revocation
- reason:    <string>         ; reason explaining the revocation
+ reason:    <string>         ; comment explaining the revocation
  sig:       <signature>
 }
 ```
