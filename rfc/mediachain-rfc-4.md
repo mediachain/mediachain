@@ -443,6 +443,36 @@ for human users and are not otherwise essential to the protocol.
 
 #### Namespaces
 
+Namespaces are hierarchically structured identifiers that group
+together sets of statements. The structure is that of an inverse url,
+that is a sequence of characters from the same set as url host parts
+grouped together with dots:
+
+```
+namespace-id = <name-part>[.<name-part>]*
+```
+
+Namespaces come in existence by virtue of creating a certificate that
+assigns ownership permissions to them.  Namespaces don't need to be
+created in the data structure prior to any statement publication; the
+act of publishing a statement in a namespace effectively asserts its
+existence.
+
+As part of the mediachain software distribution, Mediachain Labs will
+create a basic namespace structure with a few initial namespaces:
+
+* u; the public namespace, with  permissions to publish and create
+  sub-namespaces assigned to everyone.
+* contrib; personal space for individual contributors, with sub-namespaces
+  assigned by Labs.
+* glam; curated namespace for well-known datasets.
+* labs; reserved for use by Mediachain Labs.
+
+This is a minimal namespace structure intended to bootstrap the system
+without asserting ownership beyond what's necessary. As the system
+evolves and grows, more namespaces will be added with ownership delegated
+to the various stakeholders.
+
 #### Permissions
 
 #### Certificates
