@@ -555,9 +555,46 @@ revocation has taken effect. Peers can also periodically run garbage
 collection processes that purge invalidated statements, subject to
 peer policy.
 
-### Statement Publication
+### Statement Publication and Distribution
 
 #### Statements
+
+A statement is a signed structure which maps a set of WKIs to an IPLD
+metadata object within some namespace. Statements can be:
+
+* simple, where a single mapping is established.
+* compound, where multiple mappings are established with a single signature.
+* republished, which effects one or more statements' mapping to a (usually) different
+  namespace while preserving origin attribution. The namespace can be
+  the same in the case of proxy publishing for and end user.
+
+The statement data structure looks as following:
+```
+Statement = {
+ statement-id: <statement-id> 
+ ns:           <namespace-id>
+ source:       <ID>
+ body:         <statement-body>
+ auth:         <CertificateID>
+ sig:          <signature>
+}
+
+statement-body =
+   simple-statement-body
+ | compound-statement-body
+ | republished-statement-body
+
+simple-statement-body = {
+ ref:    [<WKI>, ...]
+ object: <IPLDReference>
+}
+
+compound-statement-body = [<simple-statement-body>, ...]
+
+republished-statement-body = [<Statement>, ...]
+
+statement-id = <ID>:<timestamp>:<nonce>
+```
 
 #### Archives
 
