@@ -541,7 +541,9 @@ peers in the network. This may be accomplished either through
 directory servers and/or through pure peer-to-peer distribution. In
 the latter approach, peers periodically exchange revocation list
 deltas, which allows revocation statements to propagate in the network
-at state synchronization points.
+at state synchronization points. Nonetheless, we expect revocations to
+be infrequent enough so as not to require much more complexity than
+periodically polling a directory server for CRLs.
 
 It should be noted that revoking a certificate effectively revokes all
 dependent certificates as well by breaking the statement validation
