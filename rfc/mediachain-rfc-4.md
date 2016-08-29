@@ -400,7 +400,7 @@ WIP WIP WIP WIP
 
 ## The Mediachain Protocol
 
-### Identities, Namespaces, and Certificates
+### Identities, Namespaces and Certificates
 
 #### Identities
 
@@ -461,12 +461,12 @@ existence.
 As part of the mediachain software distribution, Mediachain Labs will
 create a basic namespace structure with a few initial namespaces:
 
-* u; the public namespace, with  permissions to publish and create
+* `u`: the public namespace, with  permissions to publish and create
   sub-namespaces assigned to everyone.
-* contrib; personal space for individual contributors, with sub-namespaces
+* `contrib`: personal space for individual contributors, with sub-namespaces
   assigned by Labs.
-* glam; curated namespace for well-known datasets.
-* labs; reserved for use by Mediachain Labs.
+* `glam`: curated namespace for well-known datasets.
+* `labs`: reserved for use by Mediachain Labs.
 
 This is a minimal namespace structure intended to bootstrap the system
 without asserting ownership beyond what's necessary. As the system
