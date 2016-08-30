@@ -639,7 +639,7 @@ hash tree and contains all metadata objects, public keys, and
 certificates relating to the archive. The objects are serialized in
 cbor into files named after their IPLD hashes.
 
-In order publish an archive, sources first add the arvchive tarball
+In order publish an archive, sources first add the archive tarball
 to ipfs and then publish an archive descriptor:
 ```
 ArchiveDescriptor = {
