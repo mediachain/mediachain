@@ -461,8 +461,10 @@ existence.
 As part of the mediachain software distribution, Mediachain Labs will
 create a basic namespace structure with a few initial namespaces:
 
-* `u`: the public namespace, with  permissions to publish and create
-  sub-namespaces assigned to everyone.
+* `u`: the public namespace, with no permissions required to publish and
+  create sub-namespaces.
+* `peer`: the peer-specific namespace, where each peer implicitly owns
+  a sub-namespace named with its id.
 * `contrib`: personal space for individual contributors, with sub-namespaces
   assigned by Labs.
 * `glam`: curated namespace for well-known datasets.
@@ -555,6 +557,26 @@ revocation has taken effect. Peers can also periodically run garbage
 collection processes that purge invalidated statements, subject to
 peer policy.
 
+#### Root Certificates
+
+Ultimately, the certificate chains must terminate at some root. These
+certificates have no authorization attached to them. Instead, their
+validity is judged by trust in the issuing key. 
+
+For Phase II, the trust store will be seeded with keys owned by
+Mediachain Labs, bundled with the software. As the ecosystem grows,
+the intention is to add more keys owned by independent stakeholders.
+Eventually, the trust store can even become dynamic, based on the
+reputation of individual peers issuing certificates.
+
+Nonetheless, the trust store is not limited to the keys bundled with
+software, as any peer can independently add or remove keys as it sees
+fit. So each individual peer can have its own view of the namespace
+hierarchy, based on keys it has elected to trust to issue root
+certificates and Labs keys are no more powerful than other keys in the
+trust store.
+
+
 ### Statement Publication and Distribution
 
 #### Statements
@@ -586,6 +608,7 @@ statement-body =
 
 simple-statement-body = {
  ref:    [<WKI>, ...]
+ tags:   [<string>, ...]
  object: <IPLDReference>
 }
 
