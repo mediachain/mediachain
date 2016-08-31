@@ -388,14 +388,14 @@ WIP WIP WIP WIP
 
 ## The Mediachain Protocol
 
-### Identities, Namespaces and Certificates
+### Identities, Namespaces and Endorsements
 
 #### Identities
 
 Every peer participating in the system generates a public-private key
 pair, which is expected to stay stable throughout the lifetime of the
 peer. The keys are used for idenifying the peer in the network,
-signing statements, and issuing certificates. End users operating
+signing statements, and issuing endorsements. End users operating
 though publisher services also have their own keys, which allows them
 to sign their statements for attribution purposes and so on.
 
@@ -410,7 +410,7 @@ PublicKey = {
 
 The keys are published in IPFS and persisted by the network. They are initially
 seeded by their owners, but they are reseeded by readers as part of signature
-and certificate validation for published statements.
+validation for published statements.
 
 Identities can be associated with human meaningful information through CBOR-encoded
 identity records:
@@ -440,129 +440,13 @@ grouped together with dots:
 namespace-id = <name-part>[.<name-part>]*
 ```
 
-Namespaces come in existence by virtue of creating a certificate that
-assigns permissions to them.  Namespaces don't need to be
-created in the data structure prior to any statement publication; the
-act of publishing a statement in a namespace effectively asserts its
-existence.
+Namespaces don't need to be created in the data structure prior to any
+statement publication; the act of publishing a statement in a
+namespace effectively asserts its existence.
 
-As part of the mediachain software distribution, Mediachain Labs will
-create a basic namespace structure with a few initial namespaces:
+#### Endorsements
 
-* `u`: the public namespace, with no permissions required to publish and
-  create sub-namespaces.
-* `peer`: the peer-specific namespace, where each peer implicitly owns
-  a sub-namespace named with its id.
-* `contrib`: personal space for individual contributors, with sub-namespaces
-  assigned by Labs.
-* `glam`: curated namespace for well-known datasets.
-* `labs`: reserved for use by Mediachain Labs.
-
-This is a minimal namespace structure intended to bootstrap the system
-without asserting ownership beyond what's necessary. As the system
-evolves and grows, more namespaces will be added with ownership delegated
-to the various stakeholders.
-
-#### Permissions
-
-There are four roles a peer can assume in a namespace:
-
-* Reader; any peer reading the namespace, which requires no explicit permission.
-* Publisher; the peer can publish statements to a namespace, which will
-  by accepted by other peers. Requires a publisher certificate for the
-  namespace.
-* Moderator; the peer manages publishing permissions and can issue
-  and revoke publisher certificates.
-* Owner; the peer owns the namespace and can issue and revoke moderator
-  certificates. The peer can create sub-namespaces by assinging ownership
-  to them and can also issue co-owenership certificates to other peers.
-
-The permissions are enforced at the statement level by each peer
-independently. Whenever a peer receives a new statement, it validates
-the attached certificate chain pointer, which must grant permission to
-publish in the namespace. Statements that fail validation are rejected
-by the peer, who does not add them to the local store or propagate
-them further in the network.
-
-#### Certificates
-
-Certificates are first class objects stored in IPFS and referenced by their
-IPLD hash, with the following structure:
-```
-Certificate = {
- timestamp: <timestamp>
- issuer:    <ID>             ; peer issuing the certificate
- peer:      <peer>           ; ID of the authorized peer or '*' wildcard for everyone
- auth:      <CertificateID>  ; certificate chain authorizing the issuer
-                             ;  nil for root certs bundled with the software
- role:      <peer-role>      ; role permitted by the certificate
- namespace: <namespace-id>   ; namespace where the role is permitted,
-                             ;  may specify wildcard as leaf
- sig:       <signature>
-}
-
-peer-role = oneof {
- 'publisher'
- 'moderator'
- 'owner'
-}
-```
-
-Similarly to public keys, certificates are initially seeded by their
-owners and persisted by the network as statements propagate.
-
-#### Certificate Revocation
-
-In order to revoke a certificate, the issuing peer or another authorized peer
-creates a revocation statement with the following structure:
-```
-CertificateRevocation = {
- timestamp: <timestamp>
- issuer:    <ID>             ; peer revoking the certificate
- cert:      <CertificateID>  ; id of the certificate being revoked
- auth:      <CertificateID>  ; certificate authorizing the revocation
- reason:    <string>         ; comment explaining the revocation
- sig:       <signature>
-}
-```
-
-In order to be effective, revocation statements must be distributed to
-peers in the network. This may be accomplished either through
-directory servers and/or through pure peer-to-peer distribution. In
-the latter approach, peers periodically exchange revocation list
-deltas, which allows revocation statements to propagate in the network
-at state synchronization points. Nonetheless, we expect revocations to
-be infrequent enough so as not to require much more complexity than
-periodically polling a directory server for CRLs.
-
-It should be noted that revoking a certificate effectively revokes all
-dependent certificates as well by breaking the statement validation
-chain. Thus, revoking a moderator certificate will also revoke all
-publisher certificates it has issued. Statements signed with
-invalidated certificates may still be dispersed in local stores in the
-network, but they will not be able to propagate further once the
-revocation has taken effect. Peers can also periodically run garbage
-collection processes that purge invalidated statements, subject to
-peer policy.
-
-#### Root Certificates
-
-Ultimately, the certificate chains must terminate at some root. These
-certificates have no authorization attached to them. Instead, their
-validity is judged by trust in the issuing key. 
-
-For Phase II, the trust store will be seeded with keys owned by
-Mediachain Labs, bundled with the software. As the ecosystem grows,
-the intention is to add more keys owned by independent stakeholders.
-Eventually, the trust store can even become dynamic, based on the
-reputation of individual peers issuing certificates.
-
-Nonetheless, the trust store is not limited to the keys bundled with
-software, as any peer can independently add or remove keys as it sees
-fit. So each individual peer can have its own view of the namespace
-hierarchy, based on keys it has elected to trust to issue root
-certificates and Labs keys are no more powerful than other keys in the
-trust store.
+#### The Trust Store
 
 
 ### Statement Publication and Distribution
@@ -576,7 +460,8 @@ metadata object within some namespace. Statements can be:
 * compound, where multiple mappings are established with a single signature.
 * republished, which effects one or more statements' mapping to a (usually) different
   namespace while preserving origin attribution. The namespace can be
-  the same in the case of proxy publishing for and end user.
+  the same in the case of proxy publishing for another peer or user who doesn't have
+  a reputation.
 
 The statement data structure looks as following:
 ```
@@ -585,7 +470,6 @@ Statement = {
  ns:           <namespace-id>
  source:       <ID>
  body:         <statement-body>
- auth:         <CertificateID>
  sig:          <signature>
 }
 
@@ -623,9 +507,9 @@ Archives have an id which is derived as a statement identifier from
 the source of the archive. The `stmt` directory contains all the
 statements pertaining to objects in the archive, in files named after
 the statement id they contain. The `ipld` directory is structured as a
-hash tree and contains all metadata objects, public keys, and
-certificates relating to the archive. The objects are serialized in
-cbor into files named after their IPLD hashes.
+hash tree and contains all metadata objects relating to the
+archive. The objects are serialized in cbor into files named after
+their IPLD hashes.
 
 In order publish an archive, sources first add the archive tarball
 to ipfs and then publish an archive descriptor:
@@ -637,7 +521,6 @@ ArchiveDescriptor = {
  data:       <IPFSReference>
  size:       <int>            ; size of the archive in bytes
  count:      <int>            ; count of unique metadata objects contained in the archive
- auth:       <CertificateID>
  sig:        <signature>
 }
 ```
