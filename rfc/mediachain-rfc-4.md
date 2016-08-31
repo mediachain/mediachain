@@ -115,27 +115,44 @@ Namespaces allow us fine grained control on publishing and
 participation level. At one end of the spectrum, we want to
 encourage public namespaces which allow lightweight permissionless
 participation. At the other end, we want to support curated namespaces
-to combat spam and allow authoritative sources and commercial media
-providers to maintain control of their own data.
+to combat spam and recognize authoritative sources.
 
 In order to implement this model, each participating peer has an
-associated identity corresponding to a public key. The identities
-are intended to be long-lived and eventually have an attached reputation
-score.
+associated identity corresponding to a public key. The identities are
+intended to be long-lived and have an attached reputation in the form
+of endorsements by other peers in the system.
 
 All statements published in the system are signed with the key of the
-source of the statement. In order to publish in a moderated namespace,
-the originating peer must present a certificate which allows it to
-publish there. Alternatively, it can convince a peer with the right
-certificate to publish on its behalf. Certificates can be obtained by
-moderators and owners of the namespace. 
+publisher of the statement. Publishers are free to publish to any
+namespace they choose, but peers receiving those statements decide
+independently whether to accept them based on the reputation of the
+publisher. If the publisher was previously vetted or is endorsed by a
+trusted peer for the namespace, then its statements are accepted by
+the receiver. In contrast, statements by an unknown or unvetted source
+are placed in quarantine, where they are subject to garbage
+collection.
 
-This moderation scheme, with delegated administrative control,
-attaches a cost to peer identities because certificates can be
-revoked. This encourages cooperative behavior by individual peers,
-thus avoiding the social cost of cheap identities [1]. At the same
-time, individual peers with publishing rights are free to implement
-their own authentication for their clients.
+Each peer maintains its own trust store, which contains the public
+keys of peers trusted to endorse publishers. A peer, call it Alice,
+may at any time issue an endorsement for another peer Bob, which vets
+Bob to publish in a particular namespace. These endorsements are
+public, so peers who trust Alice will also accept statements from Bob.
+If Bob is also trusted to endorse other peers judiciously, Alice may
+issue a stronger endorsement of trust, which implicitly vets all peers
+endorsed by Bob.
+
+Endorsements are scoped by namespace, which allows us to effectively
+curate and moderate with a distributed model of control. Trusted peers,
+for example those operated by Mediachain Labs, can bootstrap the
+system by endorsing authoritative sources. And as the system grows,
+control can be delegated by issuing trust endorsements for peers
+who can independently moderate parts of the namespace.
+
+This moderation scheme attaches a cost to peer identities, because
+endorsements can be revoked. This encourages cooperative behavior by
+individual peers, thus avoiding the social cost of cheap identities
+[1]. At the same time, individual peers with publishing endorsements
+are free to implement their own authentication for their clients.
 
 ### Queries and Aggregation
 
