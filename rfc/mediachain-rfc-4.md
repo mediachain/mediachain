@@ -117,42 +117,20 @@ encourage public namespaces which allow lightweight permissionless
 participation. At the other end, we want to support curated namespaces
 to combat spam and recognize authoritative sources.
 
-In order to implement this model, each participating peer has an
-associated identity corresponding to a public key. The identities are
-intended to be long-lived and have an attached reputation in the form
-of endorsements by other peers in the system.
+At a fundamental level, the mediachain is an open, peer-to-peer system.
+Individual peers are free to write in any namespace they see fit in their
+local store, and they are futher free to publish their statements.
+It is up to readers to decide whether statements from some source
+have any validity and thus choose whether to merge them in their
+own stores and republish in their feeds.
 
-All statements published in the system are signed with the key of the
-publisher of the statement. Publishers are free to publish to any
-namespace they choose, but peers receiving those statements decide
-independently whether to accept them based on the reputation of the
-publisher. If the publisher was previously vetted or is endorsed by a
-trusted peer for the namespace, then its statements are accepted by
-the receiver. In contrast, statements by an unknown or unvetted source
-are placed in quarantine, where they are subject to garbage
-collection.
-
-Each peer maintains its own trust store, which contains the public
-keys of peers trusted to endorse publishers. A peer, call it Alice,
-may at any time issue an endorsement for another peer Bob, which vets
-Bob to publish in a particular namespace. These endorsements are
-public, so peers who trust Alice will also accept statements from Bob.
-If Bob is also trusted to endorse other peers judiciously, Alice may
-issue a stronger endorsement of trust, which implicitly vets all peers
-endorsed by Bob.
-
-Endorsements are scoped by namespace, which allows us to effectively
-curate and moderate with a distributed model of control. Trusted peers,
-for example those operated by Mediachain Labs, can bootstrap the
-system by endorsing authoritative sources. And as the system grows,
-control can be delegated by issuing trust endorsements for peers
-who can independently moderate parts of the namespace.
-
-This moderation scheme attaches a cost to peer identities, because
-endorsements can be revoked. This encourages cooperative behavior by
-individual peers, thus avoiding the social cost of cheap identities
-[1]. At the same time, individual peers with publishing endorsements
-are free to implement their own authentication for their clients.
+In order to aid this decision, we bootstrap a reputation system by
+associating peer ids with real world entities operating the peers.
+The operator may choose to make his/her identity public and assert
+authenticity through external identity providers (blockstack, keybase,
+etc). By making the identity public and signing the peer's key, the
+operator can carry over reputation from the real world and we can
+avoid the social cost of cheap identities [1].
 
 ### Queries and Aggregation
 
@@ -234,12 +212,12 @@ publish them to other peers.
 ### Statement Publication
 
 In order to propagate statements in the network and synchronize its
-local store, a peer needs to discover other peers with publishing
-permissions in relevant namespaces. Directory servers facilitate this
-interaction: every peer who stays online registers with a directory
-server for its namespaces. Thus, a peer just coming online can obtain
-a list of peers who are interested in its buffered statements and
-can be polled to provide new statements.
+local store, a peer needs to discover other peers publishing in
+relevant namespaces. Directory servers facilitate this interaction:
+every peer who stays online registers with a directory server for its
+namespaces. Thus, a peer just coming online can obtain a list of peers
+who are interested in its buffered statements and can be polled to
+provide new statements.
 
 A publishing peer who intends to stay online can further proceed to
 register with the directory. This makes it discoverable by other peers
@@ -247,9 +225,10 @@ who want to publish or read statements in its namespaces.
 
 At this level, the system can already simply work asynchronously, by
 having readers periodcally poll publishers for new statements and
-writers push new statements to other publishers. It is sufficient to
-have a stable population of online publishers, who ensure the eventual
-publication of new statements to all readers.
+transient writers can push new statements to aggregators. It is
+sufficient to have a stable population of online publishers and
+aggregators, who ensure the eventual publication of new statements to
+all interested readers.
 
 In order to streamline online publication and indexing, stable
 publishers can organize into pubsub overlays. The overlay for a
@@ -388,48 +367,9 @@ WIP WIP WIP WIP
 
 ## The Mediachain Protocol
 
-### Identities, Namespaces and Endorsements
+### Identities
 
-#### Identities
-
-Every peer participating in the system generates a public-private key
-pair, which is expected to stay stable throughout the lifetime of the
-peer. The keys are used for idenifying the peer in the network,
-signing statements, and issuing endorsements. End users operating
-though publisher services also have their own keys, which allows them
-to sign their statements for attribution purposes and so on.
-
-The identity of a peer (or user) is the IPLD multihash of a public key structure:
-
-```
-PublicKey = {
- t:   <int>    ; key type; 1 = RSA
- pub: <bytes>  ; public key data
-}
-```
-
-The keys are published in IPFS and persisted by the network. They are initially
-seeded by their owners, but they are reseeded by readers as part of signature
-validation for published statements.
-
-Identities can be associated with human meaningful information through CBOR-encoded
-identity records:
-
-```
-IdentityRecord = {
- id:    <ID>
- sig:   <signature>
- name:  <name>
- email: <email>
- ...
-}
-```
-
-Identity records can be associated with peer ids by publishing them to
-directory servers. They are intended to provide metadata about peers
-for human users and are not otherwise essential to the protocol.
-
-#### Namespaces
+### Namespaces
 
 Namespaces are hierarchically structured identifiers that group
 together sets of statements. The structure is that of an inverse url,
@@ -444,31 +384,22 @@ Namespaces don't need to be created in the data structure prior to any
 statement publication; the act of publishing a statement in a
 namespace effectively asserts its existence.
 
-#### Endorsements
-
-#### The Trust Store
-
-
-### Statement Publication and Distribution
-
-#### Statements
+### Statements
 
 A statement is a signed structure which maps a set of WKIs to an IPLD
 metadata object within some namespace. Statements can be:
 
 * simple, where a single mapping is established.
 * compound, where multiple mappings are established with a single signature.
-* republished, which effects one or more statements' mapping to a (usually) different
-  namespace while preserving origin attribution. The namespace can be
-  the same in the case of proxy publishing for another peer or user who doesn't have
-  a reputation.
+* republished, which effects one or more statements' mapping to a possibly different
+  namespace while preserving origin and distribution path.
 
 The statement data structure looks as following:
 ```
 Statement = {
- statement-id: <statement-id> 
+ id:           <statement-id> 
  ns:           <namespace-id>
- source:       <ID>
+ src:          <ID>
  body:         <statement-body>
  sig:          <signature>
 }
@@ -491,7 +422,7 @@ republished-statement-body = [<Statement>, ...]
 statement-id = <ID>:<timestamp>:<nonce>
 ```
 
-#### Archives
+### Archives
 
 Archives are gzipped tarballs with the following structure:
 ```
@@ -514,10 +445,10 @@ their IPLD hashes.
 In order publish an archive, sources first add the archive tarball
 to ipfs and then publish an archive descriptor:
 ```
-ArchiveDescriptor = {
- archive-id: <statement-id>
+Archive = {
+ id:         <statement-id>
  ns:         <namespace-id>
- source:     <ID>
+ src:        <ID>
  data:       <IPFSReference>
  size:       <int>            ; size of the archive in bytes
  count:      <int>            ; count of unique metadata objects contained in the archive
