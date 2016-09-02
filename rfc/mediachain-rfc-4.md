@@ -408,6 +408,7 @@ statement-body =
    simple-statement-body
  | compound-statement-body
  | republished-statement-body
+ | archive-statement-body
 
 simple-statement-body = {
  ref:    [<WKI>, ...]
@@ -418,6 +419,12 @@ simple-statement-body = {
 compound-statement-body = [<simple-statement-body>, ...]
 
 republished-statement-body = [<Statement>, ...]
+
+archive-statement-body = {
+ data:       <IPFSReference>
+ size:       <int>            ; size of the archive in bytes
+ count:      <int>            ; count of unique metadata objects contained in the archive
+}
 
 statement-id = <ID>:<timestamp>:<nonce>
 ```
@@ -443,18 +450,9 @@ archive. The objects are serialized in cbor into files named after
 their IPLD hashes.
 
 In order publish an archive, sources first add the archive tarball
-to ipfs and then publish an archive descriptor:
-```
-Archive = {
- id:         <statement-id>
- ns:         <namespace-id>
- src:        <ID>
- data:       <IPFSReference>
- size:       <int>            ; size of the archive in bytes
- count:      <int>            ; count of unique metadata objects contained in the archive
- sig:        <signature>
-}
-```
+to ipfs and then publish an archive statement which is distributed
+like any other statement. Interested readers can then download and
+unpack the archive and proceed to merge it to their local stores.
 
 #### Publication Protocol
 
