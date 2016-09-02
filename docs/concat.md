@@ -53,7 +53,7 @@ statement envelope.
 
 ### Peer Roles
 
-Depending on their behaviour, peers can play three basic roles on each
+Depending on their behaviour, peers can play three basic roles in a
 namespace:
 
 - Readers: these peers only merge feeds from other sources  and don't
@@ -78,10 +78,10 @@ interface PeerNode {
 }
 
 struct PeerInfo {
- id: PeerId           ; node id
- description: String  ; node description
- operator: EntityId   ; external id
- sig: Signature       ; operator signature
+ id: PeerId                                 ; node id
+ description: String                        ; node description
+ operator: EntityId                         ; external id
+ sig: Signature                             ; operator signature
 }
 
 struct FeedInfo {
@@ -99,13 +99,13 @@ to register as publishers and discover other peers:
 ```
 interface Directory {
  ; peer registration and advertisements
- register(PublisherInfo) ; register/refresh as publisher
+ register(PublisherInfo)                             ; register/refresh as publisher
  unregister()
  
  ; peer discovery
- lookup(PeerId): Option[PublisherInfo]              ; retrieve info for a peer
- list(dir: String, ns: String): List[PublisherInfo] ; list publishers for topic
- search(operator: EntityId): List[PublisherInfo]    ; search by operator
+ lookup(PeerId): Option[PublisherInfo]               ; retrieve info for a peer
+ list(dir: String, ns: String): List[PublisherInfo]  ; list publishers for topic
+ search(operator: EntityId): List[PublisherInfo]     ; search by operator
 
  ; endorsement
  endorse(Endorsement)                                ; must be a statement from a trusted entity
@@ -121,15 +121,15 @@ struct PublisherInfo {
 }
 
 struct Endorsement {
- id: String        ; endorsement id: timestamp:nonce
- issuer: EntityId  ; external id
+ id: String            ; endorsement id: timestamp:nonce
+ issuer: EntityId      ; external id
  publisher: oneof {
-  PeerId           ; endorse a specific peer
-  EntityId         ; endorse all peers operated by some entity
+  PeerId               ; endorse a specific peer
+  EntityId             ; endorse all peers operated by some entity
  }
- ns: String        ; namespace for endorsement
- comment: String   ; comment for endorsement
- sig: Signature    ; issuer signature
+ ns: String            ; namespace for endorsement
+ comment: String       ; comment for endorsement
+ sig: Signature        ; issuer signature
 }
 
 ```
