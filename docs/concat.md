@@ -43,7 +43,7 @@ signing all statements published by the node,
 
 Each peer maintains its own local store, which is used for evaluating
 queries locally and starts initially empty. The peer can extend its
-local store by publishing new statements or by merging in feeds published
+local store by publishing new statements or by merging feeds published
 by other nodes. The merge can be the result of a one-off query, a
 (perhaps irregular) polling operation, or it can be automatic by
 subscribing to the publishers feed using the pubsub interface.
@@ -155,7 +155,7 @@ Verifying ownership of a node is a good first step, but in order to
 effectively curate the namespace we need a mechanism to promote high
 quality sources. This is accomplished through endorsements, which are
 signed statements issued by humans to recommend publishers as
-publishers within some namespace.
+sources within some namespace.
 
 Endorsements are distributed through the directory servers, which only
 accept them by trusted entities and moderators. The management of the
