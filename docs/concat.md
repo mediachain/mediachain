@@ -80,8 +80,7 @@ interface PeerNode {
 struct PeerInfo {
   id: PeerId           ; node id
   description: String  ; node description
-  operator: OperatorId ; external id
-  provider: String     ; external identity provider 
+  operator: EntityId   ; external id
   sig: Signature       ; operator signature
 }
 
@@ -106,7 +105,12 @@ interface Directory {
  ; peer discovery
  lookup(PeerId): Option[PublisherInfo]              ; retrieve info for a peer
  list(dir: String, ns: String): List[PublisherInfo] ; list publishers for topic
- search(user: String): List[PublisherInfo]          ; search by operator
+ search(operator: EntityId): List[PublisherInfo]    ; search by operator
+
+ ; endorsement
+ endorse(Endorsement)                                ; must be a statement from a trusted entity
+ retract(EndorsementRevocation)                      ; retract a previous endorsement
+ endorsements(PeerId, ns: String): List[Endorsement] ; retrieve peer endorsements for namespace
 }
 
 struct PublisherInfo {
@@ -115,6 +119,19 @@ struct PublisherInfo {
  peer: Option[PeerInfo]
  feed: List[FeedInfo]
 }
+
+struct Endorsement {
+ id: String        ; endorsement id: timestamp:nonce
+ issuer: EntityId  ; external id
+ publisher: oneof {
+  PeerId           ; endorse a specific peer
+  EntityId         ; endorse all peers operated by some entity
+ }
+ ns: String        ; namespace for endorsement
+ comment: String   ; comment for endorsement
+ sig: Signature    ; issuer signature
+}
+
 ```
 
 The basic directory interface is accessible to all peers, and also usable
@@ -123,6 +140,27 @@ interface can be provided through the web, which allows users to
 browse, discover and endorse sources with a pleasant UX.
 
 ## Identity and Endorsement
+
+Peer identities are intended to identify nodes, but they are cheap
+and not human meaningful. By contrast, operator identities are human
+meaningful and carry a reputation with them. They are also expensive,
+in they sense that they require external provider verification.
+
+In order to provide meaningful discovery and source validation, peer
+identities must be connected to some real world entity. This is
+accomplished by signing and publishing the `PeerInfo` structure, which
+endorses the peer and asserts ownership of the node.
+
+Verifying ownership of a node is a good first step, but in order to
+effectively curate the namespace we need a mechanism to promote high
+quality sources. This is accomplished through endorsements, which are
+signed statements issued by humans to recommend publishers as
+publishers within some namespace.
+
+Endorsements are distributed through the directory servers, which only
+accept them by trusted entities and moderators. The management of the
+directory server's trust store is a matter of directory server
+administration and ultimately bestows the directory operators.
 
 ## Implementation Notes
 
