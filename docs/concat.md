@@ -2,12 +2,13 @@
 
 ## Architecture
 
-The system follows the RSS model, whereby individual peers maintain
-and publish their own feeds for each namespace they participate in.
-Readers can receive those feeds directly from publishers, either by
-polling or by subscribing to a pubsub interface. Peers are free to
-aggregate and republish any feed they subscribe to, thus creating a
-network of concatinative feeds (hence ConCat).
+The system is inspired by the RSS model, whereby individual peers
+maintain and publish their own feeds for each namespace they
+participate in. Readers can receive those feeds directly from
+publishers, either by polling or by subscribing to a pubsub
+interface. Peers are free to aggregate and republish any feed they
+subscribe to, thus creating a network of concatinative feeds (hence
+ConCat).
 
 In order to be discoverable, publishers advertise their feeds to
 directory servers. Directory servers collect these advertisements
