@@ -170,5 +170,9 @@ The major components for implementing the system as an MVP:
 - Directory server: a single server should be sufficient for small scale experimentation.
   We can add more servers as the system grows.
 - Client interface: user interface for interacting with the node locally.
-  Also, interface for indexer to for ingesting feeds.
+  Also, interface for indexer to ingest feeds.
+- Directory web interface: we should try to provide a pleasant UX for browsing
+  the directory. Also, it would be nice if we could implement a simple endorsement
+  interface to expand our curation sphere, it can be as simple as a star button
+  with the proper identity provider integrations.
 
