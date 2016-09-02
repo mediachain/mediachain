@@ -106,6 +106,7 @@ interface Directory {
  ; peer discovery
  lookup(PeerId): Option[PublisherInfo]              ; retrieve info for a peer
  list(dir: String, ns: String): List[PublisherInfo] ; list publishers for topic
+ search(user: String): List[PublisherInfo]          ; search by operator
 }
 
 struct PublisherInfo {
