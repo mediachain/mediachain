@@ -1,0 +1,44 @@
+# ConCat: A System Design for Mediachain PME [Pre-critical Mass Era]
+
+## Architecture
+
+The system builds on the RSS model, whereby individual peers maintain
+and publish their own feeds for each namespace they participate in.
+Readers can receive those feeds directly from publishers, either by
+polling or by subscribing to a pubsub interface. Peers are free to
+aggregate and republish any feed they subscribe to, thus creating a
+network of concatinative feeds (hence ConCat).
+
+In order to be discoverable, publishers advertise their feeds to
+directory servers. Directory servers collect these advertisements
+into the Universe, a comprehensive but uncurated directory where all
+known peers and their feeds can be found.
+
+In order to aid moderation and promotion of authoritative sources,
+peer operators may elect to publicly identify their nodes.
+Identification utilizes operator credentials backed by external
+identity providers (blockstack, keybase, etc). In this way publishers
+can be directly connected to real world entities and carry their
+associated reputation with them.
+
+The public identification allows directory servers to provide the next
+stratum of discovery, by virtue of the Contrib directory. This
+directory lists only verified nodes and allows discovery based on
+operator identities (eg organizations, social media handles, keybase
+user names and so on).
+
+The final stratum of discovery, is the Glam directory. In this space,
+directory servers recognize and promote autoritative sources and their
+namespaces. The recommendation model can be bootstrapped by utilizing
+operator identities with a web of trust, whereby entities trusted by
+directory servers can issue scoped endorsements for moderators and
+publishers
+
+## Peer Nodes
+
+## The Directory
+
+## Identity and Endorsement
+
+## Implementation Notes
+
