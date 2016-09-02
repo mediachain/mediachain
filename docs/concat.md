@@ -164,3 +164,11 @@ administration and ultimately bestows the directory operators.
 
 ## Implementation Notes
 
+The major components for implementing the system as an MVP:
+- Peer nodes: single implementation can act as source, cache, aggregator, etc.
+  Peers interact with each other only through the peer interface.
+- Directory server: a single server should be sufficient for small scale experimentation.
+  We can add more servers as the system grows.
+- Client interface: user interface for interacting with the node locally.
+  Also, interface for indexer to for ingesting feeds.
+
