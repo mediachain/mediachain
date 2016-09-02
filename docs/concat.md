@@ -78,10 +78,10 @@ interface PeerNode {
 }
 
 struct PeerInfo {
-  id: PeerId           ; node id
-  description: String  ; node description
-  operator: EntityId   ; external id
-  sig: Signature       ; operator signature
+ id: PeerId           ; node id
+ description: String  ; node description
+ operator: EntityId   ; external id
+ sig: Signature       ; operator signature
 }
 
 struct FeedInfo {
