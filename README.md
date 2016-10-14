@@ -1,3 +1,5 @@
+### DEPRECATED in favor of new design, see https://github.com/mediachain/concat/ + https://github.com/mediachain/aleph
+
 # Mediachain 💿 🔗
 ![logo](mediachain_logo_small.png)
 
