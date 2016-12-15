@@ -173,7 +173,7 @@ statements to their subscribers. Equally well, peers can poll their
 peers for recent updates, allowing them to operate in a disconnected
 fashion.
 
-The metadata associated with statements is stored in IPFS using the
+The metadata associated with statements is stored using the
 IPLD format, with the seeding initially supplied by sources. As
 statements propagate in the network, peers may opportunistically
 reseed metadata in order to aid availability and distribution. More
@@ -205,7 +205,7 @@ peer can compute the index that maps identifiers to metadata
 statements and answer basic queries.
 
 Peers can operate disconnected and simply manipulate their local view
-of the mediachain by adding new statements to the store. Their updates
+of the world by adding new statements to the store. Their updates
 are buffered in the spool until they connect to the network and
 publish them to other peers.
 
@@ -230,6 +230,9 @@ sufficient to have a stable population of online publishers and
 aggregators, who ensure the eventual publication of new statements to
 all interested readers.
 
+The role of the directory can also be played by the IPFS KAD DHT
+or something like the Ethereum Name Service.
+
 In order to streamline online publication and indexing, stable
 publishers can organize into pubsub overlays. The overlay for a
 namespace can be constructed by connecting to a subset of other
@@ -251,17 +254,17 @@ pre-existing datasets from authoritative sources in bulk.
 The ingestion process first requires a translation step, where
 metadata records from the existing dataset are translated to
 structured metadata objects for the mediachain. The next step is to
-publish the objects in IPFS and obtain their pointers, so that they
-can related to media identifiers with statements. Finally, for each
-object in the original dataset a statement msut be generated, which
-binds the pre-existing object identifier to the metadata object with a
-cryptographic signature.
+publish the objects as content-addressed IPLD and obtain their pointers,
+so that they can related to media identifiers with statements. Finally, 
+for each object in the original dataset a statement must be generated, 
+which binds the pre-existing object identifier to the metadata object
+with a cryptographic signature.
 
 This process follows a straightforward path from existing record to
 mediachain statement and may very well work with small datasets.
 However, this process is extremely inefficient for large datasets
-with millions of artefacts. Firstly, the metadata need to published to
-IPFS, a process which may be lengthy and resource hungry. Secondly, a
+with millions of artefacts. Firstly, the metadata need to published,
+ a process which may be lengthy and resource hungry. Secondly, a
 cryptographic signature needs to be generated for each statement, a
 process which is also computationally expensive. And then there is the
 traffic required for propagating statements in the network, which can
@@ -272,8 +275,8 @@ binding multiple statements together with a single signature. And in
 order to address the load issues, the protocol allows for publishing
 archives to the network. These archives are tarballs that contain
 statements and their associated metadata as separate files named by
-their IPLD hashes. A bulk ingesting source can thus avoid the IPFS
-publication step and bundle the statements directly with their
+their IPLD hashes. A bulk ingesting source can thus avoid publishing
+individual objects and bundle the statements directly with their
 metadata objects.  Furthermore, the archive can be distributed
 directly to interested readers by using a protocol optimized for bulk
 transfer, such as IPFS Bitswap or Bittorrent.
@@ -287,27 +290,19 @@ to push high volumes of data without overloading the network.
 
 ### Metadata Persistence
 
-The flow of metadata in the system follows the path from sources to
-readers through IPFS. When a reader receives a statement and adds it
-to its local store, it also fetches the associated metadata. Client
-readers are not expected to reseed the object in IPFS, especially if
-they operate in a disconnected fashion.
-
-In order to avoid overloading the source with IPFS requests and
+In order to avoid overloading the source with requests and
 provide availability even when the source is offline, the metadata is
 reseeded by caches who follow the relevant namespaces. Longer term
 metadata persistence in the form of archive files is provided by
 archivers. These basic services will be supported by organizations
 using the mediachain per normal course of operation.
 
-The issue of persistent seeding in IPFS is a little more complicated.
-Firstly, a seeder must consume memory, storage, and egress bandwidth
-in order to serve the objects. Secondly, IPFS publishing creates
-system traffic in the form of DHT provider announcements. Thus, a form
-of incentives needs to be devised to encourage and justify persistent
-IPFS seeding for high value namespace. This can be achieved with an
-application-specific coin like filecoin or through a well established
-blockchain.
+The issue of persistent seeding is a little more complicated.
+A seeder must consume memory, storage, and egress bandwidth
+in order to serve the objects. Thus, a form of incentives needs to be
+devised to encourage and justify persistent seeding for high value namespace.
+This can be achieved with an application-specific coin like filecoin
+or through a well established blockchain.
 
 ### Indexes and Queries
 
@@ -421,7 +416,7 @@ compound-statement-body = [<simple-statement-body>, ...]
 republished-statement-body = [<Statement>, ...]
 
 archive-statement-body = {
- data:       <IPFSReference>
+ data:       <MultiHash>
  size:       <int>            ; size of the archive in bytes
  count:      <int>            ; count of unique metadata objects contained in the archive
 }
