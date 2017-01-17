@@ -20,11 +20,11 @@ It is a single port of entry for applications and users to publish, discover, an
 
 With Mediachain
 
-- [a group of museums can collaborate on cultural heritage data in a shared system](https://blog.mediachain.io/bringing-cultural-metadata-to-life-12cc118b2298)
+- [A group of museums can collaborate on cultural heritage data in a shared system](https://blog.mediachain.io/bringing-cultural-metadata-to-life-12cc118b2298)
 - [A cooperative of openly-licensed image sharing platforms can publish attribution information to a community-maintained ledger](https://blog.mediachain.io/please-share-with-gratitude-b489e60a3e13#.nhr7031af)
 - [A consortium of music industry organizations can share rights data without ceding control to a third party](https://blog.mediachain.io/what-a-blockchain-for-music-really-means-e2f8dc66d57d)
 - A developer can build a decentralized blogging platform without needing to run a centralized database [blog post coming soon].
-- A dApp developer can plug in a off-chain, scalable data solution and focus on building a great product
+- A dApp developer can plug in an off-chain, scalable data solution and focus on building a great product and secure smart contract [blog post coming soon].
 
 # How does Mediachain fit in the decentralized stack?
 
