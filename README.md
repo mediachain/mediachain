@@ -12,13 +12,11 @@ Join the Mediachain community on Slack: http://slack.mediachain.io.
 
 # What is Mediachain?
 
-Mediachain is a singular data fabric for open-first media applications.
+Mediachain serves the role of a traditional database, but is a decentralized, global data layer for powering serverless applications.
 
-It serves the role of a traditional database, but is a decentralized, global data layer for powering serverless applications.
+It is a single port of entry for applications and users to publish, discover, and collaborate on data.
 
-It is a single port of entry for applications and users to publish, discover, and collaborate on media metadata.
-
-With Mediachain, a group of museums can collaborate on cultural heritage data in a shared system, a cooperative of openly-licensed image sharing platforms can publish attribution information to a community-maintained ledger, a consortium of music industry organizations can share rights data without ceding control to a third party, and a developer can build a decentralized blogging platform without needing to run a centralized database.
+With Mediachain, [a group of museums can collaborate on cultural heritage data in a shared system](https://blog.mediachain.io/bringing-cultural-metadata-to-life-12cc118b2298), [a cooperative of openly-licensed image sharing platforms can publish attribution information to a community-maintained ledger](https://blog.mediachain.io/please-share-with-gratitude-b489e60a3e13#.nhr7031af), [a consortium of music industry organizations can share rights data without ceding control to a third party](https://blog.mediachain.io/what-a-blockchain-for-music-really-means-e2f8dc66d57d), and a developer can build a decentralized blogging platform without needing to run a centralized database [blog post coming soon].
 
 Mediachain complements emerging technologies in the decentralized application protocol stack, where Ethereum is the logic layer, IPFS is the file system, and Mediachain is the database.
 
