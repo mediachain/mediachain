@@ -26,7 +26,7 @@ of objects) supporting bulk and firehose ingestion models.
 Fundamentally, what we need is a map of media identifiers to sets
 of statements that allows us to track and relate media objects.
 This has the hallmarks of a CRDT data structure, which allows a system to
-achieve eventually consistent state without the need for consensus. 
+achieve eventually consistent state without the need for consensus.
 
 So what we want to build is a distributed database that supports
 _upserts_ connecting statements to one or more domain specific
@@ -57,7 +57,7 @@ identifiers (WKI; e.g. moma:190935) with the following motivations:
   For instance, a service like Clarifai can publish a namespace containing only
   merges based on visual similarity
 * WKI-based provider records can be reasonably implemented as distributed,
-  freeing organizationss from relying on indexers for simple mappings
+  freeing organizations from relying on indexers for simple mappings
 
 Works that are mediachain-first and require an identifier can either
 generate one or receive it from a ticket server. This ID will be
@@ -69,7 +69,7 @@ The Phase I data structure interface provided 3 basic operations:
 insert, update, and lookup. The insert method ingested an object into
 the system and returned its canonical identifier. For each identifier,
 the system maintained a chain pointer linking the object to a chain of
-updates. The update method updated the chain pointer by consing a new
+updates. The update method updated the chain pointer by creating a new
 update object on top of the current chain, while lookup retrieved the
 head of the chain for a canonical.
 
@@ -87,7 +87,7 @@ set containing the object.
 The lookup method can be retained as a basic read operation, with a
 change at its return value. Since there are no chained updates any
 more, the method returns the known set of updates relating to an
-identifier. 
+identifier.
 
 ### Namespace Partitioning
 
@@ -119,7 +119,7 @@ to combat spam and recognize authoritative sources.
 
 At a fundamental level, the mediachain is an open, peer-to-peer system.
 Individual peers are free to write in any namespace they see fit in their
-local store, and they are futher free to publish their statements.
+local store, and they are further free to publish their statements.
 It is up to readers to decide whether statements from some source
 have any validity and thus choose whether to merge them in their
 own stores and republish in their feeds.
@@ -177,7 +177,7 @@ The metadata associated with statements is stored using the
 IPLD format, with the seeding initially supplied by sources. As
 statements propagate in the network, peers may opportunistically
 reseed metadata in order to aid availability and distribution. More
-specialized peers can provide persistent seeding and achiving services
+specialized peers can provide persistent seeding and archiving services
 for some namespaces, potentially incentivized through something like
 Filecoin.
 
@@ -224,7 +224,7 @@ register with the directory. This makes it discoverable by other peers
 who want to publish or read statements in its namespaces.
 
 At this level, the system can already simply work asynchronously, by
-having readers periodcally poll publishers for new statements and
+having readers periodically poll publishers for new statements and
 transient writers can push new statements to aggregators. It is
 sufficient to have a stable population of online publishers and
 aggregators, who ensure the eventual publication of new statements to
@@ -255,8 +255,8 @@ The ingestion process first requires a translation step, where
 metadata records from the existing dataset are translated to
 structured metadata objects for the mediachain. The next step is to
 publish the objects as content-addressed IPLD and obtain their pointers,
-so that they can related to media identifiers with statements. Finally, 
-for each object in the original dataset a statement must be generated, 
+so that they can related to media identifiers with statements. Finally,
+for each object in the original dataset a statement must be generated,
 which binds the pre-existing object identifier to the metadata object
 with a cryptographic signature.
 
@@ -392,7 +392,7 @@ metadata object within some namespace. Statements can be:
 The statement data structure looks as following:
 ```
 Statement = {
- id:           <statement-id> 
+ id:           <statement-id>
  ns:           <namespace-id>
  src:          <ID>
  body:         <statement-body>

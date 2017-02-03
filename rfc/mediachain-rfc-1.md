@@ -59,7 +59,7 @@ entities and artefacts. An _Entity_ represents a person or organization
 who may associate with artefacts, for example by creating or posting
 a reference to the artefact. _Artefacts_ represent media works as tracked
 by Mediachain. They can be images, video, text, or any other
-common media found in the Internet. 
+common media found in the Internet.
 
 In Mediachain schema, entities are instances of data objects with
 their type field set to `entity`, while Artefacts are instances
@@ -73,7 +73,7 @@ the original unparsed metadata are linked through a `metaSource` reference.
 Artefacts can also have their associated data stored in IPFS, so that media
 can be directly accessed from references to their Canonicals.
 If this is the case, then the artefact object will contain a link to
-the IPFS datablob in its `data` field
+the IPFS data blob in its `data` field
 
 Finally, both types carry a set of cryptographic signatures that assert their
 validity. The signatures come from _signatories_ with known keys in the
@@ -148,7 +148,7 @@ Nil = { "type" : "nil" }
 
 The entity and artefact chains differ on the type of relationships
 they store. They both support metadata update cells, which simply
-provide new metadata to the base object as arbitray key-value pairs.
+provide new metadata to the base object as arbitrary key-value pairs.
 
 The entity chain also allows for linking two entities, for example
 having a pseudonymous artist publicly revealing a true name that
@@ -212,7 +212,7 @@ ArtefactChainCell =
  | <ArtefactOwnershipCell>
  | <ArtefactReferenceCell>
  | <Nil>
- 
+
 ArtefactUpdateCell = {
  "type" : "artefactUpdate"
  "chain" : <Reference>
@@ -304,7 +304,7 @@ an index that allows it to read and query Mediachain.
 ### Appending Data in Mediachain
 
 The datastore initially is almost empty, containing only the `Nil` object
-as the bottom of all chains 
+as the bottom of all chains
 For each entity and artefact added to the store, a corresponding entry
 is added to the journal, connecting a canonical reference with its chain
 pointing to the `Nil` object.
@@ -326,7 +326,7 @@ CanonicalEntry = {
  "ref"  : <Reference> ; canonical reference for an entity or artefact
  "timestamp" : <Timestamp>
  }
- 
+
 ChainEntry = {
  "type"  : "update"
  "ref"   : <Reference> ; canonical reference for entity or artefact
@@ -360,8 +360,8 @@ outside the scope of this document.
 As an example, consider the situation described in [4].
 In that case, a graphic artist created a GIF to commemorate the
 passing of well known actor and musician David Bowie. The GIF
-quickly went viral, mutating along the way, and resulting at a
-complete loss of attribution for the cultural afterfact.
+quickly went viral, mutating along the way, and resulting in a
+complete loss of attribution for the cultural artifact.
 
 Mediachain is designed to solve this kind of problems by
 tracking the propagation and evolution of the artefact in the

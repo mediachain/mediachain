@@ -76,7 +76,7 @@ exchanging regular heartbeats and peer identity messages.  Once booted,
 Peer nodes are expected to be long-lived, with a lifespan of months
 and longer except for intermittent failures.
 
-The overlay can start fully connected with a small number of bootsrap
+The overlay can start fully connected with a small number of bootstrap
 nodes, but over time relax the connectivity to an N-cut connected
 model.  That is, with a suitable peer selection strategy, the network
 can tolerate up to N peer failures without forming a
@@ -131,7 +131,7 @@ Block = {
 The blockchain can be easily stored in the IPFS datastore, thus solving the
 problem of Journal distribution and persistence. For additional integrity
 protection and disaster recovery backups, peer nodes may elect to persist
-the blockchain in an outside backing store like S3. 
+the blockchain in an outside backing store like S3.
 
 A reference to the last block in the store is sufficient to boot a new
 node that reconstructs an up-to-date index of Mediachain.
@@ -197,11 +197,11 @@ the block. This can be accomplished with a randomized Leader Election
 algorithm similar to the Raft consensus protocol [3].
 Alternatively, a Proof of Work mechanism can be used, similar to
 bitcoin, where all Peers content on mining their currently accumulated
-transaction block. The advantage of a Proof of Work altorithm is that it
+transaction block. The advantage of a Proof of Work algorithm is that it
 fortifies the protocol against certain adversarial failures, albeit at
 an energy cost.
 
-Once a commiter has been designated, the Peer proceeds with writing the
+Once a committer has been designated, the Peer proceeds with writing the
 block to the store and propagates the block canonical reference to all
 its peers and clients. The new block is in turn broadcast by its peers to the
 entire core network and out to all connected clients.
@@ -211,7 +211,7 @@ The other commits can then be merged by replaying their differential transaction
 on top of the selected commit.
 
 Another aspect of the commit would be to persist the blobs pointed by
-the transactions being commited. Small records (less than 1KB) can be
+the transactions being committed. Small records (less than 1KB) can be
 stored directly in the DHT, but larger ones will need to be persisted
 by the core network.
 
@@ -246,7 +246,7 @@ data models for entity and artefact chains in [2]:
 ```
 EntityChainCell =
  ...
- | <EntityChainLinkCell> 
+ | <EntityChainLinkCell>
 
 EntityChainLinkCell = {
  "type" : "entityChainLink"
@@ -269,8 +269,8 @@ ArtefactChainLinkCell = {
  }
 ```
 
-In addition, in order to track the conflicting update transactions 
-and allow peers and clients to discern a merged chain we also need to 
+In addition, in order to track the conflicting update transactions
+and allow peers and clients to discern a merged chain we also need to
 extend the `JournalEntry` to include a `ChainMergeEntry`:
 ```
 JournalEntry =
@@ -283,7 +283,7 @@ ChainMergeEntry = {
  "chain" : <Reference>          ; reference to the head of the chain
  "chainPrevious" : <Reference>  ; reference to the previous head of the chain
  "chainMerge" : <Reference>     ; reference to merged orphan chain head
- } 
+ }
 ```
 
 The following example shows a merge of two conflicting `ChainEntries`:
@@ -316,7 +316,7 @@ QmCCC... = ArtefactChainCell {
 ```
 
 When the conflicting `ChainEntries` for an artefact chain are merged
-the result is a `ChainEntry` and a `ChainMergeEntry` in the Journal, and a 
+the result is a `ChainEntry` and a `ChainMergeEntry` in the Journal, and a
 new `ArtefactChainLinkCell` in the datastore as the head of the chain:
 ```
 ChainEntry {
@@ -360,14 +360,14 @@ two types:
 Common failures are expected with some mean time between failures.
 They can be correlated, leading to connectivity problems within the core
 network. In some occasions, crashes and internet-wide connectivity
-problems can avalanche leading to core network paritions.
+problems can avalanche leading to core network partitions.
 
 On the other hand, byzantine behaviors can appear because of software
 bugs or adversarial actions. Bugs may cause nodes to send or suppress
 arbitrary messages. Even worse, nodes exhibiting adversarial behavior
 may try to poison or disrupt the system with malicious intent.
-Our threat model is not concerned with state actors, but rather 
-simply acknowledges common internet threats, where attacker-controled 
+Our threat model is not concerned with state actors, but rather
+simply acknowledges common internet threats, where attacker-controlled
 nodes can become adversarial to the system.
 
 ### Common Failures
@@ -377,13 +377,13 @@ Once the data have reached IPFS and a transaction has been inserted
 to the core network, the originating client can crash without
 affecting the commit.
 
-On the other hand, all system protocols must be designed to accomodate
+On the other hand, all system protocols must be designed to accommodate
 crashes at inopportune moments. Peers exchange regular heartbeat
-messages, which allow nodes to health-check each other and the 
+messages, which allow nodes to health-check each other and the
 current membership to be propagated throughout the network.
-Similarly, the block commit protocol must be fortified with 
+Similarly, the block commit protocol must be fortified with
 reasonable timeouts so that commits can be restarted on leader
-failures. 
+failures.
 
 To make the effects of crashes clearer, let's consider all the logical
 steps in the Mediachain write protocol:
@@ -393,7 +393,7 @@ client -> peer:  push transaction
 peer -> peer: block commit protocol
 peer -> client: commited block
 client: confirm transaction
-``` 
+```
 
 With each step in the protocol fortified for crash recovery, we
 can be reasonably certain that once the client has written the data
@@ -407,11 +407,11 @@ events.
 ### Network Partitions
 
 During the lifetime of the system, there will be inevitable severe
-network events where correlated failures can parition the core
-network.  In the face of network paritions, the CAP theorem dictactes
+network events where correlated failures can partition the core
+network.  In the face of network partitions, the CAP theorem dictates
 that the blockchain will either be Consistent or Available.
 
-Common consenus protocols in the literature choose consistency in such
+Common consensus protocols in the literature choose consistency in such
 cases. This is an appropriate response for a cluster of tightly
 controlled machines, but inappropriate for a decentralized system.
 Hence, Mediachain should be designed to be partition tolerant with
@@ -447,7 +447,7 @@ long combination of the two.
 The peer-to-peer broadcast of transactions in the core network routes
 through multiple paths. As such, it can withstand a number of
 nodes trying to deny or disrupt the service by suppressing
-broadcast messages. 
+broadcast messages.
 
 At worst, clients of adversarial nodes will be denied service.
 Affected clients can easily recover by connecting to another Peer for
@@ -491,7 +491,7 @@ transactions.  Such actions can be rendered ineffective by requiring
 Proof of Work to be associated with every transaction.  In addition,
 there should be a limit to the size of blobs acceptable blobs as part
 of the transaction in order to avoid core network storage exhaustion
-by such attacks. 
+by such attacks.
 
 If the system is under too much write stress, additional measures can
 be taken: difficulty for Proof of Work can be adjusted, CAPTCHAs may
@@ -500,18 +500,18 @@ be presented to clients, IP blacklisting etc.
 #### Peer Injection Attacks
 
 A Peer can attempt to poison the blockchain by injecting invalid
-transactions with dangling pointers. Similary it can attempt
+transactions with dangling pointers. Similarly, it can attempt
 to flood the system with duplicate transactions. Both scenarios
 can be simply defended by requiring peers to verify all transactions
-as new, not just client transactions. 
+as new, not just client transactions.
 
 A variation of the poisoning attack is for a peer to attempt to commit
 invalid blocks, containing invalid journal entries or extending an
 arbitrary blockchain. In order to be robust against such cases, peers
-must also verify commited blocks before accepting them as the new
+must also verify committed blocks before accepting them as the new
 blockchain pointer.
 
-Another flooding attack scenario is for a peer to attempt to 
+Another flooding attack scenario is for a peer to attempt to
 generate a flood of valid transactions without originating
 them from a client. This scenario is mitigated by the requirement
 for all transactions to require Proof of Work regardless of origin.
@@ -519,15 +519,15 @@ Thus, a peer is naturally limited to its flooding rate by hash
 power requirements.
 
 A more subtle flooding attack is for a peer to attempt to hijack
-the Leader Election protocol and become a perpetual commiter.
+the Leader Election protocol and become a perpetual committer.
 This is impossible to mitigate with a pure randomized Leader
-Election protocol -- it can only be mitigated by using a Proof of 
-Work competition for leader election. 
+Election protocol -- it can only be mitigated by using a Proof of
+Work competition for leader election.
 
 Similarly, a peer node may attempt to build a trivially long blockchain
 to needlessly trigger partition healing protocols. These
 attacks can be mitigated by treating a block as a transaction, and thus
-requiring Proof of Work by the commiting node before accepting it.
+requiring Proof of Work by the committing node before accepting it.
 
 However, given that core network membership is moderated by signing
 Level-1 certificates, problems of this nature should be treated as
@@ -540,7 +540,7 @@ intervention is required for resolution and key revocation.
 
 The system architecture described so far should not have problems
 scaling to large number of nodes. Principals and organizations can
-easily add more peers to the core network accomodating the
+easily add more peers to the core network accommodating the
 demands of client nodes as the system grows.
 
 There is however on potential scaling bottleneck that can lead the
@@ -559,7 +559,7 @@ larger, assuming an average of 10 updates per index head. Thus, a
 a billion entities and artefacts in Mediachain would require about
 1TB of storage; this is readily available in today's public clouds.
 
-A larger scale blockchain and index can be accomodated by sharding.
+A larger scale blockchain and index can be accommodated by sharding.
 If the storage requirements become too large for a commonly available
 cloud instance to handle the entire blockchain, the canonical space
 can be sharded using the canonical identifier bits. In this scenario,

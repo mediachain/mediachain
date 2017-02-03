@@ -350,7 +350,7 @@ Media works can be identified by unicode strings in any of the following formats
 
 ##### Input format:
 
-Body of POST request is a JSON-encoded string. 
+Body of POST request is a JSON-encoded string.
 
 ##### Returned on success:
 
@@ -447,7 +447,7 @@ Inputs:
 Key              | Value
 -----------------|-------------------------------------------------
   as_groups      | List of lists of media IDs, with grouped IDs all considered duplicates, and split IDs all considered non-duplicates.
-  as_pairs       | Pairs of of media IDs, with a "same" or "different" labels. Pairs must be transitively consistent.
+  as_pairs       | Pairs of media IDs, with a "same" or "different" labels. Pairs must be transitively consistent.
 
 Outputs: See `'error'` entry.
 
