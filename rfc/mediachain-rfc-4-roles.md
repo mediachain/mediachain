@@ -1,6 +1,6 @@
 ### Peer roles
 
-Peers can play several roles in the network, accordinging to their
+Peers can play several roles in the network, according to their
 capabilities and resources they are willing to contribute. They can
 play multiple roles simultaneously, and assume different rolesets for
 each namespace they are following.
@@ -70,7 +70,7 @@ clients.
 The services of aggregators are essential for implementing processors
 (indexers, archivers, etc) who require an expanded view of the
 mediachain. By using aggregators, these peers don't have to track
-every leaf namespce in the parts of the hierarchy they are following.
+every leaf namespace in the parts of the hierarchy they are following.
 This allows the hierarchy to evolve without affecting existing
 processors, who only need to track the aggregate namespace, while also
 reducing load in leaf overlays.

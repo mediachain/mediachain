@@ -141,7 +141,7 @@ $ java -cp $TRANSACTOR_JAR io.mediachain.transactor.DatastoreRpcService $TRANSAC
 
 The services can be cleanly shutdown using killfiles.  For each service,
 a special directory is created and watched for changes.  If a file named
-`shutdown` is created, or it's modification time is updated, the service
+`shutdown` is created, or its modification time is updated, the service
 will shut itself down.
 
 The location of the control directory depends on the values set in the config

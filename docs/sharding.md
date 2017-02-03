@@ -2,7 +2,7 @@
 
 Most decentralized systems striving towards consensus suffer from the same
 problem: operating at scale. There are many approaches to scaling decentralized
-systems, each with its own strenghts and drawbacks. We'll discuss them in a
+systems, each with its own strengths and drawbacks. We'll discuss them in a
 series of 'case studies' found below.
 
 ## Case Studies
@@ -11,14 +11,14 @@ series of 'case studies' found below.
 
 The Domain Name System, DNS, is a famously decentralized system.
 
-- Makes a common trade-off of slight centralizaiton for performance and
+- Makes a common trade-off of slight centralization for performance and
   consistency.
 - Updates are sent to the top of the hierarchy, at which point they become truth
-  and then propogate back down remaining branches of hierarchy.
-- Top layer of the hierarchy is a consortium, communicating via the 
+  and then propagate back down remaining branches of hierarchy.
+- Top layer of the hierarchy is a consortium, communicating via the
   [Border Gateway Protocol](https://en.wikipedia.org/wiki/Border_Gateway_Protocol).
 - Consortium is laid out as a set of zones, each corresponding to a
-  
+
 DNS is an efficient, WAN-scale system. While it is subject to a variety of
 attacks at the lower levels of the hierarchy, it has managed to serve the
 purposes of the web for years now.
@@ -29,11 +29,11 @@ being.
 ### Case Study: Gossip and Keyspace Sharding, CockroachDB
 
 CockroachDB, developed by Cockroach Labs, is a compelling new entrant to the
-distributed database space. 
+distributed database space.
 
 In order to scale write speeds, CockroachDB shards (splits into many pieces) the
 keyspace of its underlying key-value store. Each shard is replicated by some
-tunable number of machines participating in the quourum, N. Those N servers form
+tunable number of machines participating in the quorum, N. Those N servers form
 a small quorum which ensure their views of that data stored in that share are
 consistent.
 
@@ -79,13 +79,13 @@ Following this, Mediachain can be relatively simply sharded over the key of the
 object being modified. For clarity:
 
 - Let K be the keyspace of objects in Mediachain
-- Let S{n} forall n in Nat, be the set of all possible divisions of K into n
+- Let S{n} for all n in Nat, be the set of all possible divisions of K into n
   intervals such that, when combined, these intervals form K
 - Let Sx be a member of S{n}, n/x
 - Let Sxi be the ith member of Sx, where 0 <= i < x
 - For a given key, k, its data is to be committed to the node associated with
   the interval in Sx containing k
-  
+
 To minimize data churn when adding or removing shards, we use a technique known
 as [consistent hashing](https://en.wikipedia.org/wiki/Consistent_hashing).
 Consistent hashing also has an additional benefit of helping ensure data is
